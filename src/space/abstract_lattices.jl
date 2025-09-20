@@ -172,5 +172,3 @@ Return the coordinate axes as separate 1D ranges for each dimension.
 This is useful for plotting or when you need the axes separately rather than as a grid.
 """
 coordinate_axes(lattice::AbstractLattice) = (discrete_segment.(start(lattice), stop(lattice), size(lattice))...,)
-
-using Statistics
