@@ -34,6 +34,16 @@ function difference_of_simple_sigmoids(x, a_up, θ_up, a_down, θ_down)
     simple_sigmoid(x, a_up, θ_up) - simple_sigmoid(x, a_down, θ_down)
 end
 
+"""
+    difference_of_rectified_zeroed_sigmoids(x, a_up, θ_up, a_down, θ_down)
+
+The difference of two rectified zeroed sigmoid functions: rectified_zeroed_sigmoid_up(x) - rectified_zeroed_sigmoid_down(x).
+This ensures the result cannot be negative and creates more biologically realistic bump-like functions.
+"""
+function difference_of_rectified_zeroed_sigmoids(x, a_up, θ_up, a_down, θ_down)
+    rectified_zeroed_sigmoid(x, a_up, θ_up) - rectified_zeroed_sigmoid(x, a_down, θ_down)
+end
+
 ############## Sigmoid Parameter Types ##############
 
 """
@@ -69,7 +79,8 @@ RectifiedZeroedSigmoidNonlinearity(; a, θ) = RectifiedZeroedSigmoidNonlinearity
 Difference of sigmoids nonlinearity parameter type with parameters for two sigmoids:
 - a_up, θ_up: parameters for the "up" sigmoid
 - a_down, θ_down: parameters for the "down" sigmoid
-The result is sigmoid_up(x) - sigmoid_down(x).
+The result is rectified_zeroed_sigmoid_up(x) - rectified_zeroed_sigmoid_down(x).
+This defaults to using rectified zeroed sigmoids for biological realism.
 """
 struct DifferenceOfSigmoidsNonlinearity{T}
     a_up::T
@@ -109,9 +120,9 @@ end
     apply_nonlinearity(dA, A, nonlinearity::DifferenceOfSigmoidsNonlinearity, t)
 
 Apply difference of sigmoids nonlinearity to the activation array A, modifying dA.
-Implements difference of sigmoids logic directly without unnecessary copies.
+Implements difference of rectified zeroed sigmoids logic directly without unnecessary copies.
 """
 function apply_nonlinearity(dA, A, nonlinearity::DifferenceOfSigmoidsNonlinearity, t)
-    # Apply difference of sigmoids nonlinearity directly: dA += difference_of_simple_sigmoids(A) - A
-    @. dA += difference_of_simple_sigmoids(A, nonlinearity.a_up, nonlinearity.θ_up, nonlinearity.a_down, nonlinearity.θ_down) - A
+    # Apply difference of rectified zeroed sigmoids nonlinearity directly: dA += difference_of_rectified_zeroed_sigmoids(A) - A
+    @. dA += difference_of_rectified_zeroed_sigmoids(A, nonlinearity.a_up, nonlinearity.θ_up, nonlinearity.a_down, nonlinearity.θ_down) - A
 end
