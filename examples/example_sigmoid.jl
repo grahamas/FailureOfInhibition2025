@@ -26,19 +26,13 @@ function demo_sigmoid_usage()
         println("   f($x) = $(round(y, digits=4))")
     end
     
-    # Show how to apply it to neural field data
-    println("\n3. Applying to neural field data:")
+    # Show how to apply it to neural field data using apply_nonlinearity
+    println("\n3. Using apply_nonlinearity with SigmoidNonlinearity:")
     # Simulate some neural field activity
     field_activity = [0.2, 0.8, -0.1, 1.5, 0.0]
     println("   Original activity: $field_activity")
     
-    # Apply sigmoid nonlinearity
-    sigmoid_output = copy(field_activity)
-    sigmoid(sigmoid_output)
-    println("   After sigmoid:     $(round.(sigmoid_output, digits=4))")
-    
     # Show how it would be used in a model differential equation
-    println("\n4. Usage in differential equation (like wcm1973!):")
     dA = zeros(length(field_activity))
     A = copy(field_activity)
     
@@ -46,6 +40,17 @@ function demo_sigmoid_usage()
     apply_nonlinearity(dA, A, sigmoid, 0.0)  # t=0.0 for this example
     println("   dA after:  $(round.(dA, digits=4))")
     println("   A unchanged: $A")
+    
+    # Show RectifiedZeroedSigmoidNonlinearity
+    println("\n4. Using RectifiedZeroedSigmoidNonlinearity:")
+    rect_sigmoid = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5)
+    dA_rect = zeros(length(field_activity))
+    A_rect = copy(field_activity)
+    
+    println("   dA_rect before: $dA_rect")
+    apply_nonlinearity(dA_rect, A_rect, rect_sigmoid, 0.0)
+    println("   dA_rect after:  $(round.(dA_rect, digits=4))")
+    println("   A_rect unchanged: $A_rect")
     
     println("\n5. Different sigmoid shapes:")
     # Steeper sigmoid
@@ -63,7 +68,7 @@ function demo_sigmoid_usage()
     
     println("\n=== Demo Complete ===")
     println("\nThe sigmoid nonlinearity is now ready to use in neural field models!")
-    println("Simply pass a SigmoidNonlinearity object as p.nonlinearity to wcm1973!")
+    println("Simply pass a SigmoidNonlinearity or RectifiedZeroedSigmoidNonlinearity object as p.nonlinearity to wcm1973!")
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

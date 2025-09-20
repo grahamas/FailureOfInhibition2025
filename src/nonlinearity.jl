@@ -40,26 +40,39 @@ end
 SigmoidNonlinearity(; a, θ) = SigmoidNonlinearity(a, θ)
 
 """
-    (s::SigmoidNonlinearity)(inplace::AbstractArray, source, t)
+    RectifiedZeroedSigmoidNonlinearity{T}
 
-Apply sigmoid nonlinearity in-place to the array.
+Rectified zeroed sigmoid nonlinearity parameter type with slope a and threshold theta.
+In practice, we use rectified sigmoid functions because firing rates cannot be negative.
 """
-function (s::SigmoidNonlinearity)(inplace::AbstractArray, source=nothing, t=nothing)
-    inplace .= simple_sigmoid.(inplace, s.a, s.θ)
+struct RectifiedZeroedSigmoidNonlinearity{T}
+    a::T
+    θ::T
 end
+
+# Constructor with keyword arguments
+RectifiedZeroedSigmoidNonlinearity(; a, θ) = RectifiedZeroedSigmoidNonlinearity(a, θ)
 
 ############## Apply Nonlinearity Interface ##############
 
 """
-    apply_nonlinearity(dA, A, nonlinearity, t)
+    apply_nonlinearity(dA, A, nonlinearity::SigmoidNonlinearity, t)
 
-Apply the specified nonlinearity to the activation array A, modifying dA.
-This is the main interface function called by the model.
+Apply simple sigmoid nonlinearity to the activation array A, modifying dA.
+Implements sigmoid logic directly without unnecessary copies.
 """
-function apply_nonlinearity(dA, A, nonlinearity, t)
-    # Apply nonlinearity to A and add to dA
-    # Create a temporary copy to avoid modifying A
-    temp = copy(A)
-    nonlinearity(temp, A, t)
-    dA .+= temp .- A  # Add the nonlinear transformation
+function apply_nonlinearity(dA, A, nonlinearity::SigmoidNonlinearity, t)
+    # Apply sigmoid nonlinearity directly: dA += sigmoid(A) - A
+    @. dA += simple_sigmoid(A, nonlinearity.a, nonlinearity.θ) - A
+end
+
+"""
+    apply_nonlinearity(dA, A, nonlinearity::RectifiedZeroedSigmoidNonlinearity, t)
+
+Apply rectified zeroed sigmoid nonlinearity to the activation array A, modifying dA.
+Implements rectified zeroed sigmoid logic directly without unnecessary copies.
+"""
+function apply_nonlinearity(dA, A, nonlinearity::RectifiedZeroedSigmoidNonlinearity, t)
+    # Apply rectified zeroed sigmoid nonlinearity directly: dA += rectified_zeroed_sigmoid(A) - A
+    @. dA += rectified_zeroed_sigmoid(A, nonlinearity.a, nonlinearity.θ) - A
 end

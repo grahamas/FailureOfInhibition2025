@@ -29,7 +29,7 @@ export start, stop, extent, simpson_weights
 export fft_center_idx
 
 # Export nonlinearity types and functions
-export SigmoidNonlinearity, simple_sigmoid, rectified_zeroed_sigmoid, apply_nonlinearity
+export SigmoidNonlinearity, RectifiedZeroedSigmoidNonlinearity, simple_sigmoid, rectified_zeroed_sigmoid, apply_nonlinearity
 
 # Export model functions
 export wcm1973!, population, stimulate
