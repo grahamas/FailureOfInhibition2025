@@ -80,6 +80,7 @@ function propagate_activation(dA, A, connectivity::GaussianConnectivityParameter
     buffer_shift = similar(buffer_real)
     gc = GaussianConnectivity(fft_op, ifft_op, buffer_real, buffer_complex, buffer_shift)
     propagate_activation(dA, A, gc, t)
+end
 
 function propagate_activation(dA, A, c::GaussianConnectivity, t)
     # Compute fft, multiply by kernel, and invert
