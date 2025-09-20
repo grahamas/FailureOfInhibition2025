@@ -52,7 +52,21 @@ function demo_sigmoid_usage()
     println("   dA_rect after:  $(round.(dA_rect, digits=4))")
     println("   A_rect unchanged: $A_rect")
     
-    println("\n5. Different sigmoid shapes:")
+    # Show DifferenceOfSigmoidsNonlinearity
+    println("\n5. Using DifferenceOfSigmoidsNonlinearity:")
+    # This creates a bump-like function using rectified zeroed sigmoids (now default)
+    # Narrow ascending at 0.3, broader descending at 0.7 for better bump shape
+    diff_sigmoid = DifferenceOfSigmoidsNonlinearity(a_up=5.0, θ_up=0.3, a_down=3.0, θ_down=0.7)
+    dA_diff = zeros(length(field_activity))
+    A_diff = copy(field_activity)
+    
+    println("   dA_diff before: $dA_diff")
+    apply_nonlinearity(dA_diff, A_diff, diff_sigmoid, 0.0)
+    println("   dA_diff after:  $(round.(dA_diff, digits=4))")
+    println("   A_diff unchanged: $A_diff")
+    println("   Note: Now uses rectified zeroed sigmoids by default for biological realism")
+    
+    println("\n6. Different sigmoid shapes:")
     # Steeper sigmoid
     steep_sigmoid = SigmoidNonlinearity(a=5.0, θ=0.5)
     # Gentler sigmoid  
@@ -66,9 +80,42 @@ function demo_sigmoid_usage()
     println("   Steep sigmoid (a=5.0):   $(round(steep_val, digits=4))")
     println("   Gentle sigmoid (a=0.5):  $(round(gentle_val, digits=4))")
     
+    println("\n7. Comparing different difference of sigmoids shapes:")
+    # Example of a narrow bump using rectified zeroed sigmoids
+    narrow_bump = DifferenceOfSigmoidsNonlinearity(a_up=10.0, θ_up=0.4, a_down=5.0, θ_down=0.6)
+    # Example of an asymmetric shape with different steepness
+    asymmetric = DifferenceOfSigmoidsNonlinearity(a_up=8.0, θ_up=0.3, a_down=2.0, θ_down=0.8)
+    
+    x = 0.5  # Test input in the middle
+    narrow_val = difference_of_rectified_zeroed_sigmoids(x, narrow_bump.a_up, narrow_bump.θ_up, narrow_bump.a_down, narrow_bump.θ_down)
+    asymm_val = difference_of_rectified_zeroed_sigmoids(x, asymmetric.a_up, asymmetric.θ_up, asymmetric.a_down, asymmetric.θ_down)
+    
+    println("   Input x = $x:")
+    println("   Narrow bump (rectified):      $(round(narrow_val, digits=4))")
+    println("   Asymmetric shape (rectified): $(round(asymm_val, digits=4))")
+    
+    # Show zero regions
+    println("\n8. Demonstrating zero and maximal regions:")
+    test_diff = DifferenceOfSigmoidsNonlinearity(a_up=5.0, θ_up=0.3, a_down=5.0, θ_down=0.7)
+    
+    println("   Zero regions (far from thresholds):")
+    for x_test in [-1.0, 0.0, 1.2]
+        val = difference_of_rectified_zeroed_sigmoids(x_test, test_diff.a_up, test_diff.θ_up, test_diff.a_down, test_diff.θ_down)
+        println("     x = $x_test: $(round(val, digits=4))")
+    end
+    
+    println("   Maximal region (between thresholds):")
+    for x_test in [0.4, 0.5, 0.6]
+        val = difference_of_rectified_zeroed_sigmoids(x_test, test_diff.a_up, test_diff.θ_up, test_diff.a_down, test_diff.θ_down)
+        println("     x = $x_test: $(round(val, digits=4))")
+    end
+    
     println("\n=== Demo Complete ===")
     println("\nThe sigmoid nonlinearity is now ready to use in neural field models!")
-    println("Simply pass a SigmoidNonlinearity or RectifiedZeroedSigmoidNonlinearity object as p.nonlinearity to wcm1973!")
+    println("Simply pass a SigmoidNonlinearity, RectifiedZeroedSigmoidNonlinearity, or DifferenceOfSigmoidsNonlinearity object as p.nonlinearity to wcm1973!")
+    println("\nThe DifferenceOfSigmoidsNonlinearity now uses rectified zeroed sigmoids by default,")
+    println("creating biologically realistic bump functions with proper zero regions and constrained maximal regions.")
+    println("This ensures firing rates remain non-negative while enabling rich neural dynamics.")
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
