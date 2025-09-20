@@ -30,29 +30,44 @@ function test_sigmoid_functions()
     @assert rect_sigmoid.θ == 1.0
     println("   ✓ RectifiedZeroedSigmoidNonlinearity construction passed")
     
+    # Test DifferenceOfSigmoidsNonlinearity type
+    println("\n4. Testing DifferenceOfSigmoidsNonlinearity type:")
+    diff_sigmoid = DifferenceOfSigmoidsNonlinearity(a_up=2.0, θ_up=0.3, a_down=1.0, θ_down=0.7)
+    @assert diff_sigmoid.a_up == 2.0
+    @assert diff_sigmoid.θ_up == 0.3
+    @assert diff_sigmoid.a_down == 1.0
+    @assert diff_sigmoid.θ_down == 0.7
+    println("   ✓ DifferenceOfSigmoidsNonlinearity construction passed")
+    
     # Test applying sigmoid functions directly
-    println("\n4. Testing sigmoid function application:")
+    println("\n5. Testing sigmoid function application:")
     # Check that input at threshold gives 0.5
     @assert abs(simple_sigmoid(1.0, 2.0, 1.0) - 0.5) < 1e-10
     # Check that rectified zeroed sigmoid works correctly
     @assert rectified_zeroed_sigmoid(1.0, 2.0, 1.0) >= 0.0
+    # Check that difference of sigmoids works correctly
+    result = difference_of_simple_sigmoids(0.5, 2.0, 0.3, 1.0, 0.7)
+    @assert isa(result, Float64)  # Should return a number
     println("   ✓ Sigmoid function application tests passed")
     
     # Test apply_nonlinearity function
-    println("\n5. Testing apply_nonlinearity function:")
+    println("\n6. Testing apply_nonlinearity function:")
     dA1 = zeros(3)
     dA2 = zeros(3)
+    dA3 = zeros(3)
     A = [0.0, 1.0, 2.0]
     original_A = copy(A)
     
     apply_nonlinearity(dA1, A, sigmoid, 0.0)
     apply_nonlinearity(dA2, A, rect_sigmoid, 0.0)
+    apply_nonlinearity(dA3, A, diff_sigmoid, 0.0)
     
     # A should be unchanged
     @assert A == original_A
     # dA should contain the nonlinearity contribution
     @assert !all(dA1 .== 0.0)  # dA1 should have been modified
     @assert !all(dA2 .== 0.0)  # dA2 should have been modified
+    @assert !all(dA3 .== 0.0)  # dA3 should have been modified
     println("   ✓ apply_nonlinearity tests passed")
     
     println("\n=== All Sigmoid Tests Passed! ===")
@@ -69,6 +84,8 @@ function test_model_integration()
     @assert isdefined(FailureOfInhibition2025, :apply_nonlinearity)
     @assert isdefined(FailureOfInhibition2025, :SigmoidNonlinearity)
     @assert isdefined(FailureOfInhibition2025, :RectifiedZeroedSigmoidNonlinearity)
+    @assert isdefined(FailureOfInhibition2025, :DifferenceOfSigmoidsNonlinearity)
+    @assert isdefined(FailureOfInhibition2025, :difference_of_simple_sigmoids)
     println("   ✓ All required functions are available")
     
     # Test population function
