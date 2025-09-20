@@ -32,7 +32,6 @@ jobs:
         run: |
           julia --project=. -e '
             using Pkg
-            Pkg.activate(".")
             Pkg.instantiate()
             Pkg.precompile()
           '
@@ -41,7 +40,6 @@ jobs:
         run: |
           julia --project=. -e '
             using Pkg
-            Pkg.activate(".")
             using FailureOfInhibition2025
             println("✓ FailureOfInhibition2025 package loaded successfully")
             FailureOfInhibition2025.greet()
@@ -51,6 +49,5 @@ jobs:
         run: |
           julia --project=. -e '
             using Pkg
-            Pkg.activate(".")
             Pkg.status()
           '
