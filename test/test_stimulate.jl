@@ -286,15 +286,11 @@ function test_edge_cases()
     @test any(dA .> stim_neg.baseline)  # Some points get extra strength
 end
 
-function main()    
+if abspath(PROGRAM_FILE) == @__FILE__
     test_euclidean_distance()
     test_circle_stimulus_construction()
     test_stimulate_1d()
     test_stimulate_2d()
     test_time_windows()
     test_edge_cases()
-end
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    main()
 end

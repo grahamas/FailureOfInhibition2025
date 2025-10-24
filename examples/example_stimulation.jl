@@ -157,22 +157,9 @@ function example_wrapper_function()
     println("\n=== Wrapper Function Example Complete ===\n")
 end
 
-function main()
-    println("\n" * "="^60)
-    println("  Stimulation Functions Examples")
-    println("="^60 * "\n")
-    
+if abspath(PROGRAM_FILE) == @__FILE__
     example_1d_stimulation()
     example_2d_stimulation()
     example_time_windows()
     example_wrapper_function()
-    
-    println("="^60)
-    println("  All examples completed successfully!")
-    println("="^60 * "\n")
-end
-
-# Run examples when script is executed directly
-if abspath(PROGRAM_FILE) == @__FILE__
-    main()
 end

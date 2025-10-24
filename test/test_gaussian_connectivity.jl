@@ -186,15 +186,11 @@ function test_fftshift()
     @assert output == expected
 end
 
-function main()    
+if abspath(PROGRAM_FILE) == @__FILE__
     test_gaussian_connectivity_parameter()
     test_apply_connectivity_unscaled()
     test_calculate_kernel()
     test_gaussian_connectivity_construction()
     test_propagate_activation()
     test_fftshift()
-end
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    main()
 end
