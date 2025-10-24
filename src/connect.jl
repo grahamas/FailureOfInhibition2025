@@ -1,4 +1,5 @@
-
+using FFTW
+import LinearAlgebra: mul!
 
 struct WithDistances{C}
     connectivity::C
@@ -7,7 +8,7 @@ end
 
 struct GaussianConnectivityParameter{T,N}
     amplitude::T
-    spread::NTuple{T,N}
+    spread::NTuple{N,T}
 end
 
 struct GaussianConnectivity
@@ -23,7 +24,7 @@ function GaussianConnectivity(param::GaussianConnectivityParameter, lattice)
     kernel = calculate_kernel(param, lattice)
     fft_op = plan_rfft(kernel; flags=(FFTW.PATIENT | FFTW.UNALIGNED))
     kernel_fft = fft_op * kernel
-    ifft_op = plan_irfft(kernel_fft; flags=(FFTW.PATIENT | FFTW.UNALIGNED))
+    ifft_op = plan_irfft(kernel_fft, size(kernel, 1); flags=(FFTW.PATIENT | FFTW.UNALIGNED))
     buffer_real = similar(kernel)
     buffer_complex = similar(kernel_fft)
     buffer_shift = similar(buffer_real)
@@ -34,10 +35,10 @@ function fft_center_idx(arr)
     CartesianIndex(floor.(Ref(Int), size(arr) ./ 2) .+ 1)
 end
 
-function calculate_kernel(conn, lattice)
+function calculate_kernel(conn::GaussianConnectivityParameter, lattice)
     # Kernel has ZERO DIST at its center (or floor(extent/2) + 1)
     fft_centered_differences = differences(lattice, coordinates(lattice)[fft_center_idx(lattice)])
-    unnormed_kernel = apply_connectivity(conn.connectivity, fft_centered_differences, step(lattice), fft_centered_differences)
+    unnormed_kernel = apply_connectivity(conn, fft_centered_differences, step(lattice), fft_centered_differences)
     return unnormed_kernel .* prod(step(lattice))
 end
 
@@ -57,6 +58,12 @@ end
 
 function fftshift!(output::AbstractVector, input::AbstractVector)
     circshift!(output, input, (floor(Int, length(output) / 2)))
+end
+
+function fftshift!(output::AbstractArray, input::AbstractArray)
+    # For multi-dimensional arrays, shift by half the size in each dimension
+    shift_amounts = floor.(Int, size(output) ./ 2)
+    circshift!(output, input, shift_amounts)
 end
 
 """

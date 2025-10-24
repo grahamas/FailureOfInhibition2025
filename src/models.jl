@@ -20,15 +20,6 @@ function population(array, index)
 end
 
 """
-    stimulate(dA, A, stimulus, t)
-
-Generic stimulate function that dispatches to stimulate! methods.
-"""
-function stimulate(dA, A, stimulus, t)
-    stimulate!(dA, A, stimulus, t)
-end
-
-"""
     stimulate!(dA, A, ::Nothing, t)
 
 No-op stimulation when stimulus is nothing.
@@ -140,9 +131,9 @@ model but uses direct function calls instead of functor dispatch.
 """
 function wcm1973!(dA, A, p::WilsonCowanParameters{T,P}, t) where {T,P}
     # Apply stimulus, connectivity, and nonlinearity
-    stimulate(dA, A, p.stimulus, t)
+    stimulate!(dA, A, p.stimulus, t)
     propagate_activation(dA, A, p.connectivity, t)
-    apply_nonlinearity(dA, A, p.nonlinearity, t)
+    apply_nonlinearity!(dA, A, p.nonlinearity, t)
     
     # Apply Wilson-Cowan dynamics for each population
     for i in 1:P
@@ -152,24 +143,6 @@ function wcm1973!(dA, A, p::WilsonCowanParameters{T,P}, t) where {T,P}
         # Wilson-Cowan equations:
         # dA/dt = (-α*A + β*(1-A)*f(S+I)) / τ
         # where f(S+I) is captured in dA from nonlinearity
-        dAi .*= p.β[i] .* (1 .- Ai)
-        dAi .+= -p.α[i] .* Ai
-        dAi ./= p.τ[i]
-    end
-end
-
-# Support for the old-style parameter passing (backward compatibility)
-# This allows calling wcm1973! with any object that has the required fields
-function wcm1973!(dA, A, p, t)
-    stimulate(dA, A, p.stimulus, t)
-    propagate_activation(dA, A, p.connectivity, t)
-    apply_nonlinearity(dA, A, p.nonlinearity, t)
-    
-    # Determine number of populations dynamically
-    n_pops = length(p.α)
-    for i in 1:n_pops
-        dAi = population(dA, i)
-        Ai = population(A, i)
         dAi .*= p.β[i] .* (1 .- Ai)
         dAi .+= -p.α[i] .* Ai
         dAi ./= p.τ[i]

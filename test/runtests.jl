@@ -8,18 +8,24 @@ This file is executed when running `Pkg.test()` or `julia --project=. test/runte
 using Test
 using FailureOfInhibition2025
 
-# Include all test files
-println("Running FailureOfInhibition2025 test suite...")
-
 @testset "FailureOfInhibition2025 Tests" begin
     
-    # Run sigmoid tests
-    @testset "Sigmoid Functionality" begin
-        include("test_sigmoid.jl")
+    # Run comprehensive nonlinearity tests
+    @testset "Nonlinearity Tests" begin
+        include("test_nonlinearity.jl")
+    end
+    
+    # Run stimulation tests
+    @testset "Stimulation Functionality" begin
+        include("test_stimulate.jl")
         
-        # Run the main test function from test_sigmoid.jl
-        test_sigmoid_functions()
-        test_model_integration()
+        # Run the main test functions from test_stimulate.jl
+        test_euclidean_distance()
+        test_circle_stimulus_construction()
+        test_stimulate_1d()
+        test_stimulate_2d()
+        test_time_windows()
+        test_edge_cases()
     end
     
     # Run Wilson-Cowan model tests
@@ -39,11 +45,12 @@ println("Running FailureOfInhibition2025 test suite...")
         @test isdefined(FailureOfInhibition2025, :SigmoidNonlinearity)
         @test isdefined(FailureOfInhibition2025, :RectifiedZeroedSigmoidNonlinearity)
         @test isdefined(FailureOfInhibition2025, :simple_sigmoid)
-        @test isdefined(FailureOfInhibition2025, :apply_nonlinearity)
+        @test isdefined(FailureOfInhibition2025, :apply_nonlinearity!)
         @test isdefined(FailureOfInhibition2025, :wcm1973!)
         @test isdefined(FailureOfInhibition2025, :WilsonCowanParameters)
         @test isdefined(FailureOfInhibition2025, :population)
-        @test isdefined(FailureOfInhibition2025, :stimulate)
+        @test isdefined(FailureOfInhibition2025, :stimulate!)
+        @test isdefined(FailureOfInhibition2025, :CircleStimulus)
     end
     
     @testset "Space and Lattice Functions" begin
@@ -52,7 +59,26 @@ println("Running FailureOfInhibition2025 test suite...")
         @test isdefined(FailureOfInhibition2025, :CompactLattice)
         @test isdefined(FailureOfInhibition2025, :PeriodicLattice)
     end
+    
+    # Test Gaussian connectivity
+    @testset "Gaussian Connectivity" begin
+        include("test_gaussian_connectivity.jl")
+        
+        # Run the main test functions from test_gaussian_connectivity.jl
+        test_gaussian_connectivity_parameter()
+        test_apply_connectivity_unscaled()
+        test_calculate_kernel()
+        test_gaussian_connectivity_construction()
+        test_propagate_activation()
+        test_fftshift()
+    end
+
+    # Run comprehensive space/lattice/coordinates tests
+    @testset "Space/Lattice/Coordinates Functionality" begin
+        include("test_space.jl")
+        
+        # Run the comprehensive test function from test_space.jl
+        run_all_space_tests()
+    end
 
 end
-
-println("✅ All tests completed successfully!")
