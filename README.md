@@ -7,10 +7,12 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 ## Features
 
 - **Sigmoid nonlinearities**: Standard and rectified zeroed sigmoid functions for neural modeling
-- **Neural field models**: WCM 1973 implementation with customizable parameters  
+- **Wilson-Cowan model**: Classic neural population dynamics model (Wilson & Cowan 1973)
+- **Neural field models**: Implementation with customizable parameters  
 - **Spatial connectivity**: Gaussian connectivity patterns with FFT-based convolution
+- **Per-population-pair connectivity**: Each population pair can have its own connectivity kernel via ConnectivityMatrix
 - **Stimulus handling**: Flexible stimulation interfaces
-- **Multi-population support**: Support for multiple neural populations
+- **Multi-population support**: Support for multiple neural populations with flexible coupling
 
 ## Installation
 
@@ -21,23 +23,78 @@ Pkg.add(url="https://github.com/grahamas/FailureOfInhibition2025.git")
 
 ## Quick Start
 
+### Per-Population-Pair Connectivity
+
+The Wilson-Cowan model requires a `ConnectivityMatrix{P}` that specifies connectivity for each population pair:
+
 ```julia
 using FailureOfInhibition2025
 
-# Create a sigmoid nonlinearity
-sigmoid = SigmoidNonlinearity(a=2.0, θ=0.5)
+# Create a spatial lattice
+lattice = CompactLattice(extent=(10.0,), n_points=(21,))
 
-# Test basic sigmoid function
-result = simple_sigmoid(0.5, 2.0, 0.5)  # Returns 0.5
+# Define connectivity for each population pair
+# connectivity[i,j] maps population j → population i
+conn_ee = GaussianConnectivityParameter(1.0, (2.0,))    # E → E (excitatory)
+conn_ei = GaussianConnectivityParameter(-0.5, (1.5,))   # I → E (inhibitory)
+conn_ie = GaussianConnectivityParameter(0.8, (2.5,))    # E → I (excitatory)
+conn_ii = GaussianConnectivityParameter(-0.3, (1.0,))   # I → I (inhibitory)
 
-# Use with neural field models
-# See examples/example_sigmoid.jl for more detailed usage
+# Create connectivity matrix
+connectivity = ConnectivityMatrix{2}([
+    conn_ee conn_ei;   # Row 1: inputs to E from [E, I]
+    conn_ie conn_ii    # Row 2: inputs to I from [E, I]
+])
+
+# Create stimulus and nonlinearity
+stimulus = CircleStimulus(
+    radius=2.0, strength=0.5, 
+    time_windows=[(0.0, 10.0)], 
+    lattice=lattice
+)
+nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5)
+
+# Create Wilson-Cowan model parameters (2 populations: E and I)
+params = WilsonCowanParameters{2}(
+    α = (1.0, 1.5),          # Decay rates
+    β = (1.0, 1.0),          # Saturation coefficients
+    τ = (1.0, 0.8),          # Time constants
+    connectivity = connectivity,
+    nonlinearity = nonlinearity,
+    stimulus = stimulus,
+    lattice = lattice,
+    pop_names = ("E", "I")   # Population names
+)
+
+# Set up initial state (21 spatial points × 2 populations)
+A = 0.1 .+ 0.05 .* rand(21, 2)
+dA = zeros(size(A))
+
+# Compute derivatives using Wilson-Cowan equations
+wcm1973!(dA, A, params, 0.0)
 ```
+
+The indexing convention follows matrix multiplication: `connectivity[i,j]` describes how population `j` affects population `i`. This means each row represents inputs to a target population, and each column represents outputs from a source population.
+
+See `examples/example_connectivity_matrix.jl` for detailed demonstration.
+
 
 ## Examples
 
 See the `examples/` directory for detailed usage examples:
 - `examples/example_sigmoid.jl`: Demonstrates sigmoid nonlinearity usage
+- `examples/example_wilson_cowan.jl`: Demonstrates Wilson-Cowan model usage
+- `examples/example_connectivity_matrix.jl`: Demonstrates per-population-pair connectivity with ConnectivityMatrix
+
+## Implementation Notes
+
+This package reimplements the Wilson-Cowan model from [WilsonCowanModel.jl](https://github.com/grahamas/WilsonCowanModel) with key architectural differences:
+
+1. **No callable objects**: Uses plain structs with separate functions instead of functors
+2. **Direct function dispatch**: Parameters are passed directly to `wcm1973!()` instead of creating intermediate "Action" objects
+3. **Functional programming style**: Follows a more functional approach without object-oriented patterns
+
+These differences make the code simpler and more composable while maintaining the same mathematical behavior.
 
 ## Testing
 

@@ -31,10 +31,13 @@ export fft_center_idx
 # Export nonlinearity types and functions
 export SigmoidNonlinearity, RectifiedZeroedSigmoidNonlinearity, DifferenceOfSigmoidsNonlinearity, simple_sigmoid, rectified_zeroed_sigmoid, difference_of_simple_sigmoids, difference_of_rectified_zeroed_sigmoids, apply_nonlinearity!
 
+# Export connectivity types and functions
+export GaussianConnectivityParameter, ConnectivityMatrix, propagate_activation
+
 # Export stimulation types and functions
 export CircleStimulus, stimulate!
 
 # Export model functions
-export wcm1973!, population
+export WilsonCowanParameters, wcm1973!, population
 
 end # module FailureOfInhibition2025

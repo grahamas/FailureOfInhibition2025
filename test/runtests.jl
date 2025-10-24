@@ -28,6 +28,16 @@ using FailureOfInhibition2025
         test_edge_cases()
     end
     
+    # Run Wilson-Cowan model tests
+    @testset "Wilson-Cowan Model" begin
+        include("test_wilson_cowan.jl")
+        
+        # Run the main test functions from test_wilson_cowan.jl
+        test_wilson_cowan_parameters()
+        test_wilson_cowan_dynamics()
+        test_implementation_documentation()
+    end
+    
     # Additional test groups can be added here as the package grows
     @testset "Basic Package Functionality" begin
         @test isdefined(FailureOfInhibition2025, :greet)
@@ -36,6 +46,7 @@ using FailureOfInhibition2025
         @test isdefined(FailureOfInhibition2025, :simple_sigmoid)
         @test isdefined(FailureOfInhibition2025, :apply_nonlinearity!)
         @test isdefined(FailureOfInhibition2025, :wcm1973!)
+        @test isdefined(FailureOfInhibition2025, :WilsonCowanParameters)
         @test isdefined(FailureOfInhibition2025, :population)
         @test isdefined(FailureOfInhibition2025, :stimulate!)
         @test isdefined(FailureOfInhibition2025, :CircleStimulus)
@@ -59,6 +70,17 @@ using FailureOfInhibition2025
         test_gaussian_connectivity_construction()
         test_propagate_activation()
         test_fftshift()
+    end
+
+    # Test ConnectivityMatrix
+    @testset "ConnectivityMatrix" begin
+        include("test_connectivity_matrix.jl")
+        
+        # Run the main test functions from test_connectivity_matrix.jl
+        test_connectivity_matrix_construction()
+        test_connectivity_matrix_indexing_convention()
+        test_propagate_activation_with_connectivity_matrix()
+        test_wilson_cowan_with_connectivity_matrix()
     end
 
     # Run comprehensive space/lattice/coordinates tests
