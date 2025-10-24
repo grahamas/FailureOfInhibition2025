@@ -291,7 +291,6 @@ function main()
     test_circle_stimulus_construction()
     test_stimulate_1d()
     test_stimulate_2d()
-    test_stimulate_wrapper()
     test_time_windows()
     test_edge_cases()
 end

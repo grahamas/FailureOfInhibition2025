@@ -31,7 +31,6 @@ println("Running FailureOfInhibition2025 test suite...")
         test_circle_stimulus_construction()
         test_stimulate_1d()
         test_stimulate_2d()
-        test_stimulate_wrapper()
         test_time_windows()
         test_edge_cases()
     end
@@ -45,7 +44,6 @@ println("Running FailureOfInhibition2025 test suite...")
         @test isdefined(FailureOfInhibition2025, :apply_nonlinearity)
         @test isdefined(FailureOfInhibition2025, :wcm1973!)
         @test isdefined(FailureOfInhibition2025, :population)
-        @test isdefined(FailureOfInhibition2025, :stimulate)
         @test isdefined(FailureOfInhibition2025, :stimulate!)
         @test isdefined(FailureOfInhibition2025, :CircleStimulus)
     end
@@ -58,5 +56,3 @@ println("Running FailureOfInhibition2025 test suite...")
     end
 
 end
-
-println("✅ All tests completed successfully!")
