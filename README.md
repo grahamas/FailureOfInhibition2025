@@ -57,7 +57,8 @@ A = 0.1 .+ 0.05 .* rand(21, 2)
 dA = zeros(size(A))
 
 # Compute derivatives using Wilson-Cowan equations
-wcm1973!(dA, A, params, 0.0)
+# wcm1973!(dA, A, params, 0.0)
+# Note: Full integration requires properly handling multi-population arrays
 ```
 
 ### Per-Population-Pair Connectivity
