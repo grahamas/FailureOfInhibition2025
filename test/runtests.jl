@@ -22,6 +22,19 @@ println("Running FailureOfInhibition2025 test suite...")
         test_model_integration()
     end
     
+    # Run stimulation tests
+    @testset "Stimulation Functionality" begin
+        include("test_stimulate.jl")
+        
+        # Run the main test functions from test_stimulate.jl
+        test_euclidean_distance()
+        test_circle_stimulus_construction()
+        test_stimulate_1d()
+        test_stimulate_2d()
+        test_time_windows()
+        test_edge_cases()
+    end
+    
     # Additional test groups can be added here as the package grows
     @testset "Basic Package Functionality" begin
         @test isdefined(FailureOfInhibition2025, :greet)
@@ -31,7 +44,8 @@ println("Running FailureOfInhibition2025 test suite...")
         @test isdefined(FailureOfInhibition2025, :apply_nonlinearity)
         @test isdefined(FailureOfInhibition2025, :wcm1973!)
         @test isdefined(FailureOfInhibition2025, :population)
-        @test isdefined(FailureOfInhibition2025, :stimulate)
+        @test isdefined(FailureOfInhibition2025, :stimulate!)
+        @test isdefined(FailureOfInhibition2025, :CircleStimulus)
     end
     
     @testset "Space and Lattice Functions" begin
@@ -55,5 +69,3 @@ println("Running FailureOfInhibition2025 test suite...")
     end
 
 end
-
-println("✅ All tests completed successfully!")

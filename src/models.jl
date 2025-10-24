@@ -19,17 +19,8 @@ function population(array, index)
     end
 end
 
-"""
-    stimulate(dA, A, stimulus, t)
-
-Generic stimulate function that dispatches to stimulate! methods.
-"""
-function stimulate(dA, A, stimulus, t)
-    stimulate!(dA, A, stimulus, t)
-end
-
 function wcm1973!(dA, A, p, t)
-    stimulate(dA, A, p.stimulus, t)
+    stimulate!(dA, A, p.stimulus, t)
     propagate_activation(dA, A, p.connectivity, t)
     apply_nonlinearity(dA, A, p.nonlinearity, t)
     for i in 1:2 # number of populations
