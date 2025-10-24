@@ -8,22 +8,10 @@ This file is executed when running `Pkg.test()` or `julia --project=. test/runte
 using Test
 using FailureOfInhibition2025
 
-# Include all test files
-println("Running FailureOfInhibition2025 test suite...")
-
 @testset "FailureOfInhibition2025 Tests" begin
     
-    # Run sigmoid tests
-    @testset "Sigmoid Functionality" begin
-        include("test_sigmoid.jl")
-        
-        # Run the main test function from test_sigmoid.jl
-        test_sigmoid_functions()
-        test_model_integration()
-    end
-    
     # Run comprehensive nonlinearity tests
-    @testset "Comprehensive Nonlinearity Tests" begin
+    @testset "Nonlinearity Tests" begin
         include("test_nonlinearity.jl")
     end
     
@@ -47,5 +35,3 @@ println("Running FailureOfInhibition2025 test suite...")
     end
 
 end
-
-println("✅ All tests completed successfully!")

@@ -2,7 +2,7 @@
 
 """
 Comprehensive tests for nonlinearity functions in FailureOfInhibition2025.
-Tests mathematical properties, edge cases, and numerical stability.
+Tests mathematical properties, edge cases, numerical stability, and model integration.
 """
 
 using Test
@@ -19,6 +19,10 @@ using FailureOfInhibition2025
         @test 0.0 < simple_sigmoid(0.0, 1.0, 0.0) < 1.0
         @test 0.0 < simple_sigmoid(100.0, 1.0, 0.0) <= 1.0
         @test 0.0 <= simple_sigmoid(-100.0, 1.0, 0.0) < 1.0
+        
+        # Test positive and negative inputs
+        @test simple_sigmoid(1.0, 2.0, 0.0) > 0.5
+        @test simple_sigmoid(-1.0, 2.0, 0.0) < 0.5
     end
     
     @testset "Monotonicity" begin
@@ -95,6 +99,9 @@ end
         for x in x_vals
             @test rectified_zeroed_sigmoid(x, a, θ) >= 0.0
         end
+        
+        # Test that it works correctly
+        @test rectified_zeroed_sigmoid(1.0, 2.0, 1.0) >= 0.0
     end
     
     @testset "Rectification Behavior" begin
@@ -180,6 +187,10 @@ end
         @test isa(result, Float64)
         @test !isnan(result)
         @test !isinf(result)
+        
+        # Test with parameters from test_sigmoid
+        result2 = difference_of_rectified_zeroed_sigmoids(0.5, 2.0, 0.3, 1.0, 0.7)
+        @test isa(result2, Float64)
     end
     
     @testset "Bump-like Behavior with Rectification" begin
@@ -200,6 +211,22 @@ end
         @test middle > 0.0
         @test middle > left
         @test middle > right
+        
+        # Test regions where function should be zero or minimal
+        before_up = difference_of_rectified_zeroed_sigmoids(0.0, a_up, θ_up, a_down, θ_down)
+        @test abs(before_up) < 0.1
+        
+        after_down = difference_of_rectified_zeroed_sigmoids(2.0, a_up, θ_up, a_down, θ_down)
+        @test after_down <= 0.1
+        
+        # Test maximal region
+        max_region = difference_of_rectified_zeroed_sigmoids(1.0, a_up, θ_up, a_down, θ_down)
+        mid_left = difference_of_rectified_zeroed_sigmoids(0.7, a_up, θ_up, a_down, θ_down)
+        mid_right = difference_of_rectified_zeroed_sigmoids(1.3, a_up, θ_up, a_down, θ_down)
+        
+        @test max_region > 0.0
+        @test max_region > mid_left
+        @test max_region > mid_right
     end
     
     @testset "Comparison with Non-Rectified" begin
@@ -223,12 +250,12 @@ end
         @test nl.a == 2.0
         @test nl.θ == 1.0
         
-        # Test apply_nonlinearity
+        # Test apply_nonlinearity!
         dA = zeros(3)
         A = [0.0, 1.0, 2.0]
         original_A = copy(A)
         
-        apply_nonlinearity(dA, A, nl, 0.0)
+        apply_nonlinearity!(dA, A, nl, 0.0)
         
         # A should be unchanged
         @test A == original_A
@@ -238,6 +265,9 @@ end
             expected = simple_sigmoid(A[i], nl.a, nl.θ) - A[i]
             @test abs(dA[i] - expected) < 1e-10
         end
+        
+        # dA should have been modified
+        @test !all(dA .== 0.0)
     end
     
     @testset "RectifiedZeroedSigmoidNonlinearity" begin
@@ -246,12 +276,12 @@ end
         @test nl.a == 2.0
         @test nl.θ == 1.0
         
-        # Test apply_nonlinearity
+        # Test apply_nonlinearity!
         dA = zeros(3)
         A = [0.0, 1.0, 2.0]
         original_A = copy(A)
         
-        apply_nonlinearity(dA, A, nl, 0.0)
+        apply_nonlinearity!(dA, A, nl, 0.0)
         
         # A should be unchanged
         @test A == original_A
@@ -261,6 +291,9 @@ end
             expected = rectified_zeroed_sigmoid(A[i], nl.a, nl.θ) - A[i]
             @test abs(dA[i] - expected) < 1e-10
         end
+        
+        # dA should have been modified
+        @test !all(dA .== 0.0)
     end
     
     @testset "DifferenceOfSigmoidsNonlinearity" begin
@@ -271,12 +304,19 @@ end
         @test nl.a_down == 1.0
         @test nl.θ_down == 1.5
         
-        # Test apply_nonlinearity
+        # Test construction with different parameters
+        nl2 = DifferenceOfSigmoidsNonlinearity(a_up=2.0, θ_up=0.3, a_down=1.0, θ_down=0.7)
+        @test nl2.a_up == 2.0
+        @test nl2.θ_up == 0.3
+        @test nl2.a_down == 1.0
+        @test nl2.θ_down == 0.7
+        
+        # Test apply_nonlinearity!
         dA = zeros(3)
         A = [0.0, 1.0, 2.0]
         original_A = copy(A)
         
-        apply_nonlinearity(dA, A, nl, 0.0)
+        apply_nonlinearity!(dA, A, nl, 0.0)
         
         # A should be unchanged
         @test A == original_A
@@ -286,18 +326,32 @@ end
             expected = difference_of_rectified_zeroed_sigmoids(A[i], nl.a_up, nl.θ_up, nl.a_down, nl.θ_down) - A[i]
             @test abs(dA[i] - expected) < 1e-10
         end
+        
+        # dA should have been modified
+        @test !all(dA .== 0.0)
+        
+        # Test with specific parameters from test_sigmoid
+        a_up, θ_up = 5.0, 0.5
+        a_down, θ_down = 5.0, 1.5
+        diff_nl = DifferenceOfSigmoidsNonlinearity(a_up=a_up, θ_up=θ_up, a_down=a_down, θ_down=θ_down)
+        dA_test = zeros(1)
+        A_test = [1.0]
+        apply_nonlinearity!(dA_test, A_test, diff_nl, 0.0)
+        
+        expected = difference_of_rectified_zeroed_sigmoids(1.0, a_up, θ_up, a_down, θ_down) - 1.0
+        @test abs(dA_test[1] - expected) < 1e-10
     end
 end
 
 @testset "Array Operations Tests" begin
     @testset "Broadcasting Behavior" begin
-        # Test that apply_nonlinearity works correctly with arrays
+        # Test that apply_nonlinearity! works correctly with arrays
         nl = SigmoidNonlinearity(a=2.0, θ=0.5)
         
         # 1D array
         dA = zeros(5)
         A = [-1.0, -0.5, 0.0, 0.5, 1.0]
-        apply_nonlinearity(dA, A, nl, 0.0)
+        apply_nonlinearity!(dA, A, nl, 0.0)
         
         for i in 1:5
             expected = simple_sigmoid(A[i], nl.a, nl.θ) - A[i]
@@ -307,7 +361,7 @@ end
         # 2D array
         dA_2d = zeros(3, 2)
         A_2d = [0.0 1.0; 0.5 1.5; 1.0 2.0]
-        apply_nonlinearity(dA_2d, A_2d, nl, 0.0)
+        apply_nonlinearity!(dA_2d, A_2d, nl, 0.0)
         
         for i in 1:3, j in 1:2
             expected = simple_sigmoid(A_2d[i, j], nl.a, nl.θ) - A_2d[i, j]
@@ -346,5 +400,34 @@ end
         # Should be decreasing
         @test simple_sigmoid(1.0, a, θ) < simple_sigmoid(0.0, a, θ)
         @test simple_sigmoid(0.0, a, θ) < simple_sigmoid(-1.0, a, θ)
+    end
+end
+
+@testset "Model Integration Tests" begin
+    @testset "Function Availability" begin
+        # Test that all required functions exist
+        @test isdefined(FailureOfInhibition2025, :wcm1973!)
+        @test isdefined(FailureOfInhibition2025, :population)
+        @test isdefined(FailureOfInhibition2025, :stimulate)
+        @test isdefined(FailureOfInhibition2025, :apply_nonlinearity!)
+        @test isdefined(FailureOfInhibition2025, :SigmoidNonlinearity)
+        @test isdefined(FailureOfInhibition2025, :RectifiedZeroedSigmoidNonlinearity)
+        @test isdefined(FailureOfInhibition2025, :DifferenceOfSigmoidsNonlinearity)
+        @test isdefined(FailureOfInhibition2025, :difference_of_simple_sigmoids)
+        @test isdefined(FailureOfInhibition2025, :difference_of_rectified_zeroed_sigmoids)
+    end
+    
+    @testset "Population Function" begin
+        # Test 1D case (single population)
+        array_1d = [1.0, 2.0, 3.0]
+        pop1d = population(array_1d, 1)
+        @test pop1d == array_1d
+        
+        # Test 2D case (multiple populations)
+        array_2d = [1.0 2.0; 3.0 4.0; 5.0 6.0]  # 3x2 array
+        pop1 = population(array_2d, 1)
+        pop2 = population(array_2d, 2)
+        @test pop1 == [1.0, 3.0, 5.0]
+        @test pop2 == [2.0, 4.0, 6.0]
     end
 end
