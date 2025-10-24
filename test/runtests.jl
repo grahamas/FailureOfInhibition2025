@@ -22,6 +22,20 @@ println("Running FailureOfInhibition2025 test suite...")
         test_model_integration()
     end
     
+    # Run stimulation tests
+    @testset "Stimulation Functionality" begin
+        include("test_stimulate.jl")
+        
+        # Run the main test functions from test_stimulate.jl
+        test_euclidean_distance()
+        test_circle_stimulus_construction()
+        test_stimulate_1d()
+        test_stimulate_2d()
+        test_stimulate_wrapper()
+        test_time_windows()
+        test_edge_cases()
+    end
+    
     # Additional test groups can be added here as the package grows
     @testset "Basic Package Functionality" begin
         @test isdefined(FailureOfInhibition2025, :greet)
