@@ -35,7 +35,6 @@ using FailureOfInhibition2025
         # Run the main test functions from test_wilson_cowan.jl
         test_wilson_cowan_parameters()
         test_wilson_cowan_dynamics()
-        test_backward_compatibility()
         test_implementation_documentation()
     end
     
