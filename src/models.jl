@@ -41,9 +41,23 @@ Parameters for the Wilson-Cowan model (Wilson & Cowan 1972, 1973).
 - `β::NTuple{P,T}`: Saturation coefficients for each population (typically 1.0)
 - `τ::NTuple{P,T}`: Time constants for each population
 - `connectivity`: Connectivity parameter (defines how populations interact)
+  - Can be a single connectivity object (applied to all populations)
+  - Can be a ConnectivityMatrix{P} for per-population-pair connectivity
 - `nonlinearity`: Nonlinearity parameter (defines activation functions)
 - `stimulus`: Stimulus parameter (defines external inputs)
+- `lattice`: Spatial lattice for the model (required for connectivity propagation)
 - `pop_names::NTuple{P,String}`: Names of populations (e.g., ("E", "I") for excitatory and inhibitory)
+
+# Connectivity Matrix Convention
+
+When using ConnectivityMatrix{P}, the indexing follows matrix multiplication conventions:
+`connectivity[i,j]` maps the activity of population j into population i.
+
+For a 2-population (E=1, I=2) model:
+- connectivity[1,1]: E → E (excitatory self-connection)
+- connectivity[1,2]: I → E (inhibitory to excitatory)
+- connectivity[2,1]: E → I (excitatory to inhibitory) 
+- connectivity[2,2]: I → I (inhibitory self-connection)
 
 # Implementation Differences from WilsonCowanModel.jl
 
@@ -70,8 +84,20 @@ using FailureOfInhibition2025
 # Create spatial lattice
 lattice = CompactLattice(extent=(10.0,), n_points=(21,))
 
-# Create connectivity, stimulus, and nonlinearity objects
+# Option 1: Single connectivity for all populations
 connectivity = GaussianConnectivityParameter(1.0, (2.0,))
+
+# Option 2: Per-population-pair connectivity (2x2 for 2 populations)
+# connectivity[i,j] maps population j → i
+conn_ee = GaussianConnectivityParameter(1.0, (2.0,))   # E → E
+conn_ei = GaussianConnectivityParameter(-0.5, (1.5,))  # I → E
+conn_ie = GaussianConnectivityParameter(0.8, (2.5,))   # E → I
+conn_ii = GaussianConnectivityParameter(-0.3, (1.0,))  # I → I
+connectivity_matrix = ConnectivityMatrix{2}([
+    conn_ee conn_ei;
+    conn_ie conn_ii
+])
+
 stimulus = CircleStimulus(
     radius=2.0, strength=0.5,
     time_windows=[(0.0, 10.0)],
@@ -84,9 +110,10 @@ params = WilsonCowanParameters{2}(
     α = (1.0, 1.0),           # Decay rates
     β = (1.0, 1.0),           # Saturation coefficients
     τ = (1.0, 1.0),           # Time constants
-    connectivity = connectivity,
+    connectivity = connectivity_matrix,
     nonlinearity = nonlinearity,
     stimulus = stimulus,
+    lattice = lattice,
     pop_names = ("E", "I")    # Excitatory and Inhibitory populations
 )
 
@@ -101,14 +128,15 @@ struct WilsonCowanParameters{T,P}
     connectivity
     nonlinearity
     stimulus
+    lattice
     pop_names::NTuple{P,String}
 end
 
 # Constructor with keyword arguments for convenience
-function WilsonCowanParameters{P}(; α, β, τ, connectivity, nonlinearity, stimulus, 
+function WilsonCowanParameters{P}(; α, β, τ, connectivity, nonlinearity, stimulus, lattice=nothing,
                                    pop_names=ntuple(i -> "Pop$i", P)) where {P}
     T = eltype(α)
-    WilsonCowanParameters{T,P}(α, β, τ, connectivity, nonlinearity, stimulus, pop_names)
+    WilsonCowanParameters{T,P}(α, β, τ, connectivity, nonlinearity, stimulus, lattice, pop_names)
 end
 
 """
@@ -144,7 +172,7 @@ model but uses direct function calls instead of functor dispatch.
 function wcm1973!(dA, A, p::WilsonCowanParameters{T,P}, t) where {T,P}
     # Apply stimulus, connectivity, and nonlinearity
     stimulate!(dA, A, p.stimulus, t)
-    propagate_activation(dA, A, p.connectivity, t)
+    propagate_activation(dA, A, p.connectivity, t, p.lattice)
     apply_nonlinearity!(dA, A, p.nonlinearity, t)
     
     # Apply Wilson-Cowan dynamics for each population

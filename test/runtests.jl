@@ -72,6 +72,17 @@ using FailureOfInhibition2025
         test_fftshift()
     end
 
+    # Test ConnectivityMatrix
+    @testset "ConnectivityMatrix" begin
+        include("test_connectivity_matrix.jl")
+        
+        # Run the main test functions from test_connectivity_matrix.jl
+        test_connectivity_matrix_construction()
+        test_connectivity_matrix_indexing_convention()
+        test_propagate_activation_with_connectivity_matrix()
+        test_wilson_cowan_with_connectivity_matrix()
+    end
+
     # Run comprehensive space/lattice/coordinates tests
     @testset "Space/Lattice/Coordinates Functionality" begin
         include("test_space.jl")
