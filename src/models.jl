@@ -41,8 +41,7 @@ Parameters for the Wilson-Cowan model (Wilson & Cowan 1972, 1973).
 - `β::NTuple{P,T}`: Saturation coefficients for each population (typically 1.0)
 - `τ::NTuple{P,T}`: Time constants for each population
 - `connectivity`: Connectivity parameter (defines how populations interact)
-  - Can be a single connectivity object (applied to all populations)
-  - Can be a ConnectivityMatrix{P} for per-population-pair connectivity
+  - Must be a ConnectivityMatrix{P} for per-population-pair connectivity
 - `nonlinearity`: Nonlinearity parameter (defines activation functions)
 - `stimulus`: Stimulus parameter (defines external inputs)
 - `lattice`: Spatial lattice for the model (required for connectivity propagation)
@@ -84,16 +83,13 @@ using FailureOfInhibition2025
 # Create spatial lattice
 lattice = CompactLattice(extent=(10.0,), n_points=(21,))
 
-# Option 1: Single connectivity for all populations
-connectivity = GaussianConnectivityParameter(1.0, (2.0,))
-
-# Option 2: Per-population-pair connectivity (2x2 for 2 populations)
+# Per-population-pair connectivity (2x2 for 2 populations)
 # connectivity[i,j] maps population j → i
 conn_ee = GaussianConnectivityParameter(1.0, (2.0,))   # E → E
 conn_ei = GaussianConnectivityParameter(-0.5, (1.5,))  # I → E
 conn_ie = GaussianConnectivityParameter(0.8, (2.5,))   # E → I
 conn_ii = GaussianConnectivityParameter(-0.3, (1.0,))  # I → I
-connectivity_matrix = ConnectivityMatrix{2}([
+connectivity = ConnectivityMatrix{2}([
     conn_ee conn_ei;
     conn_ie conn_ii
 ])
@@ -110,7 +106,7 @@ params = WilsonCowanParameters{2}(
     α = (1.0, 1.0),           # Decay rates
     β = (1.0, 1.0),           # Saturation coefficients
     τ = (1.0, 1.0),           # Time constants
-    connectivity = connectivity_matrix,
+    connectivity = connectivity,
     nonlinearity = nonlinearity,
     stimulus = stimulus,
     lattice = lattice,
@@ -133,7 +129,7 @@ struct WilsonCowanParameters{T,P}
 end
 
 # Constructor with keyword arguments for convenience
-function WilsonCowanParameters{P}(; α, β, τ, connectivity, nonlinearity, stimulus, lattice=nothing,
+function WilsonCowanParameters{P}(; α, β, τ, connectivity, nonlinearity, stimulus, lattice,
                                    pop_names=ntuple(i -> "Pop$i", P)) where {P}
     T = eltype(α)
     WilsonCowanParameters{T,P}(α, β, τ, connectivity, nonlinearity, stimulus, lattice, pop_names)

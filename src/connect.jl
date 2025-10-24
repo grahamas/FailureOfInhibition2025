@@ -110,11 +110,11 @@ function fftshift!(output::AbstractArray, input::AbstractArray)
 end
 
 """
-    propagate_activation(dA, A, ::Nothing, t, lattice=nothing)
+    propagate_activation(dA, A, ::Nothing, t, lattice)
 
 No-op connectivity propagation when connectivity is nothing.
 """
-propagate_activation(dA, A, ::Nothing, t, lattice=nothing) = nothing
+propagate_activation(dA, A, ::Nothing, t, lattice) = nothing
 
 """
     propagate_activation(dA, A, connectivity::GaussianConnectivity, t)
