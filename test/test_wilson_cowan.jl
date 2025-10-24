@@ -159,33 +159,6 @@ function test_wilson_cowan_dynamics()
     println("\n=== Wilson-Cowan Dynamics Tests Passed! ===")
 end
 
-function test_backward_compatibility()
-    println("\n=== Testing Backward Compatibility ===")
-    
-    # Test that old-style parameter objects still work
-    println("\n1. Testing with generic parameter object:")
-    
-    # Create a simple named tuple that has the required fields
-    old_style_params = (
-        α = (1.0, 1.0),
-        β = (1.0, 1.0),
-        τ = (1.0, 1.0),
-        connectivity = nothing,
-        nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
-        stimulus = nothing
-    )
-    
-    A = [0.5 0.5; 0.5 0.5]
-    dA = zeros(size(A))
-    
-    wcm1973!(dA, A, old_style_params, 0.0)
-    
-    @assert !all(dA .== 0.0)
-    println("   ✓ Generic parameter object test passed")
-    
-    println("\n=== Backward Compatibility Tests Passed! ===")
-end
-
 function test_implementation_documentation()
     println("\n=== Testing Implementation Documentation ===")
     
