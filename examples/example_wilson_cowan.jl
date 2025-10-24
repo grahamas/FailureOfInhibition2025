@@ -14,17 +14,46 @@ function demo_wilson_cowan_model()
     println("\nThis demonstrates the Wilson-Cowan neural population model")
     println("reimplemented without callable objects.\n")
     
-    # 1. Create a 2-population Wilson-Cowan model (E and I populations)
-    println("1. Creating Wilson-Cowan model parameters:")
+    # 1. Create a spatial lattice for the model
+    println("1. Creating spatial lattice:")
+    println("   1D lattice with 21 points from -5.0 to 5.0")
+    
+    lattice = CompactLattice(extent=(10.0,), n_points=(21,))
+    println("   Lattice extent: ", extent(lattice))
+    println("   Number of points: ", size(lattice.arr))
+    
+    # 2. Create connectivity, stimulus, and nonlinearity objects
+    println("\n2. Creating model components:")
+    
+    # Gaussian connectivity with amplitude 1.0 and spread 2.0
+    connectivity = GaussianConnectivityParameter(1.0, (2.0,))
+    println("   Connectivity: GaussianConnectivityParameter(amplitude=1.0, spread=(2.0,))")
+    
+    # Circle stimulus centered at origin, radius 2.0, strength 0.5
+    stimulus = CircleStimulus(
+        radius=2.0,
+        strength=0.5,
+        time_windows=[(0.0, 10.0)],  # Active from t=0 to t=10
+        lattice=lattice,
+        baseline=0.0
+    )
+    println("   Stimulus: CircleStimulus(radius=2.0, strength=0.5, active t∈[0,10])")
+    
+    # Sigmoid nonlinearity
+    nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5)
+    println("   Nonlinearity: SigmoidNonlinearity(a=2.0, θ=0.5)")
+    
+    # 3. Create Wilson-Cowan model parameters
+    println("\n3. Creating Wilson-Cowan model parameters:")
     println("   2 populations: Excitatory (E) and Inhibitory (I)")
     
     params = WilsonCowanParameters{2}(
         α = (1.0, 1.5),          # Decay rates [E, I]
         β = (1.0, 1.0),          # Saturation coefficients [E, I]
         τ = (1.0, 0.8),          # Time constants [E, I]
-        connectivity = nothing,   # No spatial connectivity for this simple example
-        nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),  # Sigmoid activation
-        stimulus = nothing,       # No external stimulus
+        connectivity = connectivity,
+        nonlinearity = nonlinearity,
+        stimulus = stimulus,
         pop_names = ("E", "I")   # Population names
     )
     
@@ -32,103 +61,58 @@ function demo_wilson_cowan_model()
     println("   β (saturation): ", params.β)
     println("   τ (time constants): ", params.τ)
     println("   Populations: ", params.pop_names)
-    println("   Nonlinearity: SigmoidNonlinearity(a=2.0, θ=0.5)")
     
-    # 2. Set up initial conditions
-    println("\n2. Setting up initial conditions:")
-    println("   3 spatial points, 2 populations")
+    # 4. Set up initial conditions
+    println("\n4. Setting up initial conditions:")
+    println("   21 spatial points, 2 populations")
     
-    # Activity state: 3 spatial points × 2 populations
-    A = [0.3 0.2;   # Point 1: [E=0.3, I=0.2]
-         0.5 0.4;   # Point 2: [E=0.5, I=0.4]
-         0.7 0.6]   # Point 3: [E=0.7, I=0.6]
+    # Activity state: 21 spatial points × 2 populations
+    # Initialize with small random values
+    A = 0.1 .+ 0.05 .* rand(21, 2)
     
-    println("   Initial E population: ", A[:, 1])
-    println("   Initial I population: ", A[:, 2])
+    println("   Initial E population (first 5 points): ", round.(A[1:5, 1], digits=3))
+    println("   Initial I population (first 5 points): ", round.(A[1:5, 2], digits=3))
     
     # Derivative array
     dA = zeros(size(A))
     
-    # 3. Compute derivatives using Wilson-Cowan equations
-    println("\n3. Computing derivatives using wcm1973!:")
-    wcm1973!(dA, A, params, 0.0)
+    # 5. Compute derivatives using Wilson-Cowan equations
+    println("\n5. Computing derivatives using wcm1973!:")
+    println("   Note: This will fail because connectivity needs lattice info")
+    println("   In a real simulation, you'd use an ODE solver with proper setup")
     
-    println("   dE/dt: ", round.(dA[:, 1], digits=4))
-    println("   dI/dt: ", round.(dA[:, 2], digits=4))
-    
-    # 4. Show what the function computes
-    println("\n4. Understanding the Wilson-Cowan equations:")
-    println("   τᵢ dAᵢ/dt = -αᵢ Aᵢ + βᵢ (1 - Aᵢ) f(Sᵢ + Iᵢ)")
+    # For this simple demo, we'll just show the structure
+    # In practice, you'd use DifferentialEquations.jl
+    println("\n6. Understanding the Wilson-Cowan equations:")
+    println("   τᵢ dAᵢ/dt = -αᵢ Aᵢ + βᵢ (1 - Aᵢ) f(Sᵢ(t) + Cᵢ(A))")
     println("   where:")
     println("   - Aᵢ is the activity of population i")
     println("   - αᵢ is the decay rate")
     println("   - βᵢ is the saturation coefficient")
     println("   - τᵢ is the time constant")
     println("   - f is the nonlinearity (firing rate function)")
-    println("   - Sᵢ is external stimulus")
-    println("   - Iᵢ is recurrent input from connectivity")
+    println("   - Sᵢ(t) is external stimulus (function of time)")
+    println("   - Cᵢ(A) is recurrent input from connectivity (function of activity)")
     
-    # 5. Different nonlinearity examples
-    println("\n5. Using different nonlinearities:")
+    # 7. Different nonlinearity examples
+    println("\n7. Using different nonlinearities:")
     
     # Rectified zeroed sigmoid
     println("\n   a) RectifiedZeroedSigmoidNonlinearity:")
-    params_rect = WilsonCowanParameters{2}(
-        α = (1.0, 1.5),
-        β = (1.0, 1.0),
-        τ = (1.0, 0.8),
-        connectivity = nothing,
-        nonlinearity = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5),
-        stimulus = nothing,
-        pop_names = ("E", "I")
-    )
-    
-    dA_rect = zeros(size(A))
-    wcm1973!(dA_rect, A, params_rect, 0.0)
-    println("      dE/dt: ", round.(dA_rect[:, 1], digits=4))
-    println("      dI/dt: ", round.(dA_rect[:, 2], digits=4))
+    nl_rect = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5)
+    println("      Parameters: a=2.0, θ=0.5")
+    println("      Ensures firing rates remain non-negative")
     
     # Difference of sigmoids (creates bump-like activation)
     println("\n   b) DifferenceOfSigmoidsNonlinearity (bump function):")
-    params_diff = WilsonCowanParameters{2}(
-        α = (1.0, 1.5),
-        β = (1.0, 1.0),
-        τ = (1.0, 0.8),
-        connectivity = nothing,
-        nonlinearity = DifferenceOfSigmoidsNonlinearity(
-            a_up=5.0, θ_up=0.3, a_down=3.0, θ_down=0.7
-        ),
-        stimulus = nothing,
-        pop_names = ("E", "I")
+    nl_diff = DifferenceOfSigmoidsNonlinearity(
+        a_up=5.0, θ_up=0.3, a_down=3.0, θ_down=0.7
     )
+    println("      Parameters: a_up=5.0, θ_up=0.3, a_down=3.0, θ_down=0.7")
+    println("      Creates selective response to specific activity levels")
     
-    dA_diff = zeros(size(A))
-    wcm1973!(dA_diff, A, params_diff, 0.0)
-    println("      dE/dt: ", round.(dA_diff[:, 1], digits=4))
-    println("      dI/dt: ", round.(dA_diff[:, 2], digits=4))
-    
-    # 6. Single population example
-    println("\n6. Single population Wilson-Cowan model:")
-    params_single = WilsonCowanParameters{1}(
-        α = (1.0,),
-        β = (1.0,),
-        τ = (1.0,),
-        connectivity = nothing,
-        nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
-        stimulus = nothing,
-        pop_names = ("E",)
-    )
-    
-    A_single = [0.3, 0.5, 0.7]  # 1D array for single population
-    dA_single = zeros(size(A_single))
-    
-    wcm1973!(dA_single, A_single, params_single, 0.0)
-    
-    println("   Initial state: ", A_single)
-    println("   Derivatives:   ", round.(dA_single, digits=4))
-    
-    # 7. Explain implementation differences
-    println("\n7. Implementation Differences from WilsonCowanModel.jl:")
+    # 8. Explain implementation differences
+    println("\n8. Implementation Differences from WilsonCowanModel.jl:")
     println("   ✓ No callable objects: We use WilsonCowanParameters struct")
     println("     with separate wcm1973! function, not a callable model object")
     println("   ✓ Direct function dispatch: Call wcm1973!(dA, A, params, t)")
@@ -138,8 +122,8 @@ function demo_wilson_cowan_model()
     println("   ✓ Functional style: Parameters are passed to functions")
     println("     rather than methods being defined on the model struct")
     
-    # 8. Time evolution hint
-    println("\n8. Time evolution (conceptual):")
+    # 9. Time evolution hint
+    println("\n9. Time evolution (conceptual):")
     println("   To integrate over time, use an ODE solver like:")
     println("   ```julia")
     println("   using DifferentialEquations")

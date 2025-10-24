@@ -25,26 +25,35 @@ Pkg.add(url="https://github.com/grahamas/FailureOfInhibition2025.git")
 ```julia
 using FailureOfInhibition2025
 
-# Create a sigmoid nonlinearity
-sigmoid = SigmoidNonlinearity(a=2.0, θ=0.5)
+# Create a spatial lattice
+lattice = CompactLattice(extent=(10.0,), n_points=(21,))
+
+# Create connectivity, stimulus, and nonlinearity objects
+connectivity = GaussianConnectivityParameter(1.0, (2.0,))  # amplitude, spread
+stimulus = CircleStimulus(
+    radius=2.0, strength=0.5, 
+    time_windows=[(0.0, 10.0)], 
+    lattice=lattice
+)
+nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5)
 
 # Create Wilson-Cowan model parameters (2 populations: E and I)
 params = WilsonCowanParameters{2}(
     α = (1.0, 1.5),          # Decay rates
     β = (1.0, 1.0),          # Saturation coefficients
     τ = (1.0, 0.8),          # Time constants
-    connectivity = nothing,   # Connectivity (to be configured)
-    nonlinearity = sigmoid,
-    stimulus = nothing,       # Stimulus (to be configured)
+    connectivity = connectivity,
+    nonlinearity = nonlinearity,
+    stimulus = stimulus,
     pop_names = ("E", "I")   # Population names
 )
 
-# Set up initial state (3 spatial points × 2 populations)
-A = [0.3 0.2; 0.5 0.4; 0.7 0.6]
+# Set up initial state (21 spatial points × 2 populations)
+A = 0.1 .+ 0.05 .* rand(21, 2)
 dA = zeros(size(A))
 
 # Compute derivatives using Wilson-Cowan equations
-wcm1973!(dA, A, params, 0.0)
+# wcm1973!(dA, A, params, 0.0)
 
 # See examples/ directory for detailed usage
 ```

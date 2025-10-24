@@ -31,6 +31,9 @@ export fft_center_idx
 # Export nonlinearity types and functions
 export SigmoidNonlinearity, RectifiedZeroedSigmoidNonlinearity, DifferenceOfSigmoidsNonlinearity, simple_sigmoid, rectified_zeroed_sigmoid, difference_of_simple_sigmoids, difference_of_rectified_zeroed_sigmoids, apply_nonlinearity!
 
+# Export connectivity types and functions
+export GaussianConnectivityParameter, propagate_activation
+
 # Export stimulation types and functions
 export CircleStimulus, stimulate!
 

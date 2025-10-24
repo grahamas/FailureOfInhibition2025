@@ -67,14 +67,26 @@ This implementation differs from the reference WilsonCowanModel.jl repository in
 ```julia
 using FailureOfInhibition2025
 
+# Create spatial lattice
+lattice = CompactLattice(extent=(10.0,), n_points=(21,))
+
+# Create connectivity, stimulus, and nonlinearity objects
+connectivity = GaussianConnectivityParameter(1.0, (2.0,))
+stimulus = CircleStimulus(
+    radius=2.0, strength=0.5,
+    time_windows=[(0.0, 10.0)],
+    lattice=lattice
+)
+nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5)
+
 # Create parameters for a 2-population Wilson-Cowan model
-params = WilsonCowanParameters(
+params = WilsonCowanParameters{2}(
     α = (1.0, 1.0),           # Decay rates
     β = (1.0, 1.0),           # Saturation coefficients
     τ = (1.0, 1.0),           # Time constants
-    connectivity = nothing,    # Connectivity parameter (to be defined)
-    nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
-    stimulus = nothing,        # Stimulus parameter (to be defined)
+    connectivity = connectivity,
+    nonlinearity = nonlinearity,
+    stimulus = stimulus,
     pop_names = ("E", "I")    # Excitatory and Inhibitory populations
 )
 
@@ -106,7 +118,7 @@ Wilson-Cowan model differential equation (Wilson & Cowan 1973).
 
 Implements the classic Wilson-Cowan equations for neural population dynamics:
 ```
-τᵢ dAᵢ/dt = -αᵢ Aᵢ + βᵢ (1 - Aᵢ) f(Sᵢ + Iᵢ)
+τᵢ dAᵢ/dt = -αᵢ Aᵢ + βᵢ (1 - Aᵢ) f(Sᵢ(t) + Cᵢ(A))
 ```
 
 where:
@@ -115,8 +127,8 @@ where:
 - `βᵢ` is the saturation coefficient
 - `τᵢ` is the time constant
 - `f` is the nonlinearity (firing rate function)
-- `Sᵢ` is external stimulus
-- `Iᵢ` is recurrent input from connectivity
+- `Sᵢ(t)` is external stimulus (function of time)
+- `Cᵢ(A)` is recurrent input from connectivity (function of activity)
 
 # Arguments
 - `dA`: Output array for derivatives (modified in-place)

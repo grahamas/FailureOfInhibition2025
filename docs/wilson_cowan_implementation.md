@@ -7,7 +7,7 @@ This document details the Wilson-Cowan model implementation in FailureOfInhibiti
 The Wilson-Cowan model (Wilson & Cowan 1972, 1973) describes the dynamics of neural populations using coupled differential equations:
 
 ```
-τᵢ dAᵢ/dt = -αᵢ Aᵢ + βᵢ (1 - Aᵢ) f(Sᵢ + Iᵢ)
+τᵢ dAᵢ/dt = -αᵢ Aᵢ + βᵢ (1 - Aᵢ) f(Sᵢ(t) + Cᵢ(A))
 ```
 
 where:
@@ -16,8 +16,8 @@ where:
 - `βᵢ` is the saturation coefficient
 - `τᵢ` is the time constant
 - `f` is the nonlinearity (firing rate function)
-- `Sᵢ` is external stimulus
-- `Iᵢ` is recurrent input from connectivity
+- `Sᵢ(t)` is external stimulus (function of time)
+- `Cᵢ(A)` is recurrent input from connectivity (function of activity)
 
 ## Mathematical Equivalence
 
@@ -138,13 +138,25 @@ prob = ODEProblem(action, A₀, tspan, nothing)
 ```julia
 using FailureOfInhibition2025
 
+# Create spatial lattice
+lattice = CompactLattice(extent=(10.0,), n_points=(21,))
+
+# Create connectivity, stimulus, and nonlinearity objects
+connectivity = GaussianConnectivityParameter(1.0, (2.0,))
+stimulus = CircleStimulus(
+    radius=2.0, strength=0.5,
+    time_windows=[(0.0, 10.0)],
+    lattice=lattice
+)
+nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5)
+
 params = WilsonCowanParameters{2}(
     α = (1.0, 1.5),
     β = (1.0, 1.0),
     τ = (1.0, 0.8),
-    connectivity = nothing,
-    nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
-    stimulus = nothing,
+    connectivity = connectivity,
+    nonlinearity = nonlinearity,
+    stimulus = stimulus,
     pop_names = ("E", "I")
 )
 
