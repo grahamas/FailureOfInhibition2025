@@ -46,6 +46,8 @@ println("Running FailureOfInhibition2025 test suite...")
         @test isdefined(FailureOfInhibition2025, :wcm1973!)
         @test isdefined(FailureOfInhibition2025, :population)
         @test isdefined(FailureOfInhibition2025, :stimulate)
+        @test isdefined(FailureOfInhibition2025, :stimulate!)
+        @test isdefined(FailureOfInhibition2025, :CircleStimulus)
     end
     
     @testset "Space and Lattice Functions" begin
