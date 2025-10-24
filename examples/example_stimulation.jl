@@ -149,9 +149,7 @@ function example_wrapper_function()
     dA = zeros(Float64, size(lattice)...)
     A = zeros(Float64, size(lattice)...)
     
-    # Can use either stimulate! or the wrapper function stimulate
-    println("Using stimulate wrapper function:")
-    stimulate(dA, A, stimulus, 5.0)
+    stimulate!(dA, A, stimulus, 5.0)
     
     println("  - Stimulus applied successfully")
     println("  - Points stimulated: $(sum(dA .> 0.0))")

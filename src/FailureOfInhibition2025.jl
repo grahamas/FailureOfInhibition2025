@@ -32,7 +32,7 @@ export fft_center_idx
 export SigmoidNonlinearity, RectifiedZeroedSigmoidNonlinearity, DifferenceOfSigmoidsNonlinearity, simple_sigmoid, rectified_zeroed_sigmoid, difference_of_simple_sigmoids, difference_of_rectified_zeroed_sigmoids, apply_nonlinearity
 
 # Export stimulation types and functions
-export CircleStimulus, stimulate!, stimulate
+export CircleStimulus, stimulate!
 
 # Export model functions
 export wcm1973!, population

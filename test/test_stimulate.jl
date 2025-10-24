@@ -243,32 +243,6 @@ function test_stimulate_2d()
     println("\n=== 2D stimulate! Tests Passed! ===")
 end
 
-function test_stimulate_wrapper()
-    println("\n=== Testing stimulate Wrapper Function ===")
-    
-    # Test that the wrapper function exists and works
-    println("\n1. Testing stimulate wrapper:")
-    lattice = CompactLattice(-3.0, 3.0, 7)
-    stim = CircleStimulus(
-        radius=1.0,
-        strength=5.0,
-        time_windows=[(0.0, 10.0)],
-        lattice=lattice
-    )
-    
-    dA = zeros(Float64, size(lattice)...)
-    A = zeros(Float64, size(lattice)...)
-    
-    # Call the wrapper function
-    stimulate(dA, A, stim, 5.0)
-    
-    # Verify it had the same effect as stimulate!
-    @test any(dA .> 0.0)  # Some points should be stimulated
-    println("   ✓ Wrapper function works")
-    
-    println("\n=== stimulate Wrapper Tests Passed! ===")
-end
-
 function test_time_windows()
     println("\n=== Testing Time Window Functionality ===")
     
