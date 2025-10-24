@@ -7,7 +7,8 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 ## Features
 
 - **Sigmoid nonlinearities**: Standard and rectified zeroed sigmoid functions for neural modeling
-- **Neural field models**: WCM 1973 implementation with customizable parameters  
+- **Wilson-Cowan model**: Classic neural population dynamics model (Wilson & Cowan 1973)
+- **Neural field models**: Implementation with customizable parameters  
 - **Spatial connectivity**: Gaussian connectivity patterns with FFT-based convolution
 - **Stimulus handling**: Flexible stimulation interfaces
 - **Multi-population support**: Support for multiple neural populations
@@ -27,17 +28,42 @@ using FailureOfInhibition2025
 # Create a sigmoid nonlinearity
 sigmoid = SigmoidNonlinearity(a=2.0, θ=0.5)
 
-# Test basic sigmoid function
-result = simple_sigmoid(0.5, 2.0, 0.5)  # Returns 0.5
+# Create Wilson-Cowan model parameters (2 populations: E and I)
+params = WilsonCowanParameters{2}(
+    α = (1.0, 1.5),          # Decay rates
+    β = (1.0, 1.0),          # Saturation coefficients
+    τ = (1.0, 0.8),          # Time constants
+    connectivity = nothing,   # Connectivity (to be configured)
+    nonlinearity = sigmoid,
+    stimulus = nothing,       # Stimulus (to be configured)
+    pop_names = ("E", "I")   # Population names
+)
 
-# Use with neural field models
-# See examples/example_sigmoid.jl for more detailed usage
+# Set up initial state (3 spatial points × 2 populations)
+A = [0.3 0.2; 0.5 0.4; 0.7 0.6]
+dA = zeros(size(A))
+
+# Compute derivatives using Wilson-Cowan equations
+wcm1973!(dA, A, params, 0.0)
+
+# See examples/ directory for detailed usage
 ```
 
 ## Examples
 
 See the `examples/` directory for detailed usage examples:
 - `examples/example_sigmoid.jl`: Demonstrates sigmoid nonlinearity usage
+- `examples/example_wilson_cowan.jl`: Demonstrates Wilson-Cowan model usage
+
+## Implementation Notes
+
+This package reimplements the Wilson-Cowan model from [WilsonCowanModel.jl](https://github.com/grahamas/WilsonCowanModel) with key architectural differences:
+
+1. **No callable objects**: Uses plain structs with separate functions instead of functors
+2. **Direct function dispatch**: Parameters are passed directly to `wcm1973!()` instead of creating intermediate "Action" objects
+3. **Functional programming style**: Follows a more functional approach without object-oriented patterns
+
+These differences make the code simpler and more composable while maintaining the same mathematical behavior.
 
 ## Testing
 

@@ -60,6 +60,16 @@ function fftshift!(output::AbstractVector, input::AbstractVector)
 end
 
 """
+    propagate_activation(dA, A, ::Nothing, t)
+
+No-op connectivity propagation when connectivity is nothing.
+"""
+function propagate_activation(dA, A, ::Nothing, t)
+    # Do nothing when no connectivity is present
+    return nothing
+end
+
+"""
     propagate_activation(dA, A, connectivity::GaussianConnectivityParameter{T,N}, t)
 
 Propagates activation `A` through a Gaussian connectivity kernel, writing the result into `dA`.

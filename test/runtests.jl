@@ -22,6 +22,17 @@ println("Running FailureOfInhibition2025 test suite...")
         test_model_integration()
     end
     
+    # Run Wilson-Cowan model tests
+    @testset "Wilson-Cowan Model" begin
+        include("test_wilson_cowan.jl")
+        
+        # Run the main test functions from test_wilson_cowan.jl
+        test_wilson_cowan_parameters()
+        test_wilson_cowan_dynamics()
+        test_backward_compatibility()
+        test_implementation_documentation()
+    end
+    
     # Additional test groups can be added here as the package grows
     @testset "Basic Package Functionality" begin
         @test isdefined(FailureOfInhibition2025, :greet)
@@ -30,6 +41,7 @@ println("Running FailureOfInhibition2025 test suite...")
         @test isdefined(FailureOfInhibition2025, :simple_sigmoid)
         @test isdefined(FailureOfInhibition2025, :apply_nonlinearity)
         @test isdefined(FailureOfInhibition2025, :wcm1973!)
+        @test isdefined(FailureOfInhibition2025, :WilsonCowanParameters)
         @test isdefined(FailureOfInhibition2025, :population)
         @test isdefined(FailureOfInhibition2025, :stimulate)
     end
