@@ -22,6 +22,11 @@ println("Running FailureOfInhibition2025 test suite...")
         test_model_integration()
     end
     
+    # Run comprehensive nonlinearity tests
+    @testset "Comprehensive Nonlinearity Tests" begin
+        include("test_nonlinearity.jl")
+    end
+    
     # Additional test groups can be added here as the package grows
     @testset "Basic Package Functionality" begin
         @test isdefined(FailureOfInhibition2025, :greet)
