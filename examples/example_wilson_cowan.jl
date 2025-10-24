@@ -54,6 +54,7 @@ function demo_wilson_cowan_model()
         connectivity = connectivity,
         nonlinearity = nonlinearity,
         stimulus = stimulus,
+        lattice = lattice,
         pop_names = ("E", "I")   # Population names
     )
     

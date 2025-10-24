@@ -157,6 +157,7 @@ params = WilsonCowanParameters{2}(
     connectivity = connectivity,
     nonlinearity = nonlinearity,
     stimulus = stimulus,
+    lattice = lattice,
     pop_names = ("E", "I")
 )
 
