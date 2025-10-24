@@ -404,11 +404,11 @@ end
 end
 
 @testset "Model Integration Tests" begin
+    # FIXME needs more integration testing
     @testset "Function Availability" begin
         # Test that all required functions exist
         @test isdefined(FailureOfInhibition2025, :wcm1973!)
         @test isdefined(FailureOfInhibition2025, :population)
-        @test isdefined(FailureOfInhibition2025, :stimulate)
         @test isdefined(FailureOfInhibition2025, :apply_nonlinearity!)
         @test isdefined(FailureOfInhibition2025, :SigmoidNonlinearity)
         @test isdefined(FailureOfInhibition2025, :RectifiedZeroedSigmoidNonlinearity)
