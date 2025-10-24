@@ -40,6 +40,19 @@ println("Running FailureOfInhibition2025 test suite...")
         @test isdefined(FailureOfInhibition2025, :CompactLattice)
         @test isdefined(FailureOfInhibition2025, :PeriodicLattice)
     end
+    
+    # Test Gaussian connectivity
+    @testset "Gaussian Connectivity" begin
+        include("test_gaussian_connectivity.jl")
+        
+        # Run the main test functions from test_gaussian_connectivity.jl
+        test_gaussian_connectivity_parameter()
+        test_apply_connectivity_unscaled()
+        test_calculate_kernel()
+        test_gaussian_connectivity_construction()
+        test_propagate_activation()
+        test_fftshift()
+    end
 
 end
 
