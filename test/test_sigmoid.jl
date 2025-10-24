@@ -53,17 +53,17 @@ function test_sigmoid_functions()
     @assert isa(result_rect, Float64)  # Should return a number
     println("   ✓ Sigmoid function application tests passed")
     
-    # Test apply_nonlinearity function
-    println("\n6. Testing apply_nonlinearity function:")
+    # Test apply_nonlinearity! function
+    println("\n6. Testing apply_nonlinearity! function:")
     dA1 = zeros(3)
     dA2 = zeros(3)
     dA3 = zeros(3)
     A = [0.0, 1.0, 2.0]
     original_A = copy(A)
     
-    apply_nonlinearity(dA1, A, sigmoid, 0.0)
-    apply_nonlinearity(dA2, A, rect_sigmoid, 0.0)
-    apply_nonlinearity(dA3, A, diff_sigmoid, 0.0)
+    apply_nonlinearity!(dA1, A, sigmoid, 0.0)
+    apply_nonlinearity!(dA2, A, rect_sigmoid, 0.0)
+    apply_nonlinearity!(dA3, A, diff_sigmoid, 0.0)
     
     # A should be unchanged
     @assert A == original_A
@@ -71,7 +71,7 @@ function test_sigmoid_functions()
     @assert !all(dA1 .== 0.0)  # dA1 should have been modified
     @assert !all(dA2 .== 0.0)  # dA2 should have been modified
     @assert !all(dA3 .== 0.0)  # dA3 should have been modified
-    println("   ✓ apply_nonlinearity tests passed")
+    println("   ✓ apply_nonlinearity! tests passed")
     
     # Test zero and maximal regions of difference of rectified zeroed sigmoids
     println("\n7. Testing zero and maximal regions of difference of rectified zeroed sigmoids:")
@@ -110,7 +110,7 @@ function test_sigmoid_functions()
     diff_nl = DifferenceOfSigmoidsNonlinearity(a_up=a_up, θ_up=θ_up, a_down=a_down, θ_down=θ_down)
     dA_test = zeros(1)
     A_test = [1.0]
-    apply_nonlinearity(dA_test, A_test, diff_nl, 0.0)
+    apply_nonlinearity!(dA_test, A_test, diff_nl, 0.0)
     
     # The result should match our direct function call
     expected = difference_of_rectified_zeroed_sigmoids(1.0, a_up, θ_up, a_down, θ_down) - 1.0
@@ -129,7 +129,7 @@ function test_model_integration()
     @assert isdefined(FailureOfInhibition2025, :wcm1973!)
     @assert isdefined(FailureOfInhibition2025, :population)
     @assert isdefined(FailureOfInhibition2025, :stimulate)
-    @assert isdefined(FailureOfInhibition2025, :apply_nonlinearity)
+    @assert isdefined(FailureOfInhibition2025, :apply_nonlinearity!)
     @assert isdefined(FailureOfInhibition2025, :SigmoidNonlinearity)
     @assert isdefined(FailureOfInhibition2025, :RectifiedZeroedSigmoidNonlinearity)
     @assert isdefined(FailureOfInhibition2025, :DifferenceOfSigmoidsNonlinearity)
