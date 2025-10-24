@@ -10,8 +10,9 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Wilson-Cowan model**: Classic neural population dynamics model (Wilson & Cowan 1973)
 - **Neural field models**: Implementation with customizable parameters  
 - **Spatial connectivity**: Gaussian connectivity patterns with FFT-based convolution
+- **Per-population-pair connectivity**: Each population pair can have its own connectivity kernel via ConnectivityMatrix
 - **Stimulus handling**: Flexible stimulation interfaces
-- **Multi-population support**: Support for multiple neural populations
+- **Multi-population support**: Support for multiple neural populations with flexible coupling
 
 ## Installation
 
@@ -21,6 +22,8 @@ Pkg.add(url="https://github.com/grahamas/FailureOfInhibition2025.git")
 ```
 
 ## Quick Start
+
+### Basic Usage
 
 ```julia
 using FailureOfInhibition2025
@@ -45,6 +48,7 @@ params = WilsonCowanParameters{2}(
     connectivity = connectivity,
     nonlinearity = nonlinearity,
     stimulus = stimulus,
+    lattice = lattice,
     pop_names = ("E", "I")   # Population names
 )
 
@@ -53,16 +57,51 @@ A = 0.1 .+ 0.05 .* rand(21, 2)
 dA = zeros(size(A))
 
 # Compute derivatives using Wilson-Cowan equations
-# wcm1973!(dA, A, params, 0.0)
-
-# See examples/ directory for detailed usage
+wcm1973!(dA, A, params, 0.0)
 ```
+
+### Per-Population-Pair Connectivity
+
+For more realistic neural network models, you can specify different connectivity kernels for each population pair:
+
+```julia
+# Define connectivity for each population pair
+# connectivity[i,j] maps population j → population i
+conn_ee = GaussianConnectivityParameter(1.0, (2.0,))    # E → E (excitatory)
+conn_ei = GaussianConnectivityParameter(-0.5, (1.5,))   # I → E (inhibitory)
+conn_ie = GaussianConnectivityParameter(0.8, (2.5,))    # E → I (excitatory)
+conn_ii = GaussianConnectivityParameter(-0.3, (1.0,))   # I → I (inhibitory)
+
+# Create connectivity matrix
+connectivity = ConnectivityMatrix{2}([
+    conn_ee conn_ei;   # Row 1: inputs to E from [E, I]
+    conn_ie conn_ii    # Row 2: inputs to I from [E, I]
+])
+
+# Use in Wilson-Cowan model
+params = WilsonCowanParameters{2}(
+    α = (1.0, 1.5),
+    β = (1.0, 1.0),
+    τ = (1.0, 0.8),
+    connectivity = connectivity,
+    nonlinearity = nonlinearity,
+    stimulus = stimulus,
+    lattice = lattice,
+    pop_names = ("E", "I")
+)
+```
+
+The indexing convention follows matrix multiplication: `connectivity[i,j]` describes how population `j` affects population `i`. This means each row represents inputs to a target population, and each column represents outputs from a source population.
+
+See examples/ directory for detailed usage
+
 
 ## Examples
 
 See the `examples/` directory for detailed usage examples:
 - `examples/example_sigmoid.jl`: Demonstrates sigmoid nonlinearity usage
 - `examples/example_wilson_cowan.jl`: Demonstrates Wilson-Cowan model usage
+- `examples/example_connectivity_matrix.jl`: Demonstrates per-population-pair connectivity with ConnectivityMatrix
 
 ## Implementation Notes
 
