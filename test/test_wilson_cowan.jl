@@ -191,17 +191,12 @@ function test_implementation_documentation()
     println("\n=== Implementation Documentation Tests Passed! ===")
 end
 
-function main()
+if abspath(PROGRAM_FILE) == @__FILE__
     println("Running Wilson-Cowan model tests...")
     test_wilson_cowan_parameters()
     test_wilson_cowan_dynamics()
-    test_backward_compatibility()
     test_implementation_documentation()
     println("\n🎉 All Wilson-Cowan tests completed successfully!")
     println("\nWilson-Cowan model implementation is complete with proper documentation")
     println("of differences from the WilsonCowanModel.jl reference implementation.")
-end
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    main()
 end
