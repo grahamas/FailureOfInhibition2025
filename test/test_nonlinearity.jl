@@ -348,5 +348,3 @@ end
         @test simple_sigmoid(0.0, a, θ) < simple_sigmoid(-1.0, a, θ)
     end
 end
-
-println("✅ All comprehensive nonlinearity tests passed!")
