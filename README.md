@@ -23,7 +23,9 @@ Pkg.add(url="https://github.com/grahamas/FailureOfInhibition2025.git")
 
 ## Quick Start
 
-### Basic Usage
+### Basic Usage Pattern
+
+Here's the basic structure for using the Wilson-Cowan model (see examples/ for complete working code):
 
 ```julia
 using FailureOfInhibition2025
@@ -57,8 +59,8 @@ A = 0.1 .+ 0.05 .* rand(21, 2)
 dA = zeros(size(A))
 
 # Compute derivatives using Wilson-Cowan equations
-# wcm1973!(dA, A, params, 0.0)
-# Note: Full integration requires properly handling multi-population arrays
+# (Use with ODE solvers like DifferentialEquations.jl)
+# See examples/example_wilson_cowan.jl for complete usage
 ```
 
 ### Per-Population-Pair Connectivity
@@ -66,6 +68,10 @@ dA = zeros(size(A))
 For more realistic neural network models, you can specify different connectivity kernels for each population pair:
 
 ```julia
+using FailureOfInhibition2025
+
+lattice = CompactLattice(extent=(10.0,), n_points=(21,))
+
 # Define connectivity for each population pair
 # connectivity[i,j] maps population j → population i
 conn_ee = GaussianConnectivityParameter(1.0, (2.0,))    # E → E (excitatory)
@@ -79,6 +85,8 @@ connectivity = ConnectivityMatrix{2}([
     conn_ie conn_ii    # Row 2: inputs to I from [E, I]
 ])
 
+nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5)
+
 # Use in Wilson-Cowan model
 params = WilsonCowanParameters{2}(
     α = (1.0, 1.5),
@@ -86,15 +94,20 @@ params = WilsonCowanParameters{2}(
     τ = (1.0, 0.8),
     connectivity = connectivity,
     nonlinearity = nonlinearity,
-    stimulus = stimulus,
+    stimulus = nothing,
     lattice = lattice,
     pop_names = ("E", "I")
 )
+
+# Compute derivatives
+A = 0.1 .+ 0.05 .* rand(21, 2)
+dA = zeros(size(A))
+wcm1973!(dA, A, params, 0.0)  # Works!
 ```
 
 The indexing convention follows matrix multiplication: `connectivity[i,j]` describes how population `j` affects population `i`. This means each row represents inputs to a target population, and each column represents outputs from a source population.
 
-See examples/ directory for detailed usage
+See `examples/example_connectivity_matrix.jl` for detailed demonstration.
 
 
 ## Examples
