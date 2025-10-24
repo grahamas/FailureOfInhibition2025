@@ -11,6 +11,49 @@ struct GaussianConnectivityParameter{T,N}
     spread::NTuple{N,T}
 end
 
+"""
+    ConnectivityMatrix{P}
+
+A PxP matrix of connectivity objects for P populations.
+
+The connectivity matrix follows matrix multiplication conventions:
+`connectivity[i,j]` maps the activity of population j into population i.
+
+For example, in a 2-population (E, I) model:
+- connectivity[1,1]: E → E (excitatory self-connection)
+- connectivity[1,2]: I → E (inhibitory to excitatory)
+- connectivity[2,1]: E → I (excitatory to inhibitory)
+- connectivity[2,2]: I → I (inhibitory self-connection)
+
+Each element can be:
+- A connectivity parameter (e.g., GaussianConnectivityParameter)
+- A GaussianConnectivity object (pre-computed)
+- `nothing` (no connection)
+"""
+struct ConnectivityMatrix{P,C}
+    matrix::Matrix{C}
+    
+    function ConnectivityMatrix{P}(matrix::Matrix{C}) where {P,C}
+        size(matrix) == (P, P) || throw(ArgumentError("Matrix must be $(P)x$(P), got $(size(matrix))"))
+        new{P,C}(matrix)
+    end
+end
+
+# Constructor from a tuple of tuples for easier construction
+function ConnectivityMatrix{P}(data::NTuple{P,NTuple{P,C}}) where {P,C}
+    matrix = Matrix{C}(undef, P, P)
+    for i in 1:P
+        for j in 1:P
+            matrix[i,j] = data[i][j]
+        end
+    end
+    ConnectivityMatrix{P}(matrix)
+end
+
+# Indexing support
+Base.getindex(cm::ConnectivityMatrix, i, j) = cm.matrix[i, j]
+Base.size(cm::ConnectivityMatrix) = size(cm.matrix)
+
 struct GaussianConnectivity
     fft_op
     ifft_op
@@ -67,39 +110,78 @@ function fftshift!(output::AbstractArray, input::AbstractArray)
 end
 
 """
-    propagate_activation(dA, A, ::Nothing, t)
+    propagate_activation(dA, A, ::Nothing, t, lattice)
 
 No-op connectivity propagation when connectivity is nothing.
 """
-function propagate_activation(dA, A, ::Nothing, t)
-    # Do nothing when no connectivity is present
-    return nothing
-end
+propagate_activation(dA, A, ::Nothing, t, lattice) = nothing
 
 """
-    propagate_activation(dA, A, connectivity::GaussianConnectivityParameter{T,N}, t)
+    propagate_activation(dA, A, connectivity::GaussianConnectivity, t)
 
-Propagates activation `A` through a Gaussian connectivity kernel, writing the result into `dA`.
-Uses FFTs for efficient convolution. The `connectivity` parameter defines the kernel properties, and `t` is a time parameter (not directly used in this implementation).
-
-FIXME should cache buffers and (i)fft ops
+Propagates activation through a pre-computed GaussianConnectivity object.
+Used for testing and simple single-population cases.
 """
-function propagate_activation(dA, A, connectivity::GaussianConnectivityParameter{T,N}, t) where {T,N}
-    kernel = calculate_kernel(dA, connectivity) .* prod(step(dA)) # FIXME step(dA) might need to be step(coordinates(dA))
-    kernel_fftd = rfft(kern_dx)
-    single_pop = population(dA, 1)
-    fft_op = plan_rfft(single_pop; flags=(FFTW.PATIENT | FFTW.UNALIGNED))
-    ifft_op = plan_irfft(fft_op * single_pop, size(dA,1); flags=(FFTW.PATIENT | FFTW.UNALIGNED))
-    FFTAction(kernel_fftd, similar(kernel_fftd), similar(kern), fft_op, ifft_op)
-    # Create buffers
-    buffer_complex = similar(kernel_fftd)
-    buffer_real = similar(kernel)
-    buffer_shift = similar(buffer_real)
-    gc = GaussianConnectivity(fft_op, ifft_op, buffer_real, buffer_complex, buffer_shift)
-    propagate_activation(dA, A, gc, t)
-end
-
 function propagate_activation(dA, A, c::GaussianConnectivity, t)
+    # Compute fft, multiply by kernel, and invert
+    mul!(c.buffer_complex, c.fft_op, A)
+    c.buffer_complex .*= c.kernel_fft
+    mul!(c.buffer_real, c.ifft_op, c.buffer_complex)
+    fftshift!(c.buffer_shift, c.buffer_real)
+    dA .+= c.buffer_shift
+end
+
+"""
+    propagate_activation(dA, A, connectivity::ConnectivityMatrix{P}, t, lattice)
+
+Propagates activation through a connectivity matrix.
+
+For each population pair (i,j), applies connectivity[i,j] which maps 
+the activity of population j to influence on population i.
+Follows matrix multiplication convention: A_ij maps j → i.
+"""
+function propagate_activation(dA, A, connectivity::ConnectivityMatrix{P}, t, lattice) where {P}
+    # For each target population i
+    for i in 1:P
+        dAi = population(dA, i)
+        
+        # Sum contributions from all source populations j
+        for j in 1:P
+            conn_ij = connectivity[i, j]
+            
+            # Skip if no connection exists
+            if conn_ij === nothing
+                continue
+            end
+            
+            # Get source population activity
+            Aj = population(A, j)
+            
+            # Create temporary buffer for this connection's contribution
+            temp_contribution = zero(dAi)
+            
+            # Propagate from source j to target i
+            propagate_activation_single(temp_contribution, Aj, conn_ij, t, lattice)
+            
+            # Add to target population's derivative
+            dAi .+= temp_contribution
+        end
+    end
+end
+
+"""
+    propagate_activation_single(dA, A, connectivity, t, lattice)
+
+Propagates activation for a single population-to-population connection.
+This is a helper function used by the ConnectivityMatrix propagation.
+"""
+function propagate_activation_single(dA, A, connectivity::GaussianConnectivityParameter, t, lattice)
+    # Create GaussianConnectivity if given parameter
+    gc = GaussianConnectivity(connectivity, lattice)
+    propagate_activation_single(dA, A, gc, t, lattice)
+end
+
+function propagate_activation_single(dA, A, c::GaussianConnectivity, t, lattice)
     # Compute fft, multiply by kernel, and invert
     mul!(c.buffer_complex, c.fft_op, A)
     c.buffer_complex .*= c.kernel_fft

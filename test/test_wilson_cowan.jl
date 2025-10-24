@@ -9,6 +9,9 @@ using FailureOfInhibition2025
 function test_wilson_cowan_parameters()
     println("=== Testing Wilson-Cowan Parameters ===")
     
+    # Create a simple lattice for tests
+    lattice = CompactLattice(extent=(10.0,), n_points=(11,))
+    
     # Test basic construction with keyword arguments
     println("\n1. Testing WilsonCowanParameters construction:")
     params = WilsonCowanParameters{2}(
@@ -18,6 +21,7 @@ function test_wilson_cowan_parameters()
         connectivity = nothing,
         nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
         stimulus = nothing,
+        lattice = lattice,
         pop_names = ("E", "I")
     )
     
@@ -26,6 +30,7 @@ function test_wilson_cowan_parameters()
     @assert params.τ == (1.0, 0.8)
     @assert params.pop_names == ("E", "I")
     @assert params.nonlinearity isa SigmoidNonlinearity
+    @assert params.lattice === lattice
     println("   ✓ WilsonCowanParameters construction passed")
     
     # Test with default pop_names
@@ -36,7 +41,8 @@ function test_wilson_cowan_parameters()
         τ = (1.0, 1.0, 1.0),
         connectivity = nothing,
         nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
-        stimulus = nothing
+        stimulus = nothing,
+        lattice = lattice
     )
     
     @assert params_default.pop_names == ("Pop1", "Pop2", "Pop3")
@@ -48,6 +54,9 @@ end
 function test_wilson_cowan_dynamics()
     println("\n=== Testing Wilson-Cowan Dynamics ===")
     
+    # Create a simple lattice for tests
+    lattice = CompactLattice(extent=(10.0,), n_points=(3,))
+    
     # Create a simple 2-population model
     println("\n1. Testing basic dynamics with 2 populations:")
     
@@ -58,7 +67,8 @@ function test_wilson_cowan_dynamics()
         τ = (1.0, 1.0),
         connectivity = nothing,
         nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
-        stimulus = nothing
+        stimulus = nothing,
+        lattice = lattice
     )
     
     # Create state arrays for 2 populations with 3 spatial points each
@@ -78,13 +88,15 @@ function test_wilson_cowan_dynamics()
     
     # Test single population case
     println("\n2. Testing single population:")
+    lattice_single = CompactLattice(extent=(10.0,), n_points=(3,))
     params_single = WilsonCowanParameters{1}(
         α = (1.0,),
         β = (1.0,),
         τ = (1.0,),
         connectivity = nothing,
         nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
-        stimulus = nothing
+        stimulus = nothing,
+        lattice = lattice_single
     )
     
     A_single = [0.3, 0.5, 0.7]  # 1D array for single population
@@ -103,7 +115,8 @@ function test_wilson_cowan_dynamics()
         τ = (1.0, 2.0),  # Different time constants
         connectivity = nothing,
         nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
-        stimulus = nothing
+        stimulus = nothing,
+        lattice = lattice
     )
     
     A = [0.5 0.5; 0.5 0.5]
@@ -124,7 +137,8 @@ function test_wilson_cowan_dynamics()
         τ = (1.0, 1.0),
         connectivity = nothing,
         nonlinearity = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5),
-        stimulus = nothing
+        stimulus = nothing,
+        lattice = lattice
     )
     
     A = [0.3 0.3; 0.5 0.5]
@@ -145,7 +159,8 @@ function test_wilson_cowan_dynamics()
         nonlinearity = DifferenceOfSigmoidsNonlinearity(
             a_up=5.0, θ_up=0.3, a_down=3.0, θ_down=0.7
         ),
-        stimulus = nothing
+        stimulus = nothing,
+        lattice = lattice
     )
     
     A = [0.5 0.5; 0.6 0.6]
@@ -162,6 +177,9 @@ end
 function test_implementation_documentation()
     println("\n=== Testing Implementation Documentation ===")
     
+    # Create a simple lattice for tests
+    lattice = CompactLattice(extent=(10.0,), n_points=(11,))
+    
     # Check that WilsonCowanParameters is properly documented
     println("\n1. Verifying WilsonCowanParameters is exported:")
     @assert isdefined(FailureOfInhibition2025, :WilsonCowanParameters)
@@ -176,6 +194,7 @@ function test_implementation_documentation()
         connectivity = nothing,
         nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
         stimulus = nothing,
+        lattice = lattice,
         pop_names = ("E", "I")
     )
     
@@ -185,6 +204,7 @@ function test_implementation_documentation()
     @assert hasfield(typeof(params), :connectivity)
     @assert hasfield(typeof(params), :nonlinearity)
     @assert hasfield(typeof(params), :stimulus)
+    @assert hasfield(typeof(params), :lattice)
     @assert hasfield(typeof(params), :pop_names)
     println("   ✓ All expected fields present")
     
