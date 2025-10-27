@@ -21,6 +21,7 @@ include("models.jl")
 export AbstractSpace, AbstractLattice
 export AbstractCompactLattice, CompactLattice
 export AbstractPeriodicLattice, PeriodicLattice
+export AbstractPointLattice, PointLattice
 export AbstractAugmentedLattice, AbstractEmbeddedLattice, RandomlyEmbeddedLattice
 export coordinates, differences, difference
 export discrete_segment, discrete_lattice, coordinate_axes

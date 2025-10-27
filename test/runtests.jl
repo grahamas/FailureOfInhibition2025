@@ -91,4 +91,12 @@ using FailureOfInhibition2025
         run_all_space_tests()
     end
 
+    # Run PointLattice tests
+    @testset "PointLattice Functionality" begin
+        include("test_point_lattice.jl")
+        
+        # Run the comprehensive test function from test_point_lattice.jl
+        run_all_point_lattice_tests()
+    end
+
 end

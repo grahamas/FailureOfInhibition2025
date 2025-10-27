@@ -85,6 +85,44 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_sigmoid.jl`: Demonstrates sigmoid nonlinearity usage
 - `examples/example_wilson_cowan.jl`: Demonstrates Wilson-Cowan model usage
 - `examples/example_connectivity_matrix.jl`: Demonstrates per-population-pair connectivity with ConnectivityMatrix
+- `examples/example_point_model.jl`: Demonstrates non-spatial (point) models using PointLattice
+
+## Point Models (Non-Spatial)
+
+The package supports both spatial and non-spatial models using the same `wcm1973!` function. For non-spatial models (simple ODEs without spatial structure), use a `PointLattice`:
+
+```julia
+using FailureOfInhibition2025
+
+# Create a point lattice (zero-dimensional space)
+lattice = PointLattice()
+
+# Create parameters for a non-spatial 2-population model
+params = WilsonCowanParameters{2}(
+    α = (1.0, 1.5),          # Decay rates
+    β = (1.0, 1.0),          # Saturation coefficients
+    τ = (1.0, 0.8),          # Time constants
+    connectivity = nothing,   # No spatial connectivity
+    nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
+    stimulus = nothing,
+    lattice = lattice,       # PointLattice for non-spatial model
+    pop_names = ("E", "I")
+)
+
+# Activity state: just population values (no spatial dimension)
+A = [0.3, 0.5]  # Shape: (2,) for 2 populations
+dA = zeros(2)
+
+# Use the same wcm1973! function
+wcm1973!(dA, A, params, 0.0)
+```
+
+This allows you to:
+- Test model dynamics without spatial complications
+- Perform parameter exploration for non-spatial models
+- Implement mean-field approximations
+- Use the classical Wilson-Cowan equations (original 1972/1973 formulation)
+- Run faster simulations when spatial structure is not needed
 
 ## Implementation Notes
 
