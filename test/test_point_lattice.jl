@@ -264,6 +264,107 @@ function test_point_lattice_dynamics()
     println("\n=== Dynamics Correctness Tests Passed! ===")
 end
 
+function test_point_lattice_with_scalar_connectivity()
+    println("\n=== Testing PointLattice with ScalarConnectivity ===")
+    
+    lattice = PointLattice()
+    
+    println("\n1. Testing ScalarConnectivity construction:")
+    # Create scalar connectivity for 2-population model
+    conn_ee = ScalarConnectivity(1.0)    # E → E (excitatory)
+    conn_ei = ScalarConnectivity(-0.5)   # I → E (inhibitory)
+    conn_ie = ScalarConnectivity(0.8)    # E → I (excitatory)
+    conn_ii = ScalarConnectivity(-0.3)   # I → I (inhibitory)
+    
+    @test conn_ee.weight == 1.0
+    @test conn_ei.weight == -0.5
+    println("   ✓ ScalarConnectivity construction passed")
+    
+    println("\n2. Testing ConnectivityMatrix with ScalarConnectivity:")
+    connectivity = ConnectivityMatrix{2}([
+        conn_ee conn_ei;
+        conn_ie conn_ii
+    ])
+    
+    @test connectivity[1,1].weight == 1.0
+    @test connectivity[1,2].weight == -0.5
+    @test connectivity[2,1].weight == 0.8
+    @test connectivity[2,2].weight == -0.3
+    println("   ✓ ConnectivityMatrix with ScalarConnectivity passed")
+    
+    println("\n3. Testing Wilson-Cowan with ScalarConnectivity:")
+    params = WilsonCowanParameters{2}(
+        α = (1.0, 1.5),
+        β = (1.0, 1.0),
+        τ = (1.0, 0.8),
+        connectivity = connectivity,
+        nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
+        stimulus = nothing,
+        lattice = lattice,
+        pop_names = ("E", "I")
+    )
+    
+    # Use (1, P) shape for point models with connectivity
+    A = reshape([0.3, 0.5], 1, 2)
+    dA = zeros(1, 2)
+    wcm1973!(dA, A, params, 0.0)
+    
+    @test !all(dA .== 0.0)
+    println("   ✓ Wilson-Cowan with ScalarConnectivity passed")
+    
+    println("\n4. Testing connectivity effects on dynamics:")
+    # Test that connectivity actually affects the dynamics
+    # Create model without connectivity (can use 1D array)
+    params_no_conn = WilsonCowanParameters{2}(
+        α = (1.0, 1.5),
+        β = (1.0, 1.0),
+        τ = (1.0, 0.8),
+        connectivity = nothing,
+        nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
+        stimulus = nothing,
+        lattice = lattice,
+        pop_names = ("E", "I")
+    )
+    
+    A_no_conn = [0.3, 0.5]
+    dA_no_conn = zeros(2)
+    dA_with_conn = zeros(1, 2)
+    
+    wcm1973!(dA_no_conn, A_no_conn, params_no_conn, 0.0)
+    wcm1973!(dA_with_conn, A, params, 0.0)
+    
+    # With connectivity, dynamics should be different
+    @test dA_no_conn != vec(dA_with_conn)
+    println("   ✓ Connectivity affects dynamics as expected")
+    
+    println("\n5. Testing mixed connectivity (some nothing):")
+    # Test sparse connectivity where some connections are nothing
+    conn_sparse = ConnectivityMatrix{2}([
+        ScalarConnectivity(1.0) nothing;
+        nothing ScalarConnectivity(-0.3)
+    ])
+    
+    params_sparse = WilsonCowanParameters{2}(
+        α = (1.0, 1.5),
+        β = (1.0, 1.0),
+        τ = (1.0, 0.8),
+        connectivity = conn_sparse,
+        nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
+        stimulus = nothing,
+        lattice = lattice,
+        pop_names = ("E", "I")
+    )
+    
+    A_sparse = reshape([0.3, 0.5], 1, 2)
+    dA_sparse = zeros(1, 2)
+    wcm1973!(dA_sparse, A_sparse, params_sparse, 0.0)
+    
+    @test !all(dA_sparse .== 0.0)
+    println("   ✓ Sparse connectivity (with nothing) passed")
+    
+    println("\n=== ScalarConnectivity Tests Passed! ===")
+end
+
 function run_all_point_lattice_tests()
     @testset "PointLattice Tests" begin
         
@@ -285,6 +386,10 @@ function run_all_point_lattice_tests()
         
         @testset "PointLattice Dynamics" begin
             test_point_lattice_dynamics()
+        end
+        
+        @testset "PointLattice with ScalarConnectivity" begin
+            test_point_lattice_with_scalar_connectivity()
         end
     end
 end

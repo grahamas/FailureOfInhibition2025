@@ -70,6 +70,7 @@ using FailureOfInhibition2025
         test_gaussian_connectivity_construction()
         test_propagate_activation()
         test_fftshift()
+        test_scalar_connectivity()
     end
 
     # Test ConnectivityMatrix

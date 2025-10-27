@@ -89,7 +89,7 @@ See the `examples/` directory for detailed usage examples:
 
 ## Point Models (Non-Spatial)
 
-The package supports both spatial and non-spatial models using the same `wcm1973!` function. For non-spatial models (simple ODEs without spatial structure), use a `PointLattice`:
+The package supports both spatial and non-spatial models using the same `wcm1973!` function. For non-spatial models (simple ODEs without spatial structure), use a `PointLattice` with `ScalarConnectivity` for population interactions:
 
 ```julia
 using FailureOfInhibition2025
@@ -97,27 +97,43 @@ using FailureOfInhibition2025
 # Create a point lattice (zero-dimensional space)
 lattice = PointLattice()
 
+# Define scalar connectivity between populations
+# For a 2-population (E, I) model: connectivity[i,j] maps j → i
+conn_ee = ScalarConnectivity(1.0)    # E → E (excitatory self-connection)
+conn_ei = ScalarConnectivity(-0.5)   # I → E (inhibitory to excitatory)
+conn_ie = ScalarConnectivity(0.8)    # E → I (excitatory to inhibitory)
+conn_ii = ScalarConnectivity(-0.3)   # I → I (inhibitory self-connection)
+
+connectivity = ConnectivityMatrix{2}([
+    conn_ee conn_ei;
+    conn_ie conn_ii
+])
+
 # Create parameters for a non-spatial 2-population model
 params = WilsonCowanParameters{2}(
     α = (1.0, 1.5),          # Decay rates
     β = (1.0, 1.0),          # Saturation coefficients
     τ = (1.0, 0.8),          # Time constants
-    connectivity = nothing,   # No spatial connectivity
+    connectivity = connectivity,  # Population-to-population connectivity
     nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
     stimulus = nothing,
     lattice = lattice,       # PointLattice for non-spatial model
     pop_names = ("E", "I")
 )
 
-# Activity state: just population values (no spatial dimension)
-A = [0.3, 0.5]  # Shape: (2,) for 2 populations
-dA = zeros(2)
+# Activity state: use (1, P) shape for point models with connectivity
+# This maintains consistency with spatial models (N_spatial, P)
+A = reshape([0.3, 0.5], 1, 2)  # Shape: (1, 2) for 1 point, 2 populations
+dA = zeros(1, 2)
 
 # Use the same wcm1973! function
 wcm1973!(dA, A, params, 0.0)
 ```
 
+**Note**: For point models *without* connectivity (connectivity=nothing), you can use a simpler 1D array: `A = [0.3, 0.5]`. For point models *with* connectivity, use the (1, P) shape to maintain consistency with how populations are indexed in spatial models.
+
 This allows you to:
+- Model population interactions in non-spatial systems
 - Test model dynamics without spatial complications
 - Perform parameter exploration for non-spatial models
 - Implement mean-field approximations

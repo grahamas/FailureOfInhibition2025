@@ -12,6 +12,35 @@ struct GaussianConnectivityParameter{T,N}
 end
 
 """
+    ScalarConnectivity{T}
+
+A simple scalar connectivity coefficient for non-spatial (point) models.
+
+For point models where there is no spatial structure, connectivity is just
+a scalar weight that multiplies the source population's activity.
+
+# Fields
+- `weight::T`: The connectivity weight/coefficient
+
+# Example
+```julia
+# For a 2-population point model with E→E, E→I, I→E, I→I connections
+conn_ee = ScalarConnectivity(1.0)    # E → E (excitatory)
+conn_ei = ScalarConnectivity(-0.5)   # I → E (inhibitory)
+conn_ie = ScalarConnectivity(0.8)    # E → I (excitatory)
+conn_ii = ScalarConnectivity(-0.3)   # I → I (inhibitory)
+
+connectivity = ConnectivityMatrix{2}([
+    conn_ee conn_ei;
+    conn_ie conn_ii
+])
+```
+"""
+struct ScalarConnectivity{T}
+    weight::T
+end
+
+"""
     ConnectivityMatrix{P}
 
 A PxP matrix of connectivity objects for P populations.
@@ -188,4 +217,17 @@ function propagate_activation_single(dA, A, c::GaussianConnectivity, t, lattice)
     mul!(c.buffer_real, c.ifft_op, c.buffer_complex)
     fftshift!(c.buffer_shift, c.buffer_real)
     dA .+= c.buffer_shift
+end
+
+"""
+    propagate_activation_single(dA, A, connectivity::ScalarConnectivity, t, lattice)
+
+Propagates activation for scalar connectivity in point models.
+
+For point models, this simply multiplies the source activity by the connectivity
+weight and adds it to the derivative.
+"""
+function propagate_activation_single(dA, A, c::ScalarConnectivity, t, lattice)
+    # For scalar connectivity, just multiply activity by weight
+    dA .+= c.weight .* A
 end
