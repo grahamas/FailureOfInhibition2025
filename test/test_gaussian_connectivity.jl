@@ -186,6 +186,80 @@ function test_fftshift()
     @assert output == expected
 end
 
+function test_scalar_connectivity()
+    println("=== Testing ScalarConnectivity ===")
+    
+    # Test basic construction
+    println("\n1. Testing ScalarConnectivity construction:")
+    conn = ScalarConnectivity(1.5)
+    @assert conn.weight == 1.5
+    @assert typeof(conn) == ScalarConnectivity{Float64}
+    
+    # Test with different types
+    conn_f32 = ScalarConnectivity(2.0f0)
+    @assert conn_f32.weight == 2.0f0
+    @assert typeof(conn_f32) == ScalarConnectivity{Float32}
+    println("   ✓ Construction passed")
+    
+    # Test propagate_activation_single with ScalarConnectivity
+    println("\n2. Testing propagate_activation_single with ScalarConnectivity:")
+    lattice = PointLattice()
+    
+    # Create connectivity
+    conn = ScalarConnectivity(2.0)
+    
+    # Test propagation
+    A = [0.5]
+    dA = zeros(1)
+    FailureOfInhibition2025.propagate_activation_single(dA, A, conn, 0.0, lattice)
+    
+    # Should add 2.0 * 0.5 = 1.0 to dA
+    @assert dA[1] ≈ 1.0
+    println("   ✓ Propagation passed")
+    
+    # Test with negative weight (inhibitory)
+    println("\n3. Testing with negative weight (inhibitory):")
+    conn_inhib = ScalarConnectivity(-1.5)
+    A = [0.4]
+    dA = zeros(1)
+    FailureOfInhibition2025.propagate_activation_single(dA, A, conn_inhib, 0.0, lattice)
+    
+    # Should add -1.5 * 0.4 = -0.6 to dA
+    @assert dA[1] ≈ -0.6
+    println("   ✓ Negative weight passed")
+    
+    # Test with ConnectivityMatrix
+    println("\n4. Testing ScalarConnectivity with ConnectivityMatrix:")
+    conn_ee = ScalarConnectivity(1.0)
+    conn_ei = ScalarConnectivity(-0.5)
+    conn_ie = ScalarConnectivity(0.8)
+    conn_ii = ScalarConnectivity(-0.3)
+    
+    connectivity = ConnectivityMatrix{2}([
+        conn_ee conn_ei;
+        conn_ie conn_ii
+    ])
+    
+    @assert connectivity[1,1].weight == 1.0
+    @assert connectivity[1,2].weight == -0.5
+    @assert connectivity[2,1].weight == 0.8
+    @assert connectivity[2,2].weight == -0.3
+    
+    # Test propagation through matrix
+    # For point models with connectivity, use (1, P) shape
+    A = reshape([0.3, 0.5], 1, 2)
+    dA = zeros(1, 2)
+    FailureOfInhibition2025.propagate_activation(dA, A, connectivity, 0.0, lattice)
+    
+    # dA[1,1] should get: 1.0*0.3 + (-0.5)*0.5 = 0.3 - 0.25 = 0.05
+    # dA[1,2] should get: 0.8*0.3 + (-0.3)*0.5 = 0.24 - 0.15 = 0.09
+    @assert dA[1,1] ≈ 0.05
+    @assert dA[1,2] ≈ 0.09
+    println("   ✓ ConnectivityMatrix propagation passed")
+    
+    println("\n=== ScalarConnectivity Tests Passed! ===")
+end
+
 if abspath(PROGRAM_FILE) == @__FILE__
     test_gaussian_connectivity_parameter()
     test_apply_connectivity_unscaled()
@@ -193,4 +267,5 @@ if abspath(PROGRAM_FILE) == @__FILE__
     test_gaussian_connectivity_construction()
     test_propagate_activation()
     test_fftshift()
+    test_scalar_connectivity()
 end

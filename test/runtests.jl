@@ -70,6 +70,7 @@ using FailureOfInhibition2025
         test_gaussian_connectivity_construction()
         test_propagate_activation()
         test_fftshift()
+        test_scalar_connectivity()
     end
 
     # Test ConnectivityMatrix
@@ -89,6 +90,14 @@ using FailureOfInhibition2025
         
         # Run the comprehensive test function from test_space.jl
         run_all_space_tests()
+    end
+
+    # Run PointLattice tests
+    @testset "PointLattice Functionality" begin
+        include("test_point_lattice.jl")
+        
+        # Run the comprehensive test function from test_point_lattice.jl
+        run_all_point_lattice_tests()
     end
 
 end
