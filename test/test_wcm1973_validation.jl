@@ -44,9 +44,9 @@ function test_equation_structure()
     # 1. dA starts at 0
     # 2. apply_nonlinearity adds: sigmoid(A) - A to dA
     # 3. Then: dA *= β*(1-A)
-    # 4. Then: dA += -α*A  
+    # 4. Then: dA += -α*A
     # 5. Then: dA /= τ
-    # 
+    #
     # So: dA = ((sigmoid(A) - A) * β * (1-A) - α*A) / τ
     f_A = 1.0 / (1.0 + exp(-0.5))  # sigmoid(0.5, a=1.0, θ=0.0)
     expected_dA = ((f_A - 0.5) * 1.0 * (1.0 - 0.5) - 1.0 * 0.5) / 1.0
@@ -274,8 +274,10 @@ end
 """
 Test 7: Two-Population Interaction
 Verify that E-I interactions work correctly.
-Excitatory population should excite both E and I.
-Inhibitory population should inhibit both E and I.
+The connectivity matrix defines how each population affects others:
+- E->E and E->I connections are excitatory (positive)
+- I->E and I->I connections are inhibitory (negative)
+This tests the connectivity matrix implementation.
 """
 function test_population_interaction()
     println("\n=== Test 7: Two-Population Interaction ===")

@@ -6,7 +6,7 @@ This document describes the validation tests created for the `wcm1973!` implemen
 
 The Wilson-Cowan model describes neural population dynamics using the following differential equation:
 
-```
+```math
 τᵢ dAᵢ/dt = -αᵢ Aᵢ + βᵢ (1 - Aᵢ) f(Sᵢ(t) + Cᵢ(A))
 ```
 
