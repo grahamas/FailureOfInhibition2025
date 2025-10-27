@@ -19,17 +19,19 @@ Parameters for a Gaussian connectivity kernel in N dimensions.
 # Normalization
 The connectivity kernel is normalized such that its integral over the entire
 space equals the amplitude parameter. Specifically, the kernel is first normalized
-to have unit integral (sum = 1.0 when discretized), and then multiplied by the amplitude.
+to have unit integral (∫ kernel(x) dx = 1.0 when discretized), and then multiplied 
+by the amplitude.
 
 This means:
-- For amplitude = 1.0, ∫ kernel(x) dx = 1.0
-- For amplitude = A, ∫ kernel(x) dx = A
+- For amplitude = 1.0, the integral ∫ kernel(x) dx = 1.0
+- For amplitude = A, the integral ∫ kernel(x) dx = A
 - The normalization is independent of the spread parameter
 
 The normalization uses the analytical formula for a multivariate Gaussian:
     kernel(x) = amplitude * exp(-||x/σ||²/2) / (√(∏σᵢ²) * (2π)^(N/2))
 
-where σ is the spread vector and N is the number of dimensions.
+where σ = (σ₁, σ₂, ..., σₙ) is the spread vector, σᵢ are its individual components,
+and N is the number of dimensions.
 
 # Examples
 ```julia

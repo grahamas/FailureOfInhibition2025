@@ -186,16 +186,16 @@ function test_fftshift()
     @assert output == expected
 end
 
+"""
+Test that connectivity kernels are normalized to have unit integral
+before the amplitude is applied.
+
+For a properly normalized kernel:
+- The discrete sum of kernel values (approximating the integral) should equal the amplitude
+- Changing the amplitude should scale the kernel proportionally
+- The normalization should be independent of the spread parameter
+"""
 function test_kernel_normalization()
-    """
-    Test that connectivity kernels are normalized to have unit integral
-    before the amplitude is applied.
-    
-    For a properly normalized kernel:
-    - The discrete sum of kernel values (approximating the integral) should equal the amplitude
-    - Changing the amplitude should scale the kernel proportionally
-    - The normalization should be independent of the spread parameter
-    """
     
     # Test 1D normalization with various amplitudes
     # Use a large enough lattice to capture the full Gaussian
