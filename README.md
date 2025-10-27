@@ -86,7 +86,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_wilson_cowan.jl`: Demonstrates Wilson-Cowan model usage
 - `examples/example_connectivity_matrix.jl`: Demonstrates per-population-pair connectivity with ConnectivityMatrix
 - `examples/example_point_model.jl`: Demonstrates non-spatial (point) models using PointLattice
-- `examples/example_wcm1973_modes.jl`: **Demonstrates the three dynamical modes from Wilson & Cowan 1973**
+- `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
 
 ## Wilson-Cowan 1973 Validation
 
