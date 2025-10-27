@@ -82,6 +82,14 @@ using FailureOfInhibition2025
         test_propagate_activation_with_connectivity_matrix()
         test_wilson_cowan_with_connectivity_matrix()
     end
+    
+    # Test WCM1973 Implementation Validation
+    @testset "WCM1973 Validation Tests" begin
+        include("test_wcm1973_validation.jl")
+        
+        # Run comprehensive validation tests based on Wilson & Cowan (1973) paper
+        run_all_wcm1973_validation_tests()
+    end
 
     # Run comprehensive space/lattice/coordinates tests
     @testset "Space/Lattice/Coordinates Functionality" begin
