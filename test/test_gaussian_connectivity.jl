@@ -186,6 +186,74 @@ function test_fftshift()
     @assert output == expected
 end
 
+function test_kernel_normalization()
+    """
+    Test that connectivity kernels are normalized to have unit integral
+    before the amplitude is applied.
+    
+    For a properly normalized kernel:
+    - The discrete sum of kernel values (approximating the integral) should equal the amplitude
+    - Changing the amplitude should scale the kernel proportionally
+    - The normalization should be independent of the spread parameter
+    """
+    
+    # Test 1D normalization with various amplitudes
+    # Use a large enough lattice to capture the full Gaussian
+    lattice_1d = CompactLattice(extent=(40.0,), n_points=(401,))
+    
+    # Test with amplitude = 1.0 (unit amplitude)
+    param_unit = FailureOfInhibition2025.GaussianConnectivityParameter{Float64,1}(1.0, (1.0,))
+    kernel_unit = FailureOfInhibition2025.calculate_kernel(param_unit, lattice_1d)
+    sum_unit = sum(kernel_unit)
+    
+    # Kernel with unit amplitude should sum to approximately 1.0
+    @assert abs(sum_unit - 1.0) < 0.01
+    
+    # Test with amplitude = 2.5
+    param_scaled = FailureOfInhibition2025.GaussianConnectivityParameter{Float64,1}(2.5, (1.0,))
+    kernel_scaled = FailureOfInhibition2025.calculate_kernel(param_scaled, lattice_1d)
+    sum_scaled = sum(kernel_scaled)
+    
+    # Kernel sum should equal the amplitude
+    @assert abs(sum_scaled - 2.5) < 0.01
+    
+    # Ratio should match amplitude ratio
+    @assert abs((sum_scaled / sum_unit) - 2.5) < 0.01
+    
+    # Test with different spread but same amplitude
+    param_wide = FailureOfInhibition2025.GaussianConnectivityParameter{Float64,1}(2.5, (3.0,))
+    kernel_wide = FailureOfInhibition2025.calculate_kernel(param_wide, lattice_1d)
+    sum_wide = sum(kernel_wide)
+    
+    # Sum should still equal amplitude regardless of spread
+    @assert abs(sum_wide - 2.5) < 0.01
+    
+    # Test 2D normalization
+    lattice_2d = CompactLattice(extent=(20.0, 20.0), n_points=(101, 101))
+    
+    param_2d_unit = FailureOfInhibition2025.GaussianConnectivityParameter{Float64,2}(1.0, (1.5, 2.0))
+    kernel_2d_unit = FailureOfInhibition2025.calculate_kernel(param_2d_unit, lattice_2d)
+    sum_2d_unit = sum(kernel_2d_unit)
+    
+    # 2D kernel with unit amplitude should sum to approximately 1.0
+    @assert abs(sum_2d_unit - 1.0) < 0.01
+    
+    param_2d_scaled = FailureOfInhibition2025.GaussianConnectivityParameter{Float64,2}(3.5, (1.5, 2.0))
+    kernel_2d_scaled = FailureOfInhibition2025.calculate_kernel(param_2d_scaled, lattice_2d)
+    sum_2d_scaled = sum(kernel_2d_scaled)
+    
+    # 2D kernel sum should equal the amplitude
+    @assert abs(sum_2d_scaled - 3.5) < 0.01
+    
+    # Test with negative amplitude (inhibitory connection)
+    param_inhibit = FailureOfInhibition2025.GaussianConnectivityParameter{Float64,1}(-1.5, (1.0,))
+    kernel_inhibit = FailureOfInhibition2025.calculate_kernel(param_inhibit, lattice_1d)
+    sum_inhibit = sum(kernel_inhibit)
+    
+    # Negative amplitude should result in negative sum
+    @assert abs(sum_inhibit - (-1.5)) < 0.01
+end
+
 if abspath(PROGRAM_FILE) == @__FILE__
     test_gaussian_connectivity_parameter()
     test_apply_connectivity_unscaled()
@@ -193,4 +261,5 @@ if abspath(PROGRAM_FILE) == @__FILE__
     test_gaussian_connectivity_construction()
     test_propagate_activation()
     test_fftshift()
+    test_kernel_normalization()
 end

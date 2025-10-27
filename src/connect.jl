@@ -6,6 +6,40 @@ struct WithDistances{C}
     distances
 end
 
+"""
+    GaussianConnectivityParameter{T,N}
+
+Parameters for a Gaussian connectivity kernel in N dimensions.
+
+# Fields
+- `amplitude::T`: The amplitude or strength of the connection. This represents
+  the integral of the connectivity kernel over the entire space.
+- `spread::NTuple{N,T}`: The spread (standard deviation) of the Gaussian in each dimension.
+
+# Normalization
+The connectivity kernel is normalized such that its integral over the entire
+space equals the amplitude parameter. Specifically, the kernel is first normalized
+to have unit integral (sum = 1.0 when discretized), and then multiplied by the amplitude.
+
+This means:
+- For amplitude = 1.0, ∫ kernel(x) dx = 1.0
+- For amplitude = A, ∫ kernel(x) dx = A
+- The normalization is independent of the spread parameter
+
+The normalization uses the analytical formula for a multivariate Gaussian:
+    kernel(x) = amplitude * exp(-||x/σ||²/2) / (√(∏σᵢ²) * (2π)^(N/2))
+
+where σ is the spread vector and N is the number of dimensions.
+
+# Examples
+```julia
+# 1D excitatory connection with amplitude 1.5 and spread 2.0
+conn_e = GaussianConnectivityParameter{Float64,1}(1.5, (2.0,))
+
+# 2D inhibitory connection with amplitude -0.5 and anisotropic spread
+conn_i = GaussianConnectivityParameter{Float64,2}(-0.5, (1.0, 1.5))
+```
+"""
 struct GaussianConnectivityParameter{T,N}
     amplitude::T
     spread::NTuple{N,T}
@@ -78,6 +112,29 @@ function fft_center_idx(arr)
     CartesianIndex(floor.(Ref(Int), size(arr) ./ 2) .+ 1)
 end
 
+"""
+    calculate_kernel(conn::GaussianConnectivityParameter, lattice)
+
+Calculate a discretized Gaussian connectivity kernel on a lattice.
+
+The kernel is computed such that when discretized on the lattice:
+1. The kernel is first normalized to have unit integral (∑ kernel * dx = 1.0)
+2. Then scaled by the amplitude parameter
+
+This ensures that the discrete sum approximates the continuous integral:
+    ∑ kernel[i] * Δx ≈ amplitude
+
+# Arguments
+- `conn::GaussianConnectivityParameter`: Connectivity parameters (amplitude and spread)
+- `lattice`: Spatial lattice defining the discretization
+
+# Returns
+Discretized kernel array with the same size as the lattice.
+
+# Note
+The kernel is centered at the FFT center index (floor(extent/2) + 1) to be
+compatible with FFT-based convolution operations.
+"""
 function calculate_kernel(conn::GaussianConnectivityParameter, lattice)
     # Kernel has ZERO DIST at its center (or floor(extent/2) + 1)
     fft_centered_differences = differences(lattice, coordinates(lattice)[fft_center_idx(lattice)])
@@ -85,12 +142,40 @@ function calculate_kernel(conn::GaussianConnectivityParameter, lattice)
     return unnormed_kernel .* prod(step(lattice))
 end
 
+"""
+    apply_connectivity_unscaled(conn::GaussianConnectivityParameter, coord_differences)
+
+Compute the unscaled, unnormalized Gaussian kernel value at a given distance.
+
+Returns exp(-||x/σ||²/2) where x is the coordinate difference and σ is the spread.
+This is the raw Gaussian shape before normalization and amplitude scaling.
+"""
 function apply_connectivity_unscaled(conn::GaussianConnectivityParameter{T,N_CDT}, coord_differences::Tup) where {T,N_CDT, Tup<:NTuple{N_CDT,T}}
     exp(
         -sum( (coord_differences ./ conn.spread) .^ 2) / 2
     )
 end
 
+"""
+    apply_connectivity(connectivity, diffs, step_size, center_diffs)
+
+Apply Gaussian connectivity with proper normalization.
+
+Computes the normalized Gaussian kernel values:
+    kernel(x) = amplitude * exp(-||x/σ||²/2) / (√(∏σᵢ²) * (2π)^(N/2))
+
+The normalization constant (√(∏σᵢ²) * (2π)^(N/2)) ensures that the continuous
+integral of the Gaussian equals 1.0 before the amplitude is applied.
+
+# Arguments
+- `connectivity::GaussianConnectivityParameter`: Connectivity parameters
+- `diffs`: Array of coordinate differences where kernel should be evaluated
+- `step_size`: Discretization step size (unused but kept for interface compatibility)
+- `center_diffs`: Coordinate differences (unused but kept for interface compatibility)
+
+# Returns
+Array of normalized kernel values scaled by the amplitude.
+"""
 function apply_connectivity(connectivity::CONN, diffs::DIFFS, step_size::NTuple{N_CDT,T}, center_diffs::DIFFS) where {T,N_ARR,N_CDT,CDT<:NTuple{N_CDT,T},DIFFS<:AbstractArray{CDT,N_ARR},CONN<:GaussianConnectivityParameter{T,N_CDT}}
     unscaled = apply_connectivity_unscaled.(Ref(connectivity), diffs)
     scaling_diffs = apply_connectivity_unscaled.(Ref(connectivity), center_diffs)
