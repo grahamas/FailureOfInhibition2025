@@ -18,6 +18,15 @@ Each mode is characterized by different parameter sets (Table 2 in the paper).
 using FailureOfInhibition2025
 using Test
 
+# Load UnicodePlots for visualization during testing
+HAS_UNICODEPLOTS = false
+try
+    using UnicodePlots
+    global HAS_UNICODEPLOTS = true
+catch
+    global HAS_UNICODEPLOTS = false
+end
+
 """
     create_wcm1973_parameters(mode::Symbol; lattice=nothing)
 
@@ -262,6 +271,96 @@ function create_point_model_wcm1973(mode::Symbol)
 end
 
 #=============================================================================
+Plotting Helper Functions
+=============================================================================#
+
+"""
+Simple Euler integration for point models with optional external input.
+Used for generating plots during testing.
+"""
+function euler_integrate_for_plot(params, A₀, tspan, dt=0.1; external_input=nothing)
+    t_start, t_end = tspan
+    times = collect(t_start:dt:t_end)
+    n_steps = length(times)
+    
+    # Initialize arrays
+    A_history = zeros(n_steps, size(A₀)...)
+    A_history[1, :, :] = A₀
+    
+    A = copy(A₀)
+    dA = zeros(size(A))
+    
+    for i in 2:n_steps
+        t = times[i-1]
+        fill!(dA, 0.0)
+        
+        # Add external input if provided
+        if external_input !== nothing
+            input_val = external_input(t)
+            dA[1, 1] += input_val  # Add to excitatory population
+        end
+        
+        wcm1973!(dA, A, params, t)
+        A .+= dt .* dA
+        A_history[i, :, :] = A
+    end
+    
+    return times, A_history
+end
+
+"""
+Brief pulse stimulus for testing
+"""
+function brief_pulse(t; start_time=5.0, duration=5.0, strength=15.0)
+    if start_time <= t < start_time + duration
+        return strength
+    else
+        return 0.0
+    end
+end
+
+"""
+Generate and display a plot for a given mode during testing.
+Only displays if UnicodePlots is available.
+"""
+function plot_mode_dynamics(mode::Symbol, params, A₀, tspan; 
+                            external_input=nothing, 
+                            mode_name="", 
+                            description="")
+    if !HAS_UNICODEPLOTS
+        return
+    end
+    
+    # Simulate
+    times, A_history = euler_integrate_for_plot(params, A₀, tspan, 0.5, 
+                                                external_input=external_input)
+    
+    # Extract E and I activity
+    E_activity = [A_history[i, 1, 1] for i in 1:length(times)]
+    I_activity = [A_history[i, 1, 2] for i in 1:length(times)]
+    
+    # Plot
+    println("\n" * "─"^60)
+    println("$mode_name")
+    if !isempty(description)
+        println(description)
+    end
+    println()
+    
+    p = UnicodePlots.lineplot(times, E_activity,
+        title=mode_name,
+        name="Excitatory (E)",
+        xlabel="Time (msec)",
+        ylabel="Activity",
+        width=55,
+        height=12,
+        ylim=[0, 0.4])
+    UnicodePlots.lineplot!(p, times, I_activity, name="Inhibitory (I)")
+    println(p)
+    println("─"^60)
+end
+
+#=============================================================================
 Test Functions
 =============================================================================#
 
@@ -350,6 +449,14 @@ function test_active_transient_mode_basic()
     
     println("   ✓ Resting state stability verified (small drift allowed)")
     
+    # Generate plot if UnicodePlots is available
+    println("\n3. Visualizing Active Transient Mode dynamics:")
+    A₀ = reshape([0.05, 0.05], 1, 2)
+    plot_mode_dynamics(:active_transient, params, A₀, (0.0, 100.0),
+        external_input = t -> brief_pulse(t, start_time=5.0, duration=5.0, strength=15.0),
+        mode_name = "Active Transient Mode (Sensory Neo-Cortex)",
+        description = "Brief stimulus → transient response → return to rest")
+    
     println("\n=== Active Transient Mode Basic Tests Passed! ===")
 end
 
@@ -379,6 +486,14 @@ function test_oscillatory_mode_basic()
     
     println("   ✓ Oscillatory mode parameters set correctly")
     
+    # Generate plot if UnicodePlots is available
+    println("\n2. Visualizing Oscillatory Mode dynamics:")
+    A₀ = reshape([0.05, 0.05], 1, 2)
+    plot_mode_dynamics(:oscillatory, params, A₀, (0.0, 200.0),
+        external_input = t -> brief_pulse(t, start_time=5.0, duration=10.0, strength=20.0),
+        mode_name = "Oscillatory Mode (Thalamus)",
+        description = "Sustained stimulus → persistent oscillations")
+    
     println("\n=== Oscillatory Mode Basic Tests Passed! ===")
 end
 
@@ -406,6 +521,14 @@ function test_steady_state_mode_basic()
     @test !all(dA .== 0.0)
     
     println("   ✓ Steady-state mode parameters set correctly")
+    
+    # Generate plot if UnicodePlots is available
+    println("\n2. Visualizing Steady-State Mode dynamics:")
+    A₀ = reshape([0.05, 0.05], 1, 2)
+    plot_mode_dynamics(:steady_state, params, A₀, (0.0, 150.0),
+        external_input = t -> brief_pulse(t, start_time=5.0, duration=8.0, strength=18.0),
+        mode_name = "Steady-State Mode (Prefrontal Cortex)",
+        description = "Brief stimulus → persistent elevated activity")
     
     println("\n=== Steady-State Mode Basic Tests Passed! ===")
 end
