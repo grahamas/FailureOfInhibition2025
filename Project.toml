@@ -11,7 +11,6 @@ UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
 [compat]
 FFTW = "^1.9"
 LinearAlgebra = "^1.9"
-UnicodePlots = "3.8.1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
