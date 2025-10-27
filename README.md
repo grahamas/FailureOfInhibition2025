@@ -110,6 +110,26 @@ Or run tests directly:
 julia --project=. test/runtests.jl
 ```
 
+### Validation Tests
+
+The package includes comprehensive validation tests for the `wcm1973!` implementation based on the mathematical theory in Wilson & Cowan (1973). These tests verify:
+
+- Equation structure and mathematical correctness
+- Parameter effects (α, β, τ)
+- Activity bounds and saturation mechanisms
+- Steady state conditions
+- Multi-population E-I interactions
+- Spatial dynamics
+- Various nonlinearity types
+
+See [`docs/wcm1973_validation_tests.md`](docs/wcm1973_validation_tests.md) for detailed documentation of the validation tests and their theoretical basis.
+
+Run validation tests separately:
+```bash
+julia --project=. test/test_wcm1973_validation.jl
+```
+```
+
 ## Continuous Integration
 
 This package uses GitHub Actions for automated testing across multiple Julia versions (1.9, 1.11, nightly) and operating systems (Ubuntu, Windows, macOS). The CI workflow includes:
