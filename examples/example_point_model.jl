@@ -94,7 +94,7 @@ function demo_point_model()
     println("\n   Spatial model (for comparison):")
     println("   - Lattice: CompactLattice(extent=(10.0,), n_points=(21,))")
     println("   - Activity shape: (21, 2) for 21 spatial points, 2 populations")
-    println("   - Dynamics: ∂A/∂t = f(A) + ∇²A (PDE with diffusion/connectivity)")
+    println("   - Dynamics: dA/dt = f(A) + spatial_coupling(A) (PDE)")
     
     # 8. Simple time integration example (conceptual)
     println("\n8. Time evolution (conceptual - forward Euler for illustration):")
