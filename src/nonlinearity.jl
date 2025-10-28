@@ -126,3 +126,37 @@ function apply_nonlinearity!(dA, A, nonlinearity::DifferenceOfSigmoidsNonlineari
     # Apply difference of rectified zeroed sigmoids nonlinearity directly: dA += difference_of_rectified_zeroed_sigmoids(A) - A
     @. dA += difference_of_rectified_zeroed_sigmoids(A, nonlinearity.a_up, nonlinearity.θ_up, nonlinearity.a_down, nonlinearity.θ_down) - A
 end
+
+"""
+    apply_nonlinearity!(dA, A, nonlinearity::Tuple, t)
+
+Apply per-population nonlinearities when nonlinearity is a tuple.
+Each element of the tuple is applied to the corresponding population.
+"""
+function apply_nonlinearity!(dA, A, nonlinearity::Tuple, t)
+    P = length(nonlinearity)
+    for i in 1:P
+        # Extract population i
+        if ndims(dA) == 1
+            dAi = dA
+            Ai = A
+        elseif ndims(dA) == 2
+            dAi = view(dA, :, i)
+            Ai = view(A, :, i)
+        else
+            error("Unsupported array dimensionality")
+        end
+        
+        # Apply nonlinearity for this population
+        nl_i = nonlinearity[i]
+        if nl_i isa SigmoidNonlinearity
+            @. dAi += simple_sigmoid(Ai, nl_i.a, nl_i.θ) - Ai
+        elseif nl_i isa RectifiedZeroedSigmoidNonlinearity
+            @. dAi += rectified_zeroed_sigmoid(Ai, nl_i.a, nl_i.θ) - Ai
+        elseif nl_i isa DifferenceOfSigmoidsNonlinearity
+            @. dAi += difference_of_rectified_zeroed_sigmoids(Ai, nl_i.a_up, nl_i.θ_up, nl_i.a_down, nl_i.θ_down) - Ai
+        else
+            error("Unsupported nonlinearity type: $(typeof(nl_i))")
+        end
+    end
+end
