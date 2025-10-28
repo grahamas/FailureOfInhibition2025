@@ -106,7 +106,7 @@ The Wilson-Cowan point model (non-spatial) with these parameter ranges exhibits 
 - **Moderate coupling** → Transiently oscillatory but damped
 - **Too strong coupling** → Numerical instability (blow-up)
 
-There is a very narrow (possibly nonexistent) parameter regime between "damped" and "unstable" that produces sustained oscillations in the point model.
+There is a very narrow (possibly non-existent) parameter regime between "damped" and "unstable" that produces sustained oscillations in the point model.
 
 ### 3. Transient Oscillations Can Be Enhanced
 
@@ -262,7 +262,9 @@ The scripts provide reusable functions for parameter exploration:
 
 ## Conclusion
 
-The parameter search revealed that **sustained oscillations are difficult to achieve in the Wilson-Cowan point model** with physiologically plausible parameters. The WCM 1973 "oscillatory mode" produces transient, damped oscillations. For truly sustained oscillations, consider:
+The parameter search revealed that sustained oscillations are difficult to achieve in the Wilson-Cowan point model with physiologically plausible parameters. The WCM 1973 "oscillatory mode" produces transient, damped oscillations. 
+
+For truly sustained oscillations, consider:
 
 - **Spatial models** with wave propagation
 - **External forcing** or periodic stimulation
