@@ -86,6 +86,22 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_wilson_cowan.jl`: Demonstrates Wilson-Cowan model usage
 - `examples/example_connectivity_matrix.jl`: Demonstrates per-population-pair connectivity with ConnectivityMatrix
 - `examples/example_point_model.jl`: Demonstrates non-spatial (point) models using PointLattice
+- `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
+
+## Wilson-Cowan 1973 Validation
+
+This package includes validated implementations of the three dynamical modes described in the seminal 1973 paper:
+
+1. **Active Transient Mode** - Sensory neo-cortex behavior with self-generated transient responses
+2. **Oscillatory Mode** - Thalamic behavior with sustained oscillations
+3. **Steady-State Mode** - Archi-/prefrontal cortex with stable spatial patterns
+
+For detailed parameter mappings, mathematical formulation, and usage instructions, see:
+- `docs/wcm1973_validation.md` - Complete parameter mapping and validation documentation
+- `test/test_wcm1973_validation.jl` - Comprehensive validation test suite
+- `examples/example_wcm1973_modes.jl` - Usage examples for all three modes
+
+**Reference:** Wilson, H. R., & Cowan, J. D. (1973). A mathematical theory of the functional dynamics of cortical and thalamic nervous tissue. *Kybernetik*, 13(2), 55-80.
 
 ## Point Models (Non-Spatial)
 

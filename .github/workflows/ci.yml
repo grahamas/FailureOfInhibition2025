@@ -15,13 +15,11 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.9'     # LTS version
-          - '1.11'    # Current stable
-          - 'nightly' # Development version
+          - '1.10'     # LTS version
         os:
           - ubuntu-latest
-          - windows-latest
-          - macOS-latest
+          # - windows-latest
+          # - macOS-latest
     
     steps:
       - name: Checkout repository

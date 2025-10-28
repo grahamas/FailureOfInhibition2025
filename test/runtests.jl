@@ -101,4 +101,12 @@ using FailureOfInhibition2025
         run_all_point_lattice_tests()
     end
 
+    # Run WCM 1973 validation tests
+    @testset "WCM 1973 Validation" begin
+        include("test_wcm1973_validation.jl")
+        
+        # Run the comprehensive test function from test_wcm1973_validation.jl
+        run_all_wcm1973_tests()
+    end
+
 end
