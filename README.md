@@ -180,6 +180,21 @@ Or run tests directly:
 julia --project=. test/runtests.jl
 ```
 
+## Benchmarking
+
+Performance benchmarks are available to track the runtime of components and simulations:
+
+```bash
+julia --project=. test/benchmark/run_benchmarks.jl
+```
+
+Benchmarks include:
+- **Component benchmarks**: Nonlinearity, connectivity, and stimulation functions
+- **0D simulations**: Point models (simple ODEs) with 1-3 populations
+- **1D simulations**: Spatial models with 51-201 points and 1-2 populations
+
+Results are saved to CSV files with timestamp and commit ID for tracking performance changes over time. See `test/benchmark/README.md` for details.
+
 ## Continuous Integration
 
 This package uses GitHub Actions for automated testing across multiple Julia versions (1.9, 1.11, nightly) and operating systems (Ubuntu, Windows, macOS). The CI workflow includes:
@@ -189,6 +204,7 @@ This package uses GitHub Actions for automated testing across multiple Julia ver
 - **Code quality checks**: Format checking and strict mode testing
 - **Coverage reporting**: Automated coverage analysis with Codecov integration
 - **Documentation building**: Automatic documentation generation (when available)
+- **Performance benchmarking**: Automated benchmarks run as part of integration tests
 
 ## Contributing
 

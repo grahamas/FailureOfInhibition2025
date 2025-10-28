@@ -195,3 +195,16 @@ jobs:
             
             println(\"🎉 All integration tests passed!\")
           "
+      
+      - name: Run benchmarks
+        run: |
+          echo "Running benchmarks..."
+          julia --project=. test/benchmark/run_benchmarks.jl
+          echo "✓ Benchmarks completed successfully"
+      
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark_results_ms/*.csv
+          retention-days: 90
