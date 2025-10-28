@@ -14,6 +14,7 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Stimulus handling**: Flexible stimulation interfaces
 - **Multi-population support**: Support for multiple neural populations with flexible coupling
 - **Simulation utilities**: Solve models over time using DifferentialEquations.jl and save results to CSV
+- **Bifurcation analysis**: Tools for analyzing parameter space and generating bifurcation diagrams
 
 ## Installation
 
@@ -116,6 +117,45 @@ save_simulation_summary(sol, "summary.csv", params=params)
 
 See `examples/example_simulation.jl` for comprehensive simulation examples including point models, spatial models, and WCM 1973 modes.
 
+## Bifurcation Analysis
+
+The package provides tools for analyzing how system dynamics change across parameter space, enabling the generation of bifurcation diagrams:
+
+```julia
+using FailureOfInhibition2025
+
+# Create base parameters
+params = create_point_model_wcm1973(:active_transient)
+
+# Perform 2D parameter sweep
+diagram = parameter_sweep_2d(
+    params,
+    :bₑₑ, 0.5:0.1:3.0,  # E-E coupling strength
+    :bᵢₑ, 0.5:0.1:3.0,  # I-E coupling strength
+    tspan=(0.0, 500.0)
+)
+
+# Analyze results
+for (i, p1) in enumerate(diagram.param1_values)
+    for (j, p2) in enumerate(diagram.param2_values)
+        point = diagram.points[i, j]
+        if point.is_oscillatory
+            println("Oscillatory at bₑₑ=$p1, bᵢₑ=$p2")
+            println("  Period: $(point.oscillation_period)")
+            println("  Amplitude: $(point.oscillation_amplitude)")
+        end
+    end
+end
+```
+
+The bifurcation analysis tools include:
+- **Parameter sweeping**: Systematically vary parameter pairs across a 2D grid
+- **Dynamics classification**: Automatically detect steady states, oscillations, and transients
+- **Oscillation characterization**: Measure oscillation period and amplitude
+- **Activity statistics**: Track mean, min, and max activity for each population
+
+See `examples/example_bifurcation_diagrams.jl` for detailed demonstrations of bifurcation analysis with informative parameter pairs.
+
 ## Examples
 
 See the `examples/` directory for detailed usage examples:
@@ -125,6 +165,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_point_model.jl`: Demonstrates non-spatial (point) models using PointLattice
 - `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
+- `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis across parameter space
 
 ## Wilson-Cowan 1973 Validation
 
