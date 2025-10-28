@@ -17,6 +17,9 @@ include("nonlinearity.jl")
 # Include model functionality
 include("models.jl")
 
+# Include simulation functionality
+include("simulate.jl")
+
 # Export main space types and functions
 export AbstractSpace, AbstractLattice
 export AbstractCompactLattice, CompactLattice
@@ -40,5 +43,8 @@ export CircleStimulus, stimulate!
 
 # Export model functions
 export WilsonCowanParameters, wcm1973!, population
+
+# Export simulation functions
+export solve_model, save_simulation_results, save_simulation_summary
 
 end # module FailureOfInhibition2025

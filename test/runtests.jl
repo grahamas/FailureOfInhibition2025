@@ -109,4 +109,12 @@ using FailureOfInhibition2025
         run_all_wcm1973_tests()
     end
 
+    # Run simulation tests
+    @testset "Simulation Functionality" begin
+        include("test_simulate.jl")
+        
+        # Run the comprehensive test function from test_simulate.jl
+        run_all_simulation_tests()
+    end
+
 end
