@@ -87,13 +87,28 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_connectivity_matrix.jl`: Demonstrates per-population-pair connectivity with ConnectivityMatrix
 - `examples/example_point_model.jl`: Demonstrates non-spatial (point) models using PointLattice
 - `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
+- `examples/search_oscillatory_parameters.jl`: Parameter search for sustained oscillations
+- `examples/search_oscillatory_parameters_v2.jl`: Parameter search with baseline-subtracted sigmoids
+- `examples/search_oscillatory_parameters_theory.jl`: Theory-guided parameter search with differential time constants
+
+## Parameter Search for Oscillatory Behavior
+
+The Wilson-Cowan 1973 "oscillatory mode" produces **damped oscillations** rather than sustained oscillations. A comprehensive parameter search has been conducted to explore the parameter space for sustained oscillatory behavior. Key findings:
+
+- Point (non-spatial) Wilson-Cowan models with standard parameters produce only transient, damped oscillations
+- Strong coupling parameters can cause numerical instability
+- Sustained oscillations typically require spatial structure, external forcing, or model extensions
+
+For details on the parameter search methodology, results, and recommendations, see:
+- `docs/oscillatory_parameter_search.md` - Complete analysis and recommendations
+- `examples/search_oscillatory_parameters*.jl` - Executable parameter search scripts
 
 ## Wilson-Cowan 1973 Validation
 
 This package includes validated implementations of the three dynamical modes described in the seminal 1973 paper:
 
 1. **Active Transient Mode** - Sensory neo-cortex behavior with self-generated transient responses
-2. **Oscillatory Mode** - Thalamic behavior with sustained oscillations
+2. **Oscillatory Mode** - Thalamic behavior with transient oscillations (note: produces damped oscillations, not sustained)
 3. **Steady-State Mode** - Archi-/prefrontal cortex with stable spatial patterns
 
 For detailed parameter mappings, mathematical formulation, and usage instructions, see:
