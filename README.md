@@ -196,11 +196,11 @@ println("Parameter importance: ", result[:means_star])
 
 Various output metrics can be analyzed:
 - `:final_mean` - Mean activity at final time (default)
-- `:final_E` - Final excitatory population activity
-- `:final_I` - Final inhibitory population activity
+- `:final_E` - Final excitatory population activity (first population)
+- `:final_I` - Final inhibitory population activity (second population, if exists)
 - `:max_mean` - Maximum mean activity over time
 - `:variance` - Variance of activity over time
-- `:oscillation_amplitude` - Amplitude of oscillations
+- `:oscillation_amplitude` - Amplitude of oscillations in final portion
 
 ### Applications
 
