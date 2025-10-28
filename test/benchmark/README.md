@@ -40,10 +40,10 @@ Each CSV file includes:
 - **timestamp**: When the benchmark was run
 - **commit_id**: Git commit SHA (for tracking changes over time)
 - **benchmark_name**: Name of the benchmark
-- **mean_time_s**: Mean execution time in seconds
-- **min_time_s**: Minimum execution time
-- **max_time_s**: Maximum execution time
-- **std_time_s**: Standard deviation of execution time
+- **mean_time_ms**: Mean execution time in seconds
+- **min_time_ms**: Minimum execution time
+- **max_time_ms**: Maximum execution time
+- **std_time_ms**: Standard deviation of execution time
 - **n_runs**: Number of runs averaged
 
 ## CI Integration
