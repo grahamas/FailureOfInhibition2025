@@ -8,7 +8,7 @@ using CSV
 using Statistics
 
 """
-    solve_model(initial_condition, tspan, params; solver=Tsit5(), kwargs...)
+    solve_model(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), kwargs...) where N
 
 Solve the Wilson-Cowan model using DifferentialEquations.jl.
 
@@ -87,7 +87,7 @@ tspan = (0.0, 100.0)
 sol = solve_model(A₀, tspan, params, saveat=0.1)
 ```
 """
-function solve_model(initial_condition, tspan, params; solver=Tsit5(), kwargs...)
+function solve_model(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), kwargs...) where N
     # Create ODE problem
     prob = ODEProblem(wcm1973!, initial_condition, tspan, params)
     
