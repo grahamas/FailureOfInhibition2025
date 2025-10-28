@@ -20,6 +20,9 @@ include("models.jl")
 # Include simulation functionality
 include("simulate.jl")
 
+# Include analysis functionality
+include("analysis.jl")
+
 # Export main space types and functions
 export AbstractSpace, AbstractLattice
 export AbstractCompactLattice, CompactLattice
@@ -46,5 +49,9 @@ export WilsonCowanParameters, wcm1973!, population
 
 # Export simulation functions
 export solve_model, save_simulation_results, save_simulation_summary
+
+# Export analysis functions
+export detect_traveling_peak, compute_decay_rate, compute_amplitude
+export compute_distance_traveled, compute_half_max_width
 
 end # module FailureOfInhibition2025
