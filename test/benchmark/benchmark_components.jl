@@ -21,7 +21,7 @@ function benchmark_nonlinearity_components()
     
     # Benchmark SigmoidNonlinearity
     sigmoid = SigmoidNonlinearity(a=2.0, θ=0.5)
-    result = benchmark_function("SigmoidNonlinearity (n=$n_points)", n_runs=1000) do
+    result = benchmark_function("SigmoidNonlinearity (n=$n_points)", samples=1000) do
         dA .= 0.0
         apply_nonlinearity!(dA, A, sigmoid, t)
     end
@@ -29,7 +29,7 @@ function benchmark_nonlinearity_components()
     
     # Benchmark RectifiedZeroedSigmoidNonlinearity
     rect_sigmoid = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5)
-    result = benchmark_function("RectifiedZeroedSigmoidNonlinearity (n=$n_points)", n_runs=1000) do
+    result = benchmark_function("RectifiedZeroedSigmoidNonlinearity (n=$n_points)", samples=1000) do
         dA .= 0.0
         apply_nonlinearity!(dA, A, rect_sigmoid, t)
     end
@@ -37,7 +37,7 @@ function benchmark_nonlinearity_components()
     
     # Benchmark DifferenceOfSigmoidsNonlinearity
     diff_sigmoid = DifferenceOfSigmoidsNonlinearity(a_up=5.0, θ_up=0.3, a_down=3.0, θ_down=0.7)
-    result = benchmark_function("DifferenceOfSigmoidsNonlinearity (n=$n_points)", n_runs=1000) do
+    result = benchmark_function("DifferenceOfSigmoidsNonlinearity (n=$n_points)", samples=1000) do
         dA .= 0.0
         apply_nonlinearity!(dA, A, diff_sigmoid, t)
     end
@@ -45,13 +45,13 @@ function benchmark_nonlinearity_components()
     
     # Benchmark simple_sigmoid function
     x = 0.5
-    result = benchmark_function("simple_sigmoid (scalar)", n_runs=10000) do
+    result = benchmark_function("simple_sigmoid (scalar)", samples=10000) do
         simple_sigmoid(x, 2.0, 0.5)
     end
     push!(results, result)
     
     # Benchmark rectified_zeroed_sigmoid function
-    result = benchmark_function("rectified_zeroed_sigmoid (scalar)", n_runs=10000) do
+    result = benchmark_function("rectified_zeroed_sigmoid (scalar)", samples=10000) do
         rectified_zeroed_sigmoid(x, 2.0, 0.5)
     end
     push!(results, result)
@@ -73,7 +73,7 @@ function benchmark_connectivity_components()
     conn_1d = GaussianConnectivityParameter(1.0, (2.0,))
     connectivity_1d = ConnectivityMatrix{1}(reshape([conn_1d], 1, 1))
     
-    result = benchmark_function("GaussianConnectivity 1D (n=101)", n_runs=100) do
+    result = benchmark_function("GaussianConnectivity 1D (n=101)", samples=100) do
         dA_1d .= 0.0
         propagate_activation(dA_1d, A_1d, connectivity_1d, 0.0, lattice_1d)
     end
@@ -85,7 +85,7 @@ function benchmark_connectivity_components()
     conn_scalar = ScalarConnectivity(1.5)
     connectivity_scalar = ConnectivityMatrix{1}(reshape([conn_scalar], 1, 1))
     
-    result = benchmark_function("ScalarConnectivity (point model)", n_runs=10000) do
+    result = benchmark_function("ScalarConnectivity (point model)", samples=10000) do
         dA_scalar .= 0.0
         propagate_activation(dA_scalar, A_scalar, connectivity_scalar, 0.0, PointLattice())
     end
@@ -106,7 +106,7 @@ function benchmark_connectivity_components()
         conn_ie conn_ii
     ])
     
-    result = benchmark_function("ConnectivityMatrix 2x2 (point model)", n_runs=1000) do
+    result = benchmark_function("ConnectivityMatrix 2x2 (point model)", samples=1000) do
         dA_2pop .= 0.0
         propagate_activation(dA_2pop, A_2pop, connectivity_matrix, 0.0, lattice_2pop)
     end
@@ -134,13 +134,13 @@ function benchmark_stimulation_components()
         lattice=lattice_1d
     )
     
-    result = benchmark_function("CircleStimulus 1D (n=101, active)", n_runs=1000) do
+    result = benchmark_function("CircleStimulus 1D (n=101, active)", samples=1000) do
         dA_1d .= 0.0
         stimulate!(dA_1d, A_1d, stimulus_1d, 5.0)
     end
     push!(results, result)
     
-    result = benchmark_function("CircleStimulus 1D (n=101, inactive)", n_runs=1000) do
+    result = benchmark_function("CircleStimulus 1D (n=101, inactive)", samples=1000) do
         dA_1d .= 0.0
         stimulate!(dA_1d, A_1d, stimulus_1d, 15.0)
     end
@@ -149,7 +149,7 @@ function benchmark_stimulation_components()
     # No stimulus (nothing) - single value
     A_simple = [0.5]
     dA_simple = zeros(1)
-    result = benchmark_function("No stimulus (nothing)", n_runs=10000) do
+    result = benchmark_function("No stimulus (nothing)", samples=10000) do
         dA_simple .= 0.0
         stimulate!(dA_simple, A_simple, nothing, 0.0)
     end

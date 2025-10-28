@@ -1,10 +1,10 @@
 # Benchmarking
 
-This directory contains benchmarking code for tracking the performance of FailureOfInhibition2025 components and simulations.
+This directory contains benchmarking code for tracking the performance of FailureOfInhibition2025 components and simulations using [BenchmarkTools.jl](https://github.com/JuliaCI/BenchmarkTools.jl).
 
 ## Structure
 
-- **benchmark_utils.jl**: Utility functions for timing, CSV writing, and git commit tracking
+- **benchmark_utils.jl**: Utility functions for timing (using BenchmarkTools), CSV writing, and git commit tracking
 - **benchmark_components.jl**: Benchmarks for individual components (nonlinearity, connectivity, stimulation)
 - **benchmark_simulations.jl**: Benchmarks for 0D (point) and 1D simulations
 - **run_benchmarks.jl**: Main runner that executes all benchmarks
@@ -84,6 +84,8 @@ grep '1D: 101 points, 1 population' benchmark_results/simulation_benchmarks.csv
 
 ## Notes
 
-- Benchmarks use multiple runs (50-10000 depending on the operation) to get stable measurements
-- A warmup run is performed before timing to avoid JIT compilation overhead
+- Benchmarks use BenchmarkTools.jl for accurate performance measurements
+- BenchmarkTools automatically determines the number of samples needed for stable measurements
+- Warmup runs are performed automatically to avoid JIT compilation overhead
 - Results may vary based on system load and hardware
+- Default settings: minimum 100 samples, up to 5 seconds of runtime per benchmark

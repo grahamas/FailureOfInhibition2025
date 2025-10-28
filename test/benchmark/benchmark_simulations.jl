@@ -30,7 +30,7 @@ function benchmark_0d_simulations()
     A_1pop = [0.5]
     dA_1pop = zeros(1)
     
-    result = benchmark_function("0D: 1 population, no connectivity", n_runs=1000) do
+    result = benchmark_function("0D: 1 population, no connectivity", samples=1000) do
         dA_1pop .= 0.0
         wcm1973!(dA_1pop, A_1pop, params_1pop, 0.0)
     end
@@ -61,7 +61,7 @@ function benchmark_0d_simulations()
     A_2pop = reshape([0.3, 0.5], 1, 2)
     dA_2pop = zeros(1, 2)
     
-    result = benchmark_function("0D: 2 populations (E,I), ScalarConnectivity", n_runs=1000) do
+    result = benchmark_function("0D: 2 populations (E,I), ScalarConnectivity", samples=1000) do
         dA_2pop .= 0.0
         wcm1973!(dA_2pop, A_2pop, params_2pop, 0.0)
     end
@@ -82,7 +82,7 @@ function benchmark_0d_simulations()
     A_2pop_simple = [0.3, 0.5]
     dA_2pop_simple = zeros(2)
     
-    result = benchmark_function("0D: 2 populations, no connectivity", n_runs=1000) do
+    result = benchmark_function("0D: 2 populations, no connectivity", samples=1000) do
         dA_2pop_simple .= 0.0
         wcm1973!(dA_2pop_simple, A_2pop_simple, params_2pop_no_conn, 0.0)
     end
@@ -109,7 +109,7 @@ function benchmark_0d_simulations()
     A_3pop = reshape([0.3, 0.4, 0.5], 1, 3)
     dA_3pop = zeros(1, 3)
     
-    result = benchmark_function("0D: 3 populations, full ConnectivityMatrix", n_runs=1000) do
+    result = benchmark_function("0D: 3 populations, full ConnectivityMatrix", samples=1000) do
         dA_3pop .= 0.0
         wcm1973!(dA_3pop, A_3pop, params_3pop, 0.0)
     end
@@ -146,7 +146,7 @@ function benchmark_1d_simulations()
     A_small = rand(51, 1)
     dA_small = zeros(51, 1)
     
-    result = benchmark_function("1D: 51 points, 1 population, Gaussian connectivity", n_runs=100) do
+    result = benchmark_function("1D: 51 points, 1 population, Gaussian connectivity", samples=100) do
         dA_small .= 0.0
         wcm1973!(dA_small, A_small, params_small, 0.0)
     end
@@ -171,7 +171,7 @@ function benchmark_1d_simulations()
     A_medium = rand(101, 1)
     dA_medium = zeros(101, 1)
     
-    result = benchmark_function("1D: 101 points, 1 population, Gaussian connectivity", n_runs=100) do
+    result = benchmark_function("1D: 101 points, 1 population, Gaussian connectivity", samples=100) do
         dA_medium .= 0.0
         wcm1973!(dA_medium, A_medium, params_medium, 0.0)
     end
@@ -196,7 +196,7 @@ function benchmark_1d_simulations()
     A_large = rand(201, 1)
     dA_large = zeros(201, 1)
     
-    result = benchmark_function("1D: 201 points, 1 population, Gaussian connectivity", n_runs=50) do
+    result = benchmark_function("1D: 201 points, 1 population, Gaussian connectivity", samples=50) do
         dA_large .= 0.0
         wcm1973!(dA_large, A_large, params_large, 0.0)
     end
@@ -229,7 +229,7 @@ function benchmark_1d_simulations()
     A_2pop = rand(101, 2)
     dA_2pop = zeros(101, 2)
     
-    result = benchmark_function("1D: 101 points, 2 populations (E,I), full model", n_runs=50) do
+    result = benchmark_function("1D: 101 points, 2 populations (E,I), full model", samples=50) do
         dA_2pop .= 0.0
         wcm1973!(dA_2pop, A_2pop, params_2pop, 0.0)
     end

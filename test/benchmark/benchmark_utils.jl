@@ -5,6 +5,8 @@ Utilities for benchmarking components and simulations.
 using FailureOfInhibition2025
 using Printf
 using Dates
+using BenchmarkTools
+using Statistics
 
 """
     get_git_commit_id()
@@ -21,9 +23,16 @@ function get_git_commit_id()
 end
 
 """
-    benchmark_function(f::Function, name::String; n_runs::Int=100)
+    benchmark_function(f::Function, name::String; samples::Int=100, evals::Int=1, seconds::Real=5)
 
-Benchmark a function by running it n_runs times and returning statistics.
+Benchmark a function using BenchmarkTools and return statistics.
+
+# Arguments
+- `f::Function`: The function to benchmark
+- `name::String`: Name of the benchmark
+- `samples::Int=100`: Minimum number of samples to collect
+- `evals::Int=1`: Number of evaluations per sample
+- `seconds::Real=5`: Maximum time budget in seconds
 
 Returns a NamedTuple with:
 - name: benchmark name
@@ -31,22 +40,19 @@ Returns a NamedTuple with:
 - min_time: minimum execution time in seconds
 - max_time: maximum execution time in seconds
 - std_time: standard deviation of execution time in seconds
-- n_runs: number of runs
+- n_runs: number of samples collected
 """
-function benchmark_function(f::Function, name::String; n_runs::Int=100)
-    # Warmup run
-    f()
+function benchmark_function(f::Function, name::String; samples::Int=100, evals::Int=1, seconds::Real=5)
+    # Create benchmarkable and run it
+    b = @benchmarkable ($f)()
+    trial = run(b, samples=samples, evals=evals, seconds=seconds)
     
-    # Timing runs
-    times = zeros(n_runs)
-    for i in 1:n_runs
-        times[i] = @elapsed f()
-    end
-    
-    mean_time = sum(times) / n_runs
-    min_time = minimum(times)
-    max_time = maximum(times)
-    std_time = sqrt(sum((times .- mean_time).^2) / n_runs)
+    # Extract statistics (times are in nanoseconds, convert to seconds)
+    mean_time = mean(trial.times) / 1e9
+    min_time = minimum(trial.times) / 1e9
+    max_time = maximum(trial.times) / 1e9
+    std_time = std(trial.times) / 1e9
+    n_runs = length(trial.times)
     
     return (
         name = name,
