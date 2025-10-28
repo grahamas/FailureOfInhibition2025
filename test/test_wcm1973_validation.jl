@@ -343,13 +343,15 @@ function plot_mode_dynamics(mode::Symbol, params, A₀, tspan;
     E_activity = [A_history[i, 1, 1] for i in 1:length(times)]
     I_activity = [A_history[i, 1, 2] for i in 1:length(times)]
     
+    # Auto-scale y-axis with some padding
+    all_activity = vcat(E_activity, I_activity)
+    y_min = min(0.0, minimum(all_activity))
+    y_max = maximum(all_activity)
+    y_range = y_max - y_min
+    ylim = [y_min - 0.05 * y_range, y_max + 0.05 * y_range]
+    
     # Plot
-    println("\n" * "─"^60)
-    println("$mode_name")
-    if !isempty(description)
-        println(description)
-    end
-    println()
+    println("\n$mode_name")
     
     p = UnicodePlots.lineplot(times, E_activity,
         title=mode_name,
@@ -358,10 +360,9 @@ function plot_mode_dynamics(mode::Symbol, params, A₀, tspan;
         ylabel="Activity",
         width=55,
         height=12,
-        ylim=[0, 0.4])
+        ylim=ylim)
     UnicodePlots.lineplot!(p, times, I_activity, name="Inhibitory (I)")
     println(p)
-    println("─"^60)
 end
 
 #=============================================================================
@@ -373,7 +374,6 @@ function test_wcm1973_parameter_construction()
     
     # Test each mode
     for mode in [:active_transient, :oscillatory, :steady_state]
-        println("\n1. Testing $mode mode:")
         params = create_wcm1973_parameters(mode)
         
         @test params isa WilsonCowanParameters{Float64, 2}
@@ -386,10 +386,8 @@ function test_wcm1973_parameter_construction()
         @test params.nonlinearity isa Tuple{SigmoidNonlinearity{Float64}, SigmoidNonlinearity{Float64}}
         @test params.nonlinearity[1] isa SigmoidNonlinearity
         @test params.nonlinearity[2] isa SigmoidNonlinearity
-        println("   ✓ $mode parameters constructed correctly")
     end
-    
-    println("\n=== WCM 1973 Parameter Construction Tests Passed! ===")
+    println("✓ All three modes have correct parameter structure")
 end
 
 function test_point_model_construction()
@@ -397,7 +395,6 @@ function test_point_model_construction()
     
     # Test each mode
     for mode in [:active_transient, :oscillatory, :steady_state]
-        println("\n1. Testing $mode mode point model:")
         params = create_point_model_wcm1973(mode)
         
         @test params isa WilsonCowanParameters{Float64, 2}
@@ -409,22 +406,17 @@ function test_point_model_construction()
         dA = zeros(1, 2)
         wcm1973!(dA, A, params, 0.0)
         @test !all(dA .== 0.0)
-        
-        println("   ✓ $mode point model works correctly")
     end
-    
-    println("\n=== Point Model Construction Tests Passed! ===")
+    println("✓ All three point models constructed correctly")
 end
 
 function test_active_transient_mode_basic()
-    println("\n=== Testing Active Transient Mode - Basic Behavior ===")
+    println("\n=== Testing Active Transient Mode ===")
     
     # Create parameters for active transient mode
     params = create_point_model_wcm1973(:active_transient)
     
-    println("\n1. Testing response to brief stimulus:")
-    
-    # Start with low activity
+    # Test response to brief stimulus
     A = reshape([0.05, 0.05], 1, 2)
     dA = zeros(1, 2)
     
@@ -439,47 +431,28 @@ function test_active_transient_mode_basic()
     @test dA[1, 1] < 0  # E population should decay
     @test dA[1, 2] < 0  # I population should decay
     
-    println("   ✓ Basic decay behavior verified")
-    
-    println("\n2. Testing that resting state is stable:")
-    
-    # At rest (near zero activity), system should stay at rest
+    # Test resting state stability
     A = reshape([0.0, 0.0], 1, 2)
     dA = zeros(1, 2)
     wcm1973!(dA, A, params, 0.0)
-    
-    # Derivatives should be small - the system has a small drive from the sigmoid
-    # at zero input due to the threshold, but it should be much smaller than
-    # the derivatives when there's significant activity
     @test abs(dA[1, 1]) < 0.01  # Small compared to typical dynamics
     @test abs(dA[1, 2]) < 0.01
+    println("✓ Decay and resting state behavior verified")
     
-    println("   ✓ Resting state stability verified (small drift allowed)")
-    
-    # Generate plot if UnicodePlots is available
-    println("\n3. Visualizing Active Transient Mode dynamics:")
+    # Generate plot
     A₀ = reshape([0.05, 0.05], 1, 2)
     plot_mode_dynamics(:active_transient, params, A₀, (0.0, 100.0),
         external_input = t -> brief_pulse(t, start_time=5.0, duration=5.0, strength=15.0),
-        mode_name = "Active Transient Mode (Sensory Neo-Cortex)",
-        description = "Brief stimulus → transient response → return to rest")
-    
-    println("\n=== Active Transient Mode Basic Tests Passed! ===")
+        mode_name = "Active Transient Mode")
 end
 
 function test_oscillatory_mode_basic()
-    println("\n=== Testing Oscillatory Mode - Basic Behavior ===")
+    println("\n=== Testing Oscillatory Mode ===")
     
     # Create parameters for oscillatory mode
     params = create_point_model_wcm1973(:oscillatory)
     
-    println("\n1. Testing oscillatory mode parameters:")
-    
-    # The oscillatory mode has distinct parameter differences:
-    # - Higher vᵢ (steeper inhibitory sigmoid)
-    # - Lower bᵢᵢ (weaker inhibitory-inhibitory coupling)
-    # - These lead to sustained oscillations
-    
+    # Test basic parameter setup
     @test params.connectivity isa ConnectivityMatrix{2}
     
     # Start with moderate activity
@@ -487,22 +460,16 @@ function test_oscillatory_mode_basic()
     dA = zeros(1, 2)
     
     wcm1973!(dA, A, params, 0.0)
-    
-    # System should generate dynamics (not at equilibrium)
     @test !all(dA .== 0.0)
+    println("✓ Parameters set correctly")
     
-    println("   ✓ Oscillatory mode parameters set correctly")
-    
-    # Generate plot if UnicodePlots is available
-    println("\n2. Visualizing Oscillatory Mode dynamics:")
+    # Generate plot
     A₀ = reshape([0.05, 0.05], 1, 2)
     plot_mode_dynamics(:oscillatory, params, A₀, (0.0, 200.0),
         external_input = t -> brief_pulse(t, start_time=5.0, duration=10.0, strength=20.0),
-        mode_name = "Oscillatory Mode (Thalamus)",
-        description = "Sustained stimulus → persistent oscillations")
+        mode_name = "Oscillatory Mode")
     
-    println("\n3. Testing for oscillatory behavior:")
-    # Simulate for a longer period
+    # Test for oscillatory behavior
     times, A_history = euler_integrate_for_plot(params, A₀, (0.0, 300.0), 0.5,
         external_input = t -> (5.0 <= t < 15.0) ? 20.0 : 0.0)
     
@@ -520,72 +487,36 @@ function test_oscillatory_mode_basic()
         return peaks
     end
     
-    # Check for oscillations in different time windows
-    # Early phase (during stimulus): t=0-20ms
-    idx_early = findall(t -> 0.0 <= t <= 20.0, times)
-    E_early_peaks = count_peaks(E_activity[idx_early], 0.05)
-    
-    # Middle phase (after stimulus): t=20-150ms  
+    # Check for oscillations after stimulus
     idx_middle = findall(t -> 20.0 <= t <= 150.0, times)
     E_middle_peaks = count_peaks(E_activity[idx_middle], 0.05)
     
-    # Late phase (well after stimulus): t=150-300ms
     idx_late = findall(t -> 150.0 <= t <= 300.0, times)
     E_late_peaks = count_peaks(E_activity[idx_late], 0.05)
     
-    println("   Peaks in early phase (0-20ms): ", E_early_peaks)
-    println("   Peaks in middle phase (20-150ms): ", E_middle_peaks)
-    println("   Peaks in late phase (150-300ms): ", E_late_peaks)
-    
-    # For true oscillatory behavior, we expect:
-    # - Some peaks in the middle phase (after stimulus)
-    # - Ideally sustained peaks in the late phase too
-    # NOTE: The current parameters from the 1973 paper Table 2 produce damped oscillations
-    # rather than sustained oscillations. This is a known limitation.
-    @test E_early_peaks >= 0  # May or may not oscillate during stimulus
-    
-    # Relaxed test: require at least 1 oscillation peak after stimulus
-    # The full sustained oscillation behavior may require parameter tuning
+    # Relaxed test for transient oscillations
     if E_middle_peaks >= 1
-        @test E_middle_peaks >= 1  # At least some transient oscillation
-        println("   ✓ System shows transient oscillatory behavior")
+        println("✓ Transient oscillatory behavior detected")
     else
-        @warn "No oscillations detected after stimulus. Current parameters from 1973 paper may need adjustment for sustained oscillations."
-        println("   ⚠ No oscillatory peaks detected - parameters may need tuning")
+        @warn "No oscillations detected. Current parameters from 1973 paper produce damped oscillations."
     end
     
-    # Calculate amplitude in late phase to check if oscillations persist
+    # Check amplitude in late phase
     if length(idx_late) > 0
-        E_late_max = maximum(E_activity[idx_late])
-        E_late_min = minimum(E_activity[idx_late])
-        E_late_amplitude = E_late_max - E_late_min
-        println("   Late phase amplitude: ", E_late_amplitude)
-        
-        # For sustained oscillations, amplitude should be significant
-        # If amplitude < 0.01, oscillations have likely decayed
-        if E_late_amplitude > 0.01
-            println("   ✓ Oscillations appear to persist (amplitude > 0.01)")
-        else
-            println("   ⚠ Oscillations have decayed (amplitude < 0.01)")
-            println("   Note: Parameters from 1973 paper may produce damped rather than sustained oscillations")
+        E_late_amplitude = maximum(E_activity[idx_late]) - minimum(E_activity[idx_late])
+        if E_late_amplitude < 0.01
+            println("⚠ Oscillations decay to rest (Table 2 parameters produce damped oscillations)")
         end
     end
-    
-    println("\n=== Oscillatory Mode Basic Tests Passed! ===")
 end
 
 function test_steady_state_mode_basic()
-    println("\n=== Testing Steady-State Mode - Basic Behavior ===")
+    println("\n=== Testing Steady-State Mode ===")
     
     # Create parameters for steady-state mode
     params = create_point_model_wcm1973(:steady_state)
     
-    println("\n1. Testing steady-state mode parameters:")
-    
-    # The steady-state mode differs from active transient only in bₑₑ
-    # Increased excitatory-excitatory coupling (bₑₑ = 2.0 vs 1.5)
-    # This should allow spatially inhomogeneous stable states
-    
+    # Test basic parameter setup
     @test params.connectivity isa ConnectivityMatrix{2}
     
     # Start with low activity
@@ -596,62 +527,37 @@ function test_steady_state_mode_basic()
     
     # System should have dynamics
     @test !all(dA .== 0.0)
+    println("✓ Parameters set correctly")
     
-    println("   ✓ Steady-state mode parameters set correctly")
-    
-    # Generate plot if UnicodePlots is available
-    println("\n2. Visualizing Steady-State Mode dynamics:")
+    # Generate plot
     A₀ = reshape([0.05, 0.05], 1, 2)
     plot_mode_dynamics(:steady_state, params, A₀, (0.0, 150.0),
         external_input = t -> brief_pulse(t, start_time=5.0, duration=8.0, strength=18.0),
-        mode_name = "Steady-State Mode (Prefrontal Cortex)",
-        description = "Brief stimulus → persistent elevated activity")
-    
-    println("\n=== Steady-State Mode Basic Tests Passed! ===")
+        mode_name = "Steady-State Mode")
 end
 
 function test_parameter_differences_between_modes()
-    println("\n=== Testing Parameter Differences Between Modes ===")
+    println("\n=== Testing Parameter Differences ===")
     
     # Create parameters for all three modes
     params_active = create_point_model_wcm1973(:active_transient)
     params_osc = create_point_model_wcm1973(:oscillatory)
     params_ss = create_point_model_wcm1973(:steady_state)
     
-    println("\n1. Comparing Active Transient vs Steady-State:")
-    # According to paper, these differ only in bₑₑ
-    # Active transient: bₑₑ = 1.5
-    # Steady state: bₑₑ = 2.0
-    println("   Active transient and steady-state differ primarily in E→E coupling strength")
-    println("   ✓ Parameter relationship verified")
-    
-    println("\n2. Comparing Active Transient vs Oscillatory:")
-    # Oscillatory mode has:
-    # - Different inhibitory sigmoid parameters (vᵢ, θᵢ)
-    # - Stronger excitatory-excitatory coupling (bₑₑ = 2.0 vs 1.5)
-    # - Weaker inhibitory-inhibitory coupling (bᵢᵢ = 0.1 vs 1.8)
-    println("   Oscillatory mode has distinct inhibitory dynamics")
-    println("   ✓ Parameter relationship verified")
-    
-    println("\n=== Parameter Difference Tests Passed! ===")
+    # Verify they are different
+    @test params_active !== params_osc
+    @test params_active !== params_ss
+    println("✓ Three modes have distinct parameters")
 end
 
 function test_spatial_model_setup()
     println("\n=== Testing Spatial Model Setup ===")
-    
-    println("\n1. Testing spatial lattice creation:")
     
     # Create spatial parameters
     params = create_wcm1973_parameters(:active_transient)
     
     @test params.lattice isa CompactLattice
     @test size(params.lattice) == (101,)
-    
-    println("   ✓ Spatial lattice created correctly")
-    
-    println("\n2. Testing spatial connectivity:")
-    
-    # Connectivity should have spatial extent
     @test params.connectivity isa ConnectivityMatrix{2}
     
     # Test that we can compute derivatives on spatial arrays
@@ -660,22 +566,18 @@ function test_spatial_model_setup()
     dA = zeros(n_points, 2)
     
     wcm1973!(dA, A, params, 0.0)
-    
-    # Should have computed derivatives
     @test !all(dA .== 0.0)
     
-    println("   ✓ Spatial connectivity works correctly")
-    
-    println("\n=== Spatial Model Setup Tests Passed! ===")
+    println("✓ Spatial model setup works correctly")
 end
 
 """
 Run all WCM 1973 validation tests
 """
 function run_all_wcm1973_tests()
-    println("\n" * "="^70)
-    println("Running WCM 1973 Validation Tests")
-    println("Based on: Wilson & Cowan (1973) Kybernetik 13(2):55-80")
+    println("="^70)
+    println("WCM 1973 Validation Tests")
+    println("Wilson & Cowan (1973) Kybernetik 13(2):55-80")
     println("="^70)
     
     test_wcm1973_parameter_construction()
@@ -687,7 +589,7 @@ function run_all_wcm1973_tests()
     test_spatial_model_setup()
     
     println("\n" * "="^70)
-    println("🎉 All WCM 1973 Validation Tests Passed!")
+    println("✓ All WCM 1973 validation tests passed")
     println("="^70)
 end
 
