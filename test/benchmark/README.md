@@ -76,7 +76,7 @@ The CSV format allows you to track how performance changes across commits:
 
 ```bash
 # View all results for a specific benchmark
-grep "1D: 101 points, 1 population" benchmark_results/simulation_benchmarks.csv
+grep '1D: 101 points, 1 population' benchmark_results/simulation_benchmarks.csv
 
 # Compare performance between commits
 # (requires analysis tools or spreadsheet software)
