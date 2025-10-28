@@ -36,10 +36,10 @@ Benchmark a function using BenchmarkTools and return statistics.
 
 Returns a NamedTuple with:
 - name: benchmark name
-- mean_time: mean execution time in seconds
-- min_time: minimum execution time in seconds
-- max_time: maximum execution time in seconds
-- std_time: standard deviation of execution time in seconds
+- mean_time: mean execution time in milliseconds
+- min_time: minimum execution time in milliseconds
+- max_time: maximum execution time in milliseconds
+- std_time: standard deviation of execution time in milliseconds
 - n_runs: number of samples collected
 """
 function benchmark_function(f::Function, name::String; samples::Int=100, evals::Int=1, seconds::Real=5)
@@ -47,11 +47,11 @@ function benchmark_function(f::Function, name::String; samples::Int=100, evals::
     b = @benchmarkable ($f)()
     trial = run(b, samples=samples, evals=evals, seconds=seconds)
     
-    # Extract statistics (times are in nanoseconds, convert to seconds)
-    mean_time = mean(trial.times) / 1e9
-    min_time = minimum(trial.times) / 1e9
-    max_time = maximum(trial.times) / 1e9
-    std_time = std(trial.times) / 1e9
+    # Extract statistics (times are in nanoseconds, convert to milliseconds)
+    mean_time = mean(trial.times) / 1e6
+    min_time = minimum(trial.times) / 1e6
+    max_time = maximum(trial.times) / 1e6
+    std_time = std(trial.times) / 1e6
     n_runs = length(trial.times)
     
     return (
@@ -83,7 +83,7 @@ function write_benchmark_results(results::Vector, filename::String)
     open(filename, "a") do io
         # Write headers if file is new
         if !file_exists
-            println(io, "timestamp,commit_id,benchmark_name,mean_time_s,min_time_s,max_time_s,std_time_s,n_runs")
+            println(io, "timestamp,commit_id,benchmark_name,mean_time_ms,min_time_ms,max_time_ms,std_time_ms,n_runs")
         end
         
         # Write results
@@ -113,7 +113,7 @@ function print_benchmark_results(results::Vector)
     println("\n" * "="^80)
     println("BENCHMARK RESULTS")
     println("="^80)
-    println(@sprintf("%-50s %12s %12s", "Benchmark", "Mean (s)", "Std (s)"))
+    println(@sprintf("%-50s %12s %12s", "Benchmark", "Mean (ms)", "Std (ms)"))
     println("-"^80)
     
     for result in results
