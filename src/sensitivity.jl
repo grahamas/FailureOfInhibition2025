@@ -88,7 +88,7 @@ Parameters are named as:
 - `α_<pop>`: Decay rate for population (e.g., "α_E", "α_I")
 - `β_<pop>`: Saturation coefficient for population
 - `τ_<pop>`: Time constant for population  
-- `conn_<src><dst>`: Connectivity from src to dst (e.g., "conn_EE", "conn_EI")
+- `conn_<dst><src>`: Connectivity from src to dst (e.g., "conn_EE", "conn_EI")
 - `a_<pop>`: Nonlinearity slope for population
 - `θ_<pop>`: Nonlinearity threshold for population
 """
