@@ -12,6 +12,7 @@ This shows how to use SciMLSensitivity.jl to:
 using FailureOfInhibition2025
 using Statistics
 using Printf
+using SciMLSensitivity
 
 println("="^70)
 println("Wilson-Cowan Model Parameter Sensitivity Analysis")
