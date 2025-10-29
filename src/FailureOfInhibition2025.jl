@@ -65,5 +65,7 @@ export sobol_sensitivity_analysis, morris_sensitivity_analysis
 # Export analysis functions
 export detect_traveling_peak, compute_decay_rate, compute_amplitude
 export compute_distance_traveled, compute_half_max_width
+export detect_oscillations, compute_oscillation_frequency, compute_oscillation_amplitude
+export compute_oscillation_decay, compute_oscillation_duration
 
 end # module FailureOfInhibition2025
