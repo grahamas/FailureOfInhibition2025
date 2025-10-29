@@ -23,6 +23,9 @@ include("simulate.jl")
 # Include bifurcation analysis functionality
 include("bifurcation.jl")
 
+# Include sensitivity analysis functionality
+include("sensitivity.jl")
+
 # Include analysis functionality
 include("analysis.jl")
 
@@ -55,6 +58,9 @@ export solve_model, save_simulation_results, save_simulation_summary
 
 # Export bifurcation analysis functions (BifurcationKit integration)
 export create_bifurcation_problem, wcm_rhs!
+
+# Export sensitivity analysis functions
+export sobol_sensitivity_analysis, morris_sensitivity_analysis
 
 # Export analysis functions
 export detect_traveling_peak, compute_decay_rate, compute_amplitude

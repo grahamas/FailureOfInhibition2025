@@ -15,6 +15,7 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Multi-population support**: Support for multiple neural populations with flexible coupling
 - **Simulation utilities**: Solve models over time using DifferentialEquations.jl and save results to CSV
 - **Bifurcation analysis**: Tools for analyzing parameter space and generating bifurcation diagrams
+- **Global sensitivity analysis**: Sobol and Morris methods for parameter importance analysis
 - **Traveling wave analysis**: Metrics for detecting and characterizing traveling waves in neural activity
 
 ## Installation
@@ -166,11 +167,103 @@ BifurcationKit provides sophisticated tools for analyzing parameter-dependent dy
 
 See `examples/example_bifurcation_diagrams.jl` for detailed demonstrations of continuation analysis with Wilson-Cowan models.
 ## Traveling Wave Analysis
+## Global Sensitivity Analysis
 
-The package provides metrics for analyzing traveling waves in neural field simulations:
+The package provides comprehensive global sensitivity analysis (GSA) tools to understand how model outputs respond to parameter variations. Two methods are available:
+
+### Sobol Sensitivity Analysis
+
+Sobol analysis quantifies the fraction of output variance attributable to each parameter:
 
 ```julia
 using FailureOfInhibition2025
+
+# Define base parameters
+lattice = PointLattice()
+connectivity = ConnectivityMatrix{2}([
+    ScalarConnectivity(0.5) ScalarConnectivity(-0.3);
+    ScalarConnectivity(0.4) ScalarConnectivity(-0.2)
+])
+
+base_params = WilsonCowanParameters{2}(
+    α = (1.0, 1.5),
+    β = (1.0, 1.0),
+    τ = (10.0, 8.0),
+    connectivity = connectivity,
+    nonlinearity = SigmoidNonlinearity(a=1.5, θ=0.3),
+    stimulus = nothing,
+    lattice = lattice,
+    pop_names = ("E", "I")
+)
+
+# Define parameter ranges to analyze
+param_ranges = [
+    ("α_E", 0.5, 2.0),       # Decay rate for E
+    ("α_I", 0.5, 2.0),       # Decay rate for I
+    ("τ_E", 5.0, 15.0),      # Time constant for E
+    ("τ_I", 4.0, 12.0),      # Time constant for I
+    ("conn_EE", 0.2, 0.8),   # E → E connectivity
+    ("conn_EI", -0.6, -0.1), # I → E connectivity
+]
+
+# Run Sobol analysis
+result = sobol_sensitivity_analysis(
+    base_params,
+    param_ranges,
+    1000,  # Number of samples
+    tspan=(0.0, 100.0),
+    output_metric=:final_mean
+)
+
+# Results contain:
+# - S1: First-order indices (individual parameter effects)
+# - ST: Total-order indices (including interactions)
+println("First-order indices: ", result[:S1])
+println("Total-order indices: ", result[:ST])
+```
+
+### Morris Screening
+
+Morris screening efficiently ranks parameter importance with fewer model evaluations:
+
+```julia
+# Run Morris screening
+result = morris_sensitivity_analysis(
+    base_params,
+    param_ranges,
+    100,  # Number of trajectories
+    tspan=(0.0, 100.0),
+    output_metric=:final_mean
+)
+
+# Results contain:
+# - means_star: Mean of absolute effects (importance)
+# - variances: Variance of effects (interactions/nonlinearity)
+println("Parameter importance: ", result[:means_star])
+```
+
+### Output Metrics
+
+Various output metrics can be analyzed:
+- `:final_mean` - Mean activity at final time (default)
+- `:final_E` - Final excitatory population activity (first population)
+- `:final_I` - Final inhibitory population activity (second population, if exists)
+- `:max_mean` - Maximum mean activity over time
+- `:variance` - Variance of activity over time
+- `:oscillation_amplitude` - Amplitude of oscillations in final portion
+
+### Applications
+
+- **Parameter ranking**: Identify most important parameters for calibration
+- **Model simplification**: Determine which parameters can be fixed
+- **Interaction analysis**: Understand parameter interactions
+- **Experimental design**: Guide which parameters to measure more accurately
+
+See `examples/example_sensitivity_analysis.jl` for comprehensive demonstrations.
+
+## Traveling Wave Analysis
+
+The package provides metrics for analyzing traveling waves in neural field simulations:
 
 # After running a spatial simulation
 sol = solve_model(A₀, tspan, params, saveat=0.1)
@@ -210,6 +303,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
 - `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis using BifurcationKit continuation methods
+- `examples/example_sensitivity_analysis.jl`: Demonstrates global sensitivity analysis with Sobol and Morris methods
 - `examples/example_traveling_wave_metrics.jl`: Demonstrates traveling wave analysis metrics
 
 ## Wilson-Cowan 1973 Validation

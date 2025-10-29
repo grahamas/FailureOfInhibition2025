@@ -122,6 +122,11 @@ using FailureOfInhibition2025
         include("test_bifurcation.jl")
     end
   
+    # Run sensitivity analysis tests
+    @testset "Sensitivity Analysis" begin
+        include("test_sensitivity.jl")
+    end
+    
     # Run traveling wave analysis tests
     @testset "Traveling Wave Analysis" begin
         include("test_analysis.jl")
