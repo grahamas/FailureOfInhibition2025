@@ -125,6 +125,10 @@ using FailureOfInhibition2025
         run_all_local_sensitivity_tests()
     end
     
+    @testset "Sensitivity Analysis" begin
+        include("test_sensitivity.jl")
+    end
+    
     # Run traveling wave analysis tests
     @testset "Traveling Wave Analysis" begin
         include("test_analysis.jl")

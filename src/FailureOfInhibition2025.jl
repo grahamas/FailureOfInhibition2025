@@ -22,6 +22,7 @@ include("simulate.jl")
 
 # Include sensitivity analysis functionality
 include("local_sensitivity.jl")
+include("sensitivity.jl")
 
 # Include analysis functionality
 include("analysis.jl")
@@ -57,6 +58,7 @@ export solve_model, save_simulation_results, save_simulation_summary
 export compute_local_sensitivities, save_local_sensitivities, summarize_sensitivities
 export compute_sensitivity_indices
 export extract_parameters, reconstruct_parameters, ODEParameterWrapper
+export sobol_sensitivity_analysis, morris_sensitivity_analysis
 
 # Export analysis functions
 export detect_traveling_peak, compute_decay_rate, compute_amplitude
