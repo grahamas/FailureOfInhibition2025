@@ -123,6 +123,13 @@ using FailureOfInhibition2025
     end
   
     # Run sensitivity analysis tests
+    @testset "Local Sensitivity Analysis" begin
+        include("test_local_sensitivity.jl")
+        
+        # Run the comprehensive test function from test_sensitivity.jl
+        run_all_local_sensitivity_tests()
+    end
+    
     @testset "Sensitivity Analysis" begin
         include("test_sensitivity.jl")
     end
