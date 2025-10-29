@@ -117,4 +117,12 @@ using FailureOfInhibition2025
         run_all_simulation_tests()
     end
 
+    # Run sensitivity analysis tests
+    @testset "Sensitivity Analysis" begin
+        include("test_sensitivity.jl")
+        
+        # Run the comprehensive test function from test_sensitivity.jl
+        run_all_sensitivity_tests()
+    end
+
 end

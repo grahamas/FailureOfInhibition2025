@@ -20,6 +20,9 @@ include("models.jl")
 # Include simulation functionality
 include("simulate.jl")
 
+# Include sensitivity analysis functionality
+include("sensitivity.jl")
+
 # Export main space types and functions
 export AbstractSpace, AbstractLattice
 export AbstractCompactLattice, CompactLattice
@@ -46,5 +49,10 @@ export WilsonCowanParameters, wcm1973!, population
 
 # Export simulation functions
 export solve_model, save_simulation_results, save_simulation_summary
+
+# Export sensitivity analysis functions
+export compute_local_sensitivities, save_local_sensitivities, summarize_sensitivities
+export compute_sensitivity_indices
+export extract_parameters, reconstruct_parameters, ODEParameterWrapper
 
 end # module FailureOfInhibition2025
