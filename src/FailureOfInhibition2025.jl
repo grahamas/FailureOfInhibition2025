@@ -29,6 +29,9 @@ include("sensitivity.jl")
 # Include analysis functionality
 include("analysis.jl")
 
+# Include optimization functionality
+include("optimize.jl")
+
 # Export main space types and functions
 export AbstractSpace, AbstractLattice
 export AbstractCompactLattice, CompactLattice
@@ -67,5 +70,8 @@ export detect_traveling_peak, compute_decay_rate, compute_amplitude
 export compute_distance_traveled, compute_half_max_width
 export detect_oscillations, compute_oscillation_frequency, compute_oscillation_amplitude
 export compute_oscillation_decay, compute_oscillation_duration
+
+# Export optimization functions
+export TravelingWaveObjective, optimize_for_traveling_wave
 
 end # module FailureOfInhibition2025

@@ -141,5 +141,10 @@ using FailureOfInhibition2025
     @testset "Oscillation Analysis - Synthetic Validation" begin
         include("test_oscillation_analysis_synthetic.jl")
     end
+    
+    # Run parameter optimization tests
+    @testset "Parameter Optimization" begin
+        include("test_optimize.jl")
+    end
 
 end
