@@ -120,6 +120,10 @@ using FailureOfInhibition2025
     # Run sensitivity analysis tests
     @testset "Sensitivity Analysis" begin
         include("test_sensitivity.jl")
+    
+    # Run traveling wave analysis tests
+    @testset "Traveling Wave Analysis" begin
+        include("test_analysis.jl")
     end
 
 end
