@@ -15,6 +15,7 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Multi-population support**: Support for multiple neural populations with flexible coupling
 - **Simulation utilities**: Solve models over time using DifferentialEquations.jl and save results to CSV
 - **Parameter sensitivity analysis**: Integrated support for computing parameter sensitivities using SciMLSensitivity.jl
+- **Bifurcation analysis**: Tools for analyzing parameter space and generating bifurcation diagrams
 - **Global sensitivity analysis**: Sobol and Morris methods for parameter importance analysis
 - **Traveling wave analysis**: Metrics for detecting and characterizing traveling waves in neural activity
 
@@ -168,7 +169,55 @@ Supported sensitivity methods include:
 - **BacksolveAdjoint**: Backsolve adjoint approach
 
 See `examples/example_sensitivity_analysis.jl` for comprehensive sensitivity analysis examples.
-## Traveling Wave Analysis
+
+## Bifurcation Analysis
+
+The package provides bifurcation analysis tools powered by [BifurcationKit.jl](https://github.com/bifurcationkit/BifurcationKit.jl), enabling continuation methods to trace bifurcation curves and detect critical transitions in Wilson-Cowan models.
+
+```julia
+using FailureOfInhibition2025
+using BifurcationKit
+
+# Create Wilson-Cowan parameters
+params = create_point_model_wcm1973(:active_transient)
+
+# Initial guess for steady state
+u0 = reshape([0.1, 0.1], 1, 2)
+
+# Create BifurcationProblem (requires parameter lens from BifurcationKit)
+# Example: vary the decay rate α[1]
+param_lens = (@lens _.α[1])
+prob = create_bifurcation_problem(params, param_lens, u0=u0)
+
+# Set up continuation parameters
+opts = ContinuationPar(
+    dsmax = 0.1,
+    dsmin = 1e-4,
+    ds = -0.01,
+    maxSteps = 100
+)
+
+# Run continuation to trace bifurcation curve
+br = continuation(prob, PALC(), opts)
+```
+
+### Continuation Analysis Features
+
+BifurcationKit provides sophisticated tools for analyzing parameter-dependent dynamics:
+
+- **Continuation methods**: Trace solution branches as parameters vary
+- **Automatic bifurcation detection**: Identify Hopf, fold, and branch point bifurcations
+- **Stability analysis**: Compute eigenvalues along solution branches
+- **Branch switching**: Continue along different solution branches at bifurcation points
+- **Periodic orbit continuation**: Analyze limit cycles and their bifurcations
+
+### Key Functions
+
+- `create_bifurcation_problem(params, param_lens; u0)`: Create a BifurcationProblem from Wilson-Cowan parameters
+- `wcm_rhs!(dA, A, params, t)`: Right-hand side function compatible with BifurcationKit
+
+See `examples/example_bifurcation_diagrams.jl` for detailed demonstrations of continuation analysis with Wilson-Cowan models.
+
 ## Global Sensitivity Analysis
 
 The package provides comprehensive global sensitivity analysis (GSA) tools to understand how model outputs respond to parameter variations. Two methods are available:
@@ -305,6 +354,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
 - `examples/example_sensitivity_analysis.jl`: Demonstrates parameter sensitivity analysis using SciMLSensitivity.jl
+- `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis using BifurcationKit continuation methods
 - `examples/example_sensitivity_analysis.jl`: Demonstrates global sensitivity analysis with Sobol and Morris methods
 - `examples/example_traveling_wave_metrics.jl`: Demonstrates traveling wave analysis metrics
 

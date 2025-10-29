@@ -117,6 +117,11 @@ using FailureOfInhibition2025
         run_all_simulation_tests()
     end
 
+    # Run bifurcation analysis tests
+    @testset "Bifurcation Analysis" begin
+        include("test_bifurcation.jl")
+    end
+  
     # Run sensitivity analysis tests
     @testset "Local Sensitivity Analysis" begin
         include("test_local_sensitivity.jl")
