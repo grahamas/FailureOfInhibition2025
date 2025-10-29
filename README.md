@@ -15,6 +15,7 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Multi-population support**: Support for multiple neural populations with flexible coupling
 - **Simulation utilities**: Solve models over time using DifferentialEquations.jl and save results to CSV
 - **Traveling wave analysis**: Metrics for detecting and characterizing traveling waves in neural activity
+- **Oscillation analysis**: Utilities for evaluating oscillations in point models (frequency, amplitude, decay, duration)
 
 ## Installation
 
@@ -152,6 +153,41 @@ Available metrics:
 
 See `examples/example_traveling_wave_metrics.jl` for comprehensive usage examples.
 
+## Oscillation Analysis
+
+The package provides utilities for analyzing oscillations in point models (non-spatial systems):
+
+```julia
+using FailureOfInhibition2025
+
+# After running a point model simulation
+sol = solve_model(A₀, tspan, params, saveat=0.1)
+
+# Detect oscillations
+has_osc, peak_times, peak_values = detect_oscillations(sol, 1)
+
+# Compute frequency
+frequency, period = compute_oscillation_frequency(sol, 1, method=:fft)
+
+# Measure amplitude
+amplitude, envelope = compute_oscillation_amplitude(sol, 1, method=:envelope)
+
+# Calculate decay rate
+decay_rate, half_life, envelope = compute_oscillation_decay(sol, 1)
+
+# Determine duration
+duration, sustained, end_time = compute_oscillation_duration(sol, 1)
+```
+
+Available metrics:
+- **`detect_oscillations`**: Detect presence of oscillations by counting peaks
+- **`compute_oscillation_frequency`**: Estimate dominant frequency using FFT or peak detection
+- **`compute_oscillation_amplitude`**: Measure oscillation amplitude using envelope, std, or peak methods
+- **`compute_oscillation_decay`**: Calculate exponential decay rate and half-life for damped oscillations
+- **`compute_oscillation_duration`**: Determine how long oscillations persist before decaying
+
+See `examples/example_oscillation_analysis.jl` for comprehensive usage examples.
+
 ## Examples
 
 See the `examples/` directory for detailed usage examples:
@@ -162,6 +198,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
 - `examples/example_traveling_wave_metrics.jl`: Demonstrates traveling wave analysis metrics
+- `examples/example_oscillation_analysis.jl`: Demonstrates oscillation analysis for point models
 
 ## Wilson-Cowan 1973 Validation
 
