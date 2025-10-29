@@ -68,76 +68,26 @@ result = compute_local_sensitivities(
     saveat=1.0  # Save every 1 time unit
 )
 
-println("  ✓ Sensitivity analysis complete")
+println("  ✓ Model solved with parametrized structure")
 println("  Number of parameters: $(length(result.param_names))")
 println("  Parameters: $(result.param_names)")
 
-# Summarize sensitivities
-println("\nComputing sensitivity summary statistics...")
-summary = summarize_sensitivities(result, params=params_point)
+# Now compute sensitivities using SciMLSensitivity.jl
+println("\nComputing sensitivities using adjoint method...")
+loss(sol) = sum(abs2, sol[end])  # Loss function: L2 norm of final state
+sens = adjoint_sensitivities(result.solution, Tsit5(), loss, InterpolatingAdjoint())
 
-println("\n--- Sensitivity Summary (sorted by mean absolute sensitivity) ---")
-sorted_summary = sort(summary, :mean_abs_sensitivity, rev=true)
-for row in eachrow(sorted_summary[1:min(10, nrow(sorted_summary)), :])
-    @printf("  %s → %s: mean_abs=%.4f, max_abs=%.4f, final=%.4f\n",
-            row.param_name, row.state_name,
-            row.mean_abs_sensitivity, row.max_abs_sensitivity, row.final_sensitivity)
-end
-
-# Save results to CSV
-output_dir = joinpath(dirname(@__FILE__), "output")
-mkpath(output_dir)
-
-sens_file = joinpath(output_dir, "point_model_sensitivities.csv")
-summary_file = joinpath(output_dir, "point_model_sensitivity_summary.csv")
-
-println("\nSaving results...")
-save_local_sensitivities(result, sens_file, params=params_point)
-println("  ✓ Full sensitivities saved to: $sens_file")
-
-using CSV, DataFrames
-CSV.write(summary_file, summary)
-println("  ✓ Summary saved to: $summary_file")
-
-#=============================================================================
-Example 2: Analyzing Sensitivity Time Evolution
-=============================================================================#
-
-println("\n\n### Example 2: Time Evolution of Sensitivities ###\n")
-
-# Look at how sensitivities change over time for specific parameters
-println("Sensitivity evolution for E population w.r.t. key parameters:")
-println()
-
-# Get indices
-e_idx = 1  # Excitatory population (first population)
-param_indices = Dict(
-    :α_1 => findfirst(==(Symbol("α_1")), result.param_names),
-    :τ_1 => findfirst(==(Symbol("τ_1")), result.param_names),
-    :β_1 => findfirst(==(Symbol("β_1")), result.param_names)
-)
-
-println("Time points: [0, 10, 20, 30, 40, 50]")
-println()
-
-for (param_name, p_idx) in param_indices
-    if p_idx !== nothing
-        println("Parameter: $param_name")
-        for t in [1, 11, 21, 31, 41, 51]  # indices for times 0, 10, 20, ...
-            if t <= length(result.times)
-                sens = result.sensitivities[t, e_idx, p_idx]
-                @printf("  t=%-3d: ∂E/∂%s = %+.6f\n", result.times[t], param_name, sens)
-            end
-        end
-        println()
-    end
+println("  ✓ Sensitivities computed")
+println("\n--- Parameter Sensitivities (∂loss/∂p) ---")
+for (i, pname) in enumerate(result.param_names)
+    @printf("  %s: %.6f\n", pname, sens[i])
 end
 
 #=============================================================================
-Example 3: Spatial Model Sensitivity (if time permits)
+Example 2: Spatial Model Sensitivity
 =============================================================================#
 
-println("\n### Example 3: Local Sensitivity - Spatial Model ###\n")
+println("\n\n### Example 2: Local Sensitivity - Spatial Model ###\n")
 
 # Create a small spatial model
 lattice_spatial = CompactLattice(extent=(10.0,), n_points=(11,))
@@ -175,30 +125,20 @@ result_spatial = compute_local_sensitivities(
     saveat=2.0
 )
 
-println("  ✓ Sensitivity analysis complete")
+println("  ✓ Model solved with parametrized structure")
 println("  Number of parameters: $(length(result_spatial.param_names))")
 println("  Number of state variables: $(size(A₀_spatial, 1) * size(A₀_spatial, 2))")
 
-# Analyze spatial average sensitivities
-summary_spatial = summarize_sensitivities(result_spatial, params=params_spatial)
+# Compute sensitivities for spatial model
+println("\nComputing sensitivities using adjoint method...")
+loss_spatial(sol) = sum(abs2, sol[end])
+sens_spatial = adjoint_sensitivities(result_spatial.solution, Tsit5(), loss_spatial, InterpolatingAdjoint())
 
-println("\n--- Spatial Model Sensitivity Summary ---")
-for row in eachrow(summary_spatial)
-    @printf("  %s (state %d): mean_abs=%.4f, max_abs=%.4f\n",
-            row.param_name, row.state_idx,
-            row.mean_abs_sensitivity, row.max_abs_sensitivity)
+println("  ✓ Sensitivities computed")
+println("\n--- Spatial Model Parameter Sensitivities ---")
+for (i, pname) in enumerate(result_spatial.param_names)
+    @printf("  %s: %.6f\n", pname, sens_spatial[i])
 end
-
-# Save spatial results
-spatial_sens_file = joinpath(output_dir, "spatial_model_sensitivities.csv")
-spatial_summary_file = joinpath(output_dir, "spatial_model_sensitivity_summary.csv")
-
-println("\nSaving spatial model results...")
-save_local_sensitivities(result_spatial, spatial_sens_file, params=params_spatial)
-println("  ✓ Sensitivities saved to: $spatial_sens_file")
-
-CSV.write(spatial_summary_file, summary_spatial)
-println("  ✓ Summary saved to: $spatial_summary_file")
 
 #=============================================================================
 Summary
@@ -209,23 +149,14 @@ println("Summary")
 println("="^70)
 println()
 println("This example demonstrated:")
-println("  ✓ Local sensitivity analysis for point models")
-println("  ✓ Computing ∂u/∂p (derivative of state w.r.t. parameters)")
-println("  ✓ Time evolution of parameter sensitivities")
-println("  ✓ Spatial model sensitivity analysis")
-println("  ✓ Summarizing and ranking parameter importance")
+println("  ✓ Setting up Wilson-Cowan models for sensitivity analysis")
+println("  ✓ Computing parameter sensitivities using adjoint methods")
+println("  ✓ Analyzing sensitivities for both point and spatial models")
 println()
 println("Key insights from sensitivity analysis:")
-println("  - Local sensitivities show how small parameter changes affect dynamics")
-println("  - Forward mode (ForwardDiffSensitivity) is efficient for few parameters")
-println("  - Sensitivities evolve over time, revealing transient vs. steady-state effects")
-println("  - Spatial models can have position-dependent sensitivities")
-println()
-println("Output files saved to: $output_dir")
-println("  - point_model_sensitivities.csv")
-println("  - point_model_sensitivity_summary.csv")
-println("  - spatial_model_sensitivities.csv")
-println("  - spatial_model_sensitivity_summary.csv")
+println("  - Adjoint methods efficiently compute ∂(loss)/∂p for many parameters")
+println("  - The loss function defines what aspect of the solution you're sensitive to")
+println("  - Sensitivities quantify how parameters affect the chosen output metric")
 println()
 println("Next steps:")
 println("  - Use adjoint methods for models with many parameters")
