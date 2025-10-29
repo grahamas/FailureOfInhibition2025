@@ -23,6 +23,9 @@ include("simulate.jl")
 # Include sensitivity analysis functionality
 include("sensitivity.jl")
 
+# Include analysis functionality
+include("analysis.jl")
+
 # Export main space types and functions
 export AbstractSpace, AbstractLattice
 export AbstractCompactLattice, CompactLattice
@@ -54,5 +57,9 @@ export solve_model, save_simulation_results, save_simulation_summary
 export compute_local_sensitivities, save_local_sensitivities, summarize_sensitivities
 export compute_sensitivity_indices
 export extract_parameters, reconstruct_parameters, ODEParameterWrapper
+
+# Export analysis functions
+export detect_traveling_peak, compute_decay_rate, compute_amplitude
+export compute_distance_traveled, compute_half_max_width
 
 end # module FailureOfInhibition2025

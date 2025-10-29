@@ -124,5 +124,10 @@ using FailureOfInhibition2025
         # Run the comprehensive test function from test_sensitivity.jl
         run_all_sensitivity_tests()
     end
+    
+    # Run traveling wave analysis tests
+    @testset "Traveling Wave Analysis" begin
+        include("test_analysis.jl")
+    end
 
 end
