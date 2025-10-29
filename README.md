@@ -14,6 +14,7 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Stimulus handling**: Flexible stimulation interfaces
 - **Multi-population support**: Support for multiple neural populations with flexible coupling
 - **Simulation utilities**: Solve models over time using DifferentialEquations.jl and save results to CSV
+- **Parameter sensitivity analysis**: Integrated support for computing parameter sensitivities using SciMLSensitivity.jl
 
 ## Installation
 
@@ -116,6 +117,56 @@ save_simulation_summary(sol, "summary.csv", params=params)
 
 See `examples/example_simulation.jl` for comprehensive simulation examples including point models, spatial models, and WCM 1973 modes.
 
+## Parameter Sensitivity Analysis
+
+The package integrates with SciMLSensitivity.jl to enable parameter sensitivity analysis for Wilson-Cowan models. This allows you to understand how changes in model parameters affect the dynamics.
+
+```julia
+using FailureOfInhibition2025
+using SciMLSensitivity
+
+# Create model parameters
+lattice = PointLattice()
+connectivity = ConnectivityMatrix{2}([
+    ScalarConnectivity(0.5) ScalarConnectivity(-0.3);
+    ScalarConnectivity(0.4) ScalarConnectivity(-0.2)
+])
+
+params = WilsonCowanParameters{2}(
+    α = (1.0, 1.5),    # Decay rates
+    β = (1.0, 1.0),    # Saturation coefficients
+    τ = (10.0, 8.0),   # Time constants
+    connectivity = connectivity,
+    nonlinearity = SigmoidNonlinearity(a=1.5, θ=0.3),
+    stimulus = nothing,
+    lattice = lattice,
+    pop_names = ("E", "I")
+)
+
+# Solve model with parameter structure for sensitivity analysis
+A₀ = reshape([0.1, 0.1], 1, 2)
+tspan = (0.0, 50.0)
+result = compute_local_sensitivities(A₀, tspan, params, saveat=1.0)
+
+# Use SciMLSensitivity.jl to compute sensitivities
+loss(sol) = sum(abs2, sol[end])  # Define a loss function
+sens = adjoint_sensitivities(result.solution, Tsit5(), loss, InterpolatingAdjoint())
+
+println("Parameter sensitivities: ", sens)
+```
+
+The `compute_local_sensitivities` function:
+- Extracts specified parameters (α, β, τ) into a vector for sensitivity analysis
+- Solves the ODE system with the parametrized structure
+- Returns a solution that can be used with SciMLSensitivity.jl functions
+
+Supported sensitivity methods include:
+- **InterpolatingAdjoint**: Efficient continuous adjoint method (recommended for most cases)
+- **QuadratureAdjoint**: Alternative adjoint method using quadrature
+- **BacksolveAdjoint**: Backsolve adjoint approach
+
+See `examples/example_sensitivity_analysis.jl` for comprehensive sensitivity analysis examples.
+
 ## Examples
 
 See the `examples/` directory for detailed usage examples:
@@ -125,6 +176,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_point_model.jl`: Demonstrates non-spatial (point) models using PointLattice
 - `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
+- `examples/example_sensitivity_analysis.jl`: Demonstrates parameter sensitivity analysis using SciMLSensitivity.jl
 
 ## Wilson-Cowan 1973 Validation
 
