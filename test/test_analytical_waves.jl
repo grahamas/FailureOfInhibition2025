@@ -18,6 +18,21 @@ where:
 - c is the wave speed
 """
 
+# Helper function to create WilsonCowanParameters for analytical wave testing
+function create_test_params(lattice)
+    conn = GaussianConnectivityParameter(1.0, (2.0,))
+    return WilsonCowanParameters{1}(
+        α = (1.0,),
+        β = (1.0,),
+        τ = (8.0,),
+        connectivity = ConnectivityMatrix{1}(reshape([conn], 1, 1)),
+        nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.25),
+        stimulus = nothing,
+        lattice = lattice,
+        pop_names = ("E",)
+    )
+end
+
 @testset "Analytical Traveling Wave Tests" begin
     
     @testset "Exponentially Decaying Sech² Wave" begin
@@ -34,20 +49,8 @@ where:
         n_points = 201
         lattice = CompactLattice(extent=(extent,), n_points=(n_points,))
         
-        # Create WilsonCowanParameters (required for the new function)
-        # The parameters are not used for the analytical wave itself,
-        # but the lattice information is extracted from them
-        conn = GaussianConnectivityParameter(1.0, (2.0,))
-        params = WilsonCowanParameters{1}(
-            α = (1.0,),
-            β = (1.0,),
-            τ = (8.0,),
-            connectivity = ConnectivityMatrix{1}(reshape([conn], 1, 1)),
-            nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.25),
-            stimulus = nothing,
-            lattice = lattice,
-            pop_names = ("E",)
-        )
+        # Create WilsonCowanParameters to provide lattice information for wave generation
+        params = create_test_params(lattice)
         
         # Time domain
         t_start = 0.0
@@ -189,18 +192,8 @@ where:
         n_points = 151
         lattice = CompactLattice(extent=(extent,), n_points=(n_points,))
         
-        # Create WilsonCowanParameters
-        conn = GaussianConnectivityParameter(1.0, (2.0,))
-        params = WilsonCowanParameters{1}(
-            α = (1.0,),
-            β = (1.0,),
-            τ = (8.0,),
-            connectivity = ConnectivityMatrix{1}(reshape([conn], 1, 1)),
-            nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.25),
-            stimulus = nothing,
-            lattice = lattice,
-            pop_names = ("E",)
-        )
+        # Create WilsonCowanParameters to provide lattice information for wave generation
+        params = create_test_params(lattice)
         
         # Time domain
         times = 0.0:0.5:15.0
