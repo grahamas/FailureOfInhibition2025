@@ -117,4 +117,9 @@ using FailureOfInhibition2025
         run_all_simulation_tests()
     end
 
+    # Run traveling wave analysis tests
+    @testset "Traveling Wave Analysis" begin
+        include("test_analysis.jl")
+    end
+
 end
