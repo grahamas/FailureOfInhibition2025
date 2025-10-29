@@ -9,6 +9,7 @@ using FailureOfInhibition2025
 using CSV
 using DataFrames
 using DifferentialEquations
+using SciMLSensitivity
 
 """
     test_parameter_extraction()
