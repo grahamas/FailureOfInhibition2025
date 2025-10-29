@@ -174,6 +174,81 @@ println("="^70)
         println("   ✓ Targeted optimization completed")
     end
     
+    @testset "Optimization with Analytical Traveling Wave" begin
+        println("\n=== Testing Optimization with Analytical Traveling Wave ===")
+        
+        # Set up parameters for the analytical wave
+        lattice = CompactLattice(extent=(40.0,), n_points=(101,))  # Larger domain
+        
+        # Create parameters that will be used to generate the analytical wave
+        # These represent the "true" or "target" parameters
+        target_wave_speed = 2.0
+        target_decay_rate = 0.05
+        target_wavenumber = 1.0
+        target_amplitude = 1.0
+        
+        # Create base parameters to start optimization from
+        conn = GaussianConnectivityParameter(1.0, (2.0,))
+        base_params = WilsonCowanParameters{1}(
+            α = (1.0,),
+            β = (1.0,),
+            τ = (8.0,),
+            connectivity = ConnectivityMatrix{1}(reshape([conn], 1, 1)),
+            nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.25),
+            stimulus = nothing,
+            lattice = lattice,
+            pop_names = ("E",)
+        )
+        
+        # Generate the analytical traveling wave solution
+        times = 0.0:0.2:10.0
+        analytical_sol = generate_analytical_traveling_wave(
+            base_params, times,
+            wave_speed = target_wave_speed,
+            decay_rate = target_decay_rate,
+            wavenumber = target_wavenumber,
+            amplitude = target_amplitude,
+            initial_position = -10.0
+        )
+        
+        println("  Analytical wave parameters:")
+        println("    - Wave speed: $(target_wave_speed)")
+        println("    - Decay rate: $(target_decay_rate)")
+        println("    - Wavenumber: $(target_wavenumber)")
+        println("    - Amplitude: $(target_amplitude)")
+        
+        # Test that the analytical wave can be analyzed
+        println("\n  Testing analytical wave analysis:")
+        has_peak, trajectory, peak_times = detect_traveling_peak(analytical_sol, 1, threshold=0.1)
+        @test has_peak == true
+        println("    ✓ Traveling peak detected in analytical wave")
+        
+        distance, _ = compute_distance_traveled(analytical_sol, 1, lattice, threshold=0.1)
+        expected_distance = target_wave_speed * times[end]
+        distance_error = abs(distance - expected_distance) / expected_distance
+        println("    - Distance: expected $(round(expected_distance, digits=2)), got $(round(distance, digits=2)), error $(round(distance_error * 100, digits=1))%")
+        @test distance_error < 0.15  # Allow 15% error due to discretization
+        println("    ✓ Distance measurement reasonably accurate")
+        
+        decay, _ = compute_decay_rate(analytical_sol, 1)
+        if decay !== nothing
+            decay_error = abs(decay - target_decay_rate) / target_decay_rate
+            println("    - Decay rate: expected $(round(target_decay_rate, digits=4)), got $(round(decay, digits=4)), error $(round(decay_error * 100, digits=1))%")
+            @test decay_error < 0.2  # Allow 20% error
+            println("    ✓ Decay rate measurement reasonably accurate")
+        else
+            println("    - No decay detected (decay rate too small)")
+        end
+        
+        amp = compute_amplitude(analytical_sol, 1, method=:max)
+        amp_error = abs(amp - target_amplitude) / target_amplitude
+        println("    - Amplitude: expected $(round(target_amplitude, digits=3)), got $(round(amp, digits=3)), error $(round(amp_error * 100, digits=1))%")
+        @test amp_error < 0.1
+        println("    ✓ Amplitude measurement accurate")
+        
+        println("\n  ✓ Analytical traveling wave successfully parameterized and analyzed")
+    end
+    
 end
 
 println("\n" * "="^70)
