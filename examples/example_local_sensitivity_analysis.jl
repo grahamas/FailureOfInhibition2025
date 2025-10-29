@@ -61,11 +61,10 @@ println("  Parameters analyzed: α (decay), β (saturation), τ (time constant)"
 println("  Populations: E (excitatory), I (inhibitory)")
 println("  Time span: $(tspan)")
 
-# Compute sensitivities using forward mode (good for few parameters)
+# Set up model for sensitivity analysis
 result = compute_local_sensitivities(
     A₀_point, tspan, params_point,
     include_params=[:α, :β, :τ],
-    method=ForwardDiffSensitivity(),
     saveat=1.0  # Save every 1 time unit
 )
 
@@ -169,11 +168,10 @@ println("  Spatial lattice: 11 points over extent 10.0")
 println("  Time span: $(tspan_spatial)")
 println("  Single population with Gaussian connectivity")
 
-# Compute sensitivities (only analyze α, β, τ for single population)
+# Set up model for sensitivity analysis (only analyze α, β, τ for single population)
 result_spatial = compute_local_sensitivities(
     A₀_spatial, tspan_spatial, params_spatial,
     include_params=[:α, :β, :τ],
-    method=ForwardDiffSensitivity(),
     saveat=2.0
 )
 
