@@ -8,6 +8,7 @@ parameters that produce desired traveling wave behaviors in 1D spatial models.
 """
 
 using FailureOfInhibition2025
+using Optim  # For accessing result properties
 using Printf
 
 println("="^70)
