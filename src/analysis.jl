@@ -373,9 +373,11 @@ function compute_half_max_width(sol, pop_idx=1, time_idx=nothing, lattice=nothin
     if isempty(above_indices)
         return 0.0, half_max_level, profile
     end
-    
-    # Calculate width as span of indices above half-max
-    width_indices = maximum(above_indices) - minimum(above_indices) + 1
+
+    # Find half_max as span between time_idx (peak) and the edge of
+    # the above-half-max ones containing it
+    edges = xor.(above_indices[1:end-1], above_indices[2:end])
+    next_half_max = findfirst(edges[time_idx:end])
     
     # Convert to physical distance if lattice is provided
     if lattice !== nothing
@@ -384,13 +386,13 @@ function compute_half_max_width(sol, pop_idx=1, time_idx=nothing, lattice=nothin
         
         if length(ext) == 1
             spatial_scale = ext[1] / (n_pts - 1)
-            physical_width = (width_indices - 1) * spatial_scale
+            physical_width = next_half_max * spatial_scale
             return physical_width, half_max_level, profile
         else
-            return Float64(width_indices), half_max_level, profile
+            return Float64(next_half_max), half_max_level, profile
         end
     else
-        return Float64(width_indices), half_max_level, profile
+        return Float64(next_half_max), half_max_level, profile
     end
 end
 
