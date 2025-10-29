@@ -337,13 +337,13 @@ function test_different_sensitivity_methods()
 end
 
 """
-    run_all_sensitivity_tests()
+    run_all_local_sensitivity_tests()
 
-Run all sensitivity analysis tests.
+Run all local sensitivity analysis tests.
 """
-function run_all_sensitivity_tests()
+function run_all_local_sensitivity_tests()
     println("\n" * "="^70)
-    println("Running Sensitivity Analysis Tests")
+    println("Running Local Sensitivity Analysis Tests")
     println("="^70)
     
     test_parameter_extraction()
@@ -354,12 +354,12 @@ function run_all_sensitivity_tests()
     test_different_sensitivity_methods()
     
     println("\n" * "="^70)
-    println("✓ All Sensitivity Analysis Tests Passed!")
+    println("✓ All Local Sensitivity Analysis Tests Passed!")
     println("="^70)
 end
 
 # Run tests if this file is executed directly
 if abspath(PROGRAM_FILE) == @__FILE__
     using FailureOfInhibition2025
-    run_all_sensitivity_tests()
+    run_all_local_sensitivity_tests()
 end
