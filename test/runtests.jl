@@ -127,4 +127,9 @@ using FailureOfInhibition2025
         include("test_oscillation_analysis.jl")
     end
 
+    # Run oscillation analysis tests on synthetic sine waves
+    @testset "Oscillation Analysis - Synthetic Validation" begin
+        include("test_oscillation_analysis_synthetic.jl")
+    end
+
 end
