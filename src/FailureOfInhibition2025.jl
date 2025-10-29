@@ -21,7 +21,7 @@ include("models.jl")
 include("simulate.jl")
 
 # Include sensitivity analysis functionality
-include("sensitivity.jl")
+include("local_sensitivity.jl")
 
 # Include analysis functionality
 include("analysis.jl")
