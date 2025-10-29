@@ -50,9 +50,7 @@ export WilsonCowanParameters, wcm1973!, population
 # Export simulation functions
 export solve_model, save_simulation_results, save_simulation_summary
 
-# Export bifurcation analysis functions
-export BifurcationPoint, BifurcationDiagram
-export detect_steady_state, detect_oscillations, analyze_dynamics
-export parameter_sweep_2d, update_parameter, create_bifurcation_problem, wcm_rhs!
+# Export bifurcation analysis functions (BifurcationKit integration)
+export create_bifurcation_problem, wcm_rhs!
 
 end # module FailureOfInhibition2025

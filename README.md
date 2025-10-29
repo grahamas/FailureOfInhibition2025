@@ -119,45 +119,7 @@ See `examples/example_simulation.jl` for comprehensive simulation examples inclu
 
 ## Bifurcation Analysis
 
-The package provides tools for analyzing how system dynamics change across parameter space, powered by [BifurcationKit.jl](https://github.com/bifurcationkit/BifurcationKit.jl):
-
-```julia
-using FailureOfInhibition2025
-
-# Create base parameters
-params = create_point_model_wcm1973(:active_transient)
-
-# Perform 2D parameter sweep
-diagram = parameter_sweep_2d(
-    params,
-    :bₑₑ, 0.5:0.1:3.0,  # E-E coupling strength
-    :bᵢₑ, 0.5:0.1:3.0,  # I-E coupling strength
-    tspan=(0.0, 500.0)
-)
-
-# Analyze results
-for (i, p1) in enumerate(diagram.param1_values)
-    for (j, p2) in enumerate(diagram.param2_values)
-        point = diagram.points[i, j]
-        if point.is_oscillatory
-            println("Oscillatory at bₑₑ=$p1, bᵢₑ=$p2")
-            println("  Period: $(point.oscillation_period)")
-            println("  Amplitude: $(point.oscillation_amplitude)")
-        end
-    end
-end
-```
-
-The bifurcation analysis tools include:
-- **Parameter sweeping**: Systematically vary parameter pairs across a 2D grid
-- **Dynamics classification**: Automatically detect steady states, oscillations, and transients
-- **Oscillation characterization**: Measure oscillation period and amplitude
-- **Activity statistics**: Track mean, min, and max activity for each population
-- **BifurcationKit integration**: Create BifurcationProblem objects for advanced continuation analysis
-
-### Advanced Usage with BifurcationKit
-
-For more sophisticated bifurcation analysis, you can use BifurcationKit directly:
+The package provides bifurcation analysis tools powered by [BifurcationKit.jl](https://github.com/bifurcationkit/BifurcationKit.jl), enabling continuation methods to trace bifurcation curves and detect critical transitions in Wilson-Cowan models.
 
 ```julia
 using FailureOfInhibition2025
@@ -165,14 +127,43 @@ using BifurcationKit
 
 # Create Wilson-Cowan parameters
 params = create_point_model_wcm1973(:active_transient)
+
+# Initial guess for steady state
 u0 = reshape([0.1, 0.1], 1, 2)
 
 # Create BifurcationProblem (requires parameter lens from BifurcationKit)
-# This allows continuation methods, detection of Hopf bifurcations, etc.
+# Example: vary the decay rate α[1]
+param_lens = (@lens _.α[1])
 prob = create_bifurcation_problem(params, param_lens, u0=u0)
+
+# Set up continuation parameters
+opts = ContinuationPar(
+    dsmax = 0.1,
+    dsmin = 1e-4,
+    ds = -0.01,
+    maxSteps = 100
+)
+
+# Run continuation to trace bifurcation curve
+br = continuation(prob, PALC(), opts)
 ```
 
-See `examples/example_bifurcation_diagrams.jl` for detailed demonstrations of bifurcation analysis with informative parameter pairs.
+### Continuation Analysis Features
+
+BifurcationKit provides sophisticated tools for analyzing parameter-dependent dynamics:
+
+- **Continuation methods**: Trace solution branches as parameters vary
+- **Automatic bifurcation detection**: Identify Hopf, fold, and branch point bifurcations
+- **Stability analysis**: Compute eigenvalues along solution branches
+- **Branch switching**: Continue along different solution branches at bifurcation points
+- **Periodic orbit continuation**: Analyze limit cycles and their bifurcations
+
+### Key Functions
+
+- `create_bifurcation_problem(params, param_lens; u0)`: Create a BifurcationProblem from Wilson-Cowan parameters
+- `wcm_rhs!(dA, A, params, t)`: Right-hand side function compatible with BifurcationKit
+
+See `examples/example_bifurcation_diagrams.jl` for detailed demonstrations of continuation analysis with Wilson-Cowan models.
 
 ## Examples
 
@@ -183,7 +174,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_point_model.jl`: Demonstrates non-spatial (point) models using PointLattice
 - `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
-- `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis across parameter space
+- `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis using BifurcationKit continuation methods
 
 ## Wilson-Cowan 1973 Validation
 

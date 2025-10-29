@@ -1,245 +1,188 @@
 #!/usr/bin/env julia
 
 """
-Example demonstrating bifurcation analysis of Wilson-Cowan models.
+Example demonstrating bifurcation analysis of Wilson-Cowan models using BifurcationKit.
 
-This example shows how to generate bifurcation diagrams for informative parameter pairs,
-revealing how system dynamics change across parameter space. Based on the three dynamical
-modes from Wilson & Cowan 1973, we explore parameter regions that transition between
-different behaviors (steady states, oscillations, active transients).
+This example shows how to use continuation methods to trace bifurcation curves and
+detect bifurcation points (Hopf, fold, etc.) in the Wilson-Cowan model. Based on the
+three dynamical modes from Wilson & Cowan 1973, we demonstrate how to analyze
+transitions between different behaviors.
 
-The bifurcation analysis uses BifurcationKit.jl for advanced capabilities while providing
-a simple interface for parameter space exploration.
+For more information on BifurcationKit, see:
+https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/
 """
 
 using FailureOfInhibition2025
+using BifurcationKit
 
 # Load the WCM 1973 parameter creation functions
 include("../test/test_wcm1973_validation.jl")
 
 println("\n" * "="^70)
 println("Bifurcation Analysis: Wilson-Cowan Model")
-println("Powered by BifurcationKit.jl")
+println("Using BifurcationKit Continuation Methods")
 println("="^70)
 
 #=============================================================================
-Example 1: E-E vs I-E Coupling Strength
+Introduction to BifurcationKit with Wilson-Cowan Models
 =============================================================================#
 
-println("\n### Example 1: E-E vs I-E Coupling Strength ###\n")
-println("This parameter pair is critical for determining stability.")
-println("Higher E-E coupling (bₑₑ) increases excitatory feedback.")
-println("Higher I-E coupling (bᵢₑ) increases inhibitory feedback to E population.")
+println("\n### BifurcationKit Continuation Analysis ###\n")
+println("This example demonstrates how to use BifurcationKit to:")
+println("  - Create a bifurcation problem from Wilson-Cowan parameters")
+println("  - Set up continuation parameters")
+println("  - Trace solution branches as parameters vary")
+println("  - Detect bifurcation points (Hopf, fold, etc.)")
 println()
 
-# Create base parameters (point model for faster computation)
+#=============================================================================
+Example 1: Setting up a Bifurcation Problem
+=============================================================================#
+
+println("\n### Example 1: Creating a BifurcationProblem ###\n")
+
+# Create point model parameters for faster computation
 base_params = create_point_model_wcm1973(:active_transient)
 
-println("Performing 2D parameter sweep...")
-println("  - E-E coupling (bₑₑ): 0.5 to 3.0")
-println("  - I-E coupling (bᵢₑ): 0.5 to 3.0")
-println("  - Grid: 11x11 points")
-println("  - Simulation time: 500 time units")
+# Initial guess for steady state
+u0 = reshape([0.1, 0.1], 1, 2)
+
+println("Created Wilson-Cowan parameters:")
+println("  - Mode: Active Transient")
+println("  - Populations: $(base_params.pop_names)")
+println("  - Lattice type: $(typeof(base_params.lattice))")
 println()
 
-# Perform parameter sweep
-# Note: Using coarser grid for demonstration; increase resolution for publication quality
-diagram_ee_ie = parameter_sweep_2d(
-    base_params,
-    :bₑₑ, 0.5:0.25:3.0,  # E-E coupling
-    :bᵢₑ, 0.5:0.25:3.0,  # I-E coupling
-    tspan=(0.0, 500.0),
-    saveat=0.5
-)
+# Note: To use continuation methods, you need to specify which parameter to vary
+# using BifurcationKit's lens system. For example:
+# 
+# using Setfield
+# param_lens = @lens _.α[1]  # Vary decay rate of E population
+#
+# Then create the bifurcation problem:
+# prob = create_bifurcation_problem(base_params, param_lens, u0=u0)
+#
+# And run continuation:
+# opts = ContinuationPar(
+#     dsmax = 0.1,      # Maximum continuation step
+#     dsmin = 1e-4,     # Minimum continuation step  
+#     ds = -0.01,       # Initial step (negative = decrease parameter)
+#     maxSteps = 100,   # Maximum number of steps
+#     pMin = 0.0,       # Minimum parameter value
+#     pMax = 5.0        # Maximum parameter value
+# )
+# br = continuation(prob, PALC(), opts)
 
-println("✓ Sweep complete!")
-println("\nResults summary:")
-println("  Parameter combinations tested: $(length(diagram_ee_ie.param1_values) * length(diagram_ee_ie.param2_values))")
-
-# Analyze results
-n_oscillatory = sum([p.is_oscillatory for p in diagram_ee_ie.points])
-n_steady = sum([!isnothing(p.steady_state) for p in diagram_ee_ie.points])
-total_points = length(diagram_ee_ie.points)
-
-println("  Oscillatory behavior: $n_oscillatory / $total_points points")
-println("  Steady state behavior: $n_steady / $total_points points")
+println("To use continuation methods:")
+println("  1. Define a parameter lens (e.g., @lens _.α[1])")
+println("  2. Create bifurcation problem: create_bifurcation_problem(params, lens)")
+println("  3. Set continuation options: ContinuationPar(...)")
+println("  4. Run continuation: continuation(prob, PALC(), opts)")
 println()
-
-# Show some example points
-println("Example parameter combinations:")
-println()
-
-# Find a point with oscillations
-for (i, p1) in enumerate(diagram_ee_ie.param1_values)
-    for (j, p2) in enumerate(diagram_ee_ie.param2_values)
-        point = diagram_ee_ie.points[i, j]
-        if point.is_oscillatory && !isnothing(point.oscillation_period)
-            println("  Oscillatory: bₑₑ=$(p1), bᵢₑ=$(p2)")
-            println("    Period: $(round(point.oscillation_period, digits=2))")
-            println("    Amplitude: $(round(point.oscillation_amplitude, digits=4))")
-            println("    Mean E activity: $(round(point.mean_activity[1], digits=4))")
-            break
-        end
-    end
-end
-
-println()
-
-# Find a point with steady state
-for (i, p1) in enumerate(diagram_ee_ie.param1_values)
-    for (j, p2) in enumerate(diagram_ee_ie.param2_values)
-        point = diagram_ee_ie.points[i, j]
-        if !isnothing(point.steady_state) && !point.is_oscillatory
-            println("  Steady state: bₑₑ=$(p1), bᵢₑ=$(p2)")
-            println("    E activity: $(round(point.mean_activity[1], digits=4))")
-            println("    I activity: $(round(point.mean_activity[2], digits=4))")
-            break
-        end
-    end
-end
 
 #=============================================================================
-Example 2: E-I vs I-I Coupling Strength
+Example 2: Understanding the Continuation Interface
 =============================================================================#
 
-println("\n\n### Example 2: E-I vs I-I Coupling Strength ###\n")
-println("This parameter pair controls the inhibitory network dynamics.")
-println("E-I coupling (bₑᵢ) determines how strongly E drives I population.")
-println("I-I coupling (bᵢᵢ) controls inhibitory self-regulation.")
+println("\n### Example 2: Continuation Method Overview ###\n")
+
+println("BifurcationKit continuation methods provide:")
+println("  ✓ Automatic detection of bifurcation points")
+println("    - Fold (saddle-node) bifurcations")
+println("    - Hopf bifurcations (birth of oscillations)")
+println("    - Branch points")
 println()
-
-println("Performing 2D parameter sweep...")
-println("  - E-I coupling (bₑᵢ): 0.5 to 3.0")
-println("  - I-I coupling (bᵢᵢ): 0.1 to 2.5")
-println("  - Grid: 11x11 points")
+println("  ✓ Stability analysis via eigenvalue computation")
+println("  ✓ Branch switching at bifurcation points")
+println("  ✓ Periodic orbit continuation (for limit cycles)")
 println()
-
-diagram_ei_ii = parameter_sweep_2d(
-    base_params,
-    :bₑᵢ, 0.5:0.25:3.0,  # E-I coupling
-    :bᵢᵢ, 0.1:0.24:2.5,  # I-I coupling
-    tspan=(0.0, 500.0),
-    saveat=0.5
-)
-
-println("✓ Sweep complete!")
-println()
-
-# Analyze results
-n_oscillatory = sum([p.is_oscillatory for p in diagram_ei_ii.points])
-println("  Oscillatory behavior: $n_oscillatory / $(length(diagram_ei_ii.points)) points")
 
 #=============================================================================
-Example 3: Sigmoid Steepness Parameters (vₑ vs vᵢ)
+Example 3: Working with wcm_rhs!
 =============================================================================#
 
-println("\n\n### Example 3: Sigmoid Steepness (vₑ vs vᵢ) ###\n")
-println("Sigmoid steepness controls neuronal response sharpness.")
-println("Higher values → more switch-like behavior")
-println("Lower values → more graded responses")
+println("\n### Example 3: Using wcm_rhs! Function ###\n")
+
+# The wcm_rhs! function adapts the Wilson-Cowan model for BifurcationKit
+A = reshape([0.15, 0.12], 1, 2)
+dA = zeros(size(A))
+
+# Compute derivatives
+wcm_rhs!(dA, A, base_params, 0.0)
+
+println("Wilson-Cowan dynamics at A = [$(A[1,1]), $(A[1,2])]:")
+println("  dE/dt = $(round(dA[1,1], digits=6))")
+println("  dI/dt = $(round(dA[1,2], digits=6))")
 println()
-
-println("Performing 2D parameter sweep...")
-println("  - E steepness (vₑ): 0.1 to 2.0")
-println("  - I steepness (vᵢ): 0.1 to 2.0")
-println("  - Grid: 10x10 points")
+println("This function is used internally by create_bifurcation_problem")
+println("to interface with BifurcationKit's continuation methods.")
 println()
-
-diagram_ve_vi = parameter_sweep_2d(
-    base_params,
-    :vₑ, 0.1:0.21:2.0,  # E sigmoid steepness
-    :vᵢ, 0.1:0.21:2.0,  # I sigmoid steepness
-    tspan=(0.0, 500.0),
-    saveat=0.5
-)
-
-println("✓ Sweep complete!")
-println()
-
-# Find oscillatory regime
-n_oscillatory = sum([p.is_oscillatory for p in diagram_ve_vi.points])
-println("  Oscillatory behavior: $n_oscillatory / $(length(diagram_ve_vi.points)) points")
-println("  (Note: Steeper sigmoids often promote oscillations)")
 
 #=============================================================================
-Example 4: Comparing Different Base Modes
+Example 4: Typical Workflow
 =============================================================================#
 
-println("\n\n### Example 4: Mode-Dependent Bifurcation Structure ###\n")
-println("Different WCM 1973 modes have different bifurcation structures.")
-println("Testing how oscillatory mode differs from active transient mode.")
+println("\n### Example 4: Typical BifurcationKit Workflow ###\n")
+
+println("```julia")
+println("using FailureOfInhibition2025")
+println("using BifurcationKit")
+println("using Setfield")
+println()
+println("# 1. Create Wilson-Cowan parameters")
+println("params = create_point_model_wcm1973(:active_transient)")
+println()
+println("# 2. Define which parameter to vary")
+println("# Example: vary E-E coupling strength")
+println("# Note: This requires modifying connectivity, which is complex")
+println("# For simple parameters like α, τ, use:")
+println("param_lens = @lens _.α[1]")
+println()
+println("# 3. Create bifurcation problem")
+println("u0 = reshape([0.1, 0.1], 1, 2)")
+println("prob = create_bifurcation_problem(params, param_lens, u0=u0)")
+println()
+println("# 4. Set continuation parameters")
+println("opts = ContinuationPar(")
+println("    dsmax = 0.1,")
+println("    dsmin = 1e-4,")
+println("    ds = -0.01,")
+println("    maxSteps = 100,")
+println("    pMin = 0.0,")
+println("    pMax = 5.0")
+println(")")
+println()
+println("# 5. Run continuation")
+println("br = continuation(prob, PALC(), opts)")
+println()
+println("# 6. Analyze results")
+println("# - br contains the solution branch")
+println("# - Bifurcation points are marked in br")
+println("# - Can plot with: plot(br)")
+println("```")
 println()
 
-# Use oscillatory mode as base
-base_params_osc = create_point_model_wcm1973(:oscillatory)
-
-println("Sweeping oscillatory mode parameters...")
-diagram_osc = parameter_sweep_2d(
-    base_params_osc,
-    :bₑₑ, 1.0:0.25:3.0,
-    :bᵢₑ, 0.5:0.25:2.5,
-    tspan=(0.0, 500.0),
-    saveat=0.5
-)
-
-n_osc_mode = sum([p.is_oscillatory for p in diagram_osc.points])
-println("✓ Complete!")
-println("  Oscillations in oscillatory mode: $n_osc_mode / $(length(diagram_osc.points)) points")
-println("  (Compare to active transient mode which has fewer oscillatory regions)")
-
 #=============================================================================
-Summary and Usage Notes
+Summary
 =============================================================================#
 
 println("\n" * "="^70)
 println("Summary")
 println("="^70)
 println()
-println("Bifurcation diagrams reveal:")
-println("  ✓ Parameter regions with different dynamics (steady, oscillatory, transient)")
-println("  ✓ Transitions between behavioral regimes")
-println("  ✓ Critical parameter combinations for specific behaviors")
+println("This example demonstrated:")
+println("  ✓ How to create BifurcationProblem objects for Wilson-Cowan models")
+println("  ✓ The wcm_rhs! function for BifurcationKit compatibility")
+println("  ✓ Overview of continuation method workflow")
 println()
-println("Informative parameter pairs demonstrated:")
-println("  1. E-E vs I-E coupling (bₑₑ vs bᵢₑ): Stability and excitation-inhibition balance")
-println("  2. E-I vs I-I coupling (bₑᵢ vs bᵢᵢ): Inhibitory network dynamics")
-println("  3. Sigmoid steepness (vₑ vs vᵢ): Nonlinearity effects")
+println("Key functions:")
+println("  - create_bifurcation_problem(): Create BifurcationKit problem")
+println("  - wcm_rhs!(): Right-hand side for continuation methods")
 println()
-println("The BifurcationDiagram objects can be used for:")
-println("  - Creating heatmaps of activity levels")
-println("  - Plotting stability boundaries")
-println("  - Identifying oscillatory vs non-oscillatory regimes")
-println("  - Analyzing bifurcation curves")
+println("For detailed BifurcationKit usage, see:")
+println("  https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/")
 println()
-println("Access results via:")
-println("  - diagram.points[i,j]: BifurcationPoint at (param1[i], param2[j])")
-println("  - point.mean_activity: Mean activity of each population")
-println("  - point.is_oscillatory: Boolean indicating oscillations")
-println("  - point.oscillation_period: Period of oscillations (if present)")
-println()
-println("For publication-quality diagrams:")
-println("  - Increase grid resolution (more parameter values)")
-println("  - Increase simulation time for better convergence")
-println("  - Use appropriate visualization tools (e.g., Plots.jl, Makie.jl)")
-println()
-println("Example visualization code (requires Plots.jl):")
-println("```julia")
-println("using Plots")
-println()
-println("# Extract mean E activity across parameter space")
-println("n1, n2 = size(diagram.points)")
-println("mean_E = [diagram.points[i,j].mean_activity[1] for i in 1:n1, j in 1:n2]")
-println()
-println("# Create heatmap")
-println("heatmap(diagram.param2_values, diagram.param1_values, mean_E,")
-println("        xlabel=\"I-E coupling (bᵢₑ)\", ylabel=\"E-E coupling (bₑₑ)\",")
-println("        title=\"Mean E Activity\", colorbar_title=\"Activity\")")
-println()
-println("# Extract oscillatory regions")
-println("is_osc = [diagram.points[i,j].is_oscillatory for i in 1:n1, j in 1:n2]")
-println("heatmap(diagram.param2_values, diagram.param1_values, is_osc,")
-println("        xlabel=\"I-E coupling (bᵢₑ)\", ylabel=\"E-E coupling (bₑₑ)\",")
-println("        title=\"Oscillatory Regime\", color=:viridis)")
-println("```")
+println("Note: Parameter variation requires using BifurcationKit's lens system")
+println("to modify nested structures like connectivity matrices.")
 println()
 println("="^70)
