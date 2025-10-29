@@ -138,8 +138,8 @@ where:
         println("\n  Testing compute_half_max_width:")
         width, half_max, profile = compute_half_max_width(sol, 1, 1, lattice)  # At t=0
         
-        # For sech²(kx), the FWHM is approximately 2.634/k
-        expected_width = 2.634 / k
+        # For sech²(kx), the FWHM is approximately 1.7627/k
+        expected_width = (1.7627/2) / k
         width_error = abs(width - expected_width) / expected_width
         
         println("    - Expected width (theoretical FWHM): $(round(expected_width, digits=2))")
