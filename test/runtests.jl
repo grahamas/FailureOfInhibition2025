@@ -132,6 +132,16 @@ using FailureOfInhibition2025
         include("test_analysis.jl")
     end
 
+    # Run analytical traveling wave tests
+    @testset "Analytical Traveling Waves" begin
+        include("test_analytical_waves.jl")
+    end
+
+    # Run parameter optimization tests
+    @testset "Parameter Optimization" begin
+        include("test_optimize.jl")
+    end
+  
     # Run oscillation analysis tests
     @testset "Oscillation Analysis" begin
         include("test_oscillation_analysis.jl")

@@ -300,7 +300,9 @@ end
 Compute the half-maximum half-width (HMHW) of the activity profile.
 
 The HMHW is a measure of the spatial extent of activation, calculated as the
-width of the region where activity exceeds half of the maximum value.
+width of the contiguous region around the peak that exceeds half of the maximum value.
+If multiple separate peaks exist, this function measures only the width of the region
+containing the global maximum peak.
 
 # Arguments
 - `sol`: ODE solution object from `solve_model()`
@@ -366,16 +368,26 @@ function compute_half_max_width(sol, pop_idx=1, time_idx=nothing, lattice=nothin
         return 0.0, half_max_level, profile
     end
     
-    # Find contiguous regions above half-max
-    # Get indices where activity is above half-max
-    above_indices = findall(above_half_max)
+    # Find the peak location
+    peak_idx = argmax(profile)
     
-    if isempty(above_indices)
-        return 0.0, half_max_level, profile
+    # Find the contiguous region around the peak that is above half-max
+    # Start from the peak and expand left and right until we hit values below half-max
+    left_idx = peak_idx
+    right_idx = peak_idx
+    
+    # Expand left
+    while left_idx > 1 && above_half_max[left_idx - 1]
+        left_idx -= 1
     end
     
-    # Calculate width as span of indices above half-max
-    width_indices = maximum(above_indices) - minimum(above_indices) + 1
+    # Expand right
+    while right_idx < length(profile) && above_half_max[right_idx + 1]
+        right_idx += 1
+    end
+    
+    # Calculate width of this contiguous region
+    width_indices = right_idx - left_idx + 1
     
     # Convert to physical distance if lattice is provided
     if lattice !== nothing
