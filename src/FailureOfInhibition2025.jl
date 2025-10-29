@@ -20,6 +20,9 @@ include("models.jl")
 # Include simulation functionality
 include("simulate.jl")
 
+# Include bifurcation analysis functionality
+include("bifurcation.jl")
+
 # Include sensitivity analysis functionality
 include("sensitivity.jl")
 
@@ -52,6 +55,9 @@ export WilsonCowanParameters, wcm1973!, population
 
 # Export simulation functions
 export solve_model, save_simulation_results, save_simulation_summary
+
+# Export bifurcation analysis functions (BifurcationKit integration)
+export create_bifurcation_problem, wcm_rhs!
 
 # Export sensitivity analysis functions
 export sobol_sensitivity_analysis, morris_sensitivity_analysis
