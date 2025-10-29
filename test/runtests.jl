@@ -122,4 +122,9 @@ using FailureOfInhibition2025
         include("test_analysis.jl")
     end
 
+    # Run parameter optimization tests
+    @testset "Parameter Optimization" begin
+        include("test_optimize.jl")
+    end
+
 end

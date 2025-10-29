@@ -23,6 +23,9 @@ include("simulate.jl")
 # Include analysis functionality
 include("analysis.jl")
 
+# Include optimization functionality
+include("optimize.jl")
+
 # Export main space types and functions
 export AbstractSpace, AbstractLattice
 export AbstractCompactLattice, CompactLattice
@@ -53,5 +56,8 @@ export solve_model, save_simulation_results, save_simulation_summary
 # Export analysis functions
 export detect_traveling_peak, compute_decay_rate, compute_amplitude
 export compute_distance_traveled, compute_half_max_width
+
+# Export optimization functions
+export TravelingWaveObjective, optimize_for_traveling_wave
 
 end # module FailureOfInhibition2025

@@ -15,6 +15,7 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Multi-population support**: Support for multiple neural populations with flexible coupling
 - **Simulation utilities**: Solve models over time using DifferentialEquations.jl and save results to CSV
 - **Traveling wave analysis**: Metrics for detecting and characterizing traveling waves in neural activity
+- **Parameter optimization**: Find parameters that produce desired traveling wave behaviors using Optim.jl
 
 ## Installation
 
@@ -152,6 +153,55 @@ Available metrics:
 
 See `examples/example_traveling_wave_metrics.jl` for comprehensive usage examples.
 
+## Parameter Optimization
+
+The package provides optimization tools to find Wilson-Cowan model parameters that produce desired traveling wave behaviors:
+
+```julia
+using FailureOfInhibition2025
+
+# Set up base parameters
+lattice = CompactLattice(extent=(20.0,), n_points=(101,))
+conn = GaussianConnectivityParameter(0.8, (2.0,))
+params = WilsonCowanParameters{1}(
+    α=(1.0,), β=(1.0,), τ=(8.0,),
+    connectivity=ConnectivityMatrix{1}(reshape([conn], 1, 1)),
+    nonlinearity=SigmoidNonlinearity(a=2.0, θ=0.25),
+    stimulus=nothing, lattice=lattice, pop_names=("E",)
+)
+
+# Define parameter ranges to optimize
+param_ranges = (
+    connectivity_width = (1.5, 4.0),
+    sigmoid_a = (1.5, 3.5)
+)
+
+# Define objective: maximize distance traveled
+objective = TravelingWaveObjective(
+    target_distance=nothing,  # Maximize distance
+    minimize_decay=true,
+    require_traveling=true
+)
+
+# Initial condition
+A₀ = zeros(101, 1)
+A₀[15:20, 1] .= 0.6
+
+# Optimize
+result, best_params = optimize_for_traveling_wave(
+    params, param_ranges, objective, A₀, (0.0, 40.0),
+    maxiter=50
+)
+```
+
+Features:
+- **Flexible objectives**: Target specific metrics or maximize/minimize
+- **Multiple parameters**: Optimize connectivity, nonlinearity, and time constants
+- **Integration with metrics**: Uses traveling wave analysis for objective evaluation
+- **Bounded optimization**: Specify valid ranges for each parameter
+
+See `examples/example_optimize_traveling_waves.jl` for detailed optimization examples.
+
 ## Examples
 
 See the `examples/` directory for detailed usage examples:
@@ -162,6 +212,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
 - `examples/example_traveling_wave_metrics.jl`: Demonstrates traveling wave analysis metrics
+- `examples/example_optimize_traveling_waves.jl`: Demonstrates parameter optimization for traveling waves
 
 ## Wilson-Cowan 1973 Validation
 
