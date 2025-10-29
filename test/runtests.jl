@@ -117,6 +117,16 @@ using FailureOfInhibition2025
         run_all_simulation_tests()
     end
 
+    # Run bifurcation analysis tests
+    @testset "Bifurcation Analysis" begin
+        include("test_bifurcation.jl")
+    end
+  
+    # Run sensitivity analysis tests
+    @testset "Sensitivity Analysis" begin
+        include("test_sensitivity.jl")
+    end
+    
     # Run traveling wave analysis tests
     @testset "Traveling Wave Analysis" begin
         include("test_analysis.jl")
@@ -130,6 +140,16 @@ using FailureOfInhibition2025
     # Run parameter optimization tests
     @testset "Parameter Optimization" begin
         include("test_optimize.jl")
+    end
+  
+    # Run oscillation analysis tests
+    @testset "Oscillation Analysis" begin
+        include("test_oscillation_analysis.jl")
+    end
+
+    # Run oscillation analysis tests on synthetic sine waves
+    @testset "Oscillation Analysis - Synthetic Validation" begin
+        include("test_oscillation_analysis_synthetic.jl")
     end
 
 end

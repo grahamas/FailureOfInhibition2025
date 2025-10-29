@@ -1,12 +1,14 @@
 """
-Traveling wave analysis and metrics for neural field simulations.
+Analysis utilities for neural field simulations.
 
-This module provides functions to detect and measure properties of traveling waves
-in spatiotemporal activity patterns from Wilson-Cowan model simulations.
+This module provides functions to:
+1. Detect and measure properties of traveling waves in spatial models
+2. Analyze oscillations in point models (frequency, amplitude, decay, duration)
 """
 
 using Statistics
 using LinearAlgebra
+using FFTW
 
 """
     detect_traveling_peak(sol, pop_idx=1; threshold=0.1, min_distance=2)
@@ -392,4 +394,471 @@ function compute_half_max_width(sol, pop_idx=1, time_idx=nothing, lattice=nothin
     else
         return Float64(next_half_max), half_max_level, profile
     end
+end
+
+#=============================================================================
+Oscillation Analysis Functions for Point Models
+=============================================================================#
+
+# Constants for numerical thresholds
+const MIN_ENVELOPE_VALUE = 1e-10
+const MIN_DECAY_RATE = 1e-6
+
+"""
+    extract_population_timeseries(sol, pop_idx)
+
+Extract time series for a specific population from solution.
+
+This helper function handles different solution formats (point models with/without 
+connectivity, spatial models) and returns a consistent 1D time series.
+
+# Arguments
+- `sol`: ODE solution object from `solve_model()`
+- `pop_idx`: Population index to extract
+
+# Returns
+- `time_series::Vector{Float64}`: Activity values over time for the specified population
+"""
+function extract_population_timeseries(sol, pop_idx)
+    time_series = Vector{Float64}(undef, length(sol.u))
+    
+    for (i, state) in enumerate(sol.u)
+        if ndims(state) == 1
+            # Point model without connectivity
+            time_series[i] = state[pop_idx]
+        elseif size(state, 1) == 1
+            # Point model with connectivity
+            time_series[i] = state[1, pop_idx]
+        else
+            # Spatial model - use mean activity
+            time_series[i] = mean(state[:, pop_idx])
+        end
+    end
+    
+    return time_series
+end
+
+"""
+    detect_oscillations(sol, pop_idx=1; min_peaks=2)
+
+Detect if oscillations are present in a point model time series.
+
+Oscillations are detected by counting local maxima in the activity over time.
+A minimum number of peaks indicates oscillatory behavior.
+
+# Arguments
+- `sol`: ODE solution object from `solve_model()`
+- `pop_idx`: Population index to analyze (default: 1)
+- `min_peaks`: Minimum number of peaks to consider as oscillatory (default: 2)
+
+# Returns
+- `has_oscillations::Bool`: True if oscillations are detected
+- `peak_times::Vector{Float64}`: Times at which peaks occur
+- `peak_values::Vector{Float64}`: Activity values at peaks
+
+# Examples
+```julia
+sol = solve_model(A₀, tspan, params, saveat=0.1)
+has_osc, times, values = detect_oscillations(sol, 1)
+```
+"""
+function detect_oscillations(sol, pop_idx=1; min_peaks=2)
+    # Extract time series for this population
+    time_series = extract_population_timeseries(sol, pop_idx)
+    
+    # Find local maxima
+    peak_indices = Int[]
+    for i in 2:(length(time_series)-1)
+        if time_series[i] > time_series[i-1] && time_series[i] > time_series[i+1]
+            push!(peak_indices, i)
+        end
+    end
+    
+    # Collect peak information
+    peak_times = [sol.t[i] for i in peak_indices]
+    peak_values = [time_series[i] for i in peak_indices]
+    
+    has_oscillations = length(peak_indices) >= min_peaks
+    
+    return has_oscillations, peak_times, peak_values
+end
+
+"""
+    compute_oscillation_frequency(sol, pop_idx=1; method=:fft)
+
+Compute the dominant oscillation frequency in a point model time series.
+
+# Arguments
+- `sol`: ODE solution object from `solve_model()`
+- `pop_idx`: Population index to analyze (default: 1)
+- `method`: Method for frequency estimation
+  - `:fft` - Use FFT power spectrum to find dominant frequency (default)
+  - `:peaks` - Use average time between peaks
+
+# Returns
+- `frequency::Union{Float64, Nothing}`: Dominant frequency in Hz (or 1/time_units), or nothing if no oscillations detected
+- `period::Union{Float64, Nothing}`: Period of oscillations, or nothing if no oscillations detected
+
+# Examples
+```julia
+sol = solve_model(A₀, tspan, params, saveat=0.1)
+freq, period = compute_oscillation_frequency(sol, 1)
+```
+"""
+function compute_oscillation_frequency(sol, pop_idx=1; method=:fft)
+    # Extract time series
+    time_series = extract_population_timeseries(sol, pop_idx)
+    
+    if method == :fft
+        # Use FFT to find dominant frequency
+        n = length(time_series)
+        if n < 4
+            return nothing, nothing
+        end
+        
+        # Compute sampling rate and validate uniform sampling
+        dt = sol.t[2] - sol.t[1]  # Expected time step
+        
+        # Check for approximately uniform sampling
+        if length(sol.t) > 2
+            time_diffs = diff(sol.t)
+            max_diff = maximum(abs.(time_diffs .- dt))
+            if max_diff > 0.1 * dt
+                @warn "Non-uniform sampling detected. FFT results may be inaccurate."
+            end
+        end
+        
+        # Detrend by subtracting mean
+        detrended = time_series .- mean(time_series)
+        
+        # Compute FFT
+        fft_result = fft(detrended)
+        power = abs2.(fft_result)
+        
+        # Get frequencies
+        freqs = fftfreq(n, 1.0/dt)
+        
+        # Only look at positive frequencies
+        positive_freqs_idx = findall(freqs .> 0)
+        if isempty(positive_freqs_idx)
+            return nothing, nothing
+        end
+        
+        positive_freqs = freqs[positive_freqs_idx]
+        positive_power = power[positive_freqs_idx]
+        
+        # Find dominant frequency
+        max_power_idx = argmax(positive_power)
+        dominant_freq = positive_freqs[max_power_idx]
+        
+        # Check if power is significant (> 10% of total power)
+        total_power = sum(positive_power)
+        if positive_power[max_power_idx] < 0.1 * total_power
+            return nothing, nothing
+        end
+        
+        period = 1.0 / dominant_freq
+        return dominant_freq, period
+        
+    elseif method == :peaks
+        # Use time between peaks
+        has_osc, peak_times, _ = detect_oscillations(sol, pop_idx)
+        
+        if !has_osc || length(peak_times) < 2
+            return nothing, nothing
+        end
+        
+        # Calculate average time between peaks
+        inter_peak_intervals = diff(peak_times)
+        period = mean(inter_peak_intervals)
+        frequency = 1.0 / period
+        
+        return frequency, period
+    else
+        error("Unknown method: $method. Use :fft or :peaks")
+    end
+end
+
+"""
+    compute_oscillation_amplitude(sol, pop_idx=1; method=:envelope)
+
+Compute the amplitude of oscillations over time.
+
+# Arguments
+- `sol`: ODE solution object from `solve_model()`
+- `pop_idx`: Population index to analyze (default: 1)
+- `method`: Method for amplitude computation
+  - `:envelope` - Average of peak-to-trough amplitudes (default)
+  - `:std` - Standard deviation of activity
+  - `:peak_mean` - Mean of peak values
+
+# Returns
+- `amplitude::Union{Float64, Nothing}`: Oscillation amplitude, or nothing if no oscillations detected
+- `envelope::Union{Vector{Float64}, Nothing}`: Time-varying amplitude envelope (for :envelope method)
+
+# Examples
+```julia
+sol = solve_model(A₀, tspan, params, saveat=0.1)
+amp, envelope = compute_oscillation_amplitude(sol, 1)
+```
+"""
+function compute_oscillation_amplitude(sol, pop_idx=1; method=:envelope)
+    # Extract time series
+    time_series = extract_population_timeseries(sol, pop_idx)
+    
+    if method == :envelope
+        # Find peaks and troughs
+        has_osc, peak_times, peak_values = detect_oscillations(sol, pop_idx)
+        
+        if !has_osc
+            return nothing, nothing
+        end
+        
+        # Find troughs (local minima)
+        trough_indices = Int[]
+        for i in 2:(length(time_series)-1)
+            if time_series[i] < time_series[i-1] && time_series[i] < time_series[i+1]
+                push!(trough_indices, i)
+            end
+        end
+        
+        trough_values = [time_series[i] for i in trough_indices]
+        
+        if isempty(trough_values)
+            # No troughs found, use minimum
+            trough_val = minimum(time_series)
+            amplitude = mean(peak_values) - trough_val
+        else
+            # Calculate peak-to-trough amplitudes
+            amplitude = mean(peak_values) - mean(trough_values)
+        end
+        
+        # Create envelope (peaks and troughs over time)
+        envelope = Float64[]
+        for (i, val) in enumerate(time_series)
+            # Simple envelope: distance from mean
+            push!(envelope, abs(val - mean(time_series)))
+        end
+        
+        return amplitude, envelope
+        
+    elseif method == :std
+        # Use standard deviation as amplitude measure
+        amplitude = std(time_series)
+        return amplitude, nothing
+        
+    elseif method == :peak_mean
+        # Mean of peak values minus baseline
+        has_osc, _, peak_values = detect_oscillations(sol, pop_idx)
+        
+        if !has_osc
+            return nothing, nothing
+        end
+        
+        baseline = minimum(time_series)
+        amplitude = mean(peak_values) - baseline
+        
+        return amplitude, nothing
+    else
+        error("Unknown method: $method. Use :envelope, :std, or :peak_mean")
+    end
+end
+
+"""
+    compute_oscillation_decay(sol, pop_idx=1; method=:exponential)
+
+Compute the decay rate of oscillation amplitude over time.
+
+For damped oscillations, this measures how quickly the oscillation amplitude decreases.
+
+# Arguments
+- `sol`: ODE solution object from `solve_model()`
+- `pop_idx`: Population index to analyze (default: 1)
+- `method`: Method for decay computation
+  - `:exponential` - Fit exponential decay to envelope (default)
+  - `:linear` - Linear regression on log(envelope)
+  - `:peak_decay` - Exponential fit to successive peak heights
+
+# Returns
+- `decay_rate::Union{Float64, Nothing}`: Decay rate λ (in 1/time_units), or nothing if no decay
+- `half_life::Union{Float64, Nothing}`: Time for amplitude to decay to half, or nothing if no decay
+- `envelope::Vector{Float64}`: Amplitude envelope over time
+
+# Examples
+```julia
+sol = solve_model(A₀, tspan, params, saveat=0.1)
+decay_rate, half_life, envelope = compute_oscillation_decay(sol, 1)
+```
+"""
+function compute_oscillation_decay(sol, pop_idx=1; method=:exponential)
+    # Extract time series
+    time_series = extract_population_timeseries(sol, pop_idx)
+    
+    if method == :exponential || method == :linear
+        # Get amplitude envelope
+        amp, envelope = compute_oscillation_amplitude(sol, pop_idx, method=:envelope)
+        
+        if amp === nothing || envelope === nothing
+            return nothing, nothing, Float64[]
+        end
+        
+        # Fit exponential decay: A(t) = A₀ * exp(-λt)
+        # log(A(t)) = log(A₀) - λt
+        
+        # Filter out very small values to avoid log issues
+        valid_idx = findall(x -> x > MIN_ENVELOPE_VALUE, envelope)
+        if length(valid_idx) < 3
+            return nothing, nothing, envelope
+        end
+        
+        valid_times = sol.t[valid_idx]
+        valid_envelope = envelope[valid_idx]
+        log_envelope = log.(valid_envelope)
+        
+        # Linear regression
+        n = length(valid_times)
+        mean_t = mean(valid_times)
+        mean_log_A = mean(log_envelope)
+        
+        numerator = sum((valid_times .- mean_t) .* (log_envelope .- mean_log_A))
+        denominator = sum((valid_times .- mean_t) .^ 2)
+        
+        if abs(denominator) < MIN_ENVELOPE_VALUE
+            return nothing, nothing, envelope
+        end
+        
+        slope = numerator / denominator
+        decay_rate = -slope  # Positive decay rate
+        
+        # Calculate half-life
+        if decay_rate > MIN_ENVELOPE_VALUE
+            half_life = log(2) / decay_rate
+        else
+            half_life = nothing
+        end
+        
+        # Only return positive decay rates
+        if decay_rate > MIN_DECAY_RATE
+            return decay_rate, half_life, envelope
+        else
+            return nothing, nothing, envelope
+        end
+        
+    elseif method == :peak_decay
+        # Fit to successive peak heights
+        has_osc, peak_times, peak_values = detect_oscillations(sol, pop_idx)
+        
+        if !has_osc || length(peak_values) < 3
+            return nothing, nothing, Float64[]
+        end
+        
+        # Check if peaks are actually decaying
+        if peak_values[end] >= peak_values[1] * 0.9
+            # No significant decay
+            return nothing, nothing, peak_values
+        end
+        
+        # Fit exponential to peak values
+        log_peaks = log.(peak_values)
+        
+        n = length(peak_times)
+        mean_t = mean(peak_times)
+        mean_log_p = mean(log_peaks)
+        
+        numerator = sum((peak_times .- mean_t) .* (log_peaks .- mean_log_p))
+        denominator = sum((peak_times .- mean_t) .^ 2)
+        
+        if abs(denominator) < MIN_ENVELOPE_VALUE
+            return nothing, nothing, peak_values
+        end
+        
+        slope = numerator / denominator
+        decay_rate = -slope
+        
+        if decay_rate > MIN_ENVELOPE_VALUE
+            half_life = log(2) / decay_rate
+        else
+            half_life = nothing
+        end
+        
+        if decay_rate > MIN_DECAY_RATE
+            return decay_rate, half_life, peak_values
+        else
+            return nothing, nothing, peak_values
+        end
+    else
+        error("Unknown method: $method. Use :exponential, :linear, or :peak_decay")
+    end
+end
+
+"""
+    compute_oscillation_duration(sol, pop_idx=1; threshold_ratio=0.1, min_amplitude=1e-3)
+
+Compute how long oscillations persist before decaying to negligible levels.
+
+# Arguments
+- `sol`: ODE solution object from `solve_model()`
+- `pop_idx`: Population index to analyze (default: 1)
+- `threshold_ratio`: Ratio of initial amplitude below which oscillations are considered ended (default: 0.1)
+- `min_amplitude`: Minimum absolute amplitude to consider as oscillatory (default: 1e-3)
+
+# Returns
+- `duration::Union{Float64, Nothing}`: Time oscillations persist, or nothing if no oscillations or they don't decay
+- `sustained::Bool`: True if oscillations are sustained throughout the simulation
+- `end_time::Union{Float64, Nothing}`: Time when oscillations end, or nothing if sustained
+
+# Examples
+```julia
+sol = solve_model(A₀, tspan, params, saveat=0.1)
+duration, sustained, end_time = compute_oscillation_duration(sol, 1)
+```
+"""
+function compute_oscillation_duration(sol, pop_idx=1; threshold_ratio=0.1, min_amplitude=1e-3)
+    # Check if oscillations exist
+    has_osc, peak_times, peak_values = detect_oscillations(sol, pop_idx)
+    
+    if !has_osc
+        return nothing, false, nothing
+    end
+    
+    # Get amplitude envelope
+    amp, envelope = compute_oscillation_amplitude(sol, pop_idx, method=:envelope)
+    
+    if amp === nothing || amp < min_amplitude
+        return nothing, false, nothing
+    end
+    
+    # Find when envelope drops below threshold
+    threshold = amp * threshold_ratio
+    
+    # Find first time when envelope stays below threshold
+    below_threshold = false
+    end_idx = length(envelope)
+    
+    for i in 1:length(envelope)
+        if envelope[i] < threshold
+            # Check if it stays below for the rest of the simulation
+            # or for at least a few time steps
+            remaining = envelope[i:end]
+            if all(remaining .< threshold) || (length(remaining) >= 3 && all(remaining[1:3] .< threshold))
+                end_idx = i
+                below_threshold = true
+                break
+            end
+        end
+    end
+    
+    if below_threshold
+        # Oscillations ended
+        end_time = sol.t[end_idx]
+        duration = end_time - sol.t[1]
+        sustained = false
+    else
+        # Oscillations sustained throughout
+        end_time = nothing
+        duration = sol.t[end] - sol.t[1]
+        sustained = true
+    end
+    
+    return duration, sustained, end_time
 end

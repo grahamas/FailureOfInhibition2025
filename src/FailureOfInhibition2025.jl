@@ -20,6 +20,12 @@ include("models.jl")
 # Include simulation functionality
 include("simulate.jl")
 
+# Include bifurcation analysis functionality
+include("bifurcation.jl")
+
+# Include sensitivity analysis functionality
+include("sensitivity.jl")
+
 # Include analysis functionality
 include("analysis.jl")
 
@@ -53,9 +59,17 @@ export WilsonCowanParameters, wcm1973!, population
 # Export simulation functions
 export solve_model, save_simulation_results, save_simulation_summary
 
+# Export bifurcation analysis functions (BifurcationKit integration)
+export create_bifurcation_problem, wcm_rhs!
+
+# Export sensitivity analysis functions
+export sobol_sensitivity_analysis, morris_sensitivity_analysis
+
 # Export analysis functions
 export detect_traveling_peak, compute_decay_rate, compute_amplitude
 export compute_distance_traveled, compute_half_max_width
+export detect_oscillations, compute_oscillation_frequency, compute_oscillation_amplitude
+export compute_oscillation_decay, compute_oscillation_duration
 
 # Export optimization functions
 export TravelingWaveObjective, optimize_for_traveling_wave
