@@ -15,6 +15,7 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Multi-population support**: Support for multiple neural populations with flexible coupling
 - **Simulation utilities**: Solve models over time using DifferentialEquations.jl and save results to CSV
 - **Bifurcation analysis**: Tools for analyzing parameter space and generating bifurcation diagrams
+- **Traveling wave analysis**: Metrics for detecting and characterizing traveling waves in neural activity
 
 ## Installation
 
@@ -164,6 +165,40 @@ BifurcationKit provides sophisticated tools for analyzing parameter-dependent dy
 - `wcm_rhs!(dA, A, params, t)`: Right-hand side function compatible with BifurcationKit
 
 See `examples/example_bifurcation_diagrams.jl` for detailed demonstrations of continuation analysis with Wilson-Cowan models.
+## Traveling Wave Analysis
+
+The package provides metrics for analyzing traveling waves in neural field simulations:
+
+```julia
+using FailureOfInhibition2025
+
+# After running a spatial simulation
+sol = solve_model(A₀, tspan, params, saveat=0.1)
+
+# Detect traveling peaks
+has_peak, trajectory, times = detect_traveling_peak(sol, 1, threshold=0.15)
+
+# Measure decay rate
+decay_rate, amplitudes = compute_decay_rate(sol, 1)
+
+# Compute amplitude
+amplitude = compute_amplitude(sol, 1, method=:max)
+
+# Calculate distance traveled
+distance, trajectory = compute_distance_traveled(sol, 1, lattice, threshold=0.15)
+
+# Measure spatial width
+width, half_max, profile = compute_half_max_width(sol, 1, nothing, lattice)
+```
+
+Available metrics:
+- **`detect_traveling_peak`**: Detect existence of traveling peak
+- **`compute_decay_rate`**: Measure exponential decay of activity
+- **`compute_amplitude`**: Compute maximum, peak, or mean amplitude
+- **`compute_distance_traveled`**: Calculate spatial distance traveled by peak
+- **`compute_half_max_width`**: Measure spatial width at half-maximum
+
+See `examples/example_traveling_wave_metrics.jl` for comprehensive usage examples.
 
 ## Examples
 
@@ -175,6 +210,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
 - `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis using BifurcationKit continuation methods
+- `examples/example_traveling_wave_metrics.jl`: Demonstrates traveling wave analysis metrics
 
 ## Wilson-Cowan 1973 Validation
 
