@@ -222,6 +222,7 @@ function create_point_model_wcm1973(mode::Symbol)
         bᵢₑ = 1.35
         bₑᵢ = 1.35
         bᵢᵢ = 1.8
+        τₑ, τᵢ = 10.0, 10.0
     elseif mode == :oscillatory
         vₑ, θₑ = 0.5, 9.0
         vᵢ, θᵢ = 1.0, 15.0
@@ -229,6 +230,17 @@ function create_point_model_wcm1973(mode::Symbol)
         bᵢₑ = 1.5
         bₑᵢ = 1.5
         bᵢᵢ = 0.1
+        τₑ, τᵢ = 10.0, 10.0
+    elseif mode == :oscillatory_optimized
+        # Optimized parameters for stronger, more sustained oscillations
+        # Found via parameter exploration in scripts/optimize_oscillation_parameters.jl
+        vₑ, θₑ = 0.5, 9.0
+        vᵢ, θᵢ = 1.0, 15.0
+        bₑₑ = 2.2  # Increased E→E connectivity
+        bᵢₑ = 1.5
+        bₑᵢ = 1.5
+        bᵢᵢ = 0.08  # Reduced I→I connectivity
+        τₑ, τᵢ = 8.0, 10.0  # Adjusted time constant ratio
     elseif mode == :steady_state
         vₑ, θₑ = 0.5, 9.0
         vᵢ, θᵢ = 0.3, 17.0
@@ -236,6 +248,7 @@ function create_point_model_wcm1973(mode::Symbol)
         bᵢₑ = 1.35
         bₑᵢ = 1.35
         bᵢᵢ = 1.8
+        τₑ, τᵢ = 10.0, 10.0
     else
         error("Unknown mode: $mode")
     end
@@ -256,14 +269,11 @@ function create_point_model_wcm1973(mode::Symbol)
         conn_ie conn_ii
     ])
     
-    # Fixed parameters
-    μ = 10.0
-    
     # Create parameters
     params = WilsonCowanParameters{2}(
         α = (1.0, 1.0),
         β = (1.0, 1.0),
-        τ = (μ, μ),
+        τ = (τₑ, τᵢ),
         connectivity = connectivity,
         nonlinearity = nonlinearity,
         stimulus = nothing,
