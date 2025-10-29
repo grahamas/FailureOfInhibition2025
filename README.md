@@ -119,7 +119,7 @@ See `examples/example_simulation.jl` for comprehensive simulation examples inclu
 
 ## Bifurcation Analysis
 
-The package provides tools for analyzing how system dynamics change across parameter space, enabling the generation of bifurcation diagrams:
+The package provides tools for analyzing how system dynamics change across parameter space, powered by [BifurcationKit.jl](https://github.com/bifurcationkit/BifurcationKit.jl):
 
 ```julia
 using FailureOfInhibition2025
@@ -153,6 +153,24 @@ The bifurcation analysis tools include:
 - **Dynamics classification**: Automatically detect steady states, oscillations, and transients
 - **Oscillation characterization**: Measure oscillation period and amplitude
 - **Activity statistics**: Track mean, min, and max activity for each population
+- **BifurcationKit integration**: Create BifurcationProblem objects for advanced continuation analysis
+
+### Advanced Usage with BifurcationKit
+
+For more sophisticated bifurcation analysis, you can use BifurcationKit directly:
+
+```julia
+using FailureOfInhibition2025
+using BifurcationKit
+
+# Create Wilson-Cowan parameters
+params = create_point_model_wcm1973(:active_transient)
+u0 = reshape([0.1, 0.1], 1, 2)
+
+# Create BifurcationProblem (requires parameter lens from BifurcationKit)
+# This allows continuation methods, detection of Hopf bifurcations, etc.
+prob = create_bifurcation_problem(params, param_lens, u0=u0)
+```
 
 See `examples/example_bifurcation_diagrams.jl` for detailed demonstrations of bifurcation analysis with informative parameter pairs.
 

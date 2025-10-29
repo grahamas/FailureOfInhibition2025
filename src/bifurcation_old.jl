@@ -1,11 +1,10 @@
 """
-Bifurcation analysis utilities for Wilson-Cowan models using BifurcationKit.
+Bifurcation analysis utilities for Wilson-Cowan models.
 
 This module provides tools for analyzing how system dynamics change as parameters vary,
-using continuation methods from BifurcationKit for accurate bifurcation detection.
+including parameter sweeps, steady-state detection, and oscillation analysis.
 """
 
-using BifurcationKit
 using DifferentialEquations
 using Statistics
 
@@ -23,8 +22,6 @@ Represents the dynamical state at a specific parameter value.
 - `mean_activity::Array`: Mean activity over the simulation for each population
 - `max_activity::Array`: Maximum activity over the simulation for each population
 - `min_activity::Array`: Minimum activity over the simulation for each population
-- `bifurcation_type::Union{Nothing, Symbol}`: Type of bifurcation if detected (:hopf, :fold, etc.)
-- `eigenvalues::Union{Nothing, Vector}`: Eigenvalues at this point (if computed)
 """
 struct BifurcationPoint
     param_values::NamedTuple
@@ -35,17 +32,6 @@ struct BifurcationPoint
     mean_activity::Array
     max_activity::Array
     min_activity::Array
-    bifurcation_type::Union{Nothing, Symbol}
-    eigenvalues::Union{Nothing, Vector}
-end
-
-# Constructor with default values for new fields
-function BifurcationPoint(param_values, steady_state, is_oscillatory, oscillation_amplitude,
-                         oscillation_period, mean_activity, max_activity, min_activity;
-                         bifurcation_type=nothing, eigenvalues=nothing)
-    BifurcationPoint(param_values, steady_state, is_oscillatory, oscillation_amplitude,
-                    oscillation_period, mean_activity, max_activity, min_activity,
-                    bifurcation_type, eigenvalues)
 end
 
 """
@@ -64,54 +50,6 @@ struct BifurcationDiagram
     param1_values::Vector
     param2_values::Vector
     points::Matrix{BifurcationPoint}
-end
-
-"""
-    wcm_rhs!(dA, A, params::WilsonCowanParameters, t=0.0)
-
-Right-hand side function for Wilson-Cowan model suitable for BifurcationKit.
-This is a wrapper around wcm1973! that works with BifurcationKit's conventions.
-"""
-function wcm_rhs!(dA, A, params, t=0.0)
-    wcm1973!(dA, A, params, t)
-    return dA
-end
-
-"""
-    create_bifurcation_problem(params::WilsonCowanParameters, param_lens; u0=nothing)
-
-Create a BifurcationProblem for the Wilson-Cowan model.
-
-# Arguments
-- `params`: WilsonCowanParameters for the model  
-- `param_lens`: Lens specifying which parameter to vary (from BifurcationKit)
-- `u0`: Initial guess for steady state (if nothing, uses small random values)
-
-# Returns
-- BifurcationProblem suitable for continuation analysis
-
-# Note
-This function provides a BifurcationKit-compatible interface for advanced bifurcation
-analysis. For most use cases, the parameter_sweep_2d function is recommended.
-"""
-function create_bifurcation_problem(params::WilsonCowanParameters{T,P}, param_lens; u0=nothing) where {T,P}
-    # Determine initial condition if not provided
-    if u0 === nothing
-        if params.lattice isa PointLattice
-            u0 = reshape(0.1 .+ 0.05 .* rand(P), 1, P)
-        else
-            n_points = size(params.lattice)[1]
-            u0 = 0.1 .+ 0.05 .* rand(n_points, P)
-        end
-    end
-    
-    # Create the right-hand side function
-    F! = (dz, z, p) -> wcm_rhs!(dz, z, p, 0.0)
-    
-    # Create bifurcation problem
-    prob = BifurcationProblem(F!, u0, params, param_lens)
-    
-    return prob
 end
 
 """
@@ -220,13 +158,12 @@ function detect_oscillations(sol; transient_fraction=0.5, min_peaks=3)
 end
 
 """
-    analyze_dynamics(sol, param_values::NamedTuple; transient_fraction=0.5)
+    analyze_dynamics(sol; transient_fraction=0.5)
 
 Analyze the dynamics of a solution to classify its behavior.
 
 # Arguments
 - `sol`: ODE solution from solve_model
-- `param_values`: Named tuple of parameter values
 - `transient_fraction`: Fraction of time to discard as transient (default: 0.5)
 
 # Returns
@@ -279,9 +216,6 @@ end
                        solver=Tsit5(), saveat=0.5)
 
 Perform a 2D parameter sweep to generate a bifurcation diagram.
-
-This function systematically varies two parameters across specified ranges and analyzes
-the resulting dynamics at each parameter combination.
 
 # Arguments
 - `base_params`: Base WilsonCowanParameters to use as template

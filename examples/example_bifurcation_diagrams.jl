@@ -7,6 +7,9 @@ This example shows how to generate bifurcation diagrams for informative paramete
 revealing how system dynamics change across parameter space. Based on the three dynamical
 modes from Wilson & Cowan 1973, we explore parameter regions that transition between
 different behaviors (steady states, oscillations, active transients).
+
+The bifurcation analysis uses BifurcationKit.jl for advanced capabilities while providing
+a simple interface for parameter space exploration.
 """
 
 using FailureOfInhibition2025
@@ -16,6 +19,7 @@ include("../test/test_wcm1973_validation.jl")
 
 println("\n" * "="^70)
 println("Bifurcation Analysis: Wilson-Cowan Model")
+println("Powered by BifurcationKit.jl")
 println("="^70)
 
 #=============================================================================
