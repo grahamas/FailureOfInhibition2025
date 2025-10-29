@@ -398,6 +398,44 @@ end
 Oscillation Analysis Functions for Point Models
 =============================================================================#
 
+# Constants for numerical thresholds
+const MIN_ENVELOPE_VALUE = 1e-10
+const MIN_DECAY_RATE = 1e-6
+
+"""
+    extract_population_timeseries(sol, pop_idx)
+
+Extract time series for a specific population from solution.
+
+This helper function handles different solution formats (point models with/without 
+connectivity, spatial models) and returns a consistent 1D time series.
+
+# Arguments
+- `sol`: ODE solution object from `solve_model()`
+- `pop_idx`: Population index to extract
+
+# Returns
+- `time_series::Vector{Float64}`: Activity values over time for the specified population
+"""
+function extract_population_timeseries(sol, pop_idx)
+    time_series = Vector{Float64}(undef, length(sol.u))
+    
+    for (i, state) in enumerate(sol.u)
+        if ndims(state) == 1
+            # Point model without connectivity
+            time_series[i] = state[pop_idx]
+        elseif size(state, 1) == 1
+            # Point model with connectivity
+            time_series[i] = state[1, pop_idx]
+        else
+            # Spatial model - use mean activity
+            time_series[i] = mean(state[:, pop_idx])
+        end
+    end
+    
+    return time_series
+end
+
 """
     detect_oscillations(sol, pop_idx=1; min_peaks=2)
 
@@ -423,22 +461,8 @@ has_osc, times, values = detect_oscillations(sol, 1)
 ```
 """
 function detect_oscillations(sol, pop_idx=1; min_peaks=2)
-    first_state = sol.u[1]
-    
     # Extract time series for this population
-    time_series = Float64[]
-    for state in sol.u
-        if ndims(state) == 1
-            # Point model without connectivity
-            push!(time_series, state[pop_idx])
-        elseif size(state, 1) == 1
-            # Point model with connectivity
-            push!(time_series, state[1, pop_idx])
-        else
-            # Spatial model - use mean activity
-            push!(time_series, mean(state[:, pop_idx]))
-        end
-    end
+    time_series = extract_population_timeseries(sol, pop_idx)
     
     # Find local maxima
     peak_indices = Int[]
@@ -480,19 +504,8 @@ freq, period = compute_oscillation_frequency(sol, 1)
 ```
 """
 function compute_oscillation_frequency(sol, pop_idx=1; method=:fft)
-    first_state = sol.u[1]
-    
     # Extract time series
-    time_series = Float64[]
-    for state in sol.u
-        if ndims(state) == 1
-            push!(time_series, state[pop_idx])
-        elseif size(state, 1) == 1
-            push!(time_series, state[1, pop_idx])
-        else
-            push!(time_series, mean(state[:, pop_idx]))
-        end
-    end
+    time_series = extract_population_timeseries(sol, pop_idx)
     
     if method == :fft
         # Use FFT to find dominant frequency
@@ -501,8 +514,17 @@ function compute_oscillation_frequency(sol, pop_idx=1; method=:fft)
             return nothing, nothing
         end
         
-        # Compute sampling rate
-        dt = sol.t[2] - sol.t[1]  # Assumes uniform sampling
+        # Compute sampling rate and validate uniform sampling
+        dt = sol.t[2] - sol.t[1]  # Expected time step
+        
+        # Check for approximately uniform sampling
+        if length(sol.t) > 2
+            time_diffs = diff(sol.t)
+            max_diff = maximum(abs.(time_diffs .- dt))
+            if max_diff > 0.1 * dt
+                @warn "Non-uniform sampling detected. FFT results may be inaccurate."
+            end
+        end
         
         # Detrend by subtracting mean
         detrended = time_series .- mean(time_series)
@@ -579,19 +601,8 @@ amp, envelope = compute_oscillation_amplitude(sol, 1)
 ```
 """
 function compute_oscillation_amplitude(sol, pop_idx=1; method=:envelope)
-    first_state = sol.u[1]
-    
     # Extract time series
-    time_series = Float64[]
-    for state in sol.u
-        if ndims(state) == 1
-            push!(time_series, state[pop_idx])
-        elseif size(state, 1) == 1
-            push!(time_series, state[1, pop_idx])
-        else
-            push!(time_series, mean(state[:, pop_idx]))
-        end
-    end
+    time_series = extract_population_timeseries(sol, pop_idx)
     
     if method == :envelope
         # Find peaks and troughs
@@ -678,19 +689,8 @@ decay_rate, half_life, envelope = compute_oscillation_decay(sol, 1)
 ```
 """
 function compute_oscillation_decay(sol, pop_idx=1; method=:exponential)
-    first_state = sol.u[1]
-    
     # Extract time series
-    time_series = Float64[]
-    for state in sol.u
-        if ndims(state) == 1
-            push!(time_series, state[pop_idx])
-        elseif size(state, 1) == 1
-            push!(time_series, state[1, pop_idx])
-        else
-            push!(time_series, mean(state[:, pop_idx]))
-        end
-    end
+    time_series = extract_population_timeseries(sol, pop_idx)
     
     if method == :exponential || method == :linear
         # Get amplitude envelope
@@ -704,7 +704,7 @@ function compute_oscillation_decay(sol, pop_idx=1; method=:exponential)
         # log(A(t)) = log(A₀) - λt
         
         # Filter out very small values to avoid log issues
-        valid_idx = findall(x -> x > 1e-10, envelope)
+        valid_idx = findall(x -> x > MIN_ENVELOPE_VALUE, envelope)
         if length(valid_idx) < 3
             return nothing, nothing, envelope
         end
@@ -721,7 +721,7 @@ function compute_oscillation_decay(sol, pop_idx=1; method=:exponential)
         numerator = sum((valid_times .- mean_t) .* (log_envelope .- mean_log_A))
         denominator = sum((valid_times .- mean_t) .^ 2)
         
-        if abs(denominator) < 1e-10
+        if abs(denominator) < MIN_ENVELOPE_VALUE
             return nothing, nothing, envelope
         end
         
@@ -729,14 +729,14 @@ function compute_oscillation_decay(sol, pop_idx=1; method=:exponential)
         decay_rate = -slope  # Positive decay rate
         
         # Calculate half-life
-        if decay_rate > 1e-10
+        if decay_rate > MIN_ENVELOPE_VALUE
             half_life = log(2) / decay_rate
         else
             half_life = nothing
         end
         
         # Only return positive decay rates
-        if decay_rate > 1e-6
+        if decay_rate > MIN_DECAY_RATE
             return decay_rate, half_life, envelope
         else
             return nothing, nothing, envelope
@@ -766,20 +766,20 @@ function compute_oscillation_decay(sol, pop_idx=1; method=:exponential)
         numerator = sum((peak_times .- mean_t) .* (log_peaks .- mean_log_p))
         denominator = sum((peak_times .- mean_t) .^ 2)
         
-        if abs(denominator) < 1e-10
+        if abs(denominator) < MIN_ENVELOPE_VALUE
             return nothing, nothing, peak_values
         end
         
         slope = numerator / denominator
         decay_rate = -slope
         
-        if decay_rate > 1e-10
+        if decay_rate > MIN_ENVELOPE_VALUE
             half_life = log(2) / decay_rate
         else
             half_life = nothing
         end
         
-        if decay_rate > 1e-6
+        if decay_rate > MIN_DECAY_RATE
             return decay_rate, half_life, peak_values
         else
             return nothing, nothing, peak_values

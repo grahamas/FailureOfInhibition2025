@@ -11,8 +11,8 @@ include("test_wcm1973_validation.jl")
 Helper: Create oscillatory point model
 =============================================================================#
 
+"""Create a point model that produces oscillations."""
 function create_oscillatory_point_model()
-    """Create a point model that produces oscillations."""
     return create_point_model_wcm1973(:oscillatory)
 end
 
