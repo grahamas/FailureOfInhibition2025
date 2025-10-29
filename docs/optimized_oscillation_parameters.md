@@ -94,14 +94,66 @@ When a constant (non-oscillatory) stimulus is applied:
 
 ### Creating the Optimized Model
 
+**Option 1: Using the test file helper function**
+
 ```julia
 using FailureOfInhibition2025
 
-# Include the parameter creation functions
+# Include the parameter creation functions from test file
+# Note: This function is in the test file to maintain consistency with
+# the WCM 1973 validation tests.
 include("test/test_wcm1973_validation.jl")
 
 # Create optimized oscillatory mode
 params = create_point_model_wcm1973(:oscillatory_optimized)
+
+# Initial condition
+A₀ = reshape([0.3, 0.2], 1, 2)
+
+# Solve
+sol = solve_model(A₀, (0.0, 300.0), params, saveat=0.5)
+
+# Analyze oscillations
+has_osc, peak_times, _ = detect_oscillations(sol, 1)
+freq, period = compute_oscillation_frequency(sol, 1)
+amp, _ = compute_oscillation_amplitude(sol, 1)
+```
+
+**Option 2: Creating parameters directly**
+
+```julia
+using FailureOfInhibition2025
+
+# Create point lattice
+lattice = PointLattice()
+
+# Create connectivity with optimized values
+conn_ee = ScalarConnectivity(2.2)    # E → E (increased from 2.0)
+conn_ei = ScalarConnectivity(-1.5)   # I → E
+conn_ie = ScalarConnectivity(1.5)    # E → I
+conn_ii = ScalarConnectivity(-0.08)  # I → I (reduced from -0.1)
+
+connectivity = ConnectivityMatrix{2}([
+    conn_ee conn_ei;
+    conn_ie conn_ii
+])
+
+# Create nonlinearity
+nonlinearity_e = SigmoidNonlinearity(a=0.5, θ=9.0)
+nonlinearity_i = SigmoidNonlinearity(a=1.0, θ=15.0)
+nonlinearity = (nonlinearity_e, nonlinearity_i)
+
+# Create parameters with optimized time constants
+params = WilsonCowanParameters{2}(
+    α = (1.0, 1.0),
+    β = (1.0, 1.0),
+    τ = (8.0, 10.0),  # Optimized: faster E dynamics
+    connectivity = connectivity,
+    nonlinearity = nonlinearity,
+    stimulus = nothing,
+    lattice = lattice,
+    pop_names = ("E", "I")
+)
 
 # Initial condition
 A₀ = reshape([0.3, 0.2], 1, 2)

@@ -239,7 +239,7 @@ function create_point_model_wcm1973(mode::Symbol)
         bₑₑ = 2.2  # Increased E→E connectivity
         bᵢₑ = 1.5
         bₑᵢ = 1.5
-        bᵢᵢ = 0.08  # Reduced I→I connectivity
+        bᵢᵢ = 0.08  # Reduced I→I connectivity magnitude (applied as -bᵢᵢ below)
         τₑ, τᵢ = 8.0, 10.0  # Adjusted time constant ratio
     elseif mode == :steady_state
         vₑ, θₑ = 0.5, 9.0
