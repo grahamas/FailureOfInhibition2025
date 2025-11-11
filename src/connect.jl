@@ -323,21 +323,11 @@ end
 Propagates activation for a single population-to-population connection.
 This is a helper function used by the ConnectivityMatrix propagation.
 
-# Performance Note
-For optimal performance, GaussianConnectivityParameter objects should be pre-computed
-into GaussianConnectivity objects using prepare_connectivity() before being used in
-repeated propagations. This is automatically done by the WilsonCowanParameters
-constructor, ensuring kernels are only calculated once during model initialization
-rather than on every ODE step.
+# Note
+GaussianConnectivityParameter objects must be pre-computed into GaussianConnectivity
+objects using prepare_connectivity() before being used in propagation. This is
+automatically done by the WilsonCowanParameters constructor during model initialization.
 """
-function propagate_activation_single(dA, A, connectivity::GaussianConnectivityParameter, t, lattice)
-    # Fallback: Create GaussianConnectivity on-the-fly
-    # Note: This is inefficient for repeated calls (e.g., during ODE solving)
-    # Use prepare_connectivity() to pre-compute for better performance
-    gc = GaussianConnectivity(connectivity, lattice)
-    propagate_activation_single(dA, A, gc, t, lattice)
-end
-
 function propagate_activation_single(dA, A, c::GaussianConnectivity, t, lattice)
     # Compute fft, multiply by kernel, and invert
     mul!(c.buffer_complex, c.fft_op, A)
