@@ -3,7 +3,7 @@
 """
 Script to optimize parameters for oscillations in Wilson-Cowan point model.
 
-This script explores parameter space to find configurations that produce
+This script uses Optim.jl to find optimal parameters that produce
 sustained or more robust oscillations, as requested in the issue.
 
 The goal is to find parameters that:
@@ -13,399 +13,294 @@ The goal is to find parameters that:
 """
 
 using FailureOfInhibition2025
-using JSON
-using Dates
+using Optim
+using LinearAlgebra
 
 # Include the WCM 1973 parameter creation functions
 include("../test/test_wcm1973_validation.jl")
 
 """
-Evaluate oscillation quality for a given parameter set.
-Returns a score based on:
-- Number of oscillation cycles
-- Decay rate (lower is better)
-- Amplitude (should be measurable but not too large)
+Create parameters from optimization vector.
+Vector contains: [bₑₑ, bᵢᵢ, τₑ, τᵢ]
 """
-function evaluate_oscillation_quality(params, tspan=(0.0, 300.0); 
-                                      stimulus=nothing, 
-                                      A₀=reshape([0.3, 0.2], 1, 2))
-    # Solve model
-    if stimulus !== nothing
-        # Create new params with stimulus
-        params_with_stim = WilsonCowanParameters{2}(
-            α = params.α,
-            β = params.β,
-            τ = params.τ,
-            connectivity = params.connectivity,
-            nonlinearity = params.nonlinearity,
-            stimulus = stimulus,
-            lattice = params.lattice,
-            pop_names = params.pop_names
-        )
-        sol = solve_model(A₀, tspan, params_with_stim, saveat=0.5)
-    else
-        sol = solve_model(A₀, tspan, params, saveat=0.5)
-    end
+function create_params_from_vector(x::Vector)
+    bₑₑ, bᵢᵢ, τₑ, τᵢ = x
     
-    # Detect oscillations
-    has_osc, peak_times, peak_values = detect_oscillations(sol, 1, min_peaks=3)
+    lattice = PointLattice()
     
-    if !has_osc
-        return (score=0.0, has_osc=false, n_peaks=0, decay_rate=Inf, 
-                amplitude=0.0, frequency=0.0, half_life=0.0)
-    end
+    # Create connectivity
+    conn_ee = ScalarConnectivity(bₑₑ)
+    conn_ei = ScalarConnectivity(-1.5)  # Keep baseline
+    conn_ie = ScalarConnectivity(1.5)   # Keep baseline
+    conn_ii = ScalarConnectivity(-bᵢᵢ)
     
-    # Compute metrics
-    freq, period = compute_oscillation_frequency(sol, 1, method=:peaks)
-    amp, _ = compute_oscillation_amplitude(sol, 1, method=:envelope)
-    decay_rate, half_life, _ = compute_oscillation_decay(sol, 1, method=:exponential)
+    connectivity = ConnectivityMatrix{2}([
+        conn_ee conn_ei;
+        conn_ie conn_ii
+    ])
     
-    # Score based on:
-    # 1. Number of peaks (more is better)
-    # 2. Low decay rate (more sustained)
-    # 3. Reasonable amplitude (not too small, not saturating)
-    n_peaks = length(peak_times)
+    # Use baseline nonlinearity
+    nonlinearity_e = SigmoidNonlinearity(a=0.5, θ=9.0)
+    nonlinearity_i = SigmoidNonlinearity(a=1.0, θ=15.0)
+    nonlinearity = (nonlinearity_e, nonlinearity_i)
     
-    peak_score = min(n_peaks / 10.0, 1.0)  # Normalize to [0, 1]
+    params = WilsonCowanParameters{2}(
+        α = (1.0, 1.0),
+        β = (1.0, 1.0),
+        τ = (τₑ, τᵢ),
+        connectivity = connectivity,
+        nonlinearity = nonlinearity,
+        stimulus = nothing,
+        lattice = lattice,
+        pop_names = ("E", "I")
+    )
     
-    # Decay rate: lower is better. Convert to score where 0 decay = 1.0
-    # Decay rate of 0.001 or less gets full points
-    if decay_rate === nothing
-        decay_score = 1.0  # No decay detected = best
-    else
-        decay_score = exp(-decay_rate * 100.0)  # Exponential penalty
-    end
-    
-    # Amplitude: prefer 0.01 to 0.3 range
-    if amp === nothing
-        amp_score = 0.0
-    elseif amp < 0.005
-        amp_score = 0.1  # Too small
-    elseif amp > 0.4
-        amp_score = 0.5  # Saturating
-    else
-        amp_score = 1.0
-    end
-    
-    # Combined score
-    score = peak_score * 0.3 + decay_score * 0.5 + amp_score * 0.2
-    
-    return (score=score, has_osc=true, n_peaks=n_peaks, 
-            decay_rate=decay_rate, amplitude=amp, 
-            frequency=freq, half_life=half_life, period=period)
+    return params
 end
 
 """
-Create a sustained constant stimulus.
+Objective function for optimization (to be minimized).
+Returns negative score so that maximizing score becomes minimizing objective.
 """
-function create_constant_stimulus(strength, start_time, end_time, lattice)
-    # Create a simple constant stimulus that doesn't oscillate
-    return ConstantStimulus(
-        strength=strength,
-        time_windows=[(start_time, end_time)],
-        lattice=lattice
-    )
+function objective(x::Vector; verbose=false)
+    # Extract parameters - already bounded by ParticleSwarm
+    bₑₑ, bᵢᵢ, τₑ, τᵢ = x
+    
+    try
+        params = create_params_from_vector(x)
+        
+        # Solve model
+        A₀ = reshape([0.3, 0.2], 1, 2)
+        tspan = (0.0, 300.0)
+        sol = solve_model(A₀, tspan, params, saveat=0.5)
+        
+        # Detect oscillations
+        has_osc, peak_times, peak_values = detect_oscillations(sol, 1, min_peaks=3)
+        
+        if !has_osc
+            if verbose
+                println("  x=$x → No oscillations (returning penalty)")
+            end
+            return 100.0  # Large penalty for no oscillations
+        end
+        
+        # Compute metrics
+        freq, period = compute_oscillation_frequency(sol, 1, method=:peaks)
+        amp, _ = compute_oscillation_amplitude(sol, 1, method=:envelope)
+        decay_rate, half_life, _ = compute_oscillation_decay(sol, 1, method=:exponential)
+        
+        # Score based on:
+        # 1. Number of peaks (more is better)
+        # 2. Low decay rate (more sustained)
+        # 3. Reasonable amplitude (not too small, not saturating)
+        n_peaks = length(peak_times)
+        
+        peak_score = min(n_peaks / 10.0, 1.0)  # Normalize to [0, 1]
+        
+        # Decay rate: lower is better
+        if decay_rate === nothing
+            decay_score = 1.0  # No decay detected = best
+        else
+            decay_score = exp(-decay_rate * 100.0)  # Exponential penalty
+        end
+        
+        # Amplitude: prefer 0.01 to 0.3 range
+        if amp === nothing
+            amp_score = 0.0
+        elseif amp < 0.005
+            amp_score = 0.1  # Too small
+        elseif amp > 0.4
+            amp_score = 0.5  # Saturating
+        else
+            amp_score = 1.0
+        end
+        
+        # Combined score (higher is better)
+        score = peak_score * 0.3 + decay_score * 0.5 + amp_score * 0.2
+        
+        if verbose
+            println("  x=$x → score=$score (peaks=$n_peaks, amp=$(round(amp, digits=4)))")
+        end
+        
+        # Return negative score for minimization
+        return -score
+        
+    catch e
+        if verbose
+            println("  x=$x → Error: $e")
+        end
+        return 100.0  # Large penalty for errors
+    end
 end
 
 println("="^70)
 println("Parameter Optimization for Oscillations in Point Model")
+println("Using Optim.jl for optimization")
 println("="^70)
 
 # Start with the base oscillatory mode parameters
 println("\n### Baseline: WCM 1973 Oscillatory Mode ###\n")
 params_baseline = create_point_model_wcm1973(:oscillatory)
 
-# Test without stimulus
-println("Testing baseline without external stimulus...")
-result_baseline = evaluate_oscillation_quality(params_baseline)
+# Test baseline
+println("Evaluating baseline...")
+A₀ = reshape([0.3, 0.2], 1, 2)
+tspan = (0.0, 300.0)
+sol_baseline = solve_model(A₀, tspan, params_baseline, saveat=0.5)
 
-println("  Score: $(round(result_baseline.score, digits=3))")
-println("  Oscillations: $(result_baseline.has_osc)")
-println("  Peaks: $(result_baseline.n_peaks)")
-if result_baseline.decay_rate !== nothing
-    println("  Decay rate: $(round(result_baseline.decay_rate, digits=6))")
-    if result_baseline.half_life !== nothing
-        println("  Half-life: $(round(result_baseline.half_life, digits=2)) msec")
+has_osc, peak_times, _ = detect_oscillations(sol_baseline, 1)
+freq, period = compute_oscillation_frequency(sol_baseline, 1, method=:peaks)
+amp, _ = compute_oscillation_amplitude(sol_baseline, 1, method=:envelope)
+decay_rate, half_life, _ = compute_oscillation_decay(sol_baseline, 1, method=:exponential)
+
+println("Baseline results:")
+println("  Oscillations: $has_osc")
+println("  Peaks: $(length(peak_times))")
+if amp !== nothing
+    println("  Amplitude: $(round(amp, digits=4))")
+end
+if decay_rate !== nothing
+    println("  Decay rate: $(round(decay_rate, digits=6))")
+    if half_life !== nothing
+        println("  Half-life: $(round(half_life, digits=2)) msec")
     end
 end
-if result_baseline.amplitude !== nothing
-    println("  Amplitude: $(round(result_baseline.amplitude, digits=4))")
+if freq !== nothing
+    println("  Frequency: $(round(freq, digits=6)) Hz")
+    println("  Period: $(round(period, digits=2)) msec")
 end
-if result_baseline.frequency !== nothing
-    println("  Frequency: $(round(result_baseline.frequency, digits=6)) Hz")
-    println("  Period: $(round(result_baseline.period, digits=2)) msec")
+
+println("\n### Running Optimization ###\n")
+
+# Initial guess based on baseline oscillatory mode
+# [bₑₑ, bᵢᵢ, τₑ, τᵢ]
+x0 = [2.0, 0.1, 10.0, 10.0]
+
+println("Initial parameters:")
+println("  bₑₑ = $(x0[1])")
+println("  bᵢᵢ = $(x0[2])")
+println("  τₑ = $(x0[3])")
+println("  τᵢ = $(x0[4])")
+println("  Initial objective value: $(objective(x0))")
+
+# Set bounds for box-constrained optimization
+lower = [1.5, 0.01, 5.0, 5.0]
+upper = [3.0, 0.3, 15.0, 15.0]
+
+println("\nParameter bounds:")
+println("  bₑₑ: [$(lower[1]), $(upper[1])]")
+println("  bᵢᵢ: [$(lower[2]), $(upper[2])]")
+println("  τₑ: [$(lower[3]), $(upper[3])]")
+println("  τᵢ: [$(lower[4]), $(upper[4])]")
+
+println("\nRunning Particle Swarm optimization...")
+println("(This may take a few minutes...)")
+
+# Use Particle Swarm which is good for box-constrained non-smooth objectives
+result = optimize(
+    objective,
+    lower,
+    upper,
+    x0,
+    ParticleSwarm(
+        lower=lower,
+        upper=upper,
+        n_particles=30
+    ),
+    Optim.Options(
+        iterations = 100,
+        show_trace = true,
+        show_every = 10
+    )
+)
+
+println("\n### Optimization Results ###\n")
+
+x_opt = Optim.minimizer(result)
+f_opt = Optim.minimum(result)
+
+println("Converged: $(Optim.converged(result))")
+println("Iterations: $(Optim.iterations(result))")
+println("Final objective value: $(round(f_opt, digits=6))")
+println("Final score: $(round(-f_opt, digits=6))")
+
+println("\nOptimized parameters:")
+println("  bₑₑ = $(round(x_opt[1], digits=3))")
+println("  bᵢᵢ = $(round(x_opt[2], digits=3))")
+println("  τₑ = $(round(x_opt[3], digits=3))")
+println("  τᵢ = $(round(x_opt[4], digits=3))")
+
+# Evaluate optimized parameters
+println("\n### Evaluating Optimized Parameters ###\n")
+params_opt = create_params_from_vector(x_opt)
+sol_opt = solve_model(A₀, tspan, params_opt, saveat=0.5)
+
+has_osc_opt, peak_times_opt, _ = detect_oscillations(sol_opt, 1)
+freq_opt, period_opt = compute_oscillation_frequency(sol_opt, 1, method=:peaks)
+amp_opt, _ = compute_oscillation_amplitude(sol_opt, 1, method=:envelope)
+decay_opt, half_life_opt, _ = compute_oscillation_decay(sol_opt, 1, method=:exponential)
+
+println("Optimized results:")
+println("  Oscillations: $has_osc_opt")
+println("  Peaks: $(length(peak_times_opt))")
+if amp_opt !== nothing
+    println("  Amplitude: $(round(amp_opt, digits=4))")
+    if amp !== nothing
+        improvement = (amp_opt - amp) / amp * 100
+        println("  Amplitude improvement: $(round(improvement, digits=1))%")
+    end
+end
+if decay_opt !== nothing
+    println("  Decay rate: $(round(decay_opt, digits=6))")
+    if half_life_opt !== nothing
+        println("  Half-life: $(round(half_life_opt, digits=2)) msec")
+    end
+end
+if freq_opt !== nothing
+    println("  Frequency: $(round(freq_opt, digits=6)) Hz")
+    println("  Period: $(round(period_opt, digits=2)) msec")
 end
 
 # Test with sustained stimulus
-println("\nTesting baseline with sustained constant stimulus...")
-lattice = PointLattice()
-stim = create_constant_stimulus(5.0, 5.0, 100.0, lattice)
-result_baseline_stim = evaluate_oscillation_quality(params_baseline, stimulus=stim)
-
-println("  Score: $(round(result_baseline_stim.score, digits=3))")
-println("  Oscillations: $(result_baseline_stim.has_osc)")
-println("  Peaks: $(result_baseline_stim.n_peaks)")
-if result_baseline_stim.decay_rate !== nothing
-    println("  Decay rate: $(round(result_baseline_stim.decay_rate, digits=6))")
-    if result_baseline_stim.half_life !== nothing
-        println("  Half-life: $(round(result_baseline_stim.half_life, digits=2)) msec")
-    end
-end
-
-println("\n### Parameter Exploration ###\n")
-
-# Based on Wilson & Cowan 1973 and neural dynamics theory:
-# - Stronger E→E connectivity (bₑₑ) promotes oscillations
-# - Weaker I→I connectivity (bᵢᵢ) reduces damping
-# - Time constant ratio τₑ/τᵢ affects oscillation frequency
-# - Nonlinearity slope (v) affects excitability
-
-global best_score = result_baseline.score
-global best_params = nothing
-global best_result = result_baseline
-global best_config = "baseline"
-
-# Exploration 1: Vary E→E and I→I connectivity
-println("Exploring connectivity strengths...")
-for bₑₑ in [1.8, 2.0, 2.2, 2.5]
-    for bᵢᵢ in [0.05, 0.1, 0.15, 0.2]
-        lattice_test = PointLattice()
-        
-        # Create connectivity
-        conn_ee = ScalarConnectivity(bₑₑ)
-        conn_ei = ScalarConnectivity(-1.5)
-        conn_ie = ScalarConnectivity(1.5)
-        conn_ii = ScalarConnectivity(-bᵢᵢ)
-        
-        connectivity = ConnectivityMatrix{2}([
-            conn_ee conn_ei;
-            conn_ie conn_ii
-        ])
-        
-        # Use baseline nonlinearity
-        nonlinearity_e = SigmoidNonlinearity(a=0.5, θ=9.0)
-        nonlinearity_i = SigmoidNonlinearity(a=1.0, θ=15.0)
-        nonlinearity = (nonlinearity_e, nonlinearity_i)
-        
-        params_test = WilsonCowanParameters{2}(
-            α = (1.0, 1.0),
-            β = (1.0, 1.0),
-            τ = (10.0, 10.0),
-            connectivity = connectivity,
-            nonlinearity = nonlinearity,
-            stimulus = nothing,
-            lattice = lattice_test,
-            pop_names = ("E", "I")
-        )
-        
-        result = evaluate_oscillation_quality(params_test)
-        
-        if result.score > best_score
-            global best_score = result.score
-            global best_params = params_test
-            global best_result = result
-            global best_config = "bₑₑ=$bₑₑ, bᵢᵢ=$bᵢᵢ"
-            println("  → New best: bₑₑ=$bₑₑ, bᵢᵢ=$bᵢᵢ, score=$(round(result.score, digits=3))")
-        end
-    end
-end
-
-# Exploration 2: Vary time constants
-println("\nExploring time constant ratios...")
-for τₑ in [8.0, 10.0, 12.0]
-    for τᵢ in [6.0, 8.0, 10.0]
-        lattice_test = PointLattice()
-        
-        # Use best connectivity from previous exploration or baseline
-        conn_ee = ScalarConnectivity(2.2)
-        conn_ei = ScalarConnectivity(-1.5)
-        conn_ie = ScalarConnectivity(1.5)
-        conn_ii = ScalarConnectivity(-0.08)
-        
-        connectivity = ConnectivityMatrix{2}([
-            conn_ee conn_ei;
-            conn_ie conn_ii
-        ])
-        
-        nonlinearity_e = SigmoidNonlinearity(a=0.5, θ=9.0)
-        nonlinearity_i = SigmoidNonlinearity(a=1.0, θ=15.0)
-        nonlinearity = (nonlinearity_e, nonlinearity_i)
-        
-        params_test = WilsonCowanParameters{2}(
-            α = (1.0, 1.0),
-            β = (1.0, 1.0),
-            τ = (τₑ, τᵢ),
-            connectivity = connectivity,
-            nonlinearity = nonlinearity,
-            stimulus = nothing,
-            lattice = lattice_test,
-            pop_names = ("E", "I")
-        )
-        
-        result = evaluate_oscillation_quality(params_test)
-        
-        if result.score > best_score
-            global best_score = result.score
-            global best_params = params_test
-            global best_result = result
-            global best_config = "τₑ=$τₑ, τᵢ=$τᵢ"
-            println("  → New best: τₑ=$τₑ, τᵢ=$τᵢ, score=$(round(result.score, digits=3))")
-        end
-    end
-end
-
-# Exploration 3: Vary inhibitory threshold and slope
-println("\nExploring inhibitory population nonlinearity...")
-for θᵢ in [12.0, 13.0, 14.0, 15.0, 16.0]
-    for vᵢ in [0.8, 1.0, 1.2]
-        lattice_test = PointLattice()
-        
-        conn_ee = ScalarConnectivity(2.2)
-        conn_ei = ScalarConnectivity(-1.5)
-        conn_ie = ScalarConnectivity(1.5)
-        conn_ii = ScalarConnectivity(-0.08)
-        
-        connectivity = ConnectivityMatrix{2}([
-            conn_ee conn_ei;
-            conn_ie conn_ii
-        ])
-        
-        nonlinearity_e = SigmoidNonlinearity(a=0.5, θ=9.0)
-        nonlinearity_i = SigmoidNonlinearity(a=vᵢ, θ=θᵢ)
-        nonlinearity = (nonlinearity_e, nonlinearity_i)
-        
-        params_test = WilsonCowanParameters{2}(
-            α = (1.0, 1.0),
-            β = (1.0, 1.0),
-            τ = (10.0, 10.0),
-            connectivity = connectivity,
-            nonlinearity = nonlinearity,
-            stimulus = nothing,
-            lattice = lattice_test,
-            pop_names = ("E", "I")
-        )
-        
-        result = evaluate_oscillation_quality(params_test)
-        
-        if result.score > best_score
-            global best_score = result.score
-            global best_params = params_test
-            global best_result = result
-            global best_config = "vᵢ=$vᵢ, θᵢ=$θᵢ"
-            println("  → New best: vᵢ=$vᵢ, θᵢ=$θᵢ, score=$(round(result.score, digits=3))")
-        end
-    end
-end
-
-println("\n### Best Configuration Found ###\n")
-println("Configuration: $best_config")
-println("  Score: $(round(best_result.score, digits=3))")
-println("  Oscillations: $(best_result.has_osc)")
-println("  Peaks: $(best_result.n_peaks)")
-if best_result.decay_rate !== nothing
-    println("  Decay rate: $(round(best_result.decay_rate, digits=6))")
-    if best_result.half_life !== nothing
-        println("  Half-life: $(round(best_result.half_life, digits=2)) msec")
-    end
-end
-if best_result.amplitude !== nothing
-    println("  Amplitude: $(round(best_result.amplitude, digits=4))")
-end
-if best_result.frequency !== nothing
-    println("  Frequency: $(round(best_result.frequency, digits=6)) Hz")
-    println("  Period: $(round(best_result.period, digits=2)) msec")
-end
-
-if best_params !== nothing
-    println("\nOptimized parameters:")
-    println("  τ: $(best_params.τ)")
-    println("  α: $(best_params.α)")
-    println("  β: $(best_params.β)")
-    
-    # Extract connectivity values
-    conn = best_params.connectivity
-    println("  Connectivity:")
-    println("    E → E: $(conn.matrix[1,1].weight)")
-    println("    I → E: $(conn.matrix[1,2].weight)")
-    println("    E → I: $(conn.matrix[2,1].weight)")
-    println("    I → I: $(conn.matrix[2,2].weight)")
-    
-    println("  Nonlinearity E: a=$(best_params.nonlinearity[1].a), θ=$(best_params.nonlinearity[1].θ)")
-    println("  Nonlinearity I: a=$(best_params.nonlinearity[2].a), θ=$(best_params.nonlinearity[2].θ)")
-end
-
 println("\n### Testing with Sustained Stimulus ###\n")
 
-if best_params !== nothing
-    # Test with different stimulus strengths
-    for stim_strength in [3.0, 5.0, 8.0, 10.0]
-        stim_test = create_constant_stimulus(stim_strength, 5.0, 150.0, PointLattice())
-        result_stim = evaluate_oscillation_quality(best_params, stimulus=stim_test)
-        
-        println("Stimulus strength $stim_strength:")
-        println("  Score: $(round(result_stim.score, digits=3))")
-        println("  Peaks: $(result_stim.n_peaks)")
-        if result_stim.decay_rate !== nothing && result_stim.half_life !== nothing
-            println("  Half-life: $(round(result_stim.half_life, digits=2)) msec")
-        end
-    end
-end
+lattice = PointLattice()
+stim = ConstantStimulus(
+    strength=5.0,
+    time_windows=[(10.0, 150.0)],
+    lattice=lattice
+)
 
-# Save optimized parameters to JSON file
-if best_params !== nothing
-    println("\n### Saving Optimized Parameters ###\n")
-    
-    # Extract parameters in a serializable format
-    conn = best_params.connectivity
-    optimized_data = Dict(
-        "mode" => "oscillatory_optimized",
-        "timestamp" => string(now()),
-        "configuration" => best_config,
-        "metrics" => Dict(
-            "score" => best_result.score,
-            "has_oscillations" => best_result.has_osc,
-            "n_peaks" => best_result.n_peaks,
-            "decay_rate" => best_result.decay_rate,
-            "amplitude" => best_result.amplitude,
-            "frequency" => best_result.frequency,
-            "half_life" => best_result.half_life,
-            "period" => best_result.period
-        ),
-        "parameters" => Dict(
-            "tau_e" => best_params.τ[1],
-            "tau_i" => best_params.τ[2],
-            "alpha_e" => best_params.α[1],
-            "alpha_i" => best_params.α[2],
-            "beta_e" => best_params.β[1],
-            "beta_i" => best_params.β[2],
-            "connectivity" => Dict(
-                "b_ee" => conn.matrix[1,1].weight,
-                "b_ei" => conn.matrix[1,2].weight,
-                "b_ie" => conn.matrix[2,1].weight,
-                "b_ii" => conn.matrix[2,2].weight
-            ),
-            "nonlinearity" => Dict(
-                "v_e" => best_params.nonlinearity[1].a,
-                "theta_e" => best_params.nonlinearity[1].θ,
-                "v_i" => best_params.nonlinearity[2].a,
-                "theta_i" => best_params.nonlinearity[2].θ
-            )
-        )
-    )
-    
-    # Determine the output file path
-    output_path = joinpath(dirname(@__DIR__), "data", "optimized_parameters.json")
-    
-    # Save to JSON
-    open(output_path, "w") do io
-        JSON.print(io, optimized_data, 4)
-    end
-    
-    println("  Saved optimized parameters to: $output_path")
-    println("  Configuration: $best_config")
-    println("  Score: $(round(best_result.score, digits=3))")
+params_stim = WilsonCowanParameters{2}(
+    α = params_opt.α,
+    β = params_opt.β,
+    τ = params_opt.τ,
+    connectivity = params_opt.connectivity,
+    nonlinearity = params_opt.nonlinearity,
+    stimulus = stim,
+    lattice = params_opt.lattice,
+    pop_names = params_opt.pop_names
+)
+
+sol_stim = solve_model(A₀, (0.0, 300.0), params_stim, saveat=0.5)
+
+has_osc_stim, peak_times_stim, _ = detect_oscillations(sol_stim, 1)
+amp_stim, _ = compute_oscillation_amplitude(sol_stim, 1, method=:envelope)
+
+println("Results with sustained stimulus (strength=5.0, t=10-150ms):")
+println("  Oscillations: $has_osc_stim")
+println("  Peaks: $(length(peak_times_stim))")
+if amp_stim !== nothing
+    println("  Amplitude: $(round(amp_stim, digits=4))")
 end
 
 println("\n" * "="^70)
 println("Optimization Complete")
 println("="^70)
+println("\nSummary:")
+println("  Method: Particle Swarm optimization (Optim.jl)")
+println("  Optimized 4 parameters: bₑₑ, bᵢᵢ, τₑ, τᵢ")
+println("  Objective: Maximize oscillation quality score")
+println("    - 30% weight on number of peaks")
+println("    - 50% weight on sustained oscillations (low decay)")
+println("    - 20% weight on amplitude")
