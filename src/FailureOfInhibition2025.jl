@@ -32,6 +32,9 @@ include("analysis.jl")
 # Include optimization functionality
 include("optimize.jl")
 
+# Include canonical model parameter sets
+include("canonical.jl")
+
 # Export main space types and functions
 export AbstractSpace, AbstractLattice
 export AbstractCompactLattice, CompactLattice
@@ -73,5 +76,8 @@ export compute_oscillation_decay, compute_oscillation_duration
 
 # Export optimization functions
 export TravelingWaveObjective, optimize_for_traveling_wave
+
+# Export canonical model parameter functions
+export create_wcm1973_parameters, create_point_model_wcm1973
 
 end # module FailureOfInhibition2025

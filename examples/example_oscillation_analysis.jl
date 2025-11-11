@@ -15,9 +15,6 @@ The example uses the WCM 1973 oscillatory mode as a demonstration.
 
 using FailureOfInhibition2025
 
-# Load the WCM 1973 parameter creation functions
-include("../test/test_wcm1973_validation.jl")
-
 println("\n" * "="^70)
 println("Oscillation Analysis Utilities for Point Models")
 println("="^70)
