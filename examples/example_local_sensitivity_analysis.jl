@@ -13,6 +13,7 @@ using FailureOfInhibition2025
 using Statistics
 using Printf
 using SciMLSensitivity
+using DifferentialEquations
 
 println("="^70)
 println("Wilson-Cowan Model Parameter Sensitivity Analysis")
