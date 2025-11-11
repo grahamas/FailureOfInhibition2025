@@ -82,9 +82,16 @@ tspan = (0.0, 300.0)
 sol = solve_model(A₀, tspan, params, saveat=0.5)
 ```
 
-### 4. Fallback Behavior
+### 4. Required File
 
-If the JSON file doesn't exist or cannot be loaded, the system automatically falls back to hardcoded optimized parameters. This ensures backward compatibility and allows the code to work even without running the optimization script first.
+**Important**: The JSON file must exist before using `:oscillatory_optimized` mode. If the file doesn't exist, the function will error with a helpful message:
+
+```
+ERROR: Optimized parameters file not found at: /path/to/data/optimized_parameters.json
+Run the optimization script first: julia --project=. scripts/optimize_oscillation_parameters.jl
+```
+
+This ensures that you always use properly optimized parameters rather than potentially outdated hardcoded values.
 
 ## Updating Parameters
 
@@ -115,4 +122,4 @@ See `scripts/plot_optimized_oscillations.jl` for a visual comparison showing the
 - **Easy Updates**: Re-run optimization to find better parameters
 - **No Manual Editing**: Parameters update automatically without code changes
 - **Metadata Tracking**: Timestamps and metrics help track optimization history
-- **Backward Compatible**: Fallback ensures code works without JSON file
+- **Explicit Dependencies**: Errors if optimization hasn't been run, ensuring current parameters are used
