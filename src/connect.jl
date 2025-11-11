@@ -119,6 +119,38 @@ end
 Base.getindex(cm::ConnectivityMatrix, i, j) = cm.matrix[i, j]
 Base.size(cm::ConnectivityMatrix) = size(cm.matrix)
 
+"""
+    prepare_connectivity(connectivity::ConnectivityMatrix{P}, lattice)
+
+Prepare a ConnectivityMatrix by pre-computing GaussianConnectivity objects from
+GaussianConnectivityParameter objects. This ensures that connectivity kernels and
+FFT plans are only calculated once, rather than on every propagation step.
+
+Returns a new ConnectivityMatrix with GaussianConnectivity objects where the
+input had GaussianConnectivityParameter objects.
+"""
+function prepare_connectivity(connectivity::ConnectivityMatrix{P}, lattice) where {P}
+    prepared_matrix = Matrix{Union{GaussianConnectivity, ScalarConnectivity, Nothing}}(undef, P, P)
+    
+    for i in 1:P
+        for j in 1:P
+            conn = connectivity[i, j]
+            if conn isa GaussianConnectivityParameter
+                # Pre-compute the GaussianConnectivity object
+                prepared_matrix[i, j] = GaussianConnectivity(conn, lattice)
+            else
+                # Keep ScalarConnectivity and nothing as-is
+                prepared_matrix[i, j] = conn
+            end
+        end
+    end
+    
+    return ConnectivityMatrix{P}(prepared_matrix)
+end
+
+# No preparation needed for non-ConnectivityMatrix types
+prepare_connectivity(connectivity, lattice) = connectivity
+
 struct GaussianConnectivity
     fft_op
     ifft_op
@@ -290,9 +322,18 @@ end
 
 Propagates activation for a single population-to-population connection.
 This is a helper function used by the ConnectivityMatrix propagation.
+
+# Performance Note
+For optimal performance, GaussianConnectivityParameter objects should be pre-computed
+into GaussianConnectivity objects using prepare_connectivity() before being used in
+repeated propagations. This is automatically done by the WilsonCowanParameters
+constructor, ensuring kernels are only calculated once during model initialization
+rather than on every ODE step.
 """
 function propagate_activation_single(dA, A, connectivity::GaussianConnectivityParameter, t, lattice)
-    # Create GaussianConnectivity if given parameter
+    # Fallback: Create GaussianConnectivity on-the-fly
+    # Note: This is inefficient for repeated calls (e.g., during ODE solving)
+    # Use prepare_connectivity() to pre-compute for better performance
     gc = GaussianConnectivity(connectivity, lattice)
     propagate_activation_single(dA, A, gc, t, lattice)
 end

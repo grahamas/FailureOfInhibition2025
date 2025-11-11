@@ -132,7 +132,10 @@ end
 function WilsonCowanParameters{P}(; α, β, τ, connectivity, nonlinearity, stimulus, lattice,
                                    pop_names=ntuple(i -> "Pop$i", P)) where {P}
     T = eltype(α)
-    WilsonCowanParameters{T,P}(α, β, τ, connectivity, nonlinearity, stimulus, lattice, pop_names)
+    # Prepare connectivity: pre-compute GaussianConnectivity objects from parameters
+    # to ensure kernels are only calculated once
+    prepared_connectivity = prepare_connectivity(connectivity, lattice)
+    WilsonCowanParameters{T,P}(α, β, τ, prepared_connectivity, nonlinearity, stimulus, lattice, pop_names)
 end
 
 """
