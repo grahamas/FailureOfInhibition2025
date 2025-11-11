@@ -13,6 +13,8 @@ The goal is to find parameters that:
 """
 
 using FailureOfInhibition2025
+using JSON
+using Dates
 
 # Include the WCM 1973 parameter creation functions
 include("../test/test_wcm1973_validation.jl")
@@ -347,6 +349,61 @@ if best_params !== nothing
             println("  Half-life: $(round(result_stim.half_life, digits=2)) msec")
         end
     end
+end
+
+# Save optimized parameters to JSON file
+if best_params !== nothing
+    println("\n### Saving Optimized Parameters ###\n")
+    
+    # Extract parameters in a serializable format
+    conn = best_params.connectivity
+    optimized_data = Dict(
+        "mode" => "oscillatory_optimized",
+        "timestamp" => string(now()),
+        "configuration" => best_config,
+        "metrics" => Dict(
+            "score" => best_result.score,
+            "has_oscillations" => best_result.has_osc,
+            "n_peaks" => best_result.n_peaks,
+            "decay_rate" => best_result.decay_rate,
+            "amplitude" => best_result.amplitude,
+            "frequency" => best_result.frequency,
+            "half_life" => best_result.half_life,
+            "period" => best_result.period
+        ),
+        "parameters" => Dict(
+            "tau_e" => best_params.τ[1],
+            "tau_i" => best_params.τ[2],
+            "alpha_e" => best_params.α[1],
+            "alpha_i" => best_params.α[2],
+            "beta_e" => best_params.β[1],
+            "beta_i" => best_params.β[2],
+            "connectivity" => Dict(
+                "b_ee" => conn.matrix[1,1].weight,
+                "b_ei" => conn.matrix[1,2].weight,
+                "b_ie" => conn.matrix[2,1].weight,
+                "b_ii" => conn.matrix[2,2].weight
+            ),
+            "nonlinearity" => Dict(
+                "v_e" => best_params.nonlinearity[1].a,
+                "theta_e" => best_params.nonlinearity[1].θ,
+                "v_i" => best_params.nonlinearity[2].a,
+                "theta_i" => best_params.nonlinearity[2].θ
+            )
+        )
+    )
+    
+    # Determine the output file path
+    output_path = joinpath(dirname(@__DIR__), "data", "optimized_parameters.json")
+    
+    # Save to JSON
+    open(output_path, "w") do io
+        JSON.print(io, optimized_data, 4)
+    end
+    
+    println("  Saved optimized parameters to: $output_path")
+    println("  Configuration: $best_config")
+    println("  Score: $(round(best_result.score, digits=3))")
 end
 
 println("\n" * "="^70)

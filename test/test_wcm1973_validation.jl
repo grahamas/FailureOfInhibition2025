@@ -18,6 +18,15 @@ Each mode is characterized by different parameter sets (Table 2 in the paper).
 using FailureOfInhibition2025
 using Test
 
+# Load JSON for parameter loading
+HAS_JSON = false
+try
+    using JSON
+    global HAS_JSON = true
+catch
+    global HAS_JSON = false
+end
+
 # Load UnicodePlots for visualization during testing
 HAS_UNICODEPLOTS = false
 try
@@ -202,6 +211,35 @@ function create_wcm1973_parameters(mode::Symbol; lattice=nothing)
 end
 
 """
+    load_optimized_parameters()
+
+Load optimized parameters from JSON file.
+Errors if JSON package is not available or if the file doesn't exist.
+"""
+function load_optimized_parameters()
+    # Check if JSON is available
+    if !HAS_JSON
+        error("JSON package is required to load optimized parameters. Run: using Pkg; Pkg.add(\"JSON\")")
+    end
+    
+    # Look for the JSON file in the data directory
+    # The file path is relative to the package root
+    json_path = joinpath(@__DIR__, "..", "data", "optimized_parameters.json")
+    
+    if !isfile(json_path)
+        error("Optimized parameters file not found at: $json_path\n" *
+              "Run the optimization script first: julia --project=. scripts/optimize_oscillation_parameters.jl")
+    end
+    
+    try
+        data = JSON.parsefile(json_path)
+        return data
+    catch e
+        error("Failed to load optimized parameters from $json_path: $e")
+    end
+end
+
+"""
     create_point_model_wcm1973(mode::Symbol)
 
 Create a point (non-spatial) model matching Wilson & Cowan 1973.
@@ -232,15 +270,22 @@ function create_point_model_wcm1973(mode::Symbol)
         bᵢᵢ = 0.1
         τₑ, τᵢ = 10.0, 10.0
     elseif mode == :oscillatory_optimized
-        # Optimized parameters for stronger, more sustained oscillations
-        # Found via parameter exploration in scripts/optimize_oscillation_parameters.jl
-        vₑ, θₑ = 0.5, 9.0
-        vᵢ, θᵢ = 1.0, 15.0
-        bₑₑ = 2.2  # Increased E→E connectivity
-        bᵢₑ = 1.5
-        bₑᵢ = 1.5
-        bᵢᵢ = 0.08  # Reduced I→I connectivity magnitude (applied as -bᵢᵢ below)
-        τₑ, τᵢ = 8.0, 10.0  # Adjusted time constant ratio
+        # Load optimized parameters from file
+        # This will error if the file doesn't exist
+        opt_data = load_optimized_parameters()
+        
+        # Load parameters from JSON file
+        params_dict = opt_data["parameters"]
+        vₑ = params_dict["nonlinearity"]["v_e"]
+        θₑ = params_dict["nonlinearity"]["theta_e"]
+        vᵢ = params_dict["nonlinearity"]["v_i"]
+        θᵢ = params_dict["nonlinearity"]["theta_i"]
+        bₑₑ = params_dict["connectivity"]["b_ee"]
+        bᵢₑ = -params_dict["connectivity"]["b_ei"]  # Note: stored with sign, need to negate
+        bₑᵢ = params_dict["connectivity"]["b_ie"]
+        bᵢᵢ = -params_dict["connectivity"]["b_ii"]  # Note: stored with sign, need to negate
+        τₑ = params_dict["tau_e"]
+        τᵢ = params_dict["tau_i"]
     elseif mode == :steady_state
         vₑ, θₑ = 0.5, 9.0
         vᵢ, θᵢ = 0.3, 17.0
