@@ -18,9 +18,6 @@ functional properties of neural tissue.
 
 using FailureOfInhibition2025
 
-# Load the WCM 1973 parameter creation functions
-include("../test/test_wcm1973_validation.jl")
-
 println("\n" * "="^70)
 println("Wilson-Cowan Model: Three Dynamical Modes (1973)")
 println("="^70)

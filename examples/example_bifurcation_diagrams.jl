@@ -15,9 +15,6 @@ https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/
 using FailureOfInhibition2025
 using BifurcationKit
 
-# Load the WCM 1973 parameter creation functions
-include("../test/test_wcm1973_validation.jl")
-
 println("\n" * "="^70)
 println("Bifurcation Analysis: Wilson-Cowan Model")
 println("Using BifurcationKit Continuation Methods")

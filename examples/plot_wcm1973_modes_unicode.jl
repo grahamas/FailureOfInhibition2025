@@ -21,9 +21,6 @@ catch
     using UnicodePlots
 end
 
-# Load the WCM 1973 parameter creation functions
-include("../test/test_wcm1973_validation.jl")
-
 println("\n" * "="^70)
 println("Wilson-Cowan 1973: Three Dynamical Modes")
 println("="^70)

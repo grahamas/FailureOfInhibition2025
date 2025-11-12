@@ -141,9 +141,6 @@ Example 3: WCM 1973 Mode Simulation
 
 println("\n\n### Example 3: WCM 1973 Active Transient Mode ###\n")
 
-# Load the WCM 1973 parameter creation functions
-include(joinpath(dirname(@__FILE__), "..", "test", "test_wcm1973_validation.jl"))
-
 # Create parameters for active transient mode
 params_active = create_point_model_wcm1973(:active_transient)
 
