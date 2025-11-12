@@ -872,3 +872,81 @@ function compute_oscillation_duration(sol, pop_idx=1; threshold_ratio=0.1, min_a
     
     return duration, sustained, end_time
 end
+
+"""
+    generate_analytical_traveling_wave(params::WilsonCowanParameters{T,1}, times, pop_idx=1;
+                                        wave_speed=2.0, decay_rate=0.05, wavenumber=1.0, 
+                                        initial_position=-10.0, amplitude=1.0) where {T}
+
+Generate an analytical traveling wave solution for a 1D Wilson-Cowan model.
+
+The solution is a sech² traveling wave with exponential decay:
+    A(x,t) = A₀ * exp(-λt) * sech²(k(x - x₀ - ct))
+
+where:
+- A₀ is the initial amplitude
+- λ is the decay rate (1/time)
+- k is the spatial wavenumber (1/space, controls width)
+- c is the wave speed (space/time)
+- x₀ is the initial position of the wave peak
+
+This function creates a solution object that is compatible with the analysis functions
+and can be used to test optimization and analysis algorithms.
+
+# Arguments
+- `params`: WilsonCowanParameters{T,1} containing the lattice and model parameters
+- `times`: Time points at which to evaluate the solution (Vector or Range)
+- `pop_idx`: Population index (default: 1)
+- `wave_speed`: Speed of wave propagation in space/time (default: 2.0)
+- `decay_rate`: Exponential decay rate λ in 1/time (default: 0.05)
+- `wavenumber`: Spatial wavenumber k in 1/space (default: 1.0, gives FWHM ≈ 1.76)
+- `initial_position`: Initial position x₀ of wave peak (default: -10.0)
+- `amplitude`: Initial amplitude A₀ (default: 1.0)
+
+# Returns
+A named tuple with fields:
+- `u`: Vector of spatial activity matrices at each time point
+- `t`: Vector of time points
+
+# Examples
+```julia
+lattice = CompactLattice(extent=(40.0,), n_points=(201,))
+params = WilsonCowanParameters{1}(
+    α=(1.0,), β=(1.0,), τ=(8.0,),
+    connectivity=ConnectivityMatrix{1}(reshape([GaussianConnectivityParameter(1.0, (2.0,))], 1, 1)),
+    nonlinearity=SigmoidNonlinearity(a=2.0, θ=0.25),
+    stimulus=nothing, lattice=lattice, pop_names=("E",)
+)
+times = 0.0:0.2:10.0
+sol = generate_analytical_traveling_wave(params, times, wave_speed=2.0, decay_rate=0.05)
+```
+"""
+function generate_analytical_traveling_wave(params::WilsonCowanParameters{T,1}, times, pop_idx=1;
+                                           wave_speed=2.0, decay_rate=0.05, wavenumber=1.0,
+                                           initial_position=-10.0, amplitude=1.0) where {T}
+    # Extract lattice information
+    lattice = params.lattice
+    x_coords = [coord[1] for coord in coordinates(lattice)]
+    n_points = length(x_coords)
+    
+    # Define the traveling wave solution
+    function traveling_wave_solution(x, t)
+        arg = wavenumber * (x - initial_position - wave_speed * t)
+        amp = amplitude * exp(-decay_rate * t)
+        return amp / (cosh(arg)^2)  # sech²(x) = 1/cosh²(x)
+    end
+    
+    # Generate solution data
+    u_array = []
+    t_array = Float64[]
+    
+    for t in times
+        # Create spatial profile at this time
+        profile = [traveling_wave_solution(x, t) for x in x_coords]
+        push!(u_array, reshape(profile, n_points, 1))
+        push!(t_array, t)
+    end
+    
+    # Return a named tuple that mimics ODE solution structure
+    return (u=u_array, t=t_array)
+end

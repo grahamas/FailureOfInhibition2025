@@ -18,6 +18,21 @@ where:
 - c is the wave speed
 """
 
+# Helper function to create WilsonCowanParameters for analytical wave testing
+function create_test_params(lattice)
+    conn = GaussianConnectivityParameter(1.0, (2.0,))
+    return WilsonCowanParameters{1}(
+        α = (1.0,),
+        β = (1.0,),
+        τ = (8.0,),
+        connectivity = ConnectivityMatrix{1}(reshape([conn], 1, 1)),
+        nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.25),
+        stimulus = nothing,
+        lattice = lattice,
+        pop_names = ("E",)
+    )
+end
+
 @testset "Analytical Traveling Wave Tests" begin
     
     @testset "Exponentially Decaying Sech² Wave" begin
@@ -33,7 +48,9 @@ where:
         extent = 40.0
         n_points = 201
         lattice = CompactLattice(extent=(extent,), n_points=(n_points,))
-        x_coords = [coord[1] for coord in coordinates(lattice)]
+        
+        # Create WilsonCowanParameters to provide lattice information for wave generation
+        params = create_test_params(lattice)
         
         # Time domain
         t_start = 0.0
@@ -41,35 +58,18 @@ where:
         dt = 0.2
         times = t_start:dt:t_end
         
-        # Generate the traveling wave solution
-        # A(x,t) = A₀ * exp(-λt) * sech²(k(x - x₀ - ct))
-        x₀ = -10.0  # Initial position of wave peak
+        # Initial position of wave peak
+        x₀ = -10.0
         
-        function traveling_wave_solution(x, t)
-            arg = k * (x - x₀ - c * t)
-            amplitude = A₀ * exp(-λ * t)
-            return amplitude / (cosh(arg)^2)  # sech²(x) = 1/cosh²(x)
-        end
-        
-        # Create solution data structure matching ODE solver output
-        u_array = []
-        t_array = Float64[]
-        
-        for t in times
-            # Create spatial profile at this time
-            profile = [traveling_wave_solution(x, t) for x in x_coords]
-            push!(u_array, reshape(profile, n_points, 1))
-            push!(t_array, t)
-        end
-        
-        # Create a mock solution object
-        # (In real usage, this would come from solve_model)
-        struct MockSolution
-            u::Vector{Matrix{Float64}}
-            t::Vector{Float64}
-        end
-        
-        sol = MockSolution(u_array, t_array)
+        # Generate the traveling wave solution using the new function
+        sol = generate_analytical_traveling_wave(
+            params, times,
+            wave_speed = c,
+            decay_rate = λ,
+            wavenumber = k,
+            amplitude = A₀,
+            initial_position = x₀
+        )
         
         println("  Wave parameters:")
         println("    - Initial amplitude A₀: $(A₀)")
@@ -191,33 +191,23 @@ where:
         extent = 40.0
         n_points = 151
         lattice = CompactLattice(extent=(extent,), n_points=(n_points,))
-        x_coords = [coord[1] for coord in coordinates(lattice)]
+        
+        # Create WilsonCowanParameters to provide lattice information for wave generation
+        params = create_test_params(lattice)
         
         # Time domain
         times = 0.0:0.5:15.0
         x₀ = -12.0
         
-        function traveling_wave_solution(x, t)
-            arg = k * (x - x₀ - c * t)
-            return A₀ / (cosh(arg)^2)
-        end
-        
-        # Generate solution
-        u_array = []
-        t_array = Float64[]
-        
-        for t in times
-            profile = [traveling_wave_solution(x, t) for x in x_coords]
-            push!(u_array, reshape(profile, n_points, 1))
-            push!(t_array, t)
-        end
-        
-        struct MockSolution2
-            u::Vector{Matrix{Float64}}
-            t::Vector{Float64}
-        end
-        
-        sol = MockSolution2(u_array, t_array)
+        # Generate the non-decaying traveling wave solution
+        sol = generate_analytical_traveling_wave(
+            params, times,
+            wave_speed = c,
+            decay_rate = λ,
+            wavenumber = k,
+            amplitude = A₀,
+            initial_position = x₀
+        )
         
         # Test that no decay is detected
         println("  Testing decay detection on non-decaying wave:")
