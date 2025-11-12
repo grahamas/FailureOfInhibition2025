@@ -9,14 +9,14 @@ amplitude and robustness achieved by the optimized parameters.
 
 using FailureOfInhibition2025
 
-# Check for and install UnicodePlots if needed
+# Use Plots for graphical output (save to files). If missing, install it.
 try
-    using UnicodePlots
+    using Plots
 catch
     using Pkg
-    println("Installing UnicodePlots...")
-    Pkg.add("UnicodePlots")
-    using UnicodePlots
+    println("Installing Plots.jl...")
+    Pkg.add("Plots")
+    using Plots
 end
 
 # Load the WCM 1973 parameter creation functions
@@ -47,44 +47,44 @@ times_optimized = sol_optimized.t
 E_optimized = [sol_optimized.u[i][1,1] for i in 1:length(sol_optimized.t)]
 I_optimized = [sol_optimized.u[i][1,2] for i in 1:length(sol_optimized.t)]
 
-println("Generating plots...")
+println("Generating plots (saved as PNG files)...")
 
-# Create comparison plot using UnicodePlots
-p1 = lineplot(times_baseline, E_baseline,
+# Create comparison plot using Plots.jl and save to files
+p1 = plot(times_baseline, E_baseline,
     title="Baseline WCM 1973 Oscillatory Mode",
-    name="E",
+    label="E",
     xlabel="Time (msec)",
     ylabel="Activity",
-    width=70,
-    height=15)
-lineplot!(p1, times_baseline, I_baseline, name="I")
+    size=(1000,300))
+plot!(p1, times_baseline, I_baseline, label="I")
 
-p2 = lineplot(times_optimized, E_optimized,
+p2 = plot(times_optimized, E_optimized,
     title="Optimized Oscillatory Mode (191% amplitude increase)",
-    name="E",
+    label="E",
     xlabel="Time (msec)",
     ylabel="Activity",
-    width=70,
-    height=15)
-lineplot!(p2, times_optimized, I_optimized, name="I")
+    size=(1000,300))
+plot!(p2, times_optimized, I_optimized, label="I")
 
-println("\n" * "="^70)
-println(p1)
-println("\n")
-println(p2)
+outfile1 = joinpath(@__DIR__, "optimized_oscillations_baseline.png")
+outfile2 = joinpath(@__DIR__, "optimized_oscillations_optimized.png")
+savefig(p1, outfile1)
+savefig(p2, outfile2)
+println("Saved: $(outfile1)")
+println("Saved: $(outfile2)")
 
 # Zoomed-in comparison showing the first few oscillations
-p3 = lineplot(times_baseline[1:200], E_baseline[1:200],
+zoom_n = min(200, length(times_baseline))
+p3 = plot(times_baseline[1:zoom_n], E_baseline[1:zoom_n],
     title="First 100 msec: Baseline vs Optimized (E population)",
-    name="Baseline E",
+    label="Baseline E",
     xlabel="Time (msec)",
     ylabel="Activity",
-    width=70,
-    height=15)
-lineplot!(p3, times_optimized[1:200], E_optimized[1:200], name="Optimized E")
-
-println("\n")
-println(p3)
+    size=(1000,300))
+plot!(p3, times_optimized[1:zoom_n], E_optimized[1:zoom_n], label="Optimized E")
+outfile3 = joinpath(@__DIR__, "optimized_oscillations_zoomed.png")
+savefig(p3, outfile3)
+println("Saved: $(outfile3)")
 
 # Create a plot with sustained stimulus
 println("\nSimulating with sustained stimulus...")
@@ -112,17 +112,16 @@ times_stim = sol_stim.t
 E_stim = [sol_stim.u[i][1,1] for i in 1:length(sol_stim.t)]
 I_stim = [sol_stim.u[i][1,2] for i in 1:length(sol_stim.t)]
 
-p4 = lineplot(times_stim, E_stim,
+p4 = plot(times_stim, E_stim,
     title="Optimized with Sustained Stimulus (strength=5.0, t=10-150ms)",
-    name="E (with stim)",
+    label="E (with stim)",
     xlabel="Time (msec)",
     ylabel="Activity",
-    width=70,
-    height=15)
-lineplot!(p4, times_stim, I_stim, name="I (with stim)")
-
-println("\n")
-println(p4)
+    size=(1000,300))
+plot!(p4, times_stim, I_stim, label="I (with stim)")
+outfile4 = joinpath(@__DIR__, "optimized_oscillations_with_stimulus.png")
+savefig(p4, outfile4)
+println("Saved: $(outfile4)")
 
 # Print summary statistics
 println("\n" * "="^70)
@@ -152,10 +151,10 @@ println("  Peaks: $(length(peaks_stim))")
 println("  Amplitude: $(round(amp_stim, digits=4))")
 
 println("\n" * "="^70)
-println("Plots Generated (displayed above)")
+println("Plots Generated (saved to PNG files in script directory)")
 println("="^70)
 println()
-println("These Unicode plots show:")
+println("These plots show:")
 println("1. Baseline WCM 1973 oscillatory mode - weak damped oscillations")
 println("2. Optimized oscillatory mode - 191% amplitude increase")
 println("3. First 100 msec comparison - clearly shows amplitude difference")
