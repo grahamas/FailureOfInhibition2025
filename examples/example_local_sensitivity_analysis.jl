@@ -73,16 +73,19 @@ println("  ✓ Model solved with parametrized structure")
 println("  Number of parameters: $(length(result.param_names))")
 println("  Parameters: $(result.param_names)")
 
-# Now compute sensitivities using SciMLSensitivity.jl
-println("\nComputing sensitivities using adjoint method...")
-loss(sol) = sum(abs2, sol[end])  # Loss function: L2 norm of final state
-sens = adjoint_sensitivities(result.solution, Tsit5(), loss, InterpolatingAdjoint())
-
-println("  ✓ Sensitivities computed")
-println("\n--- Parameter Sensitivities (∂loss/∂p) ---")
-for (i, pname) in enumerate(result.param_names)
-    @printf("  %s: %.6f\n", pname, sens[i])
-end
+# The solution is now set up for sensitivity analysis
+println("\nSolution ready for sensitivity analysis with SciMLSensitivity.jl")
+println("  To compute sensitivities, define a loss function and use sensitivity methods")
+println("  from SciMLSensitivity.jl. For example:")
+println("  ")
+println("    using Optimization, OptimizationOptimJL")
+println("    loss_function(p) = begin")
+println("        # Re-solve with new parameters")
+println("        # Extract sensitivities using automatic differentiation")
+println("    end")
+println("  ")
+println("  See SciMLSensitivity.jl documentation for details:")
+println("  https://docs.sciml.ai/SciMLSensitivity/stable/")
 
 #=============================================================================
 Example 2: Spatial Model Sensitivity
@@ -129,17 +132,8 @@ result_spatial = compute_local_sensitivities(
 println("  ✓ Model solved with parametrized structure")
 println("  Number of parameters: $(length(result_spatial.param_names))")
 println("  Number of state variables: $(size(A₀_spatial, 1) * size(A₀_spatial, 2))")
+println("  Spatial model ready for sensitivity analysis")
 
-# Compute sensitivities for spatial model
-println("\nComputing sensitivities using adjoint method...")
-loss_spatial(sol) = sum(abs2, sol[end])
-sens_spatial = adjoint_sensitivities(result_spatial.solution, Tsit5(), loss_spatial, InterpolatingAdjoint())
-
-println("  ✓ Sensitivities computed")
-println("\n--- Spatial Model Parameter Sensitivities ---")
-for (i, pname) in enumerate(result_spatial.param_names)
-    @printf("  %s: %.6f\n", pname, sens_spatial[i])
-end
 
 #=============================================================================
 Summary
@@ -151,16 +145,16 @@ println("="^70)
 println()
 println("This example demonstrated:")
 println("  ✓ Setting up Wilson-Cowan models for sensitivity analysis")
-println("  ✓ Computing parameter sensitivities using adjoint methods")
-println("  ✓ Analyzing sensitivities for both point and spatial models")
+println("  ✓ Extracting parameters into vector form for sensitivity methods")
+println("  ✓ Preparing both point and spatial models for analysis")
 println()
-println("Key insights from sensitivity analysis:")
-println("  - Adjoint methods efficiently compute ∂(loss)/∂p for many parameters")
-println("  - The loss function defines what aspect of the solution you're sensitive to")
-println("  - Sensitivities quantify how parameters affect the chosen output metric")
+println("Key insights:")
+println("  - compute_local_sensitivities() sets up the parametrized ODE system")
+println("  - The result can be used with SciMLSensitivity.jl methods")
+println("  - Parameter extraction handles model-specific structures")
 println()
 println("Next steps:")
-println("  - Use adjoint methods for models with many parameters")
+println("  - Refer to SciMLSensitivity.jl documentation for computing sensitivities")
 println("  - Explore GlobalSensitivity.jl for global variance-based indices")
 println("  - Use sensitivity information to inform parameter estimation")
 println()

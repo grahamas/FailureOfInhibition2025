@@ -151,11 +151,10 @@ A₀ = reshape([0.1, 0.1], 1, 2)
 tspan = (0.0, 50.0)
 result = compute_local_sensitivities(A₀, tspan, params, saveat=1.0)
 
-# Use SciMLSensitivity.jl to compute sensitivities
-loss(sol) = sum(abs2, sol[end])  # Define a loss function
-sens = adjoint_sensitivities(result.solution, Tsit5(), loss, InterpolatingAdjoint())
-
-println("Parameter sensitivities: ", sens)
+# The result can now be used with SciMLSensitivity.jl for computing sensitivities
+# See SciMLSensitivity.jl documentation for details on computing parameter sensitivities
+println("Solution ready for sensitivity analysis")
+println("Parameters: ", result.param_names)
 ```
 
 The `compute_local_sensitivities` function:
