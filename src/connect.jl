@@ -267,18 +267,35 @@ No-op connectivity propagation when connectivity is nothing.
 propagate_activation(dA, A, ::Nothing, t, lattice) = nothing
 
 """
-    propagate_activation(dA, A, connectivity::GaussianConnectivity, t)
+    propagate_activation(dA, A, connectivity::GaussianConnectivity, t, lattice)
 
 Propagates activation through a pre-computed GaussianConnectivity object.
-Used for testing and simple single-population cases.
+
+# Note
+GaussianConnectivityParameter objects must be pre-computed into GaussianConnectivity
+objects using prepare_connectivity() before being used in propagation. This is
+automatically done by the WilsonCowanParameters constructor during model initialization.
 """
-function propagate_activation(dA, A, c::GaussianConnectivity, t)
+function propagate_activation(dA, A, c::GaussianConnectivity, t, lattice)
     # Compute fft, multiply by kernel, and invert
     mul!(c.buffer_complex, c.fft_op, A)
     c.buffer_complex .*= c.kernel_fft
     mul!(c.buffer_real, c.ifft_op, c.buffer_complex)
     fftshift!(c.buffer_shift, c.buffer_real)
     dA .+= c.buffer_shift
+end
+
+"""
+    propagate_activation(dA, A, connectivity::ScalarConnectivity, t, lattice)
+
+Propagates activation for scalar connectivity in point models.
+
+For point models, this simply multiplies the source activity by the connectivity
+weight and adds it to the derivative.
+"""
+function propagate_activation(dA, A, c::ScalarConnectivity, t, lattice)
+    # For scalar connectivity, just multiply activity by weight
+    dA .+= c.weight .* A
 end
 
 """
@@ -311,43 +328,10 @@ function propagate_activation(dA, A, connectivity::ConnectivityMatrix{P}, t, lat
             temp_contribution = zero(dAi)
             
             # Propagate from source j to target i
-            propagate_activation_single(temp_contribution, Aj, conn_ij, t, lattice)
+            propagate_activation(temp_contribution, Aj, conn_ij, t, lattice)
             
             # Add to target population's derivative
             dAi .+= temp_contribution
         end
     end
-end
-
-"""
-    propagate_activation_single(dA, A, connectivity, t, lattice)
-
-Propagates activation for a single population-to-population connection.
-This is a helper function used by the ConnectivityMatrix propagation.
-
-# Note
-GaussianConnectivityParameter objects must be pre-computed into GaussianConnectivity
-objects using prepare_connectivity() before being used in propagation. This is
-automatically done by the WilsonCowanParameters constructor during model initialization.
-"""
-function propagate_activation_single(dA, A, c::GaussianConnectivity, t, lattice)
-    # Compute fft, multiply by kernel, and invert
-    mul!(c.buffer_complex, c.fft_op, A)
-    c.buffer_complex .*= c.kernel_fft
-    mul!(c.buffer_real, c.ifft_op, c.buffer_complex)
-    fftshift!(c.buffer_shift, c.buffer_real)
-    dA .+= c.buffer_shift
-end
-
-"""
-    propagate_activation_single(dA, A, connectivity::ScalarConnectivity, t, lattice)
-
-Propagates activation for scalar connectivity in point models.
-
-For point models, this simply multiplies the source activity by the connectivity
-weight and adds it to the derivative.
-"""
-function propagate_activation_single(dA, A, c::ScalarConnectivity, t, lattice)
-    # For scalar connectivity, just multiply activity by weight
-    dA .+= c.weight .* A
 end
