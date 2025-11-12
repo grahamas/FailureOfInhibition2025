@@ -21,17 +21,18 @@ include("../test/test_wcm1973_validation.jl")
 
 """
 Create parameters from optimization vector.
-Vector contains: [bₑₑ, bᵢᵢ, τₑ, τᵢ]
+Vector contains: [bₑₑ, bᵢᵢ, bₑᵢ, τᵢ]
+τₑ is kept constant at 10.0
 """
 function create_params_from_vector(x::Vector)
-    bₑₑ, bᵢᵢ, τₑ, τᵢ = x
+    bₑₑ, bᵢᵢ, bₑᵢ, τᵢ = x
     
     lattice = PointLattice()
     
     # Create connectivity
     conn_ee = ScalarConnectivity(bₑₑ)
-    conn_ei = ScalarConnectivity(-1.5)  # Keep baseline
-    conn_ie = ScalarConnectivity(1.5)   # Keep baseline
+    conn_ei = ScalarConnectivity(-bₑᵢ)  # Now optimized (E→I connectivity, inhibitory)
+    conn_ie = ScalarConnectivity(1.5)    # Keep baseline
     conn_ii = ScalarConnectivity(-bᵢᵢ)
     
     connectivity = ConnectivityMatrix{2}([
@@ -47,7 +48,7 @@ function create_params_from_vector(x::Vector)
     params = WilsonCowanParameters{2}(
         α = (1.0, 1.0),
         β = (1.0, 1.0),
-        τ = (τₑ, τᵢ),
+        τ = (10.0, τᵢ),  # τₑ kept constant at 10.0
         connectivity = connectivity,
         nonlinearity = nonlinearity,
         stimulus = nothing,
@@ -64,7 +65,7 @@ Returns negative score so that maximizing score becomes minimizing objective.
 """
 function objective(x::Vector; verbose=false)
     # Extract parameters - already bounded by ParticleSwarm
-    bₑₑ, bᵢᵢ, τₑ, τᵢ = x
+    bₑₑ, bᵢᵢ, bₑᵢ, τᵢ = x
     
     try
         params = create_params_from_vector(x)
@@ -173,25 +174,28 @@ end
 println("\n### Running Optimization ###\n")
 
 # Initial guess based on baseline oscillatory mode
-# [bₑₑ, bᵢᵢ, τₑ, τᵢ]
-x0 = [2.0, 0.1, 10.0, 10.0]
+# [bₑₑ, bᵢᵢ, bₑᵢ, τᵢ]
+# Note: τₑ is kept constant at 10.0
+x0 = [2.0, 0.1, 1.5, 10.0]
 
 println("Initial parameters:")
 println("  bₑₑ = $(x0[1])")
 println("  bᵢᵢ = $(x0[2])")
-println("  τₑ = $(x0[3])")
+println("  bₑᵢ = $(x0[3])")
 println("  τᵢ = $(x0[4])")
+println("  τₑ = 10.0 (kept constant)")
 println("  Initial objective value: $(objective(x0))")
 
 # Set bounds for box-constrained optimization
-lower = [1.5, 0.01, 5.0, 5.0]
-upper = [3.0, 0.3, 15.0, 15.0]
+lower = [1.5, 0.01, 0.5, 5.0]
+upper = [3.0, 0.3, 3.0, 15.0]
 
 println("\nParameter bounds:")
 println("  bₑₑ: [$(lower[1]), $(upper[1])]")
 println("  bᵢᵢ: [$(lower[2]), $(upper[2])]")
-println("  τₑ: [$(lower[3]), $(upper[3])]")
+println("  bₑᵢ: [$(lower[3]), $(upper[3])]")
 println("  τᵢ: [$(lower[4]), $(upper[4])]")
+println("  τₑ: 10.0 (constant)")
 
 println("\nRunning Particle Swarm optimization...")
 println("(This may take a few minutes...)")
@@ -227,7 +231,7 @@ println("Final score: $(round(-f_opt, digits=6))")
 println("\nOptimized parameters:")
 println("  bₑₑ = $(round(x_opt[1], digits=3))")
 println("  bᵢᵢ = $(round(x_opt[2], digits=3))")
-println("  τₑ = $(round(x_opt[3], digits=3))")
+println("  bₑᵢ = $(round(x_opt[3], digits=3))")
 println("  τᵢ = $(round(x_opt[4], digits=3))")
 
 # Evaluate optimized parameters
@@ -299,7 +303,8 @@ println("Optimization Complete")
 println("="^70)
 println("\nSummary:")
 println("  Method: Particle Swarm optimization (Optim.jl)")
-println("  Optimized 4 parameters: bₑₑ, bᵢᵢ, τₑ, τᵢ")
+println("  Optimized 4 parameters: bₑₑ, bᵢᵢ, bₑᵢ, τᵢ")
+println("  Constant parameter: τₑ = 10.0")
 println("  Objective: Maximize oscillation quality score")
 println("    - 30% weight on number of peaks")
 println("    - 50% weight on sustained oscillations (low decay)")
