@@ -12,9 +12,6 @@ The optimized parameters were found using scripts/optimize_oscillation_parameter
 
 using FailureOfInhibition2025
 
-# Include the WCM 1973 parameter creation functions
-include("../test/test_wcm1973_validation.jl")
-
 println("="^70)
 println("Optimized Oscillation Parameters for Point Models")
 println("="^70)

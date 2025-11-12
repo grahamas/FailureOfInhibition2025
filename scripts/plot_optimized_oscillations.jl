@@ -19,9 +19,6 @@ catch
     using Plots
 end
 
-# Load the WCM 1973 parameter creation functions
-include("../test/test_wcm1973_validation.jl")
-
 println("\n" * "="^70)
 println("Time Course Plot: Optimized Oscillations")
 println("="^70)

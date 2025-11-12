@@ -15,9 +15,7 @@ The goal is to find parameters that:
 using FailureOfInhibition2025
 using Optim
 using LinearAlgebra
-
-# Include the WCM 1973 parameter creation functions
-include("../test/test_wcm1973_validation.jl")
+using Dates  # For timestamp
 
 """
 Create parameters from optimization vector.
@@ -309,3 +307,69 @@ println("  Objective: Maximize oscillation quality score")
 println("    - 30% weight on number of peaks")
 println("    - 50% weight on sustained oscillations (low decay)")
 println("    - 20% weight on amplitude")
+
+# Save optimized parameters to JSON file
+println("\n### Saving Optimized Parameters ###\n")
+
+# Try to use JSON
+try
+    using JSON
+    
+    # Create data directory if it doesn't exist
+    data_dir = joinpath(@__DIR__, "..", "data")
+    if !isdir(data_dir)
+        mkdir(data_dir)
+    end
+    
+    # Prepare parameters dictionary
+    opt_params = Dict(
+        "mode" => "oscillatory_optimized",
+        "timestamp" => string(now()),
+        "configuration" => "τₑ=10.0 (constant), optimized: bₑₑ=$(round(x_opt[1], digits=3)), bᵢᵢ=$(round(x_opt[2], digits=3)), bₑᵢ=$(round(x_opt[3], digits=3)), τᵢ=$(round(x_opt[4], digits=3))",
+        "parameters" => Dict(
+            "tau_e" => 10.0,  # Kept constant
+            "tau_i" => x_opt[4],
+            "alpha_e" => 1.0,
+            "alpha_i" => 1.0,
+            "beta_e" => 1.0,
+            "beta_i" => 1.0,
+            "connectivity" => Dict(
+                "b_ee" => x_opt[1],
+                "b_ei" => x_opt[3],  # Store with magnitude (will negate when creating conn)
+                "b_ie" => 1.5,       # Kept constant at baseline
+                "b_ii" => x_opt[2]   # Store with magnitude (will negate when creating conn)
+            ),
+            "nonlinearity" => Dict(
+                "v_e" => 0.5,
+                "theta_e" => 9.0,
+                "v_i" => 1.0,
+                "theta_i" => 15.0
+            )
+        ),
+        "metrics" => Dict(
+            "has_oscillations" => has_osc_opt,
+            "n_peaks" => length(peak_times_opt),
+            "score" => -f_opt,
+            "amplitude" => amp_opt,
+            "decay_rate" => decay_opt,
+            "half_life" => half_life_opt,
+            "frequency" => freq_opt,
+            "period" => period_opt
+        )
+    )
+    
+    # Save to JSON file
+    json_path = joinpath(data_dir, "optimized_parameters.json")
+    open(json_path, "w") do f
+        JSON.print(f, opt_params, 4)  # Pretty print with 4-space indent
+    end
+    
+    println("Parameters saved to: $json_path")
+    println("You can now use these parameters with:")
+    println("  params = create_point_model_wcm1973(:oscillatory_optimized)")
+    
+catch e
+    println("Warning: Could not save parameters to JSON: $e")
+    println("Install JSON package to enable parameter saving:")
+    println("  using Pkg; Pkg.add(\"JSON\")")
+end

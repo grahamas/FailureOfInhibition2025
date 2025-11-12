@@ -187,6 +187,36 @@ function create_wcm1973_parameters(mode::Symbol; lattice=nothing)
 end
 
 """
+    load_optimized_parameters()
+
+Load optimized parameters from JSON file.
+Returns a dictionary with the parameter values.
+"""
+function load_optimized_parameters()
+    # Look for the JSON file in the data directory
+    json_path = joinpath(@__DIR__, "..", "data", "optimized_parameters.json")
+    
+    if !isfile(json_path)
+        error("Optimized parameters file not found at: $json_path\n" *
+              "Run the optimization script first: julia --project=. scripts/optimize_oscillation_parameters.jl")
+    end
+    
+    # Try to load with JSON if available
+    try
+        # Use Base.invokelatest to avoid world age issues
+        JSON_mod = Base.require(Main, :JSON)
+        data = Base.invokelatest(JSON_mod.parsefile, json_path)
+        return data
+    catch e
+        if isa(e, ArgumentError) && occursin("not found in", string(e))
+            error("JSON package is required to load optimized parameters. Run: using Pkg; Pkg.add(\"JSON\")")
+        else
+            error("Failed to load optimized parameters from $json_path: $e")
+        end
+    end
+end
+
+"""
     create_point_model_wcm1973(mode::Symbol)
 
 Create a point (non-spatial) model matching Wilson & Cowan 1973.
@@ -196,7 +226,7 @@ which corresponds to the spatially localized aggregate equations (2.0.1 and 2.0.
 in the paper.
 
 # Arguments
-- `mode`: One of :active_transient, :oscillatory, or :steady_state
+- `mode`: One of :active_transient, :oscillatory, :oscillatory_optimized, or :steady_state
 
 # Returns
 WilsonCowanParameters{2} configured for the specified mode with PointLattice
@@ -213,6 +243,7 @@ function create_point_model_wcm1973(mode::Symbol)
         bᵢₑ = 1.35
         bₑᵢ = 1.35
         bᵢᵢ = 1.8
+        τₑ, τᵢ = 10.0, 10.0
     elseif mode == :oscillatory
         vₑ, θₑ = 0.5, 9.0
         vᵢ, θᵢ = 1.0, 15.0
@@ -220,6 +251,23 @@ function create_point_model_wcm1973(mode::Symbol)
         bᵢₑ = 1.5
         bₑᵢ = 1.5
         bᵢᵢ = 0.1
+        τₑ, τᵢ = 10.0, 10.0
+    elseif mode == :oscillatory_optimized
+        # Load optimized parameters from file
+        opt_data = load_optimized_parameters()
+        
+        # Load parameters from JSON file
+        params_dict = opt_data["parameters"]
+        vₑ = params_dict["nonlinearity"]["v_e"]
+        θₑ = params_dict["nonlinearity"]["theta_e"]
+        vᵢ = params_dict["nonlinearity"]["v_i"]
+        θᵢ = params_dict["nonlinearity"]["theta_i"]
+        bₑₑ = params_dict["connectivity"]["b_ee"]
+        bᵢₑ = params_dict["connectivity"]["b_ei"]  # Already includes sign
+        bₑᵢ = params_dict["connectivity"]["b_ie"]
+        bᵢᵢ = params_dict["connectivity"]["b_ii"]  # Already includes sign
+        τₑ = params_dict["tau_e"]
+        τᵢ = params_dict["tau_i"]
     elseif mode == :steady_state
         vₑ, θₑ = 0.5, 9.0
         vᵢ, θᵢ = 0.3, 17.0
@@ -227,8 +275,9 @@ function create_point_model_wcm1973(mode::Symbol)
         bᵢₑ = 1.35
         bₑᵢ = 1.35
         bᵢᵢ = 1.8
+        τₑ, τᵢ = 10.0, 10.0
     else
-        error("Unknown mode: $mode")
+        error("Unknown mode: $mode. Use :active_transient, :oscillatory, :oscillatory_optimized, or :steady_state")
     end
     
     # Create nonlinearity - separate for E and I populations
@@ -247,14 +296,11 @@ function create_point_model_wcm1973(mode::Symbol)
         conn_ie conn_ii
     ])
     
-    # Fixed parameters
-    μ = 10.0
-    
     # Create parameters
     params = WilsonCowanParameters{2}(
         α = (1.0, 1.0),
         β = (1.0, 1.0),
-        τ = (μ, μ),
+        τ = (τₑ, τᵢ),
         connectivity = connectivity,
         nonlinearity = nonlinearity,
         stimulus = nothing,
