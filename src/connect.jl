@@ -151,7 +151,9 @@ end
 # No preparation needed for non-ConnectivityMatrix types
 prepare_connectivity(connectivity, lattice) = connectivity
 
-struct GaussianConnectivity
+struct GaussianConnectivity{T,N}
+    amplitude::T
+    spread::NTuple{N,T}
     fft_op
     ifft_op
     kernel_fft
@@ -160,7 +162,7 @@ struct GaussianConnectivity
     buffer_shift
 end
 
-function GaussianConnectivity(param::GaussianConnectivityParameter, lattice)
+function GaussianConnectivity(param::GaussianConnectivityParameter{T,N}, lattice) where {T,N}
     kernel = calculate_kernel(param, lattice)
     fft_op = plan_rfft(kernel; flags=(FFTW.PATIENT | FFTW.UNALIGNED))
     kernel_fft = fft_op * kernel
@@ -168,7 +170,7 @@ function GaussianConnectivity(param::GaussianConnectivityParameter, lattice)
     buffer_real = similar(kernel)
     buffer_complex = similar(kernel_fft)
     buffer_shift = similar(buffer_real)
-    GaussianConnectivity(fft_op, ifft_op, kernel_fft, buffer_real, buffer_complex, buffer_shift)
+    GaussianConnectivity{T,N}(param.amplitude, param.spread, fft_op, ifft_op, kernel_fft, buffer_real, buffer_complex, buffer_shift)
 end
 
 function fft_center_idx(arr)
