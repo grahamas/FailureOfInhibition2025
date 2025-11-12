@@ -293,7 +293,7 @@ Available metrics:
 - **`compute_distance_traveled`**: Calculate spatial distance traveled by peak
 - **`compute_half_max_width`**: Measure spatial width at half-maximum
 
-See `examples/example_traveling_wave_metrics.jl` for comprehensive usage examples.
+See `examples/example_traveling_wave_metrics.jl` for comprehensive usage examples and `examples/example_traveling_wave_behaviors.jl` for visual demonstrations of different traveling wave behaviors including sustained waves, decaying waves, stationary bumps, failed waves, and E-I system dynamics.
 
 ## Parameter Optimization
 
@@ -389,6 +389,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis using BifurcationKit continuation methods
 - `examples/example_sensitivity_analysis.jl`: Demonstrates global sensitivity analysis with Sobol and Morris methods
 - `examples/example_traveling_wave_metrics.jl`: Demonstrates traveling wave analysis metrics
+- `examples/example_traveling_wave_behaviors.jl`: **Comprehensive visualization of different traveling wave behaviors using Plots.jl**
 - `examples/example_optimize_traveling_waves.jl`: Demonstrates parameter optimization for traveling waves
 - `examples/example_oscillation_analysis.jl`: Demonstrates oscillation analysis for point models
 
