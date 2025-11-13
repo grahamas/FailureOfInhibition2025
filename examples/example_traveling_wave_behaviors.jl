@@ -6,14 +6,18 @@ Example illustrating different traveling wave behaviors with visualizations.
 This comprehensive demonstration shows multiple types of traveling wave dynamics
 in Wilson-Cowan neural field models, including:
 
-1. Sustained traveling wave - propagates with minimal decay
-2. Decaying traveling wave - propagates while gradually decaying
+1. Sustained traveling wave - propagates with minimal decay (wave speed 0.8)
+2. Decaying traveling wave - propagates while gradually decaying (decay rate 0.08)
 3. Stationary bump - localized activity that doesn't travel
 4. Failed wave - quickly annihilates without propagating
-5. E-I system traveling wave - coupled excitatory-inhibitory dynamics
+5. Fast traveling wave - higher speed propagation (wave speed 1.2, moderate decay)
 
 Each scenario is visualized using Plots.jl with spatiotemporal activity plots
 and metric annotations to demonstrate how the traveling wave metrics work.
+
+All traveling scenarios use analytical sech² solutions to ensure clear,
+measurable wave propagation, demonstrating different parameter regimes
+(speed, decay, width) that the metrics can distinguish.
 """
 
 using FailureOfInhibition2025
@@ -237,54 +241,45 @@ p4 = plot_spatiotemporal_with_metrics(sol4, lattice4, params4,
                                      threshold=0.1)
 
 #=============================================================================
-Scenario 5: E-I System Traveling Wave
+Scenario 5: Fast Traveling Wave (Analytical, Higher Speed)
 =============================================================================#
 
-println("\n### Scenario 5: E-I System Traveling Wave ###\n")
+println("\n### Scenario 5: Fast Traveling Wave ###\n")
 
 lattice5 = CompactLattice(extent=(40.0,), n_points=(201,))
 
-# E-I connectivity matrix
-conn_ee = GaussianConnectivityParameter(1.2, (3.0,))   # E → E
-conn_ei = GaussianConnectivityParameter(-0.8, (2.5,))  # I → E
-conn_ie = GaussianConnectivityParameter(1.0, (3.0,))   # E → I
-conn_ii = GaussianConnectivityParameter(-0.4, (2.0,))  # I → I
+# Parameters for analytical wave
+conn5 = GaussianConnectivityParameter(1.0, (3.0,))
+connectivity5 = ConnectivityMatrix{1}(reshape([conn5], 1, 1))
 
-connectivity5 = ConnectivityMatrix{2}([
-    conn_ee conn_ei;
-    conn_ie conn_ii
-])
-
-params5 = WilsonCowanParameters{2}(
-    α = (0.8, 1.2),          # Different decay rates
-    β = (1.0, 1.0),
-    τ = (10.0, 8.0),         # E slower than I
+params5 = WilsonCowanParameters{1}(
+    α = (1.0,),
+    β = (1.0,),
+    τ = (8.0,),
     connectivity = connectivity5,
-    nonlinearity = SigmoidNonlinearity(a=2.5, θ=0.25),
+    nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.25),
     stimulus = nothing,
     lattice = lattice5,
-    pop_names = ("E", "I")
+    pop_names = ("E",)
 )
 
-# Initial condition - E population
-A₀_5 = zeros(201, 2)
-for i in 1:50
-    A₀_5[i, 1] = 0.7 * exp(-((i - 25)^2) / 80.0)  # E
-    A₀_5[i, 2] = 0.3 * exp(-((i - 25)^2) / 80.0)  # I
-end
+# Generate analytical wave with faster speed and moderate decay
+times5 = 0.0:0.3:60.0
+sol5 = generate_analytical_traveling_wave(
+    params5, times5,
+    wave_speed=1.2,           # Faster than scenario 1
+    decay_rate=0.04,          # Moderate decay
+    wavenumber=2.0,           # Narrower wave
+    initial_position=-16.0,
+    amplitude=0.75
+)
 
-sol5 = solve_model(A₀_5, (0.0, 60.0), params5, saveat=0.3)
+println("Generated fast traveling wave: $(length(sol5.t)) time points")
 
-println("Simulation complete: $(length(sol5.t)) time points")
-
-# Plot both populations
-p5_E = plot_spatiotemporal_with_metrics(sol5, lattice5, params5,
-                                       "Scenario 5: E-I System - Excitatory",
-                                       pop_idx=1, threshold=0.2)
-
-p5_I = plot_spatiotemporal_with_metrics(sol5, lattice5, params5,
-                                       "Scenario 5: E-I System - Inhibitory",
-                                       pop_idx=2, threshold=0.15)
+# Plot the fast traveling wave
+p5 = plot_spatiotemporal_with_metrics(sol5, lattice5, params5,
+                                     "Scenario 5: Fast Traveling Wave (Analytical)",
+                                     pop_idx=1, threshold=0.12)
 
 #=============================================================================
 Create combined figure and save
@@ -292,8 +287,8 @@ Create combined figure and save
 
 println("\n### Creating combined visualization ###\n")
 
-# Combine all plots
-combined_plot = plot(p1, p2, p3, p4, p5_E, p5_I,
+# Combine all plots - now 5 scenarios instead of 6
+combined_plot = plot(p1, p2, p3, p4, p5,
                     layout=(3, 2),
                     size=(1200, 1400),
                     plot_title="Traveling Wave Behaviors - Comprehensive Demonstration")
@@ -316,8 +311,7 @@ scenarios = [
     ("Decaying Traveling Wave (Analytical)", sol2, params2.lattice, 1, 0.15),
     ("Stationary Bump", sol3, params3.lattice, 1, 0.15),
     ("Failed Wave", sol4, params4.lattice, 1, 0.1),
-    ("E-I System (E)", sol5, params5.lattice, 1, 0.2),
-    ("E-I System (I)", sol5, params5.lattice, 2, 0.15)
+    ("Fast Traveling Wave (Analytical)", sol5, params5.lattice, 1, 0.12)
 ]
 
 for (name, sol, lattice, pop_idx, threshold) in scenarios
@@ -389,11 +383,12 @@ println("   • High decay rate, short half-life")
 println("   • Little to no propagation")
 println("   → Metrics: detect_traveling_peak=false, high decay_rate, minimal distance")
 println()
-println("5. E-I SYSTEM")
-println("   • Coupled dynamics between excitatory and inhibitory populations")
-println("   • Different wave speeds and decay rates for E vs I")
-println("   • Demonstrates population-specific metrics")
-println("   → Metrics: Different values per population, coupled propagation")
+println("5. FAST TRAVELING WAVE")
+println("   • Analytical solution with faster wave speed (1.2 vs 0.8 units/time)")
+println("   • Moderate decay rate between scenarios 1 and 2")
+println("   • Narrower wave profile (higher wavenumber)")
+println("   • Demonstrates different traveling wave characteristics")
+println("   → Metrics: Higher speed, moderate decay, significant distance")
 println()
 println("Metric Functions Demonstrated:")
 println("  ✓ detect_traveling_peak() - Identifies wave propagation")
