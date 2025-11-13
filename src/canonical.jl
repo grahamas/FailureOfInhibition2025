@@ -202,17 +202,24 @@ function load_optimized_parameters()
     end
     
     # Try to load with JSON if available
+    JSON_mod = nothing
     try
         # Use Base.invokelatest to avoid world age issues
         JSON_mod = Base.require(Main, :JSON)
-        data = Base.invokelatest(JSON_mod.parsefile, json_path)
-        return data
     catch e
-        if isa(e, ArgumentError) && occursin("not found in", string(e))
+        if isa(e, ArgumentError)
             error("JSON package is required to load optimized parameters. Run: using Pkg; Pkg.add(\"JSON\")")
         else
-            error("Failed to load optimized parameters from $json_path: $e")
+            error("Failed to load JSON package: $(typeof(e))")
         end
+    end
+    
+    # Now parse the file with dicttype to get plain Dict
+    try
+        data = Base.invokelatest(JSON_mod.parsefile, json_path; dicttype=Dict)
+        return data
+    catch e
+        error("Failed to load optimized parameters from $json_path: $(typeof(e)) - Check that the file is valid JSON")
     end
 end
 
