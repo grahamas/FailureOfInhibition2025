@@ -29,3 +29,7 @@ JuliaLocalPreferences.toml
 
 # Example output files
 examples/output/
+traveling_wave_behaviors.png
+*.png
+*.pdf
+*.svg
