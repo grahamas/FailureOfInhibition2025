@@ -20,6 +20,7 @@ Note: If CUDA is not available, the functions will automatically fall back to CP
 
 using FailureOfInhibition2025
 using Statistics
+using Optim
 
 # Try to load CUDA
 has_cuda = false
