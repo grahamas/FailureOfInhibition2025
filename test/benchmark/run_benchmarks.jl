@@ -1,13 +1,14 @@
 """
 Main benchmark runner for all benchmarks.
-This script runs both component and simulation benchmarks.
+This script runs component, simulation, and GPU benchmarks.
 """
 
 include("benchmark_components.jl")
 include("benchmark_simulations.jl")
+include("benchmark_gpu.jl")
 
 """
-Run all benchmarks (components and simulations).
+Run all benchmarks (components, simulations, and GPU).
 """
 function run_all_benchmarks()
     println("\n" * "="^80)
@@ -21,20 +22,27 @@ function run_all_benchmarks()
     # Run simulation benchmarks
     simulation_results = run_simulation_benchmarks()
     
+    # Run GPU benchmarks (will skip if CUDA not available)
+    gpu_results = run_gpu_benchmarks()
+    
     # Summary
-    total_benchmarks = length(component_results) + length(simulation_results)
+    total_benchmarks = length(component_results) + length(simulation_results) + length(gpu_results)
     println("\n" * "="^80)
     println("BENCHMARK SUMMARY")
     println("="^80)
     println("Total benchmarks run: $total_benchmarks")
     println("  - Component benchmarks: $(length(component_results))")
     println("  - Simulation benchmarks: $(length(simulation_results))")
+    println("  - GPU benchmarks: $(length(gpu_results))")
     println("\nResults saved to:")
     println("  - benchmark_results/component_benchmarks.csv")
     println("  - benchmark_results/simulation_benchmarks.csv")
+    if length(gpu_results) > 0
+        println("  - benchmark_results/gpu_benchmarks.csv")
+    end
     println("="^80)
     
-    return (component_results, simulation_results)
+    return (component_results, simulation_results, gpu_results)
 end
 
 # Run if executed directly

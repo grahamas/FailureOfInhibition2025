@@ -152,4 +152,9 @@ using FailureOfInhibition2025
         include("test_oscillation_analysis_synthetic.jl")
     end
 
+    # Run GPU tests (only if CUDA is available)
+    @testset "GPU Acceleration" begin
+        include("test_gpu.jl")
+    end
+
 end
