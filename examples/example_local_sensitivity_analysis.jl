@@ -58,14 +58,14 @@ A₀_point = reshape([0.1, 0.1], 1, 2)
 tspan = (0.0, 50.0)
 
 println("Computing local sensitivities for point model...")
-println("  Parameters analyzed: α (decay), β (saturation), τ (time constant)")
+println("  Parameters analyzed: α, β, τ, connectivity (b_ij), nonlinearity (a, θ)")
 println("  Populations: E (excitatory), I (inhibitory)")
 println("  Time span: $(tspan)")
 
-# Set up model for sensitivity analysis
+# Set up model for sensitivity analysis - including all parameter types
 result = compute_local_sensitivities(
     A₀_point, tspan, params_point,
-    include_params=[:α, :β, :τ],
+    include_params=[:α, :β, :τ, :connectivity, :nonlinearity],
     saveat=1.0  # Save every 1 time unit
 )
 
@@ -122,15 +122,16 @@ println("  Spatial lattice: 11 points over extent 10.0")
 println("  Time span: $(tspan_spatial)")
 println("  Single population with Gaussian connectivity")
 
-# Set up model for sensitivity analysis (only analyze α, β, τ for single population)
+# Set up model for sensitivity analysis including connectivity parameters
 result_spatial = compute_local_sensitivities(
     A₀_spatial, tspan_spatial, params_spatial,
-    include_params=[:α, :β, :τ],
+    include_params=[:α, :β, :τ, :connectivity, :nonlinearity],
     saveat=2.0
 )
 
 println("  ✓ Model solved with parametrized structure")
 println("  Number of parameters: $(length(result_spatial.param_names))")
+println("  Parameters: $(result_spatial.param_names)")
 println("  Number of state variables: $(size(A₀_spatial, 1) * size(A₀_spatial, 2))")
 println("  Spatial model ready for sensitivity analysis")
 

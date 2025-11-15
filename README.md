@@ -149,16 +149,27 @@ params = WilsonCowanParameters{2}(
 # Solve model with parameter structure for sensitivity analysis
 A₀ = reshape([0.1, 0.1], 1, 2)
 tspan = (0.0, 50.0)
-result = compute_local_sensitivities(A₀, tspan, params, saveat=1.0)
+
+# Include different parameter types in sensitivity analysis
+result = compute_local_sensitivities(
+    A₀, tspan, params, 
+    include_params=[:α, :β, :τ, :connectivity, :nonlinearity],
+    saveat=1.0
+)
 
 # The result can now be used with SciMLSensitivity.jl for computing sensitivities
 # See SciMLSensitivity.jl documentation for details on computing parameter sensitivities
 println("Solution ready for sensitivity analysis")
 println("Parameters: ", result.param_names)
+# Output: [:α_1, :α_2, :β_1, :β_2, :τ_1, :τ_2, :b_1_1, :b_1_2, :b_2_1, :b_2_2, :a, :θ]
 ```
 
 The `compute_local_sensitivities` function:
-- Extracts specified parameters (α, β, τ) into a vector for sensitivity analysis
+- Extracts specified parameters into a vector for sensitivity analysis
+- Supports multiple parameter types:
+  - `:α`, `:β`, `:τ` - per-population dynamics parameters
+  - `:connectivity` - connectivity weights (ScalarConnectivity) or Gaussian parameters (amplitude, spread)
+  - `:nonlinearity` - nonlinearity parameters (a, θ for sigmoid types)
 - Solves the ODE system with the parametrized structure
 - Returns a solution that can be used with SciMLSensitivity.jl functions
 

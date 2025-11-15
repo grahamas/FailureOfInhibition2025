@@ -33,6 +33,11 @@ Extract numeric parameters from WilsonCowanParameters into a vector for sensitiv
 # Arguments
 - `params`: WilsonCowanParameters containing model configuration
 - `include_params`: Which parameter groups to include (default: [:α, :β, :τ])
+  - `:α` - decay rates
+  - `:β` - saturation coefficients
+  - `:τ` - time constants
+  - `:connectivity` - connectivity weights (for ScalarConnectivity) or amplitude/spread (for GaussianConnectivityParameter)
+  - `:nonlinearity` - nonlinearity parameters (a, θ for sigmoid types)
 
 # Returns
 - `ODEParameterWrapper` containing parameter names and values
@@ -45,9 +50,7 @@ params = WilsonCowanParameters{2}(
     τ = (10.0, 8.0),
     # ... other fields
 )
-wrapper = extract_parameters(params)
-# wrapper.param_names = [:α_1, :α_2, :β_1, :β_2, :τ_1, :τ_2]
-# wrapper.param_values = [1.0, 1.5, 1.0, 1.0, 10.0, 8.0]
+wrapper = extract_parameters(params, include_params=[:α, :β, :τ, :connectivity, :nonlinearity])
 ```
 """
 function extract_parameters(params::WilsonCowanParameters{T,P}; 
@@ -70,6 +73,52 @@ function extract_parameters(params::WilsonCowanParameters{T,P};
             for i in 1:P
                 push!(param_names, Symbol("τ_$i"))
                 push!(param_values, params.τ[i])
+            end
+        elseif param == :connectivity
+            # Extract connectivity parameters
+            conn = params.connectivity
+            if conn isa ConnectivityMatrix
+                # Extract ScalarConnectivity weights or GaussianConnectivityParameter
+                for i in 1:P
+                    for j in 1:P
+                        c_ij = conn.matrix[i, j]
+                        if c_ij isa ScalarConnectivity
+                            push!(param_names, Symbol("b_$(i)_$(j)"))
+                            push!(param_values, c_ij.weight)
+                        elseif c_ij isa GaussianConnectivityParameter
+                            push!(param_names, Symbol("b_amplitude_$(i)_$(j)"))
+                            push!(param_values, c_ij.amplitude)
+                            # Extract spread parameters
+                            for (k, s) in enumerate(c_ij.spread)
+                                push!(param_names, Symbol("b_spread_$(i)_$(j)_dim$(k)"))
+                                push!(param_values, s)
+                            end
+                        end
+                    end
+                end
+            end
+        elseif param == :nonlinearity
+            # Extract nonlinearity parameters
+            nl = params.nonlinearity
+            if nl isa SigmoidNonlinearity
+                push!(param_names, :a)
+                push!(param_values, nl.a)
+                push!(param_names, :θ)
+                push!(param_values, nl.θ)
+            elseif nl isa RectifiedZeroedSigmoidNonlinearity
+                push!(param_names, :a)
+                push!(param_values, nl.a)
+                push!(param_names, :θ)
+                push!(param_values, nl.θ)
+            elseif nl isa DifferenceOfSigmoidsNonlinearity
+                push!(param_names, :a_up)
+                push!(param_values, nl.a_up)
+                push!(param_names, :θ_up)
+                push!(param_values, nl.θ_up)
+                push!(param_names, :a_down)
+                push!(param_values, nl.a_down)
+                push!(param_names, :θ_down)
+                push!(param_values, nl.θ_down)
             end
         end
     end
@@ -102,6 +151,14 @@ function reconstruct_parameters(wrapper::ODEParameterWrapper{T,P}, p_vec::Abstra
         τ_vals[i] = wrapper.base_params.τ[i]
     end
     
+    # Start with base connectivity and nonlinearity
+    connectivity = wrapper.base_params.connectivity
+    nonlinearity = wrapper.base_params.nonlinearity
+    
+    # Track connectivity and nonlinearity updates
+    connectivity_updates = Dict{Tuple{Int,Int}, Any}()
+    nonlinearity_updates = Dict{Symbol, U}()
+    
     # Update from parameter vector
     for (i, name) in enumerate(wrapper.param_names)
         name_str = string(name)
@@ -114,6 +171,90 @@ function reconstruct_parameters(wrapper::ODEParameterWrapper{T,P}, p_vec::Abstra
         elseif startswith(name_str, "τ_")
             idx = parse(Int, split(name_str, "_")[2])
             τ_vals[idx] = p_vec[i]
+        elseif startswith(name_str, "b_")
+            # Parse connectivity parameter
+            parts = split(name_str, "_")
+            if parts[2] == "amplitude"
+                # GaussianConnectivityParameter amplitude: b_amplitude_i_j
+                idx_i = parse(Int, parts[3])
+                idx_j = parse(Int, parts[4])
+                if !haskey(connectivity_updates, (idx_i, idx_j))
+                    connectivity_updates[(idx_i, idx_j)] = Dict{Symbol, Any}()
+                end
+                connectivity_updates[(idx_i, idx_j)][:amplitude] = p_vec[i]
+            elseif parts[2] == "spread"
+                # GaussianConnectivityParameter spread: b_spread_i_j_dimk
+                idx_i = parse(Int, parts[3])
+                idx_j = parse(Int, parts[4])
+                dim_idx = parse(Int, replace(parts[5], "dim" => ""))
+                if !haskey(connectivity_updates, (idx_i, idx_j))
+                    connectivity_updates[(idx_i, idx_j)] = Dict{Symbol, Any}()
+                end
+                if !haskey(connectivity_updates[(idx_i, idx_j)], :spread)
+                    connectivity_updates[(idx_i, idx_j)][:spread] = Dict{Int, U}()
+                end
+                connectivity_updates[(idx_i, idx_j)][:spread][dim_idx] = p_vec[i]
+            else
+                # ScalarConnectivity weight: b_i_j
+                idx_i = parse(Int, parts[2])
+                idx_j = parse(Int, parts[3])
+                connectivity_updates[(idx_i, idx_j)] = p_vec[i]
+            end
+        elseif name == :a || name == :θ || name == :a_up || name == :θ_up || name == :a_down || name == :θ_down
+            # Nonlinearity parameter
+            nonlinearity_updates[name] = p_vec[i]
+        end
+    end
+    
+    # Reconstruct connectivity if there were updates
+    if !isempty(connectivity_updates) && connectivity isa ConnectivityMatrix
+        new_matrix = Matrix{Any}(undef, P, P)
+        for i in 1:P
+            for j in 1:P
+                c_ij = connectivity.matrix[i, j]
+                if haskey(connectivity_updates, (i, j))
+                    update = connectivity_updates[(i, j)]
+                    if update isa Dict
+                        # GaussianConnectivityParameter update
+                        old_param = c_ij::GaussianConnectivityParameter
+                        new_amplitude = get(update, :amplitude, old_param.amplitude)
+                        if haskey(update, :spread)
+                            # Reconstruct spread tuple
+                            N = length(old_param.spread)
+                            spread_dict = update[:spread]
+                            new_spread = ntuple(k -> get(spread_dict, k, old_param.spread[k]), N)
+                        else
+                            new_spread = old_param.spread
+                        end
+                        new_matrix[i, j] = GaussianConnectivityParameter(new_amplitude, new_spread)
+                    else
+                        # ScalarConnectivity update
+                        new_matrix[i, j] = ScalarConnectivity(update)
+                    end
+                else
+                    new_matrix[i, j] = c_ij
+                end
+            end
+        end
+        connectivity = ConnectivityMatrix{P}(new_matrix)
+    end
+    
+    # Reconstruct nonlinearity if there were updates
+    if !isempty(nonlinearity_updates)
+        if nonlinearity isa SigmoidNonlinearity
+            new_a = get(nonlinearity_updates, :a, nonlinearity.a)
+            new_θ = get(nonlinearity_updates, :θ, nonlinearity.θ)
+            nonlinearity = SigmoidNonlinearity(new_a, new_θ)
+        elseif nonlinearity isa RectifiedZeroedSigmoidNonlinearity
+            new_a = get(nonlinearity_updates, :a, nonlinearity.a)
+            new_θ = get(nonlinearity_updates, :θ, nonlinearity.θ)
+            nonlinearity = RectifiedZeroedSigmoidNonlinearity(new_a, new_θ)
+        elseif nonlinearity isa DifferenceOfSigmoidsNonlinearity
+            new_a_up = get(nonlinearity_updates, :a_up, nonlinearity.a_up)
+            new_θ_up = get(nonlinearity_updates, :θ_up, nonlinearity.θ_up)
+            new_a_down = get(nonlinearity_updates, :a_down, nonlinearity.a_down)
+            new_θ_down = get(nonlinearity_updates, :θ_down, nonlinearity.θ_down)
+            nonlinearity = DifferenceOfSigmoidsNonlinearity(new_a_up, new_θ_up, new_a_down, new_θ_down)
         end
     end
     
@@ -122,8 +263,8 @@ function reconstruct_parameters(wrapper::ODEParameterWrapper{T,P}, p_vec::Abstra
         Tuple(α_vals),
         Tuple(β_vals),
         Tuple(τ_vals),
-        wrapper.base_params.connectivity,
-        wrapper.base_params.nonlinearity,
+        connectivity,
+        nonlinearity,
         wrapper.base_params.stimulus,
         wrapper.base_params.lattice,
         wrapper.base_params.pop_names
