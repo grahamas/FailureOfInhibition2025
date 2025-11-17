@@ -71,7 +71,9 @@ function benchmark_connectivity_components()
     A_1d = reshape(rand(101), 101, 1)  # Shape (101, 1) for 1 population
     dA_1d = zeros(101, 1)
     conn_1d = GaussianConnectivityParameter(1.0, (2.0,))
-    connectivity_1d = ConnectivityMatrix{1}(reshape([conn_1d], 1, 1))
+    connectivity_1d_param = ConnectivityMatrix{1}(reshape([conn_1d], 1, 1))
+    # Pre-compute connectivity for proper benchmarking
+    connectivity_1d = prepare_connectivity(connectivity_1d_param, lattice_1d)
     
     result = benchmark_function("GaussianConnectivity 1D (n=101)", samples=100) do
         dA_1d .= 0.0
