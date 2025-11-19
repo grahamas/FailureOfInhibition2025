@@ -162,4 +162,9 @@ using FailureOfInhibition2025
         include("test_optimize.jl")
     end
 
+    # Run GPU tests (only if CUDA is available)
+    @testset "GPU Acceleration" begin
+        include("test_gpu.jl")
+    end
+
 end
