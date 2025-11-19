@@ -24,6 +24,7 @@ include("simulate.jl")
 include("bifurcation.jl")
 
 # Include sensitivity analysis functionality
+include("local_sensitivity.jl")
 include("sensitivity.jl")
 
 # Include analysis functionality
@@ -70,6 +71,9 @@ export solve_model_gpu
 export create_bifurcation_problem, wcm_rhs!
 
 # Export sensitivity analysis functions
+export compute_local_sensitivities, save_local_sensitivities, summarize_sensitivities
+export compute_sensitivity_indices
+export extract_parameters, reconstruct_parameters, ODEParameterWrapper
 export sobol_sensitivity_analysis, morris_sensitivity_analysis
 export create_parameter_builder, create_output_function
 

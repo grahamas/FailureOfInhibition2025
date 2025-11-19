@@ -14,6 +14,7 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Stimulus handling**: Flexible stimulation interfaces
 - **Multi-population support**: Support for multiple neural populations with flexible coupling
 - **Simulation utilities**: Solve models over time using DifferentialEquations.jl and save results to CSV
+- **Parameter sensitivity analysis**: Integrated support for computing parameter sensitivities using SciMLSensitivity.jl
 - **Bifurcation analysis**: Tools for analyzing parameter space and generating bifurcation diagrams
 - **Global sensitivity analysis**: Sobol and Morris methods for parameter importance analysis
 - **Traveling wave analysis**: Metrics for detecting and characterizing traveling waves in neural activity
@@ -138,6 +139,66 @@ save_simulation_summary(sol, "summary.csv", params=params)
 
 See `examples/example_simulation.jl` for comprehensive simulation examples including point models, spatial models, and WCM 1973 modes.
 
+## Parameter Sensitivity Analysis
+
+The package integrates with SciMLSensitivity.jl to enable parameter sensitivity analysis for Wilson-Cowan models. This allows you to understand how changes in model parameters affect the dynamics.
+
+```julia
+using FailureOfInhibition2025
+using SciMLSensitivity
+
+# Create model parameters
+lattice = PointLattice()
+connectivity = ConnectivityMatrix{2}([
+    ScalarConnectivity(0.5) ScalarConnectivity(-0.3);
+    ScalarConnectivity(0.4) ScalarConnectivity(-0.2)
+])
+
+params = WilsonCowanParameters{2}(
+    α = (1.0, 1.5),    # Decay rates
+    β = (1.0, 1.0),    # Saturation coefficients
+    τ = (10.0, 8.0),   # Time constants
+    connectivity = connectivity,
+    nonlinearity = SigmoidNonlinearity(a=1.5, θ=0.3),
+    stimulus = nothing,
+    lattice = lattice,
+    pop_names = ("E", "I")
+)
+
+# Solve model with parameter structure for sensitivity analysis
+A₀ = reshape([0.1, 0.1], 1, 2)
+tspan = (0.0, 50.0)
+
+# Include different parameter types in sensitivity analysis
+result = compute_local_sensitivities(
+    A₀, tspan, params, 
+    include_params=[:α, :β, :τ, :connectivity, :nonlinearity],
+    saveat=1.0
+)
+
+# The result can now be used with SciMLSensitivity.jl for computing sensitivities
+# See SciMLSensitivity.jl documentation for details on computing parameter sensitivities
+println("Solution ready for sensitivity analysis")
+println("Parameters: ", result.param_names)
+# Output: [:α_1, :α_2, :β_1, :β_2, :τ_1, :τ_2, :b_1_1, :b_1_2, :b_2_1, :b_2_2, :a, :θ]
+```
+
+The `compute_local_sensitivities` function:
+- Extracts specified parameters into a vector for sensitivity analysis
+- Supports multiple parameter types:
+  - `:α`, `:β`, `:τ` - per-population dynamics parameters
+  - `:connectivity` - connectivity weights (ScalarConnectivity) or Gaussian parameters (amplitude, spread)
+  - `:nonlinearity` - nonlinearity parameters (a, θ for sigmoid types)
+- Solves the ODE system with the parametrized structure
+- Returns a solution that can be used with SciMLSensitivity.jl functions
+
+Supported sensitivity methods include:
+- **InterpolatingAdjoint**: Efficient continuous adjoint method (recommended for most cases)
+- **QuadratureAdjoint**: Alternative adjoint method using quadrature
+- **BacksolveAdjoint**: Backsolve adjoint approach
+
+See `examples/example_sensitivity_analysis.jl` for comprehensive sensitivity analysis examples.
+
 ## Bifurcation Analysis
 
 The package provides bifurcation analysis tools powered by [BifurcationKit.jl](https://github.com/bifurcationkit/BifurcationKit.jl), enabling continuation methods to trace bifurcation curves and detect critical transitions in Wilson-Cowan models.
@@ -185,7 +246,7 @@ BifurcationKit provides sophisticated tools for analyzing parameter-dependent dy
 - `wcm_rhs!(dA, A, params, t)`: Right-hand side function compatible with BifurcationKit
 
 See `examples/example_bifurcation_diagrams.jl` for detailed demonstrations of continuation analysis with Wilson-Cowan models.
-## Traveling Wave Analysis
+
 ## Global Sensitivity Analysis
 
 The package provides comprehensive global sensitivity analysis (GSA) tools to understand how model outputs respond to parameter variations. Two methods are available:
@@ -503,6 +564,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_point_model.jl`: Demonstrates non-spatial (point) models using PointLattice
 - `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
+- `examples/example_sensitivity_analysis.jl`: Demonstrates parameter sensitivity analysis using SciMLSensitivity.jl
 - `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis using BifurcationKit continuation methods
 - `examples/example_sensitivity_analysis.jl`: Demonstrates global sensitivity analysis with Sobol and Morris methods
 - `examples/example_traveling_wave_metrics.jl`: Demonstrates traveling wave analysis metrics
