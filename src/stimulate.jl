@@ -85,3 +85,60 @@ function stimulate!(dA, A, stim::CircleStimulus{T,L}, t) where {T,L}
         dA[on_center] .+= stim.strength
     end
 end
+
+struct ConstantStimulus{T,L}
+    strength::T
+    time_windows::Array{Tuple{T,T},1}
+    baseline::T
+    lattice::L
+end
+
+"""
+    ConstantStimulus(; strength, time_windows, lattice, baseline=0.0)
+
+Construct a ConstantStimulus with keyword arguments.
+
+# Arguments
+- `strength`: Strength of the stimulus to be applied uniformly
+- `time_windows`: Array of (start, end) tuples defining when the stimulus is active
+- `lattice`: The spatial lattice on which the stimulus will be applied
+- `baseline`: Baseline value to set everywhere when stimulus is not active (default 0.0)
+
+# Example
+```julia
+# Create a constant stimulus for a point model
+lattice = PointLattice()
+stim = ConstantStimulus(
+    strength=5.0,
+    time_windows=[(10.0, 50.0)],
+    lattice=lattice
+)
+```
+"""
+function ConstantStimulus(; strength::T, time_windows::Array{Tuple{T,T},1}, 
+                          lattice::L, baseline=zero(typeof(strength))) where {T,L}
+    ConstantStimulus{T,L}(strength, time_windows, convert(T, baseline), lattice)
+end
+
+"""
+    stimulate!(dA, A, stim::ConstantStimulus, t)
+
+Applies a constant (uniform) stimulus to the entire field `dA`.
+
+The stimulus is only applied during the time windows specified in `stim.time_windows`. 
+If the current time `t` is not within any of the time windows, only the baseline is applied.
+
+This is particularly useful for point models where you want a sustained, 
+non-oscillatory external input.
+"""
+function stimulate!(dA, A, stim::ConstantStimulus{T,L}, t) where {T,L}
+    dA .= stim.baseline
+    
+    # Check if current time is within any time window
+    in_time_window = any(window -> window[1] <= t <= window[2], stim.time_windows)
+    
+    if in_time_window
+        # Apply stimulus strength uniformly
+        dA .+= stim.strength
+    end
+end
