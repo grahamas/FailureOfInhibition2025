@@ -19,6 +19,7 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Traveling wave analysis**: Metrics for detecting and characterizing traveling waves in neural activity
 - **Parameter optimization**: Find parameters that produce desired traveling wave behaviors using Optim.jl
 - **Oscillation analysis**: Utilities for evaluating oscillations in point models (frequency, amplitude, decay, duration)
+- **GPU acceleration**: Optional CUDA.jl support for accelerated simulations and parameter searches
 
 ## Installation
 
@@ -26,6 +27,22 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 using Pkg
 Pkg.add(url="https://github.com/grahamas/FailureOfInhibition2025.git")
 ```
+
+### Optional: GPU Acceleration
+
+For GPU-accelerated simulations and parameter searches, install CUDA.jl:
+
+```julia
+using Pkg
+Pkg.add("CUDA")
+```
+
+GPU acceleration provides significant speedup for:
+- Large spatial models with many grid points
+- Extensive parameter searches with many samples
+- Long-running simulations
+
+All GPU functions automatically fall back to CPU versions if CUDA is not available or functional.
 
 ## Quick Start
 
@@ -377,6 +394,106 @@ Available metrics:
 
 See `examples/example_oscillation_analysis.jl` for comprehensive usage examples.
 
+## GPU Acceleration
+
+The package supports optional GPU acceleration for computationally intensive tasks using CUDA.jl. GPU-accelerated versions are available for simulations, sensitivity analysis, and parameter optimization.
+
+### Installation
+
+```julia
+using Pkg
+Pkg.add("CUDA")
+```
+
+### GPU-Accelerated Simulation
+
+```julia
+using FailureOfInhibition2025
+using CUDA
+
+# Check if CUDA is available
+if CUDA.functional()
+    # Create a spatial model
+    lattice = CompactLattice(extent=(20.0,), n_points=(101,))
+    conn = GaussianConnectivityParameter(1.0, (2.0,))
+    params = WilsonCowanParameters{1}(
+        α=(1.0,), β=(1.0,), τ=(8.0,),
+        connectivity=ConnectivityMatrix{1}(reshape([conn], 1, 1)),
+        nonlinearity=SigmoidNonlinearity(a=2.0, θ=0.25),
+        stimulus=nothing, lattice=lattice, pop_names=("E",)
+    )
+    
+    A₀ = zeros(101, 1)
+    A₀[45:55, 1] .= 0.5
+    
+    # Run on GPU
+    sol = solve_model_gpu(A₀, (0.0, 40.0), params, saveat=0.1)
+end
+```
+
+### GPU-Accelerated Sensitivity Analysis
+
+```julia
+# Sobol analysis on GPU
+result = sobol_sensitivity_analysis_gpu(
+    base_params,
+    param_ranges,
+    1000,  # Number of samples
+    tspan=(0.0, 100.0),
+    output_metric=:final_mean
+)
+
+# Morris screening on GPU
+result = morris_sensitivity_analysis_gpu(
+    base_params,
+    param_ranges,
+    100,  # Number of trajectories
+    tspan=(0.0, 100.0),
+    output_metric=:final_mean
+)
+```
+
+### GPU-Accelerated Parameter Optimization
+
+```julia
+# Define parameter ranges
+param_ranges = (
+    connectivity_width = (1.5, 3.5),
+    sigmoid_a = (1.5, 3.0)
+)
+
+# Define objective
+objective = TravelingWaveObjective(
+    target_distance=nothing,  # Maximize distance
+    minimize_decay=true,
+    require_traveling=false
+)
+
+# Optimize on GPU
+result, best_params = optimize_for_traveling_wave_gpu(
+    params, param_ranges, objective, A₀, (0.0, 40.0),
+    maxiter=50
+)
+```
+
+### Automatic Fallback
+
+All GPU functions automatically fall back to CPU versions if CUDA is not available:
+
+- `solve_model_gpu` → `solve_model`
+- `sobol_sensitivity_analysis_gpu` → `sobol_sensitivity_analysis`
+- `morris_sensitivity_analysis_gpu` → `morris_sensitivity_analysis`
+- `optimize_for_traveling_wave_gpu` → `optimize_for_traveling_wave`
+
+### Performance Benefits
+
+GPU acceleration provides significant speedup for:
+- **Large spatial models**: Models with 100+ grid points
+- **Parameter searches**: Sensitivity analysis with 1000+ samples
+- **Optimization**: Multiple iterations with expensive simulations
+
+See `examples/example_gpu_acceleration.jl` for comprehensive GPU usage examples.
+
 ## Examples
 
 See the `examples/` directory for detailed usage examples:
@@ -392,6 +509,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_traveling_wave_behaviors.jl`: **Comprehensive visualization of different traveling wave behaviors using Plots.jl**
 - `examples/example_optimize_traveling_waves.jl`: Demonstrates parameter optimization for traveling waves
 - `examples/example_oscillation_analysis.jl`: Demonstrates oscillation analysis for point models
+- `examples/example_gpu_acceleration.jl`: Demonstrates GPU-accelerated simulations and parameter searches
 
 ## Wilson-Cowan 1973 Validation
 
