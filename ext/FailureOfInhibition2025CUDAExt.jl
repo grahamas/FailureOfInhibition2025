@@ -2,9 +2,57 @@ module FailureOfInhibition2025CUDAExt
 
 using FailureOfInhibition2025
 using CUDA
+using CUDA.CUFFT
 using DifferentialEquations
 using Statistics
 using LinearAlgebra
+
+"""
+    FailureOfInhibition2025.propagate_activation_single(dA::CuArray, A::CuArray, connectivity::FailureOfInhibition2025.GaussianConnectivityParameter, t, lattice)
+
+GPU-specific version of propagate_activation_single that creates a GaussianConnectivity object
+with CUDA FFT plans for GPU arrays.
+"""
+function FailureOfInhibition2025.propagate_activation_single(
+    dA::CuArray, 
+    A::CuArray, 
+    connectivity::FailureOfInhibition2025.GaussianConnectivityParameter, 
+    t, 
+    lattice
+)
+    # Create GPU-compatible GaussianConnectivity
+    gc = create_gpu_gaussian_connectivity(connectivity, lattice, A)
+    FailureOfInhibition2025.propagate_activation_single(dA, A, gc, t, lattice)
+end
+
+"""
+    create_gpu_gaussian_connectivity(param::GaussianConnectivityParameter, lattice, array_template::CuArray)
+
+Helper function to create a GaussianConnectivity object with CUDA FFT plans.
+"""
+function create_gpu_gaussian_connectivity(
+    param::FailureOfInhibition2025.GaussianConnectivityParameter, 
+    lattice,
+    array_template::CuArray
+)
+    # Calculate kernel on CPU first, then transfer to GPU
+    kernel_cpu = FailureOfInhibition2025.calculate_kernel(param, lattice)
+    kernel = CuArray(kernel_cpu)
+    
+    # Create GPU FFT plans
+    fft_op = plan_rfft(kernel)
+    kernel_fft = fft_op * kernel
+    ifft_op = plan_irfft(kernel_fft, size(kernel, 1))
+    
+    # Create GPU buffers
+    buffer_real = similar(kernel)
+    buffer_complex = similar(kernel_fft)
+    buffer_shift = similar(buffer_real)
+    
+    return FailureOfInhibition2025.GaussianConnectivity(
+        fft_op, ifft_op, kernel_fft, buffer_real, buffer_complex, buffer_shift
+    )
+end
 
 """
     solve_model_gpu(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), kwargs...) where N
