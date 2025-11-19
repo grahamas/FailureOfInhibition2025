@@ -8,14 +8,16 @@ using Statistics
 using LinearAlgebra
 
 """
-    FailureOfInhibition2025.propagate_activation_single(dA::CuArray, A::CuArray, connectivity::FailureOfInhibition2025.GaussianConnectivityParameter, t, lattice)
+    FailureOfInhibition2025.propagate_activation_single(dA, A, connectivity::FailureOfInhibition2025.GaussianConnectivityParameter, t, lattice)
 
 GPU-specific version of propagate_activation_single that creates a GaussianConnectivity object
 with CUDA FFT plans for GPU arrays.
+
+This method is dispatched when A is a CUDA array. It handles both CuArray and views of CuArray.
 """
 function FailureOfInhibition2025.propagate_activation_single(
-    dA::CuArray, 
-    A::CuArray, 
+    dA::Union{CuArray, SubArray{<:Any, <:Any, <:CuArray}}, 
+    A::Union{CuArray, SubArray{<:Any, <:Any, <:CuArray}}, 
     connectivity::FailureOfInhibition2025.GaussianConnectivityParameter, 
     t, 
     lattice
@@ -26,14 +28,15 @@ function FailureOfInhibition2025.propagate_activation_single(
 end
 
 """
-    create_gpu_gaussian_connectivity(param::GaussianConnectivityParameter, lattice, array_template::CuArray)
+    create_gpu_gaussian_connectivity(param::GaussianConnectivityParameter, lattice, array_template)
 
 Helper function to create a GaussianConnectivity object with CUDA FFT plans.
+The array_template is used only to determine the array type; the actual kernel is computed on CPU and then transferred.
 """
 function create_gpu_gaussian_connectivity(
     param::FailureOfInhibition2025.GaussianConnectivityParameter, 
     lattice,
-    array_template::CuArray
+    array_template::Union{CuArray, SubArray{<:Any, <:Any, <:CuArray}}
 )
     # Calculate kernel on CPU first, then transfer to GPU
     kernel_cpu = FailureOfInhibition2025.calculate_kernel(param, lattice)
