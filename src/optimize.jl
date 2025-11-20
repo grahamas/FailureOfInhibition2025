@@ -253,6 +253,21 @@ function _update_params(base_params::WilsonCowanParameters, param_names, values)
                 
                 new_conn = GaussianConnectivityParameter(new_amplitude, new_spread)
                 params_dict[:connectivity] = ConnectivityMatrix{1}(reshape([new_conn], 1, 1))
+            elseif old_conn isa GaussianConnectivity
+                # Handle pre-computed connectivity
+                new_spread = old_conn.spread
+                new_amplitude = old_conn.amplitude
+                
+                for (i, name) in enumerate(param_names)
+                    if name == :connectivity_width
+                        new_spread = (values[i],)
+                    elseif name == :connectivity_strength
+                        new_amplitude = values[i]
+                    end
+                end
+                
+                new_conn = GaussianConnectivityParameter(new_amplitude, new_spread)
+                params_dict[:connectivity] = ConnectivityMatrix{1}(reshape([new_conn], 1, 1))
             end
         end
     end
@@ -285,15 +300,15 @@ function _update_params(base_params::WilsonCowanParameters, param_names, values)
         end
     end
     
-    # Create new parameters
-    return WilsonCowanParameters{T,P}(
-        params_dict[:α],
-        params_dict[:β],
-        params_dict[:τ],
-        params_dict[:connectivity],
-        params_dict[:nonlinearity],
-        params_dict[:stimulus],
-        params_dict[:lattice],
-        params_dict[:pop_names]
+    # Create new parameters using keyword constructor to ensure connectivity is prepared
+    return WilsonCowanParameters{P}(
+        α = params_dict[:α],
+        β = params_dict[:β],
+        τ = params_dict[:τ],
+        connectivity = params_dict[:connectivity],
+        nonlinearity = params_dict[:nonlinearity],
+        stimulus = params_dict[:stimulus],
+        lattice = params_dict[:lattice],
+        pop_names = params_dict[:pop_names]
     )
 end

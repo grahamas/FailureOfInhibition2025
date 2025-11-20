@@ -115,6 +115,9 @@ function test_propagate_activation_with_connectivity_matrix()
     matrix = [conn_ee conn_ei; conn_ie conn_ii]
     conn_matrix = ConnectivityMatrix{2}(matrix)
     
+    # Pre-compute connectivity (required after removing backward compatibility)
+    conn_matrix_prepared = prepare_connectivity(conn_matrix, lattice)
+    
     # Create activity state for 2 populations
     # Each population has 11 spatial points
     A = zeros(11, 2)
@@ -125,7 +128,7 @@ function test_propagate_activation_with_connectivity_matrix()
     
     # Propagate activation
     println("\n1. Testing propagation with full connectivity matrix:")
-    FailureOfInhibition2025.propagate_activation(dA, A, conn_matrix, 0.0, lattice)
+    FailureOfInhibition2025.propagate_activation(dA, A, conn_matrix_prepared, 0.0, lattice)
     
     # Check that both populations received input
     @assert !all(dA[:, 1] .== 0.0)  # E population should have non-zero derivative
@@ -137,12 +140,13 @@ function test_propagate_activation_with_connectivity_matrix()
     println("\n2. Testing propagation with sparse connectivity:")
     sparse_matrix = [conn_ee nothing; conn_ie conn_ii]
     sparse_conn = ConnectivityMatrix{2}(sparse_matrix)
+    sparse_conn_prepared = prepare_connectivity(sparse_conn, lattice)
     
     A_sparse = zeros(11, 2)
     A_sparse[6, 1] = 1.0  # Only E population active
     dA_sparse = zeros(11, 2)
     
-    FailureOfInhibition2025.propagate_activation(dA_sparse, A_sparse, sparse_conn, 0.0, lattice)
+    FailureOfInhibition2025.propagate_activation(dA_sparse, A_sparse, sparse_conn_prepared, 0.0, lattice)
     
     # E population should receive input only from itself (no I → E connection)
     # I population should receive input from E (E → I connection exists)
@@ -155,7 +159,7 @@ function test_propagate_activation_with_connectivity_matrix()
     println("\n3. Testing that input activity is preserved:")
     A_test = copy(A)
     dA_test = zeros(11, 2)
-    FailureOfInhibition2025.propagate_activation(dA_test, A_test, conn_matrix, 0.0, lattice)
+    FailureOfInhibition2025.propagate_activation(dA_test, A_test, conn_matrix_prepared, 0.0, lattice)
     
     @assert A_test == A  # Input should not be modified
     println("   ✓ Input preservation passed")

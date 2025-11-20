@@ -142,7 +142,7 @@ function test_propagate_activation()
     dA_1d = zeros(11)
     
     # Propagate
-    FailureOfInhibition2025.propagate_activation(dA_1d, A_1d, gc_1d, 0.0)
+    FailureOfInhibition2025.propagate_activation(dA_1d, A_1d, gc_1d, 0.0, lattice_1d)
     
     # Check that activation was propagated
     @assert !all(dA_1d .== 0.0)  # Should have non-zero values
@@ -162,7 +162,7 @@ function test_propagate_activation()
     dA_2d = zeros(11, 11)
     
     # Propagate
-    FailureOfInhibition2025.propagate_activation(dA_2d, A_2d, gc_2d, 0.0)
+    FailureOfInhibition2025.propagate_activation(dA_2d, A_2d, gc_2d, 0.0, lattice_2d)
     
     # Check that activation was propagated
     @assert !all(dA_2d .== 0.0)
@@ -171,7 +171,7 @@ function test_propagate_activation()
     # Test that activation is preserved (input not modified)
     A_test = copy(A_1d)
     dA_test = zeros(11)
-    FailureOfInhibition2025.propagate_activation(dA_test, A_test, gc_1d, 0.0)
+    FailureOfInhibition2025.propagate_activation(dA_test, A_test, gc_1d, 0.0, lattice_1d)
     @assert A_test == A_1d  # Input should not be modified    
 end
 
@@ -269,8 +269,8 @@ function test_scalar_connectivity()
     @assert typeof(conn_f32) == ScalarConnectivity{Float32}
     println("   ✓ Construction passed")
     
-    # Test propagate_activation_single with ScalarConnectivity
-    println("\n2. Testing propagate_activation_single with ScalarConnectivity:")
+    # Test propagate_activation with ScalarConnectivity
+    println("\n2. Testing propagate_activation with ScalarConnectivity:")
     lattice = PointLattice()
     
     # Create connectivity
@@ -279,7 +279,7 @@ function test_scalar_connectivity()
     # Test propagation
     A = [0.5]
     dA = zeros(1)
-    FailureOfInhibition2025.propagate_activation_single(dA, A, conn, 0.0, lattice)
+    FailureOfInhibition2025.propagate_activation(dA, A, conn, 0.0, lattice)
     
     # Should add 2.0 * 0.5 = 1.0 to dA
     @assert dA[1] ≈ 1.0
@@ -290,7 +290,7 @@ function test_scalar_connectivity()
     conn_inhib = ScalarConnectivity(-1.5)
     A = [0.4]
     dA = zeros(1)
-    FailureOfInhibition2025.propagate_activation_single(dA, A, conn_inhib, 0.0, lattice)
+    FailureOfInhibition2025.propagate_activation(dA, A, conn_inhib, 0.0, lattice)
     
     # Should add -1.5 * 0.4 = -0.6 to dA
     @assert dA[1] ≈ -0.6
