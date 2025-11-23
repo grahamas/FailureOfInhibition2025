@@ -11,7 +11,7 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Neural field models**: Implementation with customizable parameters  
 - **Spatial connectivity**: Gaussian connectivity patterns with FFT-based convolution
 - **Per-population-pair connectivity**: Each population pair can have its own connectivity kernel via ConnectivityMatrix
-- **Stimulus handling**: Flexible stimulation interfaces
+- **Stimulus handling**: Flexible stimulation interfaces (CircleStimulus for spatial stimuli, ConstantStimulus for sustained uniform input)
 - **Multi-population support**: Support for multiple neural populations with flexible coupling
 - **Simulation utilities**: Solve models over time using DifferentialEquations.jl and save results to CSV
 - **Parameter sensitivity analysis**: Integrated support for computing parameter sensitivities using SciMLSensitivity.jl
@@ -20,6 +20,7 @@ A Julia package for neural field modeling with failure of inhibition mechanisms.
 - **Traveling wave analysis**: Metrics for detecting and characterizing traveling waves in neural activity
 - **Parameter optimization**: Find parameters that produce desired traveling wave behaviors using Optim.jl
 - **Oscillation analysis**: Utilities for evaluating oscillations in point models (frequency, amplitude, decay, duration)
+- **Parameter optimization**: Find parameters that produce desired traveling wave behaviors using Optim.jl
 - **GPU acceleration**: Optional CUDA.jl support for accelerated simulations and parameter searches
 
 ## Installation
@@ -454,6 +455,54 @@ Available metrics:
 - **`compute_oscillation_duration`**: Determine how long oscillations persist before decaying
 
 See `examples/example_oscillation_analysis.jl` for comprehensive usage examples.
+## Parameter Optimization
+
+The package provides optimization tools to find Wilson-Cowan model parameters that produce desired traveling wave behaviors:
+
+```julia
+using FailureOfInhibition2025
+
+# Set up base parameters
+lattice = CompactLattice(extent=(20.0,), n_points=(101,))
+conn = GaussianConnectivityParameter(0.8, (2.0,))
+params = WilsonCowanParameters{1}(
+    α=(1.0,), β=(1.0,), τ=(8.0,),
+    connectivity=ConnectivityMatrix{1}(reshape([conn], 1, 1)),
+    nonlinearity=SigmoidNonlinearity(a=2.0, θ=0.25),
+    stimulus=nothing, lattice=lattice, pop_names=("E",)
+)
+
+# Define parameter ranges to optimize
+param_ranges = (
+    connectivity_width = (1.5, 4.0),
+    sigmoid_a = (1.5, 3.5)
+)
+
+# Define objective: maximize distance traveled
+objective = TravelingWaveObjective(
+    target_distance=nothing,  # Maximize distance
+    minimize_decay=true,
+    require_traveling=true
+)
+
+# Initial condition
+A₀ = zeros(101, 1)
+A₀[15:20, 1] .= 0.6
+
+# Optimize
+result, best_params = optimize_for_traveling_wave(
+    params, param_ranges, objective, A₀, (0.0, 40.0),
+    maxiter=50
+)
+```
+
+Features:
+- **Flexible objectives**: Target specific metrics or maximize/minimize
+- **Multiple parameters**: Optimize connectivity, nonlinearity, and time constants
+- **Integration with metrics**: Uses traveling wave analysis for objective evaluation
+- **Bounded optimization**: Specify valid ranges for each parameter
+
+See `examples/example_optimize_traveling_waves.jl` for detailed optimization examples.
 
 ## GPU Acceleration
 
@@ -571,6 +620,8 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_traveling_wave_behaviors.jl`: **Comprehensive visualization of different traveling wave behaviors using Plots.jl**
 - `examples/example_optimize_traveling_waves.jl`: Demonstrates parameter optimization for traveling waves
 - `examples/example_oscillation_analysis.jl`: Demonstrates oscillation analysis for point models
+- `examples/example_optimized_oscillations.jl`: Demonstrates optimized parameters for stronger oscillations with sustained stimulus
+- `examples/example_optimize_traveling_waves.jl`: Demonstrates parameter optimization for traveling waves
 - `examples/example_gpu_acceleration.jl`: Demonstrates GPU-accelerated simulations and parameter searches
 
 ## Wilson-Cowan 1973 Validation
@@ -580,11 +631,13 @@ This package includes validated implementations of the three dynamical modes des
 1. **Active Transient Mode** - Sensory neo-cortex behavior with self-generated transient responses
 2. **Oscillatory Mode** - Thalamic behavior with sustained oscillations
 3. **Steady-State Mode** - Archi-/prefrontal cortex with stable spatial patterns
+4. **Optimized Oscillatory Mode** - Enhanced parameters for stronger, more robust oscillations with sustained stimulus response
 
 For detailed parameter mappings, mathematical formulation, and usage instructions, see:
 - `docs/wcm1973_validation.md` - Complete parameter mapping and validation documentation
 - `test/test_wcm1973_validation.jl` - Comprehensive validation test suite
 - `examples/example_wcm1973_modes.jl` - Usage examples for all three modes
+- `examples/example_optimized_oscillations.jl` - Optimized oscillatory parameters
 
 **Reference:** Wilson, H. R., & Cowan, J. D. (1973). A mathematical theory of the functional dynamics of cortical and thalamic nervous tissue. *Kybernetik*, 13(2), 55-80.
 
