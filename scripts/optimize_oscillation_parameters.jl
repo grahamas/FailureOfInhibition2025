@@ -323,7 +323,7 @@ try
     
     # Prepare parameters dictionary
     opt_params = Dict(
-        "mode" => "oscillatory_optimized",
+        "mode" => "optimized_oscillatory",
         "timestamp" => string(now()),
         "configuration" => "τₑ=10.0 (constant), optimized: bₑₑ=$(round(x_opt[1], digits=3)), bᵢᵢ=$(round(x_opt[2], digits=3)), bₑᵢ=$(round(x_opt[3], digits=3)), τᵢ=$(round(x_opt[4], digits=3))",
         "parameters" => Dict(
@@ -359,14 +359,14 @@ try
     )
     
     # Save to JSON file
-    json_path = joinpath(data_dir, "optimized_parameters.json")
+    json_path = joinpath(data_dir, "wcm1973_oscillatory_optimized.json")
     open(json_path, "w") do f
         JSON.print(f, opt_params, 4)  # Pretty print with 4-space indent
     end
     
     println("Parameters saved to: $json_path")
     println("You can now use these parameters with:")
-    println("  params = create_point_model_wcm1973(:oscillatory_optimized)")
+    println("  params = create_point_model_wcm1973(:optimized_oscillatory)")
     
 catch e
     println("Warning: Could not save parameters to JSON: $e")

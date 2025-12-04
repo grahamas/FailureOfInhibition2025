@@ -94,18 +94,13 @@ When a constant (non-oscillatory) stimulus is applied:
 
 ### Creating the Optimized Model
 
-**Option 1: Using the test file helper function**
+**Option 1: Using the canonical parameter function**
 
 ```julia
 using FailureOfInhibition2025
 
-# Include the parameter creation functions from test file
-# Note: This function is in the test file to maintain consistency with
-# the WCM 1973 validation tests.
-include("test/test_wcm1973_validation.jl")
-
-# Create optimized oscillatory mode
-params = create_point_model_wcm1973(:oscillatory_optimized)
+# Create optimized oscillatory mode (loads from data/wcm1973_oscillatory_optimized.json)
+params = create_point_model_wcm1973(:optimized_oscillatory)
 
 # Initial condition
 A₀ = reshape([0.3, 0.2], 1, 2)

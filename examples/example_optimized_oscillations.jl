@@ -24,7 +24,7 @@ println("\n### Comparing Baseline and Optimized Oscillatory Modes ###\n")
 
 # Create both parameter sets
 params_baseline = create_point_model_wcm1973(:oscillatory)
-params_optimized = create_point_model_wcm1973(:oscillatory_optimized)
+params_optimized = create_point_model_wcm1973(:optimized_oscillatory)
 
 # Initial condition
 A₀ = reshape([0.3, 0.2], 1, 2)

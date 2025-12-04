@@ -193,7 +193,7 @@ Load optimized WCM1973 parameters from JSON file for a specific variant.
 
 # Arguments
 - `variant`: Optimization variant to load (default: :oscillatory_optimized)
-  Future variants might include :oscillatory_stimulus_optimized, etc.
+  Future variants might include :active_transient_optimized, :steady_state_optimized, etc.
 
 # Returns
 Dictionary with parameter values and metadata
@@ -201,20 +201,11 @@ Dictionary with parameter values and metadata
 # Notes
 The file naming convention is: `wcm1973_{variant}.json`
 For :oscillatory_optimized, the file is `wcm1973_oscillatory_optimized.json`
-Legacy support: Falls back to `optimized_parameters.json` if variant-specific file not found
 """
 function load_optimized_wcm1973_parameters(variant::Symbol=:oscillatory_optimized)
     # Construct variant-specific filename
     variant_filename = "wcm1973_$(variant).json"
     json_path = joinpath(@__DIR__, "..", "data", variant_filename)
-    
-    # Fall back to legacy filename for backward compatibility
-    if !isfile(json_path) && variant == :oscillatory_optimized
-        legacy_path = joinpath(@__DIR__, "..", "data", "optimized_parameters.json")
-        if isfile(legacy_path)
-            json_path = legacy_path
-        end
-    end
     
     if !isfile(json_path)
         error("Optimized parameters file not found at: $json_path\n" *
@@ -274,21 +265,14 @@ function create_point_model_wcm1973(mode::Symbol)
     # Create point lattice (zero-dimensional space)
     lattice = PointLattice()
     
-    # Check if this is an optimized variant (starts with "optimized_" or legacy format)
+    # Check if this is an optimized variant (starts with "optimized_")
     mode_str = string(mode)
-    is_optimized = startswith(mode_str, "optimized_") || endswith(mode_str, "_optimized")
+    is_optimized = startswith(mode_str, "optimized_")
     
     if is_optimized
-        # Handle both new and legacy naming:
-        # New: :optimized_oscillatory -> load "oscillatory_optimized"
-        # Legacy: :oscillatory_optimized -> load "oscillatory_optimized"
-        if startswith(mode_str, "optimized_")
-            base_mode_str = replace(mode_str, "optimized_" => "")
-            variant_symbol = Symbol(base_mode_str * "_optimized")
-        else
-            # Legacy format already has correct form
-            variant_symbol = mode
-        end
+        # Extract base mode (e.g., "oscillatory" from "optimized_oscillatory")
+        base_mode_str = replace(mode_str, "optimized_" => "")
+        variant_symbol = Symbol(base_mode_str * "_optimized")
         
         # Load optimized parameters from file
         opt_data = load_optimized_wcm1973_parameters(variant_symbol)

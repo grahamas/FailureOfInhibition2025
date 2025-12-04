@@ -32,7 +32,7 @@ params_baseline = create_point_model_wcm1973(:oscillatory)
 sol_baseline = solve_model(A₀, tspan, params_baseline, saveat=0.5)
 
 println("Simulating optimized oscillatory mode...")
-params_optimized = create_point_model_wcm1973(:oscillatory_optimized)
+params_optimized = create_point_model_wcm1973(:optimized_oscillatory)
 sol_optimized = solve_model(A₀, tspan, params_optimized, saveat=0.5)
 
 # Extract time series data

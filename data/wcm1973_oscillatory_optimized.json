@@ -29,7 +29,7 @@
         },
         "alpha_i": 1.0
     },
-    "mode": "oscillatory_optimized",
+    "mode": "optimized_oscillatory",
     "timestamp": "2025-11-12T19:55:18.394",
     "configuration": "τₑ=10.0 (constant), optimized: bₑₑ=1.763, bᵢᵢ=0.104, bₑᵢ=1.657, τᵢ=12.115"
 }
