@@ -126,16 +126,24 @@ struct WilsonCowanParameters{T,P}
     stimulus
     lattice
     pop_names::NTuple{P,String}
+    
+    # Inner constructor that ensures connectivity is always prepared
+    # This makes both positional and keyword constructors safe
+    function WilsonCowanParameters{T,P}(α::NTuple{P}, β::NTuple{P}, τ::NTuple{P},
+                                        connectivity, nonlinearity, stimulus, lattice,
+                                        pop_names::NTuple{P,String}) where {T,P}
+        # Prepare connectivity to ensure kernels are pre-computed
+        prepared_connectivity = prepare_connectivity(connectivity, lattice)
+        new{T,P}(α, β, τ, prepared_connectivity, nonlinearity, stimulus, lattice, pop_names)
+    end
 end
 
 # Constructor with keyword arguments for convenience
 function WilsonCowanParameters{P}(; α, β, τ, connectivity, nonlinearity, stimulus, lattice,
                                    pop_names=ntuple(i -> "Pop$i", P)) where {P}
     T = eltype(α)
-    # Prepare connectivity: pre-compute GaussianConnectivity objects from parameters
-    # to ensure kernels are only calculated once
-    prepared_connectivity = prepare_connectivity(connectivity, lattice)
-    WilsonCowanParameters{T,P}(α, β, τ, prepared_connectivity, nonlinearity, stimulus, lattice, pop_names)
+    # Call the positional constructor which now handles prepare_connectivity
+    WilsonCowanParameters{T,P}(α, β, τ, connectivity, nonlinearity, stimulus, lattice, pop_names)
 end
 
 """
