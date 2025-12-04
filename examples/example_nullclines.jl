@@ -35,22 +35,18 @@ Nullcline Computation Functions
 =============================================================================#
 
 """
-    compute_nullcline_e(I_values, params; stimulus_value=0.0)
+    compute_dE_dt_field(E_grid, I_grid, params; stimulus_value=0.0)
 
-Compute E-nullcline: values of E where dE/dt = 0 for given I values.
-
-For each I value, solve for E such that:
-    -α_E * E + β_E * (1 - E) * f(S + C_EE*E + C_EI*I) = 0
-
-where C_EE and C_EI are connectivity weights.
+Compute dE/dt on a grid of (E, I) values for E-nullcline plotting.
+The E-nullcline is the zero-level contour of this field.
 """
-function compute_nullcline_e(I_values, params; stimulus_value=0.0)
+function compute_dE_dt_field(E_grid, I_grid, params; stimulus_value=0.0)
     # Extract parameters
     α_E = params.α[1]
     β_E = params.β[1]
     τ_E = params.τ[1]
     
-    # Get connectivity weights (assuming ScalarConnectivity for point models)
+    # Get connectivity weights
     conn = params.connectivity
     b_EE = conn[1,1].weight  # E → E
     b_EI = conn[1,2].weight  # I → E
@@ -58,62 +54,27 @@ function compute_nullcline_e(I_values, params; stimulus_value=0.0)
     # Get nonlinearity for E population
     nonlin_E = params.nonlinearity isa Tuple ? params.nonlinearity[1] : params.nonlinearity
     
-    E_values = Float64[]
-    
-    for I in I_values
-        # We need to solve for E such that dE/dt = 0
-        # This means: -α_E * E + β_E * (1 - E) * σ(S + b_EE*E + b_EI*I) = 0
-        # Rearranging: α_E * E = β_E * (1 - E) * σ(S + b_EE*E + b_EI*I)
-        
-        # Use a simple bisection/search to find E where dE/dt = 0
-        function dE_dt(E)
-            input = stimulus_value + b_EE * E + b_EI * I
-            f_val = apply_nonlinearity_scalar(nonlin_E, input)
-            return (-α_E * E + β_E * (1 - E) * f_val) / τ_E
-        end
-        
-        # Search for zero crossing in [0, 1] range
-        E_range = range(0.0, 1.0, length=1000)
-        dE_values = [dE_dt(E) for E in E_range]
-        
-        # Find multiple zero crossings (can have multiple intersections)
-        E_nullcline_points = Float64[]
-        for i in 1:(length(E_range)-1)
-            if sign(dE_values[i]) != sign(dE_values[i+1])
-                # Linear interpolation for more accurate zero crossing
-                E_zero = E_range[i] - dE_values[i] * (E_range[i+1] - E_range[i]) / (dE_values[i+1] - dE_values[i])
-                push!(E_nullcline_points, E_zero)
-            end
-        end
-        
-        # Use the first crossing (typically the stable branch)
-        if !isempty(E_nullcline_points)
-            push!(E_values, E_nullcline_points[1])
-        else
-            # If no crossing found, check endpoints
-            if abs(dE_values[1]) < abs(dE_values[end])
-                push!(E_values, E_range[1])
-            else
-                push!(E_values, E_range[end])
-            end
-        end
+    # Compute dE/dt at each grid point
+    dE_dt = similar(E_grid)
+    for i in eachindex(E_grid)
+        E = E_grid[i]
+        I = I_grid[i]
+        input = stimulus_value + b_EE * E + b_EI * I
+        f_val = 1.0 / (1.0 + exp(-nonlin_E.a * (input - nonlin_E.θ)))
+        dE_dt[i] = (-α_E * E + β_E * (1 - E) * f_val) / τ_E
     end
     
-    return E_values
+    return dE_dt
 end
 
 """
-    compute_nullcline_i(E_values, params; stimulus_value=0.0)
+    compute_dI_dt_field(E_grid, I_grid, params; stimulus_value=0.0)
 
-Compute I-nullcline: values of I where dI/dt = 0 for given E values.
-
-For each E value, solve for I such that:
-    -α_I * I + β_I * (1 - I) * f(S + C_IE*E + C_II*I) = 0
-
-where C_IE and C_II are connectivity weights.
+Compute dI/dt on a grid of (E, I) values for I-nullcline plotting.
+The I-nullcline is the zero-level contour of this field.
 """
-function compute_nullcline_i(E_values, params; stimulus_value=0.0)
-    # Extract parameters for I population
+function compute_dI_dt_field(E_grid, I_grid, params; stimulus_value=0.0)
+    # Extract parameters
     α_I = params.α[2]
     β_I = params.β[2]
     τ_I = params.τ[2]
@@ -126,52 +87,17 @@ function compute_nullcline_i(E_values, params; stimulus_value=0.0)
     # Get nonlinearity for I population
     nonlin_I = params.nonlinearity isa Tuple ? params.nonlinearity[2] : params.nonlinearity
     
-    I_values = Float64[]
-    
-    for E in E_values
-        # Solve for I such that dI/dt = 0
-        # This means: -α_I * I + β_I * (1 - I) * σ(S + b_IE*E + b_II*I) = 0
-        
-        function dI_dt(I)
-            input = stimulus_value + b_IE * E + b_II * I
-            f_val = apply_nonlinearity_scalar(nonlin_I, input)
-            return (-α_I * I + β_I * (1 - I) * f_val) / τ_I
-        end
-        
-        # Search for zero crossing
-        I_range = range(0.0, 1.0, length=1000)
-        dI_values = [dI_dt(I) for I in I_range]
-        
-        # Find zero crossings
-        I_nullcline_points = Float64[]
-        for i in 1:(length(I_range)-1)
-            if sign(dI_values[i]) != sign(dI_values[i+1])
-                I_zero = I_range[i] - dI_values[i] * (I_range[i+1] - I_range[i]) / (dI_values[i+1] - dI_values[i])
-                push!(I_nullcline_points, I_zero)
-            end
-        end
-        
-        if !isempty(I_nullcline_points)
-            push!(I_values, I_nullcline_points[1])
-        else
-            if abs(dI_values[1]) < abs(dI_values[end])
-                push!(I_values, I_range[1])
-            else
-                push!(I_values, I_range[end])
-            end
-        end
+    # Compute dI/dt at each grid point
+    dI_dt = similar(E_grid)
+    for i in eachindex(E_grid)
+        E = E_grid[i]
+        I = I_grid[i]
+        input = stimulus_value + b_IE * E + b_II * I
+        f_val = 1.0 / (1.0 + exp(-nonlin_I.a * (input - nonlin_I.θ)))
+        dI_dt[i] = (-α_I * I + β_I * (1 - I) * f_val) / τ_I
     end
     
-    return I_values
-end
-
-"""
-    apply_nonlinearity_scalar(nonlin, x)
-
-Apply nonlinearity to a scalar value.
-"""
-function apply_nonlinearity_scalar(nonlin::SigmoidNonlinearity, x)
-    return 1.0 / (1.0 + exp(-nonlin.a * (x - nonlin.θ)))
+    return dI_dt
 end
 
 
@@ -194,16 +120,20 @@ println("  b_EI = $(params_osc.connectivity[1,2].weight)")
 println("  b_IE = $(params_osc.connectivity[2,1].weight)")
 println("  b_II = $(params_osc.connectivity[2,2].weight)")
 
-# Compute nullclines
-println("\nComputing nullclines...")
-I_range = range(0.0, 0.5, length=200)
+# Compute nullclines using grid-based approach for contour plotting
+println("\nComputing nullcline fields...")
 E_range = range(0.0, 0.5, length=200)
+I_range = range(0.0, 0.5, length=200)
 
-E_nullcline = compute_nullcline_e(I_range, params_osc, stimulus_value=0.0)
-I_nullcline = compute_nullcline_i(E_range, params_osc, stimulus_value=0.0)
+# Create meshgrid for contour plotting
+E_grid = [E for E in E_range, I in I_range]
+I_grid = [I for E in E_range, I in I_range]
 
-println("✓ E-nullcline computed")
-println("✓ I-nullcline computed")
+# Compute dE/dt and dI/dt fields
+dE_dt_field = compute_dE_dt_field(E_grid, I_grid, params_osc, stimulus_value=0.0)
+dI_dt_field = compute_dI_dt_field(E_grid, I_grid, params_osc, stimulus_value=0.0)
+
+println("✓ Nullcline fields computed")
 
 # Simulate trajectory - use solve_model with initial condition that shows oscillations
 println("\nSimulating trajectory...")
@@ -232,18 +162,20 @@ println("\nGenerating plots...")
 # Create phase portrait with nullclines
 p = plot(size=(800, 600), dpi=150)
 
-# Plot nullclines
-plot!(p, E_nullcline, I_range, 
+# Plot nullclines using contour with level 0
+contour!(p, E_range, I_range, dE_dt_field',
+    levels=[0.0],
     label="E-nullcline (dE/dt=0)",
     linewidth=2.5,
-    linestyle=:solid,
-    color=:blue)
+    color=:blue,
+    linestyle=:solid)
 
-plot!(p, E_range, I_nullcline,
+contour!(p, E_range, I_range, dI_dt_field',
+    levels=[0.0],
     label="I-nullcline (dI/dt=0)",
     linewidth=2.5,
-    linestyle=:solid,
-    color=:red)
+    color=:red,
+    linestyle=:solid)
 
 # Plot full trajectory (lighter)
 plot!(p, E_activity, I_activity,
@@ -268,26 +200,23 @@ scatter!(p, [E_activity_osc[1]], [I_activity_osc[1]],
     markersize=6,
     color=:purple)
 
-# Find and mark approximate fixed point (intersection of nullclines)
-# Simple approach: find closest points
-function find_fixed_point(E_nullcline, I_range, I_nullcline, E_range)
-    min_dist = Inf
+# Find and mark approximate fixed point (where both dE/dt ≈ 0 and dI/dt ≈ 0)
+function find_fixed_point(E_grid, I_grid, dE_dt_field, dI_dt_field)
+    # Find point where both derivatives are closest to zero
+    min_sum = Inf
     fixed_E, fixed_I = 0.0, 0.0
-    for (i, E) in enumerate(E_nullcline)
-        I_e = I_range[i]
-        for (j, I_i) in enumerate(I_nullcline)
-            E_i = E_range[j]
-            dist = sqrt((E - E_i)^2 + (I_e - I_i)^2)
-            if dist < min_dist
-                min_dist = dist
-                fixed_E, fixed_I = (E + E_i) / 2, (I_e + I_i) / 2
-            end
+    for i in eachindex(E_grid)
+        sum_sq = dE_dt_field[i]^2 + dI_dt_field[i]^2
+        if sum_sq < min_sum
+            min_sum = sum_sq
+            fixed_E = E_grid[i]
+            fixed_I = I_grid[i]
         end
     end
     return fixed_E, fixed_I
 end
 
-fixed_E, fixed_I = find_fixed_point(E_nullcline, I_range, I_nullcline, E_range)
+fixed_E, fixed_I = find_fixed_point(E_grid, I_grid, dE_dt_field, dI_dt_field)
 
 scatter!(p, [fixed_E], [fixed_I],
     label="Fixed point",
