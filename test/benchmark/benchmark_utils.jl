@@ -88,7 +88,7 @@ function write_benchmark_results(results::Vector, filename::String)
         
         # Write results
         for result in results
-            @printf(io, "%s,%s,%s,%.9f,%.9f,%.9f,%.9f,%d\n",
+            @printf(io, "%s,%s,\"%s\",%.9f,%.9f,%.9f,%.9f,%d\n",
                 timestamp,
                 commit_id,
                 result.name,
