@@ -118,8 +118,8 @@ Create a lens for accessing connectivity weight between populations i and j.
 
 This is a convenience function for creating parameter lenses to vary connectivity
 in bifurcation analysis. The lens accesses `params.connectivity.matrix[i,j].weight`
-for ScalarConnectivity or `params.connectivity.matrix[i,j].amplitude` for 
-GaussianConnectivityParameter.
+for ScalarConnectivity (point models). For spatial models with GaussianConnectivityParameter,
+users should create custom lenses using `@optic _.connectivity.matrix[i,j].amplitude`.
 
 # Arguments
 - `i`: Target population index (row in connectivity matrix)
@@ -187,7 +187,7 @@ function create_nonlinearity_lens(pop_index::Int, param::Symbol)
     elseif param == :θ
         return @optic _.nonlinearity[pop_index].θ
     else
-        error("param must be :a or :θ, got :$param")
+        error("param must be :a or :θ, got $param")
     end
 end
 
