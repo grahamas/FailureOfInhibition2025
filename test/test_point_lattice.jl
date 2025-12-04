@@ -197,7 +197,7 @@ function test_point_lattice_with_different_nonlinearities()
         τ = (1.0, 1.0),
         connectivity = nothing,
         nonlinearity = DifferenceOfSigmoidsNonlinearity(
-            a_up=5.0, θ_up=0.3, a_down=3.0, θ_down=0.7
+            a_activating=5.0, θ_activating=0.3, a_failing=3.0, θ_failing=0.7
         ),
         stimulus = nothing,
         lattice = lattice
