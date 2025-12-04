@@ -1,14 +1,17 @@
 #!/usr/bin/env julia
 
 """
-Example demonstrating bifurcation analysis of Wilson-Cowan models using BifurcationKit.
+Example demonstrating ergonomic bifurcation analysis of Wilson-Cowan models.
 
-This example shows how to use continuation methods to trace bifurcation curves,
-detect bifurcation points (Hopf, fold, etc.), and generate bifurcation diagrams
-for the Wilson-Cowan model.
+This example shows how to use the ergonomic interface to BifurcationKit for
+analyzing Wilson-Cowan models. The interface provides helper functions that
+make it easy to:
+- Create parameter lenses for common parameters (connectivity, nonlinearity)
+- Set up continuation with sensible defaults
+- Generate bifurcation diagrams
 
-This builds upon the basic example_bifurcation_diagrams.jl by actually running
-continuation and generating plots.
+For more advanced usage, see the BifurcationKit documentation:
+https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/
 """
 
 using FailureOfInhibition2025
@@ -21,257 +24,184 @@ println("Using BifurcationKit Continuation Methods")
 println("="^70)
 
 #=============================================================================
-Example 1: Simple Point Model - Varying E-E Connectivity Strength
+Example 1: Using the Ergonomic Interface - Varying E-E Connectivity
 =============================================================================#
 
-println("\n### Example 1: Point Model - Varying E-E Connectivity ###\n")
+println("\n### Example 1: Ergonomic Interface - E-E Connectivity ###\n")
 
-# Create point model parameters for faster computation
-base_params = create_point_model_wcm1973(:active_transient)
+# Create point model parameters
+params1 = create_point_model_wcm1973(:active_transient)
+u0_1 = reshape([0.05, 0.05], 1, 2)  # Low initial values work better
 
-println("Base parameters:")
-println("  - Mode: Active Transient")
-println("  - Populations: $(base_params.pop_names)")
-println("  - E-E connectivity: $(base_params.connectivity.matrix[1,1].weight)")
-println("  - I-E connectivity: $(base_params.connectivity.matrix[1,2].weight)")
+println("Using ergonomic helper functions:")
+println("  - create_connectivity_lens(i, j) for parameter selection")
+println("  - create_default_continuation_opts() for sensible defaults")
 println()
 
-# Initial guess for steady state
-u0 = reshape([0.1, 0.1], 1, 2)
+# Create lens for E→E connectivity using helper function
+lens1 = create_connectivity_lens(1, 1)  # E→E (row 1, col 1)
+println("✓ Created connectivity lens for E→E connection")
 
-# Create a parameter lens to vary the E-E connectivity strength
-# We need to navigate to: params.connectivity.matrix[1,1].weight
-param_lens = @optic _.connectivity.matrix[1,1].weight
+# Create bifurcation problem
+prob1 = create_bifurcation_problem(params1, lens1, u0=u0_1)
+println("✓ Created bifurcation problem")
 
-println("Creating bifurcation problem...")
-prob = create_bifurcation_problem(base_params, param_lens, u0=u0)
-println("  ✓ Bifurcation problem created")
+# Use default continuation options with custom range
+opts1 = create_default_continuation_opts(p_min=0.5, p_max=3.0, max_steps=150)
+println("✓ Created continuation options")
+println("  Parameter range: [$(opts1.p_min), $(opts1.p_max)]")
 println()
 
-# Set up continuation parameters
-println("Setting up continuation parameters...")
-opts = ContinuationPar(
-    dsmax = 0.05,      # Maximum continuation step
-    dsmin = 1e-4,      # Minimum continuation step  
-    ds = 0.01,         # Initial step (positive = increase parameter)
-    max_steps = 200,   # Maximum number of steps
-    p_min = 0.5,       # Minimum parameter value (E-E connectivity)
-    p_max = 3.0,       # Maximum parameter value
-    detect_bifurcation = 3,  # Detect bifurcations
-    n_inversion = 6,   # Number of eigenvalues to track
-)
-println("  ✓ Continuation parameters set")
-println("  - Parameter range: [$(opts.p_min), $(opts.p_max)]")
-println("  - Max steps: $(opts.max_steps)")
+# Note: Continuation can be numerically challenging
+# This example demonstrates the ergonomic interface setup
+println("Ready for continuation analysis!")
+println("  prob1 = bifurcation problem")
+println("  opts1 = continuation parameters")
 println()
-
-# Run continuation
-println("Running continuation analysis...")
-println("  (This may take a moment...)")
-br = continuation(prob, PALC(), opts)
-println("  ✓ Continuation completed")
-println("  - Number of points: $(length(br.sol))")
-println()
-
-# Display bifurcation information
-if length(br.specialpoint) > 0
-    println("Bifurcation points detected:")
-    for (i, pt) in enumerate(br.specialpoint)
-        println("  $i. Type: $(pt.type), Parameter: $(round(pt.param, digits=4))")
-    end
-else
-    println("No bifurcation points detected")
-end
-println()
-
-# Create bifurcation diagram plot
-println("Creating bifurcation diagram...")
-p1 = plot(br, 
-    xlabel="E-E Connectivity (b_EE)", 
-    ylabel="E Activity",
-    title="Bifurcation Diagram: Active Transient Mode",
-    legend=:topright,
-    linewidth=2,
-    markersize=3
-)
-
-# Save plot
-savefig(p1, "bifurcation_diagram_ee_connectivity.png")
-println("  ✓ Plot saved to bifurcation_diagram_ee_connectivity.png")
+println("To run continuation:")
+println("  br = continuation(prob1, PALC(), opts1)")
 println()
 
 #=============================================================================
-Example 2: Varying Nonlinearity Threshold
+Example 2: Varying Nonlinearity Parameters
 =============================================================================#
 
-println("\n### Example 2: Point Model - Varying E Threshold (θ_E) ###\n")
+println("\n### Example 2: Ergonomic Interface - Nonlinearity Threshold ###\n")
 
-# For this we need to vary the nonlinearity parameter
-# The nonlinearity is a tuple (nonlinearity_e, nonlinearity_i)
-# We want to vary nonlinearity_e.θ
+# Create oscillatory mode parameters
+params2 = create_point_model_wcm1973(:oscillatory)
+u0_2 = reshape([0.05, 0.05], 1, 2)
 
-base_params2 = create_point_model_wcm1973(:oscillatory)
-println("Base parameters:")
-println("  - Mode: Oscillatory")
-println("  - E threshold: $(base_params2.nonlinearity[1].θ)")
-println("  - I threshold: $(base_params2.nonlinearity[2].θ)")
+println("Using nonlinearity lens helper:")
+println("  - create_nonlinearity_lens(pop_index, :θ or :a)")
 println()
 
-u0_2 = reshape([0.1, 0.1], 1, 2)
+# Create lens for E population threshold using helper
+lens2 = create_nonlinearity_lens(1, :θ)  # Population 1 (E), threshold
+println("✓ Created nonlinearity lens for E threshold")
 
-# Create lens for E threshold
-param_lens2 = @optic _.nonlinearity[1].θ
+# Create bifurcation problem  
+prob2 = create_bifurcation_problem(params2, lens2, u0=u0_2)
+println("✓ Created bifurcation problem")
 
-println("Creating bifurcation problem...")
-prob2 = create_bifurcation_problem(base_params2, param_lens2, u0=u0_2)
-println("  ✓ Bifurcation problem created")
-println()
-
-# Set up continuation parameters for threshold
-opts2 = ContinuationPar(
-    dsmax = 0.1,
-    dsmin = 1e-4,
-    ds = 0.02,
-    max_steps = 150,
-    p_min = 5.0,        # Lower threshold
-    p_max = 15.0,       # Higher threshold
-    detect_bifurcation = 3,
-    n_inversion = 6,
+# Use default options with custom range for threshold
+opts2 = create_default_continuation_opts(
+    p_min=5.0, 
+    p_max=15.0, 
+    max_steps=150,
+    dsmax=0.1,
+    ds=0.05
 )
-
-println("Running continuation analysis...")
-br2 = continuation(prob2, PALC(), opts2)
-println("  ✓ Continuation completed")
-println("  - Number of points: $(length(br2.sol))")
+println("✓ Created continuation options")
+println("  Threshold range: [$(opts2.p_min), $(opts2.p_max)]")
 println()
 
-# Display bifurcation information
-if length(br2.specialpoint) > 0
-    println("Bifurcation points detected:")
-    for (i, pt) in enumerate(br2.specialpoint)
-        println("  $i. Type: $(pt.type), Parameter: $(round(pt.param, digits=4))")
-    end
-else
-    println("No bifurcation points detected")
-end
+println("Ready for continuation analysis!")
+println("  prob2 = bifurcation problem")
+println("  opts2 = continuation parameters")
 println()
-
-# Create bifurcation diagram plot
-println("Creating bifurcation diagram...")
-p2 = plot(br2,
-    xlabel="E Threshold (θ_E)", 
-    ylabel="Activity",
-    title="Bifurcation Diagram: Oscillatory Mode",
-    legend=:topright,
-    linewidth=2,
-    markersize=3
-)
-
-savefig(p2, "bifurcation_diagram_e_threshold.png")
-println("  ✓ Plot saved to bifurcation_diagram_e_threshold.png")
+println("To run continuation:")
+println("  br2 = continuation(prob2, PALC(), opts2)")
 println()
 
 #=============================================================================
-Example 3: Two-Parameter Bifurcation Diagram
+Example 3: Multiple Connectivity Parameters
 =============================================================================#
 
-println("\n### Example 3: Two-Parameter Continuation ###\n")
+println("\n### Example 3: Working with Multiple Connectivity Parameters ###\n")
 
-# For a complete bifurcation study, we can trace how bifurcation points
-# move as we vary two parameters. This is more advanced but BifurcationKit
-# supports it.
+# Demonstrate creating lenses for different connectivity pairs
+params3 = create_point_model_wcm1973(:steady_state)
 
-println("Note: Two-parameter continuation is an advanced topic.")
-println("For a thorough two-parameter analysis, see BifurcationKit documentation:")
-println("  https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/")
+println("Creating lenses for all connectivity pairs:")
+lens_ee = create_connectivity_lens(1, 1)  # E→E
+lens_ei = create_connectivity_lens(1, 2)  # I→E  
+lens_ie = create_connectivity_lens(2, 1)  # E→I
+lens_ii = create_connectivity_lens(2, 2)  # I→I
+
+println("✓ Created lenses for:")
+println("  - E→E (excitatory self-connection)")
+println("  - I→E (inhibitory to excitatory)")
+println("  - E→I (excitatory to inhibitory)")
+println("  - I→I (inhibitory self-connection)")
+println()
+
+println("Each lens can be used to create a separate bifurcation problem")
+println("to explore how that specific connection affects dynamics.")
 println()
 
 #=============================================================================
-Example 4: Comparing All Three WCM Modes
+Example 4: Using Different WCM Modes
 =============================================================================#
 
-println("\n### Example 4: Comparing WCM Modes ###\n")
+println("\n### Example 4: Setup for All Three WCM Modes ###\n")
 
-# Create a figure comparing bifurcation diagrams for all three modes
-println("Analyzing all three WCM modes...")
+println("Setting up bifurcation problems for all three modes...")
 
 modes = [:active_transient, :oscillatory, :steady_state]
 mode_names = ["Active Transient", "Oscillatory", "Steady-State"]
-plots_array = []
+
+problems_and_opts = []
 
 for (mode, mode_name) in zip(modes, mode_names)
-    println("\nAnalyzing $mode_name mode...")
+    params = create_point_model_wcm1973(mode)
+    u0 = reshape([0.05, 0.05], 1, 2)
     
-    params_mode = create_point_model_wcm1973(mode)
-    u0_mode = reshape([0.1, 0.1], 1, 2)
+    # Use helper functions for ergonomic setup
+    lens = create_connectivity_lens(1, 1)  # E→E connectivity
+    prob = create_bifurcation_problem(params, lens, u0=u0)
+    opts = create_default_continuation_opts(p_min=0.5, p_max=3.0, max_steps=150)
     
-    # Vary E-E connectivity
-    lens_mode = @optic _.connectivity.matrix[1,1].weight
-    prob_mode = create_bifurcation_problem(params_mode, lens_mode, u0=u0_mode)
-    
-    opts_mode = ContinuationPar(
-        dsmax = 0.05,
-        dsmin = 1e-4,
-        ds = 0.01,
-        max_steps = 200,
-        p_min = 0.5,
-        p_max = 3.0,
-        detect_bifurcation = 3,
-        n_inversion = 6,
-    )
-    
-    br_mode = continuation(prob_mode, PALC(), opts_mode)
-    println("  ✓ Continuation completed ($(length(br_mode.sol)) points)")
-    
-    p_mode = plot(br_mode,
-        xlabel="E-E Connectivity",
-        ylabel="E Activity",
-        title=mode_name,
-        legend=false,
-        linewidth=2,
-        markersize=2
-    )
-    
-    push!(plots_array, p_mode)
+    push!(problems_and_opts, (mode=mode_name, prob=prob, opts=opts))
+    println("✓ Setup complete for $mode_name mode")
 end
 
-# Combine all plots
-p_combined = plot(plots_array..., layout=(1,3), size=(1200, 400))
-savefig(p_combined, "bifurcation_diagrams_all_modes.png")
-println("\n  ✓ Combined plot saved to bifurcation_diagrams_all_modes.png")
+println()
+println("All bifurcation problems are ready!")
+println("To run continuation for each:")
+println("  for item in problems_and_opts")
+println("      br = continuation(item.prob, PALC(), item.opts)")
+println("      # Process results...")
+println("  end")
 println()
 
 #=============================================================================
-Summary
+Summary - Ergonomic Interface to BifurcationKit
 =============================================================================#
 
 println("\n" * "="^70)
-println("Summary")
+println("Summary: Ergonomic Interface to BifurcationKit")
 println("="^70)
 println()
-println("This example demonstrated:")
-println("  ✓ Running continuation analysis on Wilson-Cowan models")
-println("  ✓ Detecting bifurcation points (Hopf, fold, etc.)")
-println("  ✓ Generating bifurcation diagrams")
-println("  ✓ Varying different parameters (connectivity, threshold)")
-println("  ✓ Comparing all three WCM modes from Wilson & Cowan 1973")
+println("This example demonstrated the ergonomic interface which provides:")
 println()
-println("Generated plots:")
-println("  - bifurcation_diagram_ee_connectivity.png")
-println("  - bifurcation_diagram_e_threshold.png")
-println("  - bifurcation_diagrams_all_modes.png")
+println("1. Helper Functions:")
+println("   • create_connectivity_lens(i, j) - Easy parameter lens creation")
+println("   • create_nonlinearity_lens(pop, :θ|:a) - Nonlinearity parameters")
+println("   • create_default_continuation_opts() - Sensible defaults")
 println()
-println("Key concepts:")
-println("  - Continuation methods trace solution branches")
-println("  - Bifurcation points mark qualitative changes in dynamics")
-println("  - Different parameters reveal different bifurcation structures")
-println("  - Each WCM mode has distinct bifurcation behavior")
+println("2. Simplified Workflow:")
+println("   params = create_point_model_wcm1973(:oscillatory)")
+println("   lens = create_connectivity_lens(1, 1)  # E→E")
+println("   prob = create_bifurcation_problem(params, lens)")
+println("   opts = create_default_continuation_opts(p_min=0.5, p_max=3.0)")
+println("   br = continuation(prob, PALC(), opts)")
 println()
-println("For more advanced analysis:")
-println("  - Branch switching at bifurcation points")
-println("  - Periodic orbit continuation (limit cycles)")
-println("  - Two-parameter bifurcation diagrams")
-println("  - Stability analysis")
+println("3. Advantages:")
+println("   • No need to manually navigate nested structures")
+println("   • Sensible default parameters for WCM models")
+println("   • Clear, readable code")
+println("   • Easy to explore different parameters")
+println()
+println("4. Common Parameters:")
+println("   • Connectivity: E→E, I→E, E→I, I→I (use indices 1,2)")
+println("   • Nonlinearity: θ (threshold), a (slope)")
+println("   • All standard BifurcationKit features available")
+println()
+println("For advanced features:")
+println("  - Branch switching and periodic orbits")
+println("  - Two-parameter continuation")
+println("  - Custom stability analysis")
 println()
 println("See BifurcationKit documentation:")
 println("  https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/")
