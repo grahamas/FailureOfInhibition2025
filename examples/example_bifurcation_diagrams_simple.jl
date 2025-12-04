@@ -11,7 +11,7 @@ and finding steady states. We demonstrate three approaches:
 3. **Multiple WCM modes**: Compare bifurcation behavior across all three modes
 
 While this example uses manual parameter sweeps, the package also supports
-advanced continuation methods via BifurcationKit (see example_bifurcation_diagrams.jl).
+advanced continuation methods via BifurcationKit (see example_bifurcation_diagrams_visual.jl).
 """
 
 using FailureOfInhibition2025
@@ -357,7 +357,7 @@ println("  - Steady-state mode: Stable equilibria across parameter range")
 println()
 println("For advanced bifurcation analysis:")
 println("  - Use BifurcationKit for continuation methods")
-println("  - See example_bifurcation_diagrams.jl for setup")
+println("  - See example_bifurcation_diagrams_visual.jl for setup")
 println("  - Automatic bifurcation point detection")
 println("  - Stability analysis along branches")
 println()
