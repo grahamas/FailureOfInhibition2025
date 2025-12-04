@@ -85,6 +85,17 @@ using FailureOfInhibition2025
         test_wilson_cowan_with_connectivity_matrix()
     end
 
+    # Test connectivity kernel pre-computation
+    @testset "Connectivity Kernel Pre-computation" begin
+        include("test_kernel_precomputation.jl")
+        
+        # Run the main test functions from test_kernel_precomputation.jl
+        test_gaussian_connectivity_parameter_converted()
+        test_scalar_connectivity_unchanged()
+        test_nothing_connectivity_unchanged()
+        test_non_connectivity_matrix_unchanged()
+    end
+
     # Run comprehensive space/lattice/coordinates tests
     @testset "Space/Lattice/Coordinates Functionality" begin
         include("test_space.jl")
