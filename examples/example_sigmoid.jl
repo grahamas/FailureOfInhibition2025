@@ -53,10 +53,10 @@ function demo_sigmoid_usage()
     println("   A_rect unchanged: $A_rect")
     
     # Show DifferenceOfSigmoidsNonlinearity
-    println("\n5. Using DifferenceOfSigmoidsNonlinearity:")
+    println("\n5. Using DifferenceOfSigmoidsNonlinearity (Failure of Inhibition):")
     # This creates a bump-like function using rectified zeroed sigmoids (now default)
-    # Narrow ascending at 0.3, broader descending at 0.7 for better bump shape
-    diff_sigmoid = DifferenceOfSigmoidsNonlinearity(a_up=5.0, θ_up=0.3, a_down=3.0, θ_down=0.7)
+    # Narrow activating at 0.3, broader failing at 0.7 for better bump shape
+    diff_sigmoid = DifferenceOfSigmoidsNonlinearity(a_activating=5.0, θ_activating=0.3, a_failing=3.0, θ_failing=0.7)
     dA_diff = zeros(length(field_activity))
     A_diff = copy(field_activity)
     
@@ -82,13 +82,13 @@ function demo_sigmoid_usage()
     
     println("\n7. Comparing different difference of sigmoids shapes:")
     # Example of a narrow bump using rectified zeroed sigmoids
-    narrow_bump = DifferenceOfSigmoidsNonlinearity(a_up=10.0, θ_up=0.4, a_down=5.0, θ_down=0.6)
+    narrow_bump = DifferenceOfSigmoidsNonlinearity(a_activating=10.0, θ_activating=0.4, a_failing=5.0, θ_failing=0.6)
     # Example of an asymmetric shape with different steepness
-    asymmetric = DifferenceOfSigmoidsNonlinearity(a_up=8.0, θ_up=0.3, a_down=2.0, θ_down=0.8)
+    asymmetric = DifferenceOfSigmoidsNonlinearity(a_activating=8.0, θ_activating=0.3, a_failing=2.0, θ_failing=0.8)
     
     x = 0.5  # Test input in the middle
-    narrow_val = difference_of_rectified_zeroed_sigmoids(x, narrow_bump.a_up, narrow_bump.θ_up, narrow_bump.a_down, narrow_bump.θ_down)
-    asymm_val = difference_of_rectified_zeroed_sigmoids(x, asymmetric.a_up, asymmetric.θ_up, asymmetric.a_down, asymmetric.θ_down)
+    narrow_val = difference_of_rectified_zeroed_sigmoids(x, narrow_bump.a_activating, narrow_bump.θ_activating, narrow_bump.a_failing, narrow_bump.θ_failing)
+    asymm_val = difference_of_rectified_zeroed_sigmoids(x, asymmetric.a_activating, asymmetric.θ_activating, asymmetric.a_failing, asymmetric.θ_failing)
     
     println("   Input x = $x:")
     println("   Narrow bump (rectified):      $(round(narrow_val, digits=4))")
@@ -96,17 +96,17 @@ function demo_sigmoid_usage()
     
     # Show zero regions
     println("\n8. Demonstrating zero and maximal regions:")
-    test_diff = DifferenceOfSigmoidsNonlinearity(a_up=5.0, θ_up=0.3, a_down=5.0, θ_down=0.7)
+    test_diff = DifferenceOfSigmoidsNonlinearity(a_activating=5.0, θ_activating=0.3, a_failing=5.0, θ_failing=0.7)
     
     println("   Zero regions (far from thresholds):")
     for x_test in [-1.0, 0.0, 1.2]
-        val = difference_of_rectified_zeroed_sigmoids(x_test, test_diff.a_up, test_diff.θ_up, test_diff.a_down, test_diff.θ_down)
+        val = difference_of_rectified_zeroed_sigmoids(x_test, test_diff.a_activating, test_diff.θ_activating, test_diff.a_failing, test_diff.θ_failing)
         println("     x = $x_test: $(round(val, digits=4))")
     end
     
     println("   Maximal region (between thresholds):")
     for x_test in [0.4, 0.5, 0.6]
-        val = difference_of_rectified_zeroed_sigmoids(x_test, test_diff.a_up, test_diff.θ_up, test_diff.a_down, test_diff.θ_down)
+        val = difference_of_rectified_zeroed_sigmoids(x_test, test_diff.a_activating, test_diff.θ_activating, test_diff.a_failing, test_diff.θ_failing)
         println("     x = $x_test: $(round(val, digits=4))")
     end
     

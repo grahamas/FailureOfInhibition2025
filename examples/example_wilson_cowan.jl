@@ -104,13 +104,13 @@ function demo_wilson_cowan_model()
     println("      Parameters: a=2.0, θ=0.5")
     println("      Ensures firing rates remain non-negative")
     
-    # Difference of sigmoids (creates bump-like activation)
-    println("\n   b) DifferenceOfSigmoidsNonlinearity (bump function):")
+    # Difference of sigmoids (creates bump-like activation for Failure of Inhibition)
+    println("\n   b) DifferenceOfSigmoidsNonlinearity (Failure of Inhibition - bump function):")
     nl_diff = DifferenceOfSigmoidsNonlinearity(
-        a_up=5.0, θ_up=0.3, a_down=3.0, θ_down=0.7
+        a_activating=5.0, θ_activating=0.3, a_failing=3.0, θ_failing=0.7
     )
-    println("      Parameters: a_up=5.0, θ_up=0.3, a_down=3.0, θ_down=0.7")
-    println("      Creates selective response to specific activity levels")
+    println("      Parameters: a_activating=5.0, θ_activating=0.3, a_failing=3.0, θ_failing=0.7")
+    println("      Creates selective response where inhibition fails at higher activity levels")
     
     # 8. Explain implementation differences
     println("\n8. Implementation Differences from WilsonCowanModel.jl:")
