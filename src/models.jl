@@ -187,3 +187,125 @@ function wcm1973!(dA, A, p::WilsonCowanParameters{T,P}, t) where {T,P}
         dAi ./= p.τ[i]
     end
 end
+
+############## Failure of Inhibition (FoI) Model ##############
+
+"""
+    FailureOfInhibitionParameters{T}
+
+Parameters for a Failure of Inhibition (FoI) model - a specialized 2-population Wilson-Cowan model.
+
+An FoI model is a Wilson-Cowan model with two populations (Excitatory and Inhibitory) where:
+- The excitatory population uses a standard sigmoid nonlinearity
+- The inhibitory population uses a non-monotonic difference of sigmoids nonlinearity
+
+This creates dynamics where inhibition can fail at higher activity levels, leading to
+characteristic FoI behaviors such as traveling waves and sustained activity patterns.
+
+# Fields
+- `α::NTuple{2,T}`: Decay rates for [E, I] populations
+- `β::NTuple{2,T}`: Saturation coefficients for [E, I] populations (typically 1.0)
+- `τ::NTuple{2,T}`: Time constants for [E, I] populations
+- `connectivity`: Connectivity parameter (defines how populations interact)
+- `nonlinearity_E`: Nonlinearity for excitatory population (SigmoidNonlinearity or RectifiedZeroedSigmoidNonlinearity)
+- `nonlinearity_I`: Nonlinearity for inhibitory population (DifferenceOfSigmoidsNonlinearity)
+- `stimulus`: Stimulus parameter (defines external inputs)
+- `lattice`: Spatial lattice for the model
+
+# Example
+
+```julia
+using FailureOfInhibition2025
+
+# Create spatial lattice
+lattice = CompactLattice(extent=(10.0,), n_points=(21,))
+
+# Define connectivity
+conn_ee = GaussianConnectivityParameter(1.0, (2.0,))
+conn_ei = GaussianConnectivityParameter(-0.5, (1.5,))
+conn_ie = GaussianConnectivityParameter(0.8, (2.5,))
+conn_ii = GaussianConnectivityParameter(-0.3, (1.0,))
+connectivity = ConnectivityMatrix{2}([
+    conn_ee conn_ei;
+    conn_ie conn_ii
+])
+
+# Create FoI parameters
+params = FailureOfInhibitionParameters(
+    α = (1.0, 1.5),
+    β = (1.0, 1.0),
+    τ = (10.0, 8.0),
+    connectivity = connectivity,
+    nonlinearity_E = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5),
+    nonlinearity_I = DifferenceOfSigmoidsNonlinearity(
+        a_activating=5.0, θ_activating=0.3,
+        a_failing=3.0, θ_failing=0.7
+    ),
+    stimulus = nothing,
+    lattice = lattice
+)
+```
+"""
+struct FailureOfInhibitionParameters{T}
+    α::NTuple{2,T}
+    β::NTuple{2,T}
+    τ::NTuple{2,T}
+    connectivity
+    nonlinearity_E
+    nonlinearity_I
+    stimulus
+    lattice
+end
+
+"""
+    FailureOfInhibitionParameters(; α, β, τ, connectivity, nonlinearity_E, nonlinearity_I, stimulus, lattice)
+
+Construct FailureOfInhibitionParameters with keyword arguments.
+
+Automatically converts to WilsonCowanParameters{2} with per-population nonlinearities.
+"""
+function FailureOfInhibitionParameters(; α, β, τ, connectivity, nonlinearity_E, nonlinearity_I, stimulus, lattice)
+    T = eltype(α)
+    # Store parameters
+    foi_params = FailureOfInhibitionParameters{T}(α, β, τ, connectivity, nonlinearity_E, nonlinearity_I, stimulus, lattice)
+    return foi_params
+end
+
+"""
+    foi_to_wcm(params::FailureOfInhibitionParameters{T}) where T
+
+Convert FailureOfInhibitionParameters to WilsonCowanParameters with per-population nonlinearities.
+"""
+function foi_to_wcm(params::FailureOfInhibitionParameters{T}) where T
+    # Create tuple of nonlinearities: (E, I)
+    nonlinearity = (params.nonlinearity_E, params.nonlinearity_I)
+    
+    # Prepare connectivity
+    prepared_connectivity = prepare_connectivity(params.connectivity, params.lattice)
+    
+    return WilsonCowanParameters{T,2}(
+        params.α,
+        params.β,
+        params.τ,
+        prepared_connectivity,
+        nonlinearity,
+        params.stimulus,
+        params.lattice,
+        ("E", "I")
+    )
+end
+
+"""
+    foi!(dA, A, p::FailureOfInhibitionParameters, t)
+
+Failure of Inhibition model differential equation.
+
+This is a convenience wrapper that converts FoI parameters to WCM parameters
+and calls wcm1973!. The inhibitory population uses a non-monotonic difference
+of sigmoids nonlinearity, while the excitatory population uses a standard nonlinearity.
+"""
+function foi!(dA, A, p::FailureOfInhibitionParameters, t)
+    # Convert to WilsonCowanParameters and call wcm1973!
+    wcm_params = foi_to_wcm(p)
+    wcm1973!(dA, A, wcm_params, t)
+end
