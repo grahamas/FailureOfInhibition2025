@@ -1,0 +1,35 @@
+{
+    "metrics": {
+        "n_peaks": 10,
+        "score": 0.8388625005650596,
+        "decay_rate": 0.0038901367637383007,
+        "half_life": 178.18067144093217,
+        "period": 27.944444444444443,
+        "frequency": 0.03578528827037773,
+        "amplitude": 0.005328954759639243,
+        "has_oscillations": true
+    },
+    "parameters": {
+        "tau_i": 12.114922692758764,
+        "alpha_e": 1.0,
+        "beta_e": 1.0,
+        "connectivity": {
+            "b_ei": 1.656590913398146,
+            "b_ee": 1.763422484572983,
+            "b_ii": 0.10385107849898866,
+            "b_ie": 1.5
+        },
+        "beta_i": 1.0,
+        "tau_e": 10.0,
+        "nonlinearity": {
+            "v_i": 1.0,
+            "theta_e": 9.0,
+            "theta_i": 15.0,
+            "v_e": 0.5
+        },
+        "alpha_i": 1.0
+    },
+    "mode": "optimized_oscillatory",
+    "timestamp": "2025-11-12T19:55:18.394",
+    "configuration": "τₑ=10.0 (constant), optimized: bₑₑ=1.763, bᵢᵢ=0.104, bₑᵢ=1.657, τᵢ=12.115"
+}

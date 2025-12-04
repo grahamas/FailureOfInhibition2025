@@ -55,7 +55,7 @@ export SigmoidNonlinearity, RectifiedZeroedSigmoidNonlinearity, DifferenceOfSigm
 export GaussianConnectivityParameter, ScalarConnectivity, ConnectivityMatrix, propagate_activation, prepare_connectivity
 
 # Export stimulation types and functions
-export CircleStimulus, stimulate!
+export CircleStimulus, ConstantStimulus, stimulate!
 
 # Export model functions
 export WilsonCowanParameters, wcm1973!, population
