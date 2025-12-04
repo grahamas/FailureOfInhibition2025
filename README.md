@@ -245,7 +245,7 @@ BifurcationKit provides sophisticated tools for analyzing parameter-dependent dy
 - `create_bifurcation_problem(params, param_lens; u0)`: Create a BifurcationProblem from Wilson-Cowan parameters
 - `wcm_rhs!(dA, A, params, t)`: Right-hand side function compatible with BifurcationKit
 
-See `examples/example_bifurcation_diagrams.jl` for detailed demonstrations of continuation analysis with Wilson-Cowan models.
+See `examples/example_bifurcation_diagrams.jl` for detailed demonstrations of continuation analysis with Wilson-Cowan models, and `examples/example_bifurcation_diagrams_simple.jl` for a practical example that generates bifurcation diagrams using parameter sweeps.
 
 ## Global Sensitivity Analysis
 
@@ -566,6 +566,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
 - `examples/example_sensitivity_analysis.jl`: Demonstrates parameter sensitivity analysis using SciMLSensitivity.jl
 - `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis using BifurcationKit continuation methods
+- `examples/example_bifurcation_diagrams_simple.jl`: **Practical example generating bifurcation diagrams via parameter sweeps**
 - `examples/example_sensitivity_analysis.jl`: Demonstrates global sensitivity analysis with Sobol and Morris methods
 - `examples/example_traveling_wave_metrics.jl`: Demonstrates traveling wave analysis metrics
 - `examples/example_traveling_wave_behaviors.jl`: **Comprehensive visualization of different traveling wave behaviors using Plots.jl**
