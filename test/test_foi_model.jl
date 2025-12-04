@@ -185,5 +185,3 @@ using FailureOfInhibition2025
         @test params.nonlinearity_I.θ_failing == 0.7
     end
 end
-
-println("🎉 All FoI model tests passed!")
