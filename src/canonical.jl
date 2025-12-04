@@ -187,18 +187,39 @@ function create_wcm1973_parameters(mode::Symbol; lattice=nothing)
 end
 
 """
-    load_optimized_parameters()
+    load_optimized_wcm1973_parameters(variant::Symbol=:oscillatory_optimized)
 
-Load optimized parameters from JSON file.
-Returns a dictionary with the parameter values.
+Load optimized WCM1973 parameters from JSON file for a specific variant.
+
+# Arguments
+- `variant`: Optimization variant to load (default: :oscillatory_optimized)
+  Future variants might include :oscillatory_stimulus_optimized, etc.
+
+# Returns
+Dictionary with parameter values and metadata
+
+# Notes
+The file naming convention is: `wcm1973_{variant}.json`
+For :oscillatory_optimized, the file is `wcm1973_oscillatory_optimized.json`
+Legacy support: Falls back to `optimized_parameters.json` if variant-specific file not found
 """
-function load_optimized_parameters()
-    # Look for the JSON file in the data directory
-    json_path = joinpath(@__DIR__, "..", "data", "optimized_parameters.json")
+function load_optimized_wcm1973_parameters(variant::Symbol=:oscillatory_optimized)
+    # Construct variant-specific filename
+    variant_filename = "wcm1973_$(variant).json"
+    json_path = joinpath(@__DIR__, "..", "data", variant_filename)
+    
+    # Fall back to legacy filename for backward compatibility
+    if !isfile(json_path) && variant == :oscillatory_optimized
+        legacy_path = joinpath(@__DIR__, "..", "data", "optimized_parameters.json")
+        if isfile(legacy_path)
+            json_path = legacy_path
+        end
+    end
     
     if !isfile(json_path)
         error("Optimized parameters file not found at: $json_path\n" *
-              "Run the optimization script first: julia --project=. scripts/optimize_oscillation_parameters.jl")
+              "Run the optimization script first: julia --project=. scripts/optimize_oscillation_parameters.jl\n" *
+              "Or ensure the file is named correctly: $variant_filename")
     end
     
     # Try to load with JSON if available
@@ -233,17 +254,58 @@ which corresponds to the spatially localized aggregate equations (2.0.1 and 2.0.
 in the paper.
 
 # Arguments
-- `mode`: One of :active_transient, :oscillatory, :oscillatory_optimized, or :steady_state
+- `mode`: One of :active_transient, :oscillatory, :steady_state, or optimized variants
+  Canonical modes: :active_transient, :oscillatory, :steady_state (from WCM 1973 Table 2)
+  Optimized variants: Prefix with "optimized_", e.g., :optimized_oscillatory
 
 # Returns
 WilsonCowanParameters{2} configured for the specified mode with PointLattice
+
+# Examples
+```julia
+# Canonical modes from paper
+params_osc = create_point_model_wcm1973(:oscillatory)
+
+# Optimized variant (loads from JSON)
+params_opt = create_point_model_wcm1973(:optimized_oscillatory)
+```
 """
 function create_point_model_wcm1973(mode::Symbol)
     # Create point lattice (zero-dimensional space)
     lattice = PointLattice()
     
-    # Get parameters based on mode
-    if mode == :active_transient
+    # Check if this is an optimized variant (starts with "optimized_" or legacy format)
+    mode_str = string(mode)
+    is_optimized = startswith(mode_str, "optimized_") || endswith(mode_str, "_optimized")
+    
+    if is_optimized
+        # Handle both new and legacy naming:
+        # New: :optimized_oscillatory -> load "oscillatory_optimized"
+        # Legacy: :oscillatory_optimized -> load "oscillatory_optimized"
+        if startswith(mode_str, "optimized_")
+            base_mode_str = replace(mode_str, "optimized_" => "")
+            variant_symbol = Symbol(base_mode_str * "_optimized")
+        else
+            # Legacy format already has correct form
+            variant_symbol = mode
+        end
+        
+        # Load optimized parameters from file
+        opt_data = load_optimized_wcm1973_parameters(variant_symbol)
+        
+        # Load parameters from JSON file
+        params_dict = opt_data["parameters"]
+        vₑ = params_dict["nonlinearity"]["v_e"]
+        θₑ = params_dict["nonlinearity"]["theta_e"]
+        vᵢ = params_dict["nonlinearity"]["v_i"]
+        θᵢ = params_dict["nonlinearity"]["theta_i"]
+        bₑₑ = params_dict["connectivity"]["b_ee"]
+        bᵢₑ = params_dict["connectivity"]["b_ei"]  # Already includes sign
+        bₑᵢ = params_dict["connectivity"]["b_ie"]
+        bᵢᵢ = params_dict["connectivity"]["b_ii"]  # Already includes sign
+        τₑ = params_dict["tau_e"]
+        τᵢ = params_dict["tau_i"]
+    elseif mode == :active_transient
         vₑ, θₑ = 0.5, 9.0
         vᵢ, θᵢ = 0.3, 17.0
         bₑₑ = 1.5
@@ -259,22 +321,6 @@ function create_point_model_wcm1973(mode::Symbol)
         bₑᵢ = 1.5
         bᵢᵢ = 0.1
         τₑ, τᵢ = 10.0, 10.0
-    elseif mode == :oscillatory_optimized
-        # Load optimized parameters from file
-        opt_data = load_optimized_parameters()
-        
-        # Load parameters from JSON file
-        params_dict = opt_data["parameters"]
-        vₑ = params_dict["nonlinearity"]["v_e"]
-        θₑ = params_dict["nonlinearity"]["theta_e"]
-        vᵢ = params_dict["nonlinearity"]["v_i"]
-        θᵢ = params_dict["nonlinearity"]["theta_i"]
-        bₑₑ = params_dict["connectivity"]["b_ee"]
-        bᵢₑ = params_dict["connectivity"]["b_ei"]  # Already includes sign
-        bₑᵢ = params_dict["connectivity"]["b_ie"]
-        bᵢᵢ = params_dict["connectivity"]["b_ii"]  # Already includes sign
-        τₑ = params_dict["tau_e"]
-        τᵢ = params_dict["tau_i"]
     elseif mode == :steady_state
         vₑ, θₑ = 0.5, 9.0
         vᵢ, θᵢ = 0.3, 17.0
@@ -284,7 +330,7 @@ function create_point_model_wcm1973(mode::Symbol)
         bᵢᵢ = 1.8
         τₑ, τᵢ = 10.0, 10.0
     else
-        error("Unknown mode: $mode. Use :active_transient, :oscillatory, :oscillatory_optimized, or :steady_state")
+        error("Unknown mode: $mode. Use :active_transient, :oscillatory, :steady_state, or :optimized_{base_mode}")
     end
     
     # Create nonlinearity - separate for E and I populations
