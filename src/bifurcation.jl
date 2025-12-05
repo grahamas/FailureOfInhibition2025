@@ -83,9 +83,10 @@ prob = create_bifurcation_problem(params, param_lens, u0=u0)
 ```
 
 # Notes
-- For point models (PointLattice), u0 should have shape (1, P) where P is number of populations
-- For spatial models, u0 should have shape (N_points, P)
+- For point models (PointLattice), u0 can be either a flat vector or reshaped matrix (1, P)
+- For spatial models, u0 can be either a flat vector or matrix (N_points, P)
 - The parameter lens must be compatible with the WilsonCowanParameters structure
+- Continuation can be numerically sensitive; good initial conditions near a steady state help
 - Use BifurcationKit's continuation methods (continuation, bifurcationdiagram) with the returned problem
 """
 function create_bifurcation_problem(params::WilsonCowanParameters{T,P}, param_lens; u0=nothing) where {T,P}

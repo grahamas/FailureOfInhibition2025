@@ -103,6 +103,13 @@ println()
 println("To run continuation:")
 println("  br2 = continuation(prob2, PALC(), opts2)")
 println()
+println("Note: Continuation can be numerically challenging.")
+println("If Newton fails to converge, try:")
+println("  - Different initial conditions (u0)")
+println("  - Different parameter ranges")
+println("  - Smaller step sizes (ds, dsmax)")
+println("  - Starting from a known steady state")
+println()
 
 #=============================================================================
 Example 3: Multiple Connectivity Parameters
