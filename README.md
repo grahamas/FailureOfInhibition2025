@@ -202,38 +202,42 @@ See `examples/example_sensitivity_analysis.jl` for comprehensive sensitivity ana
 
 ## Bifurcation Analysis
 
-The package provides bifurcation analysis tools powered by [BifurcationKit.jl](https://github.com/bifurcationkit/BifurcationKit.jl), enabling continuation methods to trace bifurcation curves and detect critical transitions in Wilson-Cowan models.
+The package provides an ergonomic interface to [BifurcationKit.jl](https://github.com/bifurcationkit/BifurcationKit.jl), making it easy to perform continuation analysis and detect critical transitions in Wilson-Cowan models.
+
+### Ergonomic Interface
+
+Helper functions simplify common bifurcation analysis tasks:
 
 ```julia
 using FailureOfInhibition2025
 using BifurcationKit
 
 # Create Wilson-Cowan parameters
-params = create_point_model_wcm1973(:active_transient)
+params = create_point_model_wcm1973(:oscillatory)
+u0 = reshape([0.05, 0.05], 1, 2)
 
-# Initial guess for steady state
-u0 = reshape([0.1, 0.1], 1, 2)
+# Use helper to create lens for E→E connectivity
+lens = create_connectivity_lens(1, 1)
+prob = create_bifurcation_problem(params, lens, u0=u0)
 
-# Create BifurcationProblem (requires parameter lens from BifurcationKit)
-# Example: vary the decay rate α[1]
-param_lens = (@lens _.α[1])
-prob = create_bifurcation_problem(params, param_lens, u0=u0)
+# Use defaults optimized for WCM models
+opts = create_default_continuation_opts(p_min=0.5, p_max=3.0)
 
-# Set up continuation parameters
-opts = ContinuationPar(
-    dsmax = 0.1,
-    dsmin = 1e-4,
-    ds = -0.01,
-    maxSteps = 100
-)
-
-# Run continuation to trace bifurcation curve
+# Run continuation
 br = continuation(prob, PALC(), opts)
 ```
 
-### Continuation Analysis Features
+### Key Helper Functions
 
-BifurcationKit provides sophisticated tools for analyzing parameter-dependent dynamics:
+- `create_connectivity_lens(i, j)`: Create lens for connectivity between populations i and j
+- `create_nonlinearity_lens(pop_index, :θ | :a)`: Create lens for nonlinearity parameters
+- `create_default_continuation_opts(; p_min, p_max, kwargs...)`: Sensible defaults for WCM
+- `create_bifurcation_problem(params, param_lens; u0)`: Create BifurcationProblem from WCM parameters
+- `wcm_rhs!(dA, A, params, t)`: Right-hand side function compatible with BifurcationKit
+
+### BifurcationKit Features
+
+All standard BifurcationKit capabilities are available:
 
 - **Continuation methods**: Trace solution branches as parameters vary
 - **Automatic bifurcation detection**: Identify Hopf, fold, and branch point bifurcations
@@ -241,12 +245,7 @@ BifurcationKit provides sophisticated tools for analyzing parameter-dependent dy
 - **Branch switching**: Continue along different solution branches at bifurcation points
 - **Periodic orbit continuation**: Analyze limit cycles and their bifurcations
 
-### Key Functions
-
-- `create_bifurcation_problem(params, param_lens; u0)`: Create a BifurcationProblem from Wilson-Cowan parameters
-- `wcm_rhs!(dA, A, params, t)`: Right-hand side function compatible with BifurcationKit
-
-See `examples/example_bifurcation_diagrams.jl` for detailed demonstrations of continuation analysis with Wilson-Cowan models.
+See `examples/example_bifurcation_diagrams.jl` and `examples/example_bifurcation_diagrams_visual.jl` for detailed demonstrations of the ergonomic interface to BifurcationKit.
 
 ## Global Sensitivity Analysis
 
@@ -615,6 +614,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
 - `examples/example_sensitivity_analysis.jl`: Demonstrates parameter sensitivity analysis using SciMLSensitivity.jl
 - `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis using BifurcationKit continuation methods
+- `examples/example_bifurcation_diagrams_visual.jl`: **Ergonomic interface to BifurcationKit for WCM bifurcation analysis**
 - `examples/example_sensitivity_analysis.jl`: Demonstrates global sensitivity analysis with Sobol and Morris methods
 - `examples/example_traveling_wave_metrics.jl`: Demonstrates traveling wave analysis metrics
 - `examples/example_traveling_wave_behaviors.jl`: **Comprehensive visualization of different traveling wave behaviors using Plots.jl**

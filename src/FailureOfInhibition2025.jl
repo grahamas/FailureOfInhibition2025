@@ -69,6 +69,7 @@ export solve_model_gpu
 
 # Export bifurcation analysis functions (BifurcationKit integration)
 export create_bifurcation_problem, wcm_rhs!
+export create_connectivity_lens, create_nonlinearity_lens, create_default_continuation_opts
 
 # Export sensitivity analysis functions
 export compute_local_sensitivities, save_local_sensitivities, summarize_sensitivities
