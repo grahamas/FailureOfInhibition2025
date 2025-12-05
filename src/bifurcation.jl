@@ -91,29 +91,28 @@ prob = create_bifurcation_problem(params, param_lens, u0=u0)
 """
 function create_bifurcation_problem(params::WilsonCowanParameters{T,P}, param_lens; u0=nothing) where {T,P}
     # Determine initial condition if not provided
-    local u0_matrix
-    if u0 === nothing
+    u0_matrix = if u0 === nothing
         if params.lattice isa PointLattice
             # Point model: (1, P) shape
-            u0_matrix = reshape(0.1 .+ 0.05 .* rand(P), 1, P)
+            reshape(0.1 .+ 0.05 .* rand(P), 1, P)
         else
             # Spatial model: (N_points, P) shape
             n_points = size(params.lattice)[1]
-            u0_matrix = 0.1 .+ 0.05 .* rand(n_points, P)
+            0.1 .+ 0.05 .* rand(n_points, P)
         end
     else
         # Handle both vector and matrix input
         if u0 isa AbstractVector
             # If u0 is already a vector, reshape it appropriately
             if params.lattice isa PointLattice
-                u0_matrix = reshape(u0, 1, P)
+                reshape(u0, 1, P)
             else
                 n_points = size(params.lattice)[1]
-                u0_matrix = reshape(u0, n_points, P)
+                reshape(u0, n_points, P)
             end
         else
             # u0 is already a matrix
-            u0_matrix = u0
+            u0
         end
     end
     
@@ -122,16 +121,15 @@ function create_bifurcation_problem(params::WilsonCowanParameters{T,P}, param_le
     
     # Create a wrapper function that handles reshaping
     # BifurcationKit works with flat vectors, but wcm_rhs! expects matrices
+    # Use views to avoid allocations during continuation
     function F!(dz_flat, z_flat, p)
-        # Reshape flat vector to matrix
-        z_matrix = reshape(z_flat, state_shape)
-        dz_matrix = reshape(dz_flat, state_shape)
+        # Create reshaped views (no allocation)
+        z_matrix = reshape(view(z_flat, :), state_shape)
+        dz_matrix = reshape(view(dz_flat, :), state_shape)
         
         # Call the original function
         wcm_rhs!(dz_matrix, z_matrix, p, 0.0)
         
-        # Copy reshaped result back to flat vector
-        dz_flat .= vec(dz_matrix)
         return dz_flat
     end
     
