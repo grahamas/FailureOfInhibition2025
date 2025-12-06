@@ -618,6 +618,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_sensitivity_analysis.jl`: Demonstrates global sensitivity analysis with Sobol and Morris methods
 - `examples/example_traveling_wave_metrics.jl`: Demonstrates traveling wave analysis metrics
 - `examples/example_traveling_wave_behaviors.jl`: **Comprehensive visualization of different traveling wave behaviors using Plots.jl**
+- `examples/example_parameter_traveling_wave_relationship.jl`: **Illustrates how key parameters affect traveling wave properties through systematic parameter sweeps and 2D parameter space exploration**
 - `examples/example_optimize_traveling_waves.jl`: Demonstrates parameter optimization for traveling waves
 - `examples/example_oscillation_analysis.jl`: Demonstrates oscillation analysis for point models
 - `examples/example_optimized_oscillations.jl`: Demonstrates optimized parameters for stronger oscillations with sustained stimulus

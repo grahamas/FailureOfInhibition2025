@@ -78,7 +78,7 @@ function extract_parameters(params::WilsonCowanParameters{T,P};
             # Extract connectivity parameters
             conn = params.connectivity
             if conn isa ConnectivityMatrix
-                # Extract ScalarConnectivity weights or GaussianConnectivityParameter
+                # Extract ScalarConnectivity weights, GaussianConnectivityParameter, or GaussianConnectivity
                 for i in 1:P
                     for j in 1:P
                         c_ij = conn.matrix[i, j]
@@ -86,6 +86,15 @@ function extract_parameters(params::WilsonCowanParameters{T,P};
                             push!(param_names, Symbol("b_$(i)_$(j)"))
                             push!(param_values, c_ij.weight)
                         elseif c_ij isa GaussianConnectivityParameter
+                            push!(param_names, Symbol("b_amplitude_$(i)_$(j)"))
+                            push!(param_values, c_ij.amplitude)
+                            # Extract spread parameters
+                            for (k, s) in enumerate(c_ij.spread)
+                                push!(param_names, Symbol("b_spread_$(i)_$(j)_dim$(k)"))
+                                push!(param_values, s)
+                            end
+                        elseif c_ij isa GaussianConnectivity
+                            # GaussianConnectivity is the pre-computed version of GaussianConnectivityParameter
                             push!(param_names, Symbol("b_amplitude_$(i)_$(j)"))
                             push!(param_values, c_ij.amplitude)
                             # Extract spread parameters
@@ -215,18 +224,30 @@ function reconstruct_parameters(wrapper::ODEParameterWrapper{T,P}, p_vec::Abstra
                 if haskey(connectivity_updates, (i, j))
                     update = connectivity_updates[(i, j)]
                     if update isa Dict
-                        # GaussianConnectivityParameter update
-                        old_param = c_ij::GaussianConnectivityParameter
-                        new_amplitude = get(update, :amplitude, old_param.amplitude)
+                        # GaussianConnectivity or GaussianConnectivityParameter update
+                        # Extract amplitude and spread from either type
+                        if c_ij isa GaussianConnectivityParameter
+                            old_amplitude = c_ij.amplitude
+                            old_spread = c_ij.spread
+                        elseif c_ij isa GaussianConnectivity
+                            old_amplitude = c_ij.amplitude
+                            old_spread = c_ij.spread
+                        else
+                            error("Unexpected connectivity type: $(typeof(c_ij))")
+                        end
+                        
+                        new_amplitude = get(update, :amplitude, old_amplitude)
                         if haskey(update, :spread)
                             # Reconstruct spread tuple
-                            N = length(old_param.spread)
+                            N = length(old_spread)
                             spread_dict = update[:spread]
-                            new_spread = ntuple(k -> get(spread_dict, k, old_param.spread[k]), N)
+                            new_spread = ntuple(k -> get(spread_dict, k, old_spread[k]), N)
                         else
-                            new_spread = old_param.spread
+                            new_spread = old_spread
                         end
-                        new_matrix[i, j] = GaussianConnectivityParameter(new_amplitude, new_spread)
+                        # Create GaussianConnectivityParameter and convert to GaussianConnectivity
+                        param = GaussianConnectivityParameter(new_amplitude, new_spread)
+                        new_matrix[i, j] = GaussianConnectivity(param, wrapper.base_params.lattice)
                     else
                         # ScalarConnectivity update
                         new_matrix[i, j] = ScalarConnectivity(update)
