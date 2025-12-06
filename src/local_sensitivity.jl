@@ -245,8 +245,9 @@ function reconstruct_parameters(wrapper::ODEParameterWrapper{T,P}, p_vec::Abstra
                         else
                             new_spread = old_spread
                         end
-                        # Return as GaussianConnectivityParameter - the constructor will convert to GaussianConnectivity
-                        new_matrix[i, j] = GaussianConnectivityParameter(new_amplitude, new_spread)
+                        # Create GaussianConnectivityParameter and convert to GaussianConnectivity
+                        param = GaussianConnectivityParameter(new_amplitude, new_spread)
+                        new_matrix[i, j] = GaussianConnectivity(param, wrapper.base_params.lattice)
                     else
                         # ScalarConnectivity update
                         new_matrix[i, j] = ScalarConnectivity(update)
