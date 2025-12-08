@@ -275,11 +275,19 @@ end
 Failure of Inhibition model differential equation.
 
 This is an alias for wcm1973! that can be used for clarity when working with FoI models.
-The inhibitory population (second population) should use a non-monotonic difference of sigmoids 
-nonlinearity, while the excitatory population (first population) uses a standard nonlinearity.
+
+# Expected Parameter Structure
+For proper FoI dynamics, the WilsonCowanParameters should be configured with:
+- Two populations (E and I)
+- `p.nonlinearity` as a tuple: `(nonlinearity_E, nonlinearity_I)` where:
+  - First element (E): Standard nonlinearity (SigmoidNonlinearity or RectifiedZeroedSigmoidNonlinearity)
+  - Second element (I): DifferenceOfSigmoidsNonlinearity (non-monotonic, characteristic of FoI)
+
+Use `FailureOfInhibitionParameters()` constructor to ensure correct configuration.
 
 # Note
-There is no separate FoI parameter type. FoI models use WilsonCowanParameters with 
-per-population nonlinearities specified as a tuple.
+There is no separate FoI parameter type. FoI models use WilsonCowanParameters directly to
+avoid object construction in the ODE solver inner loop. This function is purely an alias 
+to wcm1973! with zero overhead.
 """
 foi!(dA, A, p::WilsonCowanParameters, t) = wcm1973!(dA, A, p, t)
