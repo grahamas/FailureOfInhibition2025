@@ -120,14 +120,14 @@ function extract_parameters(params::WilsonCowanParameters{T,P};
                 push!(param_names, :θ)
                 push!(param_values, nl.θ)
             elseif nl isa DifferenceOfSigmoidsNonlinearity
-                push!(param_names, :a_up)
-                push!(param_values, nl.a_up)
-                push!(param_names, :θ_up)
-                push!(param_values, nl.θ_up)
-                push!(param_names, :a_down)
-                push!(param_values, nl.a_down)
-                push!(param_names, :θ_down)
-                push!(param_values, nl.θ_down)
+                push!(param_names, :a_activating)
+                push!(param_values, nl.a_activating)
+                push!(param_names, :θ_activating)
+                push!(param_values, nl.θ_activating)
+                push!(param_names, :a_failing)
+                push!(param_values, nl.a_failing)
+                push!(param_names, :θ_failing)
+                push!(param_values, nl.θ_failing)
             end
         end
     end
@@ -209,7 +209,7 @@ function reconstruct_parameters(wrapper::ODEParameterWrapper{T,P}, p_vec::Abstra
                 idx_j = parse(Int, parts[3])
                 connectivity_updates[(idx_i, idx_j)] = p_vec[i]
             end
-        elseif name == :a || name == :θ || name == :a_up || name == :θ_up || name == :a_down || name == :θ_down
+        elseif name == :a || name == :θ || name == :a_activating || name == :θ_activating || name == :a_failing || name == :θ_failing
             # Nonlinearity parameter
             nonlinearity_updates[name] = p_vec[i]
         end
@@ -271,11 +271,11 @@ function reconstruct_parameters(wrapper::ODEParameterWrapper{T,P}, p_vec::Abstra
             new_θ = get(nonlinearity_updates, :θ, nonlinearity.θ)
             nonlinearity = RectifiedZeroedSigmoidNonlinearity(new_a, new_θ)
         elseif nonlinearity isa DifferenceOfSigmoidsNonlinearity
-            new_a_up = get(nonlinearity_updates, :a_up, nonlinearity.a_up)
-            new_θ_up = get(nonlinearity_updates, :θ_up, nonlinearity.θ_up)
-            new_a_down = get(nonlinearity_updates, :a_down, nonlinearity.a_down)
-            new_θ_down = get(nonlinearity_updates, :θ_down, nonlinearity.θ_down)
-            nonlinearity = DifferenceOfSigmoidsNonlinearity(new_a_up, new_θ_up, new_a_down, new_θ_down)
+            new_a_activating = get(nonlinearity_updates, :a_activating, nonlinearity.a_activating)
+            new_θ_activating = get(nonlinearity_updates, :θ_activating, nonlinearity.θ_activating)
+            new_a_failing = get(nonlinearity_updates, :a_failing, nonlinearity.a_failing)
+            new_θ_failing = get(nonlinearity_updates, :θ_failing, nonlinearity.θ_failing)
+            nonlinearity = DifferenceOfSigmoidsNonlinearity(new_a_activating, new_θ_activating, new_a_failing, new_θ_failing)
         end
     end
     

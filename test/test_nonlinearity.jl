@@ -298,18 +298,18 @@ end
     
     @testset "DifferenceOfSigmoidsNonlinearity" begin
         # Test construction with keyword arguments
-        nl = DifferenceOfSigmoidsNonlinearity(a_up=2.0, θ_up=0.5, a_down=1.0, θ_down=1.5)
-        @test nl.a_up == 2.0
-        @test nl.θ_up == 0.5
-        @test nl.a_down == 1.0
-        @test nl.θ_down == 1.5
+        nl = DifferenceOfSigmoidsNonlinearity(a_activating=2.0, θ_activating=0.5, a_failing=1.0, θ_failing=1.5)
+        @test nl.a_activating == 2.0
+        @test nl.θ_activating == 0.5
+        @test nl.a_failing == 1.0
+        @test nl.θ_failing == 1.5
         
         # Test construction with different parameters
-        nl2 = DifferenceOfSigmoidsNonlinearity(a_up=2.0, θ_up=0.3, a_down=1.0, θ_down=0.7)
-        @test nl2.a_up == 2.0
-        @test nl2.θ_up == 0.3
-        @test nl2.a_down == 1.0
-        @test nl2.θ_down == 0.7
+        nl2 = DifferenceOfSigmoidsNonlinearity(a_activating=2.0, θ_activating=0.3, a_failing=1.0, θ_failing=0.7)
+        @test nl2.a_activating == 2.0
+        @test nl2.θ_activating == 0.3
+        @test nl2.a_failing == 1.0
+        @test nl2.θ_failing == 0.7
         
         # Test apply_nonlinearity!
         dA = zeros(3)
@@ -323,7 +323,7 @@ end
         
         # dA should contain difference_of_rectified_zeroed_sigmoids(A) - A
         for i in 1:3
-            expected = difference_of_rectified_zeroed_sigmoids(A[i], nl.a_up, nl.θ_up, nl.a_down, nl.θ_down) - A[i]
+            expected = difference_of_rectified_zeroed_sigmoids(A[i], nl.a_activating, nl.θ_activating, nl.a_failing, nl.θ_failing) - A[i]
             @test abs(dA[i] - expected) < 1e-10
         end
         
@@ -331,14 +331,14 @@ end
         @test !all(dA .== 0.0)
         
         # Test with specific parameters from test_sigmoid
-        a_up, θ_up = 5.0, 0.5
-        a_down, θ_down = 5.0, 1.5
-        diff_nl = DifferenceOfSigmoidsNonlinearity(a_up=a_up, θ_up=θ_up, a_down=a_down, θ_down=θ_down)
+        a_activating, θ_activating = 5.0, 0.5
+        a_failing, θ_failing = 5.0, 1.5
+        diff_nl = DifferenceOfSigmoidsNonlinearity(a_activating=a_activating, θ_activating=θ_activating, a_failing=a_failing, θ_failing=θ_failing)
         dA_test = zeros(1)
         A_test = [1.0]
         apply_nonlinearity!(dA_test, A_test, diff_nl, 0.0)
         
-        expected = difference_of_rectified_zeroed_sigmoids(1.0, a_up, θ_up, a_down, θ_down) - 1.0
+        expected = difference_of_rectified_zeroed_sigmoids(1.0, a_activating, θ_activating, a_failing, θ_failing) - 1.0
         @test abs(dA_test[1] - expected) < 1e-10
     end
 end

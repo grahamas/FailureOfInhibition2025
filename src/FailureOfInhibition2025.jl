@@ -59,6 +59,7 @@ export CircleStimulus, ConstantStimulus, stimulate!
 
 # Export model functions
 export WilsonCowanParameters, wcm1973!, population
+export FailureOfInhibitionParameters, foi!
 
 # Export simulation functions
 export solve_model, save_simulation_results, save_simulation_summary
