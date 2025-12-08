@@ -165,13 +165,28 @@ p = plot(size=(800, 600), dpi=150)
 # Plot nullclines using contour with level 0
 contour!(p, E_range, I_range, dE_dt_field',
     levels=[0.0],
+    linewidth=2.5,
+    color=:blue,
+    linestyle=:solid,
+    colorbar=false,
+    label="")  # Disable automatic label from contour
+
+contour!(p, E_range, I_range, dI_dt_field',
+    levels=[0.0],
+    linewidth=2.5,
+    color=:red,
+    linestyle=:solid,
+    colorbar=false,
+    label="")  # Disable automatic label from contour
+
+# Add dummy lines for legend entries (they won't be visible but will appear in legend)
+plot!(p, [NaN], [NaN], 
     label="E-nullcline (dE/dt=0)",
     linewidth=2.5,
     color=:blue,
     linestyle=:solid)
 
-contour!(p, E_range, I_range, dI_dt_field',
-    levels=[0.0],
+plot!(p, [NaN], [NaN],
     label="I-nullcline (dI/dt=0)",
     linewidth=2.5,
     color=:red,
