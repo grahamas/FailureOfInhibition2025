@@ -72,16 +72,6 @@ using Statistics
 using LinearAlgebra
 
 """
-    _cuda_is_functional()
-
-Check if CUDA is functional. Returns false if CUDA is not loaded or not functional.
-This is overridden by the CUDA extension when CUDA is available.
-"""
-function _cuda_is_functional()
-    return false
-end
-
-"""
     create_parameter_builder(base_params::WilsonCowanParameters{T,P}, param_ranges) where {T,P}
 
 Create a function that builds WilsonCowanParameters from a parameter vector.
@@ -413,15 +403,17 @@ function sobol_sensitivity_analysis(
         return outputs
     end
     
-    # Determine method label
-    method_label = use_gpu === true || (use_gpu === nothing && _cuda_is_functional()) ? "Sobol (GPU)" : "Sobol"
-    
     # Run Sobol analysis
     println("Running Sobol sensitivity analysis with $n_samples samples...")
     println("Parameters: ", param_names)
     println("Output metric: $output_metric")
     
     result = gsa(f, Sobol(), [[l, u] for (l, u) in zip(lb, ub)], samples=n_samples)
+    
+    # Determine method label based on use_gpu parameter
+    # Note: When use_gpu=nothing, we can't easily detect if GPU was actually used
+    # without runtime checking, so we keep the label simple
+    method_label = use_gpu === true ? "Sobol (GPU)" : "Sobol"
     
     return Dict(
         :S1 => result.S1,
@@ -519,9 +511,6 @@ function morris_sensitivity_analysis(
         return outputs
     end
     
-    # Determine method label
-    method_label = use_gpu === true || (use_gpu === nothing && _cuda_is_functional()) ? "Morris (GPU)" : "Morris"
-    
     # Run Morris analysis
     println("Running Morris sensitivity analysis with $n_trajectories trajectories...")
     println("Parameters: ", param_names)
@@ -530,6 +519,9 @@ function morris_sensitivity_analysis(
     result = gsa(f, Morris(), [[l, u] for (l, u) in zip(lb, ub)], 
                  num_trajectory=n_trajectories, total_num_trajectory=n_trajectories,
                  num_levels=num_levels)
+    
+    # Determine method label based on use_gpu parameter
+    method_label = use_gpu === true ? "Morris (GPU)" : "Morris"
     
     return Dict(
         :means => result.means,

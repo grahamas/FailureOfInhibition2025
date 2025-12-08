@@ -7,11 +7,6 @@ using DifferentialEquations
 using Statistics
 using LinearAlgebra
 
-# Override the CUDA detection function
-function FailureOfInhibition2025._cuda_is_functional()
-    return CUDA.functional()
-end
-
 """
     FailureOfInhibition2025.GaussianConnectivity(param::GaussianConnectivityParameter, lattice, ::Type{CuArray})
 
@@ -66,44 +61,24 @@ function FailureOfInhibition2025.GaussianConnectivity(
 end
 
 """
-    solve_model(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), use_gpu=nothing, kwargs...) where N
+GPU implementation helpers for solve_model.
 
-GPU-accelerated version of solve_model (CUDA extension override).
-
-When use_gpu is true or nothing (and CUDA is functional), this method automatically 
-transfers data to GPU, runs the simulation, and transfers results back to CPU.
-Any GaussianConnectivityParameter objects in the connectivity matrix are automatically
-converted to GPU-compatible GaussianConnectivity objects with CUDA FFT plans before
-simulation begins, ensuring FFT plans are created once (not on every timestep).
+These methods override the Val-based dispatch to enable GPU computation.
 """
-function FailureOfInhibition2025.solve_model(
-    initial_condition, 
-    tspan, 
-    params::FailureOfInhibition2025.WilsonCowanParameters{N}; 
-    solver=Tsit5(), 
-    use_gpu=nothing, 
-    kwargs...
+
+# Override for use_gpu=true
+function FailureOfInhibition2025._solve_model_impl(
+    ::Val{true},
+    initial_condition,
+    tspan,
+    params::FailureOfInhibition2025.WilsonCowanParameters{N},
+    solver,
+    kwargs
 ) where N
-    # Determine whether to use GPU
-    should_use_gpu = if use_gpu === nothing
-        CUDA.functional()
-    elseif use_gpu === true
-        if !CUDA.functional()
-            error("GPU acceleration requested but CUDA is not functional")
-        end
-        true
-    else
-        false
+    if !CUDA.functional()
+        error("GPU acceleration requested but CUDA is not functional")
     end
     
-    # If not using GPU, call the base implementation
-    if !should_use_gpu
-        # Call the base CPU implementation by constructing the problem directly
-        prob = ODEProblem(FailureOfInhibition2025.wcm1973!, initial_condition, tspan, params)
-        return solve(prob, solver; kwargs...)
-    end
-    
-    # GPU implementation
     # Transfer initial condition to GPU
     u0_gpu = CuArray(initial_condition)
     
@@ -132,6 +107,25 @@ function FailureOfInhibition2025.solve_model(
     )
     
     return sol_cpu
+end
+
+# Override for use_gpu=nothing (auto-detect)
+function FailureOfInhibition2025._solve_model_impl(
+    ::Val{nothing},
+    initial_condition,
+    tspan,
+    params::FailureOfInhibition2025.WilsonCowanParameters{N},
+    solver,
+    kwargs
+) where N
+    # Auto-detect: use GPU if CUDA is functional
+    if CUDA.functional()
+        return FailureOfInhibition2025._solve_model_impl(Val(true), initial_condition, tspan, params, solver, kwargs)
+    else
+        # Fall back to CPU
+        prob = ODEProblem(FailureOfInhibition2025.wcm1973!, initial_condition, tspan, params)
+        return solve(prob, solver; kwargs...)
+    end
 end
 
 """
