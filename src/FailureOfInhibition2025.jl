@@ -63,10 +63,6 @@ export WilsonCowanParameters, wcm1973!, population
 # Export simulation functions
 export solve_model, save_simulation_results, save_simulation_summary
 
-# Export GPU simulation functions (implemented in CUDA extension)
-function solve_model_gpu end
-export solve_model_gpu
-
 # Export bifurcation analysis functions (BifurcationKit integration)
 export create_bifurcation_problem, wcm_rhs!
 
@@ -76,11 +72,6 @@ export compute_sensitivity_indices
 export extract_parameters, reconstruct_parameters, ODEParameterWrapper
 export sobol_sensitivity_analysis, morris_sensitivity_analysis
 export create_parameter_builder, create_output_function
-
-# Export GPU sensitivity analysis functions (implemented in CUDA extension)
-function sobol_sensitivity_analysis_gpu end
-function morris_sensitivity_analysis_gpu end
-export sobol_sensitivity_analysis_gpu, morris_sensitivity_analysis_gpu
 
 # Export analysis functions
 export detect_traveling_peak, compute_decay_rate, compute_amplitude
@@ -92,10 +83,6 @@ export coordinates
 
 # Export optimization functions
 export TravelingWaveObjective, optimize_for_traveling_wave, _update_params
-
-# Export GPU optimization functions (implemented in CUDA extension)
-function optimize_for_traveling_wave_gpu end
-export optimize_for_traveling_wave_gpu
 
 # Export canonical model parameter functions
 export create_wcm1973_parameters, create_point_model_wcm1973

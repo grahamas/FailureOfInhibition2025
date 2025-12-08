@@ -8,9 +8,13 @@ using CSV
 using Statistics
 
 """
-    solve_model(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), kwargs...) where N
+    solve_model(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), use_gpu=nothing, kwargs...) where N
 
 Solve the Wilson-Cowan model using DifferentialEquations.jl.
+
+Automatically uses GPU acceleration if CUDA is available and functional, unless
+explicitly disabled with `use_gpu=false`. GPU computation is handled by the CUDA
+extension when available.
 
 # Arguments
 - `initial_condition`: Initial state array (shape depends on model type)
@@ -22,6 +26,10 @@ Solve the Wilson-Cowan model using DifferentialEquations.jl.
 
 # Keyword Arguments
 - `solver`: ODE solver algorithm (default: Tsit5())
+- `use_gpu`: Whether to use GPU acceleration (default: nothing = auto-detect)
+  - `nothing`: Automatically use GPU if CUDA is functional
+  - `true`: Force GPU usage (error if CUDA not available)
+  - `false`: Force CPU usage
 - `kwargs...`: Additional keyword arguments passed to `solve()`
   - `saveat`: Times at which to save the solution (default: automatic)
   - `reltol`: Relative tolerance (default: 1e-6)
@@ -60,7 +68,8 @@ params = WilsonCowanParameters{2}(
 
 A₀ = reshape([0.1, 0.1], 1, 2)
 tspan = (0.0, 100.0)
-sol = solve_model(A₀, tspan, params)
+sol = solve_model(A₀, tspan, params)  # Automatically uses GPU if available
+sol = solve_model(A₀, tspan, params, use_gpu=false)  # Force CPU
 ```
 
 ## Spatial model (1D with 2 populations)
@@ -87,7 +96,13 @@ tspan = (0.0, 100.0)
 sol = solve_model(A₀, tspan, params, saveat=0.1)
 ```
 """
-function solve_model(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), kwargs...) where N
+function solve_model(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), use_gpu=nothing, kwargs...) where N
+    # GPU dispatch is handled by CUDA extension when loaded
+    # This is the CPU fallback implementation
+    if use_gpu === true
+        error("GPU acceleration requested but CUDA extension not loaded. Install CUDA.jl to enable GPU support.")
+    end
+    
     # Create ODE problem
     prob = ODEProblem(wcm1973!, initial_condition, tspan, params)
     
