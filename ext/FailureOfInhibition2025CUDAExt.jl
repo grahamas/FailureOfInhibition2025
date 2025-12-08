@@ -73,7 +73,7 @@ function FailureOfInhibition2025._solve_model_impl(
     tspan,
     params::FailureOfInhibition2025.WilsonCowanParameters{N},
     solver,
-    kwargs
+    kwargs::NamedTuple
 ) where N
     if !CUDA.functional()
         error("GPU acceleration requested but CUDA is not functional")
@@ -116,7 +116,7 @@ function FailureOfInhibition2025._solve_model_impl(
     tspan,
     params::FailureOfInhibition2025.WilsonCowanParameters{N},
     solver,
-    kwargs
+    kwargs::NamedTuple
 ) where N
     # Auto-detect: use GPU if CUDA is functional
     if CUDA.functional()

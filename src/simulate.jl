@@ -104,7 +104,7 @@ function solve_model(initial_condition, tspan, params::WilsonCowanParameters{N};
     if use_gpu !== nothing
         # Try to use GPU-aware implementation
         # This will be overridden by CUDA extension if loaded
-        return _solve_model_impl(Val(use_gpu), initial_condition, tspan, params, solver, kwargs)
+        return _solve_model_impl(Val(use_gpu), initial_condition, tspan, params, solver, values(kwargs))
     end
     
     # Default CPU implementation when use_gpu is not specified
@@ -118,19 +118,19 @@ function solve_model(initial_condition, tspan, params::WilsonCowanParameters{N};
 end
 
 # Internal implementation dispatcher
-_solve_model_impl(::Val{false}, initial_condition, tspan, params, solver, kwargs) = begin
+_solve_model_impl(::Val{false}, initial_condition, tspan, params, solver, kwargs::NamedTuple) = begin
     # CPU implementation
     prob = ODEProblem(wcm1973!, initial_condition, tspan, params)
     solve(prob, solver; kwargs...)
 end
 
-_solve_model_impl(::Val{true}, initial_condition, tspan, params, solver, kwargs) = begin
+_solve_model_impl(::Val{true}, initial_condition, tspan, params, solver, kwargs::NamedTuple) = begin
     # GPU requested but extension not loaded
     error("GPU acceleration requested but CUDA extension not loaded. Install and load CUDA.jl to enable GPU support: using CUDA")
 end
 
 # Auto-detect version (extended by CUDA extension)
-_solve_model_impl(::Val{nothing}, initial_condition, tspan, params, solver, kwargs) = begin
+_solve_model_impl(::Val{nothing}, initial_condition, tspan, params, solver, kwargs::NamedTuple) = begin
     # When use_gpu=nothing and CUDA extension not loaded, use CPU
     prob = ODEProblem(wcm1973!, initial_condition, tspan, params)
     solve(prob, solver; kwargs...)
