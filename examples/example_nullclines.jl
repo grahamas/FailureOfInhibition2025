@@ -3,15 +3,17 @@
 """
 Illustrate nullclines for Wilson-Cowan Model.
 
-This script demonstrates phase space analysis with nullclines for the oscillatory mode
-from Wilson & Cowan (1973). Nullclines show where each population's rate of change is zero,
+This script demonstrates phase space analysis with nullclines for an oscillatory
+Wilson-Cowan model. Nullclines show where each population's rate of change is zero,
 revealing fixed points and the structure of phase space dynamics.
 
 The nullclines are curves in (E, I) phase space where:
 - E-nullcline: dE/dt = 0 (vertical flow along nullcline)
 - I-nullcline: dI/dt = 0 (horizontal flow along nullcline)
 
-Fixed points occur where nullclines intersect.
+Fixed points occur where nullclines intersect. This example uses parameters
+tuned to show interesting nullcline shapes with a fixed point at moderate
+activity levels.
 """
 
 using FailureOfInhibition2025
@@ -27,7 +29,7 @@ catch
 end
 
 println("\n" * "="^70)
-println("Wilson-Cowan Model: Nullclines for Oscillatory Mode")
+println("Wilson-Cowan Model: Nullcline Analysis")
 println("="^70)
 
 #=============================================================================
@@ -106,19 +108,57 @@ end
 Main Analysis: Oscillatory Mode
 =============================================================================#
 
-println("\n### Oscillatory Mode (Thalamus) ###\n")
+println("\n### Wilson-Cowan Model with Interesting Nullclines ###\n")
 
-# Create oscillatory mode parameters
-params_osc = create_point_model_wcm1973(:oscillatory)
+# Create custom parameters that produce interesting nullcline shapes
+# with a fixed point at moderate activity levels
+lattice = PointLattice()
+
+# Adjusted parameters for better nullcline visualization
+# Parameters chosen to create interesting nullcline shapes with
+# a fixed point at moderate activity and sustained oscillations
+vₑ, θₑ = 2.0, 0.4   # Sigmoid steepness and threshold for E
+vᵢ, θᵢ = 2.0, 0.3   # Sigmoid steepness and threshold for I
+bₑₑ = 2.0           # E → E (strong excitatory self-connection)
+bᵢₑ = 1.8           # I → E (inhibitory to excitatory)
+bₑᵢ = 3.5           # E → I (strong excitatory to inhibitory)
+bᵢᵢ = 0.1           # I → I (very weak inhibitory self-connection)
+
+# Create nonlinearity
+nonlinearity_e = SigmoidNonlinearity(a=vₑ, θ=θₑ)
+nonlinearity_i = SigmoidNonlinearity(a=vᵢ, θ=θᵢ)
+nonlinearity = (nonlinearity_e, nonlinearity_i)
+
+# Create connectivity
+conn_ee = ScalarConnectivity(bₑₑ)
+conn_ei = ScalarConnectivity(-bᵢₑ)
+conn_ie = ScalarConnectivity(bₑᵢ)
+conn_ii = ScalarConnectivity(-bᵢᵢ)
+
+connectivity = ConnectivityMatrix{2}([
+    conn_ee conn_ei;
+    conn_ie conn_ii
+])
+
+# Create parameters
+params_osc = WilsonCowanParameters{2}(
+    α = (1.0, 1.0),
+    β = (1.0, 1.0),
+    τ = (10.0, 10.0),
+    connectivity = connectivity,
+    nonlinearity = nonlinearity,
+    stimulus = nothing,
+    lattice = lattice,
+    pop_names = ("E", "I")
+)
 
 println("Model parameters:")
 println("  α_E = $(params_osc.α[1]), α_I = $(params_osc.α[2])")
 println("  β_E = $(params_osc.β[1]), β_I = $(params_osc.β[2])")
 println("  τ_E = $(params_osc.τ[1]), τ_I = $(params_osc.τ[2])")
-println("  b_EE = $(params_osc.connectivity[1,1].weight)")
-println("  b_EI = $(params_osc.connectivity[1,2].weight)")
-println("  b_IE = $(params_osc.connectivity[2,1].weight)")
-println("  b_II = $(params_osc.connectivity[2,2].weight)")
+println("  b_EE = $bₑₑ, b_EI = -$bᵢₑ")
+println("  b_IE = $bₑᵢ, b_II = -$bᵢᵢ")
+println("  θ_E = $θₑ, θ_I = $θᵢ")
 
 # Compute nullclines using grid-based approach for contour plotting
 println("\nComputing nullcline fields...")
@@ -242,7 +282,7 @@ scatter!(p, [fixed_E], [fixed_I],
 # Format plot
 xlabel!(p, "E Activity (Excitatory)")
 ylabel!(p, "I Activity (Inhibitory)")
-title!(p, "Phase Portrait with Nullclines\nOscillatory Mode (WCM 1973)")
+title!(p, "Phase Portrait with Nullclines\nWilson-Cowan Model")
 xlims!(p, 0, 0.5)
 ylims!(p, 0, 0.5)
 plot!(p, legend=:topright)
@@ -282,7 +322,7 @@ println("Summary")
 println("="^70)
 println()
 println("This example demonstrates phase space analysis with nullclines for")
-println("the oscillatory mode from Wilson & Cowan (1973):")
+println("an oscillatory Wilson-Cowan model:")
 println()
 println("Key observations:")
 println("  • E-nullcline (blue): curve where dE/dt = 0")
