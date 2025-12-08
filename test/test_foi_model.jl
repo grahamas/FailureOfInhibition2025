@@ -34,15 +34,20 @@ using FailureOfInhibition2025
             lattice = lattice
         )
         
-        @test params isa FailureOfInhibitionParameters
+        # FoI parameters are actually WilsonCowanParameters
+        @test params isa WilsonCowanParameters{Float64, 2}
         @test params.α == (1.0, 1.5)
         @test params.β == (1.0, 1.0)
         @test params.τ == (10.0, 8.0)
-        @test params.nonlinearity_E isa RectifiedZeroedSigmoidNonlinearity
-        @test params.nonlinearity_I isa DifferenceOfSigmoidsNonlinearity
+        @test params.pop_names == ("E", "I")
+        # Nonlinearity is stored as a tuple
+        @test params.nonlinearity isa Tuple
+        @test length(params.nonlinearity) == 2
+        @test params.nonlinearity[1] isa RectifiedZeroedSigmoidNonlinearity
+        @test params.nonlinearity[2] isa DifferenceOfSigmoidsNonlinearity
     end
     
-    @testset "FoI to WCM Conversion" begin
+    @testset "FoI Uses WilsonCowanParameters" begin
         lattice = CompactLattice(extent=(10.0,), n_points=(21,))
         
         conn_ee = GaussianConnectivityParameter(1.0, (2.0,))
@@ -68,15 +73,14 @@ using FailureOfInhibition2025
             lattice = lattice
         )
         
-        wcm_params = foi_to_wcm(params)
-        
-        @test wcm_params isa WilsonCowanParameters{Float64, 2}
-        @test wcm_params.α == (1.0, 1.5)
-        @test wcm_params.pop_names == ("E", "I")
-        @test wcm_params.nonlinearity isa Tuple
-        @test length(wcm_params.nonlinearity) == 2
-        @test wcm_params.nonlinearity[1] isa RectifiedZeroedSigmoidNonlinearity
-        @test wcm_params.nonlinearity[2] isa DifferenceOfSigmoidsNonlinearity
+        # FailureOfInhibitionParameters returns WilsonCowanParameters directly
+        @test params isa WilsonCowanParameters{Float64, 2}
+        @test params.α == (1.0, 1.5)
+        @test params.pop_names == ("E", "I")
+        @test params.nonlinearity isa Tuple
+        @test length(params.nonlinearity) == 2
+        @test params.nonlinearity[1] isa RectifiedZeroedSigmoidNonlinearity
+        @test params.nonlinearity[2] isa DifferenceOfSigmoidsNonlinearity
     end
     
     @testset "FoI Dynamics" begin
@@ -179,9 +183,48 @@ using FailureOfInhibition2025
             lattice = lattice
         )
         
-        @test params.nonlinearity_I.a_activating == 5.0
-        @test params.nonlinearity_I.θ_activating == 0.3
-        @test params.nonlinearity_I.a_failing == 3.0
-        @test params.nonlinearity_I.θ_failing == 0.7
+        # Access inhibitory nonlinearity from tuple (second element)
+        @test params.nonlinearity[2].a_activating == 5.0
+        @test params.nonlinearity[2].θ_activating == 0.3
+        @test params.nonlinearity[2].a_failing == 3.0
+        @test params.nonlinearity[2].θ_failing == 0.7
+    end
+    
+    @testset "FoI and WCM are Compatible" begin
+        lattice = CompactLattice(extent=(10.0,), n_points=(21,))
+        
+        conn_ee = GaussianConnectivityParameter(1.0, (2.0,))
+        conn_ei = GaussianConnectivityParameter(-0.5, (1.5,))
+        conn_ie = GaussianConnectivityParameter(0.8, (2.5,))
+        conn_ii = GaussianConnectivityParameter(-0.3, (1.0,))
+        connectivity = ConnectivityMatrix{2}([
+            conn_ee conn_ei;
+            conn_ie conn_ii
+        ])
+        
+        params = FailureOfInhibitionParameters(
+            α = (1.0, 1.5),
+            β = (1.0, 1.0),
+            τ = (10.0, 8.0),
+            connectivity = connectivity,
+            nonlinearity_E = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5),
+            nonlinearity_I = DifferenceOfSigmoidsNonlinearity(
+                a_activating=5.0, θ_activating=0.3,
+                a_failing=3.0, θ_failing=0.7
+            ),
+            stimulus = nothing,
+            lattice = lattice
+        )
+        
+        # Test that both foi! and wcm1973! work with the same parameters
+        A = rand(21, 2) .* 0.5
+        dA_foi = zeros(21, 2)
+        dA_wcm = zeros(21, 2)
+        
+        foi!(dA_foi, A, params, 0.0)
+        wcm1973!(dA_wcm, A, params, 0.0)
+        
+        # They should produce identical results
+        @test dA_foi ≈ dA_wcm
     end
 end

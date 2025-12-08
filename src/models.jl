@@ -191,26 +191,29 @@ end
 ############## Failure of Inhibition (FoI) Model ##############
 
 """
-    FailureOfInhibitionParameters{T}
+    FailureOfInhibitionParameters(; α, β, τ, connectivity, nonlinearity_E, nonlinearity_I, stimulus, lattice)
 
-Parameters for a Failure of Inhibition (FoI) model - a specialized 2-population Wilson-Cowan model.
+Construct WilsonCowanParameters for a Failure of Inhibition (FoI) model.
 
-An FoI model is a Wilson-Cowan model with two populations (Excitatory and Inhibitory) where:
+An FoI model is a 2-population Wilson-Cowan model where:
 - The excitatory population uses a standard sigmoid nonlinearity
 - The inhibitory population uses a non-monotonic difference of sigmoids nonlinearity
 
 This creates dynamics where inhibition can fail at higher activity levels, leading to
 characteristic FoI behaviors such as traveling waves and sustained activity patterns.
 
-# Fields
-- `α::NTuple{2,T}`: Decay rates for [E, I] populations
-- `β::NTuple{2,T}`: Saturation coefficients for [E, I] populations (typically 1.0)
-- `τ::NTuple{2,T}`: Time constants for [E, I] populations
+# Arguments
+- `α`: Decay rates for [E, I] populations
+- `β`: Saturation coefficients for [E, I] populations (typically 1.0)
+- `τ`: Time constants for [E, I] populations
 - `connectivity`: Connectivity parameter (defines how populations interact)
 - `nonlinearity_E`: Nonlinearity for excitatory population (SigmoidNonlinearity or RectifiedZeroedSigmoidNonlinearity)
 - `nonlinearity_I`: Nonlinearity for inhibitory population (DifferenceOfSigmoidsNonlinearity)
 - `stimulus`: Stimulus parameter (defines external inputs)
 - `lattice`: Spatial lattice for the model
+
+# Returns
+WilsonCowanParameters{T,2} with per-population nonlinearities as a tuple (nonlinearity_E, nonlinearity_I)
 
 # Example
 
@@ -244,68 +247,39 @@ params = FailureOfInhibitionParameters(
     stimulus = nothing,
     lattice = lattice
 )
+
+# Use with wcm1973! (or foi! which is an alias)
+wcm1973!(dA, A, params, 0.0)
 ```
 """
-struct FailureOfInhibitionParameters{T}
-    α::NTuple{2,T}
-    β::NTuple{2,T}
-    τ::NTuple{2,T}
-    connectivity
-    nonlinearity_E
-    nonlinearity_I
-    stimulus
-    lattice
-end
-
-"""
-    FailureOfInhibitionParameters(; α, β, τ, connectivity, nonlinearity_E, nonlinearity_I, stimulus, lattice)
-
-Construct FailureOfInhibitionParameters with keyword arguments.
-
-Automatically converts to WilsonCowanParameters{2} with per-population nonlinearities.
-"""
 function FailureOfInhibitionParameters(; α, β, τ, connectivity, nonlinearity_E, nonlinearity_I, stimulus, lattice)
-    T = eltype(α)
-    # Store parameters
-    foi_params = FailureOfInhibitionParameters{T}(α, β, τ, connectivity, nonlinearity_E, nonlinearity_I, stimulus, lattice)
-    return foi_params
-end
-
-"""
-    foi_to_wcm(params::FailureOfInhibitionParameters{T}) where T
-
-Convert FailureOfInhibitionParameters to WilsonCowanParameters with per-population nonlinearities.
-"""
-function foi_to_wcm(params::FailureOfInhibitionParameters{T}) where T
     # Create tuple of nonlinearities: (E, I)
-    nonlinearity = (params.nonlinearity_E, params.nonlinearity_I)
+    nonlinearity = (nonlinearity_E, nonlinearity_I)
     
-    # Prepare connectivity
-    prepared_connectivity = prepare_connectivity(params.connectivity, params.lattice)
-    
-    return WilsonCowanParameters{T,2}(
-        params.α,
-        params.β,
-        params.τ,
-        prepared_connectivity,
-        nonlinearity,
-        params.stimulus,
-        params.lattice,
-        ("E", "I")
+    # Use WilsonCowanParameters constructor which will prepare connectivity
+    return WilsonCowanParameters{2}(
+        α = α,
+        β = β,
+        τ = τ,
+        connectivity = connectivity,
+        nonlinearity = nonlinearity,
+        stimulus = stimulus,
+        lattice = lattice,
+        pop_names = ("E", "I")
     )
 end
 
 """
-    foi!(dA, A, p::FailureOfInhibitionParameters, t)
+    foi!(dA, A, p::WilsonCowanParameters, t)
 
 Failure of Inhibition model differential equation.
 
-This is a convenience wrapper that converts FoI parameters to WCM parameters
-and calls wcm1973!. The inhibitory population uses a non-monotonic difference
-of sigmoids nonlinearity, while the excitatory population uses a standard nonlinearity.
+This is an alias for wcm1973! that can be used for clarity when working with FoI models.
+The inhibitory population (second population) should use a non-monotonic difference of sigmoids 
+nonlinearity, while the excitatory population (first population) uses a standard nonlinearity.
+
+# Note
+There is no separate FoI parameter type. FoI models use WilsonCowanParameters with 
+per-population nonlinearities specified as a tuple.
 """
-function foi!(dA, A, p::FailureOfInhibitionParameters, t)
-    # Convert to WilsonCowanParameters and call wcm1973!
-    wcm_params = foi_to_wcm(p)
-    wcm1973!(dA, A, wcm_params, t)
-end
+foi!(dA, A, p::WilsonCowanParameters, t) = wcm1973!(dA, A, p, t)
