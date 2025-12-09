@@ -37,66 +37,56 @@ Nullcline Computation Functions
 =============================================================================#
 
 """
-    compute_dE_dt_field(E_grid, I_grid, params; stimulus_value=0.0)
+    compute_dE_dt_field(E_grid, I_grid, params)
 
 Compute dE/dt on a grid of (E, I) values for E-nullcline plotting.
 The E-nullcline is the zero-level contour of this field.
+Uses wcm1973! to compute derivatives properly.
 """
-function compute_dE_dt_field(E_grid, I_grid, params; stimulus_value=0.0)
-    # Extract parameters
-    α_E = params.α[1]
-    β_E = params.β[1]
-    τ_E = params.τ[1]
-    
-    # Get connectivity weights
-    conn = params.connectivity
-    b_EE = conn[1,1].weight  # E → E
-    b_EI = conn[1,2].weight  # I → E
-    
-    # Get nonlinearity for E population
-    nonlin_E = params.nonlinearity isa Tuple ? params.nonlinearity[1] : params.nonlinearity
-    
-    # Compute dE/dt at each grid point
+function compute_dE_dt_field(E_grid, I_grid, params)
+    # Compute dE/dt at each grid point using wcm1973!
     dE_dt = similar(E_grid)
     for i in eachindex(E_grid)
         E = E_grid[i]
         I = I_grid[i]
-        input = stimulus_value + b_EE * E + b_EI * I
-        f_val = 1.0 / (1.0 + exp(-nonlin_E.a * (input - nonlin_E.θ)))
-        dE_dt[i] = (-α_E * E + β_E * (1 - E) * f_val) / τ_E
+        
+        # Create state array for this point
+        A = reshape([E, I], 1, 2)
+        dA = zeros(1, 2)
+        
+        # Use wcm1973! to compute derivatives
+        wcm1973!(dA, A, params, 0.0)
+        
+        # Extract dE/dt
+        dE_dt[i] = dA[1, 1]
     end
     
     return dE_dt
 end
 
 """
-    compute_dI_dt_field(E_grid, I_grid, params; stimulus_value=0.0)
+    compute_dI_dt_field(E_grid, I_grid, params)
 
 Compute dI/dt on a grid of (E, I) values for I-nullcline plotting.
 The I-nullcline is the zero-level contour of this field.
+Uses wcm1973! to compute derivatives properly.
 """
-function compute_dI_dt_field(E_grid, I_grid, params; stimulus_value=0.0)
-    # Extract parameters
-    α_I = params.α[2]
-    β_I = params.β[2]
-    τ_I = params.τ[2]
-    
-    # Get connectivity weights
-    conn = params.connectivity
-    b_IE = conn[2,1].weight  # E → I
-    b_II = conn[2,2].weight  # I → I
-    
-    # Get nonlinearity for I population
-    nonlin_I = params.nonlinearity isa Tuple ? params.nonlinearity[2] : params.nonlinearity
-    
-    # Compute dI/dt at each grid point
+function compute_dI_dt_field(E_grid, I_grid, params)
+    # Compute dI/dt at each grid point using wcm1973!
     dI_dt = similar(E_grid)
     for i in eachindex(E_grid)
         E = E_grid[i]
         I = I_grid[i]
-        input = stimulus_value + b_IE * E + b_II * I
-        f_val = 1.0 / (1.0 + exp(-nonlin_I.a * (input - nonlin_I.θ)))
-        dI_dt[i] = (-α_I * I + β_I * (1 - I) * f_val) / τ_I
+        
+        # Create state array for this point
+        A = reshape([E, I], 1, 2)
+        dA = zeros(1, 2)
+        
+        # Use wcm1973! to compute derivatives
+        wcm1973!(dA, A, params, 0.0)
+        
+        # Extract dI/dt
+        dI_dt[i] = dA[1, 2]
     end
     
     return dI_dt
@@ -124,9 +114,9 @@ bᵢₑ = 1.8           # I → E (inhibitory to excitatory)
 bₑᵢ = 3.5           # E → I (strong excitatory to inhibitory)
 bᵢᵢ = 0.1           # I → I (very weak inhibitory self-connection)
 
-# Create nonlinearity
-nonlinearity_e = SigmoidNonlinearity(a=vₑ, θ=θₑ)
-nonlinearity_i = SigmoidNonlinearity(a=vᵢ, θ=θᵢ)
+# Create nonlinearity - use RectifiedZeroedSigmoidNonlinearity
+nonlinearity_e = RectifiedZeroedSigmoidNonlinearity(a=vₑ, θ=θₑ)
+nonlinearity_i = RectifiedZeroedSigmoidNonlinearity(a=vᵢ, θ=θᵢ)
 nonlinearity = (nonlinearity_e, nonlinearity_i)
 
 # Create connectivity
@@ -169,9 +159,9 @@ I_range = range(0.0, 0.5, length=200)
 E_grid = [E for E in E_range, I in I_range]
 I_grid = [I for E in E_range, I in I_range]
 
-# Compute dE/dt and dI/dt fields
-dE_dt_field = compute_dE_dt_field(E_grid, I_grid, params_osc, stimulus_value=0.0)
-dI_dt_field = compute_dI_dt_field(E_grid, I_grid, params_osc, stimulus_value=0.0)
+# Compute dE/dt and dI/dt fields using wcm1973!
+dE_dt_field = compute_dE_dt_field(E_grid, I_grid, params_osc)
+dI_dt_field = compute_dI_dt_field(E_grid, I_grid, params_osc)
 
 println("✓ Nullcline fields computed")
 
