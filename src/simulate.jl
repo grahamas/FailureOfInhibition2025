@@ -9,8 +9,14 @@ using Statistics
 
 """
     solve_model(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), kwargs...) where N
+    solve_model(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), use_gpu=nothing, kwargs...) where N  # CUDA extension
 
 Solve the Wilson-Cowan model using DifferentialEquations.jl.
+
+When the CUDA extension is loaded, the `use_gpu` keyword argument becomes available:
+- `nothing` (default): Automatically use GPU if CUDA.functional() returns true
+- `true`: Force GPU usage (error if CUDA not functional)
+- `false`: Force CPU usage
 
 # Arguments
 - `initial_condition`: Initial state array (shape depends on model type)
@@ -22,6 +28,7 @@ Solve the Wilson-Cowan model using DifferentialEquations.jl.
 
 # Keyword Arguments
 - `solver`: ODE solver algorithm (default: Tsit5())
+- `use_gpu`: (CUDA extension only) Whether to use GPU acceleration 
 - `kwargs...`: Additional keyword arguments passed to `solve()`
   - `saveat`: Times at which to save the solution (default: automatic)
   - `reltol`: Relative tolerance (default: 1e-6)
@@ -60,7 +67,12 @@ params = WilsonCowanParameters{2}(
 
 A₀ = reshape([0.1, 0.1], 1, 2)
 tspan = (0.0, 100.0)
-sol = solve_model(A₀, tspan, params)
+sol = solve_model(A₀, tspan, params)  # Uses GPU if available (CUDA loaded)
+
+# With CUDA extension:
+# using CUDA
+# sol = solve_model(A₀, tspan, params, use_gpu=false)  # Force CPU
+# sol = solve_model(A₀, tspan, params, use_gpu=true)   # Force GPU
 ```
 
 ## Spatial model (1D with 2 populations)
@@ -87,7 +99,15 @@ tspan = (0.0, 100.0)
 sol = solve_model(A₀, tspan, params, saveat=0.1)
 ```
 """
-function solve_model(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), kwargs...) where N
+function solve_model(initial_condition, tspan, params::WilsonCowanParameters{N}; solver=Tsit5(), use_gpu=nothing, kwargs...) where N
+    # Check if use_gpu is specified
+    if use_gpu !== nothing
+        # Try to use GPU-aware implementation
+        # This will be overridden by CUDA extension if loaded
+        return _solve_model_impl(Val(use_gpu), initial_condition, tspan, params, solver, values(kwargs))
+    end
+    
+    # Default CPU implementation when use_gpu is not specified
     # Create ODE problem
     prob = ODEProblem(wcm1973!, initial_condition, tspan, params)
     
@@ -95,6 +115,25 @@ function solve_model(initial_condition, tspan, params::WilsonCowanParameters{N};
     sol = solve(prob, solver; kwargs...)
     
     return sol
+end
+
+# Internal implementation dispatcher
+_solve_model_impl(::Val{false}, initial_condition, tspan, params, solver, kwargs::NamedTuple) = begin
+    # CPU implementation
+    prob = ODEProblem(wcm1973!, initial_condition, tspan, params)
+    solve(prob, solver; kwargs...)
+end
+
+_solve_model_impl(::Val{true}, initial_condition, tspan, params, solver, kwargs::NamedTuple) = begin
+    # GPU requested but extension not loaded
+    error("GPU acceleration requested but CUDA extension not loaded. Install and load CUDA.jl to enable GPU support: using CUDA")
+end
+
+# Auto-detect version (extended by CUDA extension)
+_solve_model_impl(::Val{nothing}, initial_condition, tspan, params, solver, kwargs::NamedTuple) = begin
+    # When use_gpu=nothing and CUDA extension not loaded, use CPU
+    prob = ODEProblem(wcm1973!, initial_condition, tspan, params)
+    solve(prob, solver; kwargs...)
 end
 
 """

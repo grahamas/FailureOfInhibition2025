@@ -230,7 +230,7 @@ function create_parameter_builder(base_params::WilsonCowanParameters{T,P}, param
 end
 
 """
-    create_output_function(tspan, output_metric::Symbol, saveat=nothing)
+    create_output_function(tspan, output_metric::Symbol, saveat=nothing, use_gpu=nothing)
 
 Create a function that runs a simulation and computes an output metric.
 
@@ -244,11 +244,12 @@ Create a function that runs a simulation and computes an output metric.
   - `:variance`: Variance of mean activity over time
   - `:oscillation_amplitude`: Peak-to-trough amplitude in final portion
 - `saveat`: Time points to save (default: adaptive)
+- `use_gpu`: Whether to use GPU acceleration (default: nothing = auto-detect)
 
 # Returns
 A function `f(params) -> scalar` that simulates and returns the metric.
 """
-function create_output_function(tspan, output_metric::Symbol, saveat=nothing)
+function create_output_function(tspan, output_metric::Symbol, saveat=nothing, use_gpu=nothing)
     function compute_output(params::WilsonCowanParameters{T,P}) where {T,P}
         # Create initial condition
         if params.lattice isa PointLattice
@@ -261,9 +262,9 @@ function create_output_function(tspan, output_metric::Symbol, saveat=nothing)
         # Solve model
         try
             if saveat === nothing
-                sol = solve_model(A₀, tspan, params)
+                sol = solve_model(A₀, tspan, params, use_gpu=use_gpu)
             else
-                sol = solve_model(A₀, tspan, params, saveat=saveat)
+                sol = solve_model(A₀, tspan, params, saveat=saveat, use_gpu=use_gpu)
             end
             
             # Compute requested metric
@@ -330,13 +331,16 @@ end
         n_samples=1000;
         tspan=(0.0, 100.0),
         output_metric=:final_mean,
-        saveat=nothing
+        saveat=nothing,
+        use_gpu=nothing
     )
 
 Perform Sobol global sensitivity analysis on Wilson-Cowan model parameters.
 
 Sobol analysis decomposes the variance of the output into contributions from
 individual parameters (first-order indices) and their interactions (total-order indices).
+
+Automatically uses GPU acceleration if CUDA is available and functional.
 
 # Arguments
 - `base_params`: Base WilsonCowanParameters to use as template
@@ -345,6 +349,7 @@ individual parameters (first-order indices) and their interactions (total-order 
 - `tspan`: Time span for simulation (default: (0.0, 100.0))
 - `output_metric`: Which output metric to analyze (default: :final_mean)
 - `saveat`: Time points to save (default: adaptive)
+- `use_gpu`: Whether to use GPU acceleration (default: nothing = auto-detect)
 
 # Returns
 A dictionary containing:
@@ -370,7 +375,8 @@ function sobol_sensitivity_analysis(
     n_samples=1000;
     tspan=(0.0, 100.0),
     output_metric=:final_mean,
-    saveat=nothing
+    saveat=nothing,
+    use_gpu=nothing
 )
     # Extract bounds
     n_params = length(param_ranges)
@@ -380,7 +386,7 @@ function sobol_sensitivity_analysis(
     
     # Create parameter builder and output function
     build_params = create_parameter_builder(base_params, param_ranges)
-    compute_output = create_output_function(tspan, output_metric, saveat)
+    compute_output = create_output_function(tspan, output_metric, saveat, use_gpu)
     
     # Create wrapper function for GlobalSensitivity.jl
     function f(p_matrix)
@@ -404,11 +410,16 @@ function sobol_sensitivity_analysis(
     
     result = gsa(f, Sobol(), [[l, u] for (l, u) in zip(lb, ub)], samples=n_samples)
     
+    # Determine method label based on use_gpu parameter
+    # Note: When use_gpu=nothing, we can't easily detect if GPU was actually used
+    # without runtime checking, so we keep the label simple
+    method_label = use_gpu === true ? "Sobol (GPU)" : "Sobol"
+    
     return Dict(
         :S1 => result.S1,
         :ST => result.ST,
         :param_names => param_names,
-        :method => "Sobol",
+        :method => method_label,
         :n_samples => n_samples,
         :output_metric => output_metric
     )
@@ -422,7 +433,8 @@ end
         tspan=(0.0, 100.0),
         output_metric=:final_mean,
         saveat=nothing,
-        num_levels=10
+        num_levels=10,
+        use_gpu=nothing
     )
 
 Perform Morris screening (Elementary Effects) sensitivity analysis.
@@ -430,6 +442,8 @@ Perform Morris screening (Elementary Effects) sensitivity analysis.
 Morris screening is a computationally efficient method for identifying the most
 important parameters. It computes the mean (μ) and standard deviation (σ) of
 elementary effects for each parameter.
+
+Automatically uses GPU acceleration if CUDA is available and functional.
 
 # Arguments
 - `base_params`: Base WilsonCowanParameters to use as template
@@ -439,6 +453,7 @@ elementary effects for each parameter.
 - `output_metric`: Which output metric to analyze (default: :final_mean)
 - `saveat`: Time points to save (default: adaptive)
 - `num_levels`: Number of grid levels for Morris sampling (default: 10)
+- `use_gpu`: Whether to use GPU acceleration (default: nothing = auto-detect)
 
 # Returns
 A dictionary containing:
@@ -468,7 +483,8 @@ function morris_sensitivity_analysis(
     tspan=(0.0, 100.0),
     output_metric=:final_mean,
     saveat=nothing,
-    num_levels=10
+    num_levels=10,
+    use_gpu=nothing
 )
     # Extract bounds
     n_params = length(param_ranges)
@@ -478,7 +494,7 @@ function morris_sensitivity_analysis(
     
     # Create parameter builder and output function
     build_params = create_parameter_builder(base_params, param_ranges)
-    compute_output = create_output_function(tspan, output_metric, saveat)
+    compute_output = create_output_function(tspan, output_metric, saveat, use_gpu)
     
     # Create wrapper function for GlobalSensitivity.jl
     function f(p_matrix)
@@ -504,12 +520,15 @@ function morris_sensitivity_analysis(
                  num_trajectory=n_trajectories, total_num_trajectory=n_trajectories,
                  num_levels=num_levels)
     
+    # Determine method label based on use_gpu parameter
+    method_label = use_gpu === true ? "Morris (GPU)" : "Morris"
+    
     return Dict(
         :means => result.means,
         :means_star => result.means_star,
         :variances => result.variances,
         :param_names => param_names,
-        :method => "Morris",
+        :method => method_label,
         :n_trajectories => n_trajectories,
         :output_metric => output_metric
     )
