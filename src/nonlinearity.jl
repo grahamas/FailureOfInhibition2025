@@ -9,8 +9,7 @@
 The sigmoid function: 1/(1 + exp(-a*(x - theta)))
 where a describes the slope's steepness and theta describes translation of the slope's center.
 
-**Important**: This function is inherently rectified (always positive) with range (0, 1).
-It never returns negative values, ensuring that firing rates remain non-negative.
+This function has range (0, 1) and is always positive.
 """
 function simple_sigmoid(x, a, theta)
     1.0 / (1 + exp(-a * (x - theta)))
@@ -22,13 +21,11 @@ end
 A rectified version of the zeroed sigmoid function.
 Computes max(0, sigmoid(x) - sigmoid(0)), ensuring the function is zero at x=0.
 
-**Warning**: At x=0, this function returns 0, which means activity cannot increase from zero.
-This violates the Wilson-Cowan model requirement that dE/dt should be positive at E=0 when
-driven by the nonlinearity. Use `simple_sigmoid` (via `SigmoidNonlinearity`) for standard
-Wilson-Cowan dynamics where activity can grow from zero.
+This ensures that when all activity is zero (A=0), there is no change in activity (dA/dt=0),
+which is the biologically correct behavior: if there are no neurons firing, there should be
+no change in activity.
 
 In practice, we use rectified sigmoid functions because firing rates cannot be negative.
-However, `simple_sigmoid` is already always positive (range 0 to 1), so it's inherently rectified.
 """
 function rectified_zeroed_sigmoid(x, a, theta)
     zeroed = simple_sigmoid(x, a, theta) - simple_sigmoid(0.0, a, theta)
@@ -63,12 +60,11 @@ end
 Simple sigmoid nonlinearity parameter type with slope a and threshold theta.
 
 This nonlinearity uses `simple_sigmoid(x, a, θ) = 1/(1 + exp(-a*(x-θ)))`, which has
-range (0, 1) and is **always positive** (inherently rectified). This ensures that:
-- Firing rates never become negative
-- At A=0, the nonlinearity output is positive, allowing activity to grow from zero
-- The Wilson-Cowan dynamics are well-behaved: as A → 0, dA/dt → β*sigmoid(0) > 0
+range (0, 1) and is always positive.
 
-This is the recommended nonlinearity for standard Wilson-Cowan models.
+**Note**: This nonlinearity is NOT zero at A=0, which means dA/dt ≠ 0 even when activity is zero.
+For biologically realistic models where dA/dt should be zero when no neurons are firing,
+use `RectifiedZeroedSigmoidNonlinearity` instead.
 """
 struct SigmoidNonlinearity{T}
     a::T
@@ -85,17 +81,12 @@ Rectified zeroed sigmoid nonlinearity parameter type with slope a and threshold 
 
 This nonlinearity uses `max(0, sigmoid(x) - sigmoid(0))`, which is zero at x=0.
 
-**Warning**: At A=0, this returns 0, which means dA/dt = 0 and activity cannot grow from zero.
-This violates a key property of the Wilson-Cowan model stated in the original papers:
-as activity approaches zero, the derivative should be dominated by the (positive) nonlinearity,
-not locked at zero. Use `SigmoidNonlinearity` for standard Wilson-Cowan dynamics.
+This ensures the biologically correct behavior: when all activity is zero (A=0), there is
+no change in activity (dA/dt = 0). If there are no neurons firing, there should be no change
+in activity. This is the **recommended nonlinearity** for Wilson-Cowan models.
 
-This nonlinearity may be useful for specialized nullcline analysis where S(0) = 0 is desired,
-but it should not be used for general simulations where activity needs to grow from small values.
-
-In practice, we use rectified sigmoid functions because firing rates cannot be negative.
-However, `simple_sigmoid` (used by `SigmoidNonlinearity`) is already always positive,
-so it provides the necessary rectification without the zero-crossing issue.
+The rectification (max with 0) ensures firing rates cannot be negative, maintaining
+biological realism.
 """
 struct RectifiedZeroedSigmoidNonlinearity{T}
     a::T

@@ -404,8 +404,8 @@ end
 end
 
 @testset "Rectification Properties" begin
-    @testset "SigmoidNonlinearity is Always Positive" begin
-        # Test that simple_sigmoid is always positive (inherently rectified)
+    @testset "SimpleSigmoid is Always Positive" begin
+        # Test that simple_sigmoid is always positive (always in range 0 to 1)
         a, θ = 2.0, 0.5
         
         # Test at various points including zero and negative values
@@ -417,8 +417,7 @@ end
             @test 0.0 < result < 1.0  # In range (0, 1)
         end
         
-        # Critical test: at A=0, sigmoid should be positive
-        # This ensures activity can grow from zero in Wilson-Cowan dynamics
+        # At A=0, sigmoid is positive (non-zero)
         sig_at_zero = simple_sigmoid(0.0, a, θ)
         @test sig_at_zero > 0.0
         # Verify against computed value: sigmoid(0, a=2.0, θ=0.5) = 1/(1 + exp(-2.0*(-0.5)))
@@ -433,14 +432,14 @@ end
         result_at_zero = rectified_zeroed_sigmoid(0.0, a, θ)
         @test result_at_zero == 0.0  # Exactly zero
         
-        # This is a problem for Wilson-Cowan dynamics!
+        # This is the biologically correct behavior:
         # At A=0, the nonlinearity returns 0, so dA/dt = 0
-        # and activity cannot increase from zero
+        # No neurons firing means no change in activity
     end
     
-    @testset "Activity Growth from Zero with SigmoidNonlinearity" begin
-        # Test that Wilson-Cowan dynamics allow activity to grow from A=0
-        # when using SigmoidNonlinearity
+    @testset "Activity Growth from Zero with SigmoidNonlinearity (Non-zero at A=0)" begin
+        # Test that Wilson-Cowan dynamics with SigmoidNonlinearity
+        # have dA/dt ≠ 0 at A=0 (not biologically realistic)
         
         lattice = PointLattice()
         params = WilsonCowanParameters{1}(
@@ -459,7 +458,7 @@ end
         dA_at_zero = zeros(1, 1)
         wcm1973!(dA_at_zero, A_zero, params, 0.0)
         
-        # dA/dt should be positive at A=0
+        # dA/dt is positive at A=0 (activity changes even with no neurons firing)
         @test dA_at_zero[1] > 0.0
         
         # Test at very small A
@@ -471,9 +470,9 @@ end
         @test dA_at_small[1] > 0.0
     end
     
-    @testset "Activity Cannot Grow from Zero with RectifiedZeroedSigmoidNonlinearity" begin
-        # Test that Wilson-Cowan dynamics do NOT allow activity to grow from A=0
-        # when using RectifiedZeroedSigmoidNonlinearity (this is the problem!)
+    @testset "Biologically Correct Behavior with RectifiedZeroedSigmoidNonlinearity" begin
+        # Test that Wilson-Cowan dynamics with RectifiedZeroedSigmoidNonlinearity
+        # correctly have dA/dt = 0 at A=0 (biologically realistic)
         
         lattice = PointLattice()
         params = WilsonCowanParameters{1}(
@@ -492,9 +491,9 @@ end
         dA_at_zero = zeros(1, 1)
         wcm1973!(dA_at_zero, A_zero, params, 0.0)
         
-        # dA/dt should be exactly zero at A=0 (this is the problem!)
+        # dA/dt should be exactly zero at A=0 (biologically correct!)
         @test dA_at_zero[1] == 0.0
-        # Activity is stuck at zero and cannot grow!
+        # No neurons firing means no change in activity
     end
 end
 
