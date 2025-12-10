@@ -104,15 +104,17 @@ println("\n### Wilson-Cowan Model with Interesting Nullclines ###\n")
 # with a fixed point at moderate activity levels
 lattice = PointLattice()
 
-# Adjusted parameters for better nullcline visualization
-# Parameters chosen to create interesting nullcline shapes with
-# a fixed point at moderate activity and sustained oscillations
-vₑ, θₑ = 2.0, 0.4   # Sigmoid steepness and threshold for E
-vᵢ, θᵢ = 2.0, 0.3   # Sigmoid steepness and threshold for I
-bₑₑ = 2.0           # E → E (strong excitatory self-connection)
-bᵢₑ = 1.8           # I → E (inhibitory to excitatory)
-bₑᵢ = 3.5           # E → I (strong excitatory to inhibitory)
-bᵢᵢ = 0.1           # I → I (very weak inhibitory self-connection)
+# Adjusted parameters for better nullcline visualization with RectifiedZeroedSigmoidNonlinearity
+# The rectified zeroed sigmoid subtracts baseline, so we need:
+# - Lower thresholds to activate at lower input values
+# - Stronger connectivity to provide sufficient input
+# - Parameters tuned to get fixed point at moderate activity with interesting nullcline shapes
+vₑ, θₑ = 4.0, -0.5   # Sigmoid steepness and threshold for E (negative threshold compensates for rectification)
+vᵢ, θᵢ = 4.0, -0.3   # Sigmoid steepness and threshold for I
+bₑₑ = 3.0            # E → E (strong excitatory self-connection)
+bᵢₑ = 2.5            # I → E (inhibitory to excitatory)
+bₑᵢ = 4.5            # E → I (strong excitatory to inhibitory)
+bᵢᵢ = 0.3            # I → I (weak inhibitory self-connection)
 
 # Create nonlinearity - use RectifiedZeroedSigmoidNonlinearity
 nonlinearity_e = RectifiedZeroedSigmoidNonlinearity(a=vₑ, θ=θₑ)
