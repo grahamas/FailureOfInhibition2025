@@ -403,6 +403,99 @@ end
     end
 end
 
+@testset "Rectification Properties" begin
+    @testset "SigmoidNonlinearity is Always Positive" begin
+        # Test that simple_sigmoid is always positive (inherently rectified)
+        a, θ = 2.0, 0.5
+        
+        # Test at various points including zero and negative values
+        test_values = [-10.0, -5.0, -1.0, 0.0, 0.5, 1.0, 5.0, 10.0]
+        for x in test_values
+            result = simple_sigmoid(x, a, θ)
+            @test result > 0.0  # Always positive
+            @test result < 1.0  # Always less than 1
+            @test 0.0 < result < 1.0  # In range (0, 1)
+        end
+        
+        # Critical test: at A=0, sigmoid should be positive
+        # This ensures activity can grow from zero in Wilson-Cowan dynamics
+        sig_at_zero = simple_sigmoid(0.0, a, θ)
+        @test sig_at_zero > 0.0
+        @test sig_at_zero ≈ 0.2689414213699951  # Expected value
+    end
+    
+    @testset "RectifiedZeroedSigmoid is Zero at Origin" begin
+        # Test that rectified_zeroed_sigmoid is zero at x=0
+        a, θ = 2.0, 0.5
+        
+        result_at_zero = rectified_zeroed_sigmoid(0.0, a, θ)
+        @test result_at_zero == 0.0  # Exactly zero
+        
+        # This is a problem for Wilson-Cowan dynamics!
+        # At A=0, the nonlinearity returns 0, so dA/dt = 0
+        # and activity cannot increase from zero
+    end
+    
+    @testset "Activity Growth from Zero with SigmoidNonlinearity" begin
+        # Test that Wilson-Cowan dynamics allow activity to grow from A=0
+        # when using SigmoidNonlinearity
+        
+        lattice = PointLattice()
+        params = WilsonCowanParameters{1}(
+            α = (1.0,),
+            β = (1.0,),
+            τ = (1.0,),
+            connectivity = nothing,
+            nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
+            stimulus = nothing,
+            lattice = lattice,
+            pop_names = ("E",)
+        )
+        
+        # Test at A=0
+        A_zero = reshape([0.0], 1, 1)
+        dA_zero = zeros(1, 1)
+        wcm1973!(dA_zero, A_zero, params, 0.0)
+        
+        # dA/dt should be positive at A=0
+        @test dA_zero[1] > 0.0
+        
+        # Test at very small A
+        A_small = reshape([0.001], 1, 1)
+        dA_small = zeros(1, 1)
+        wcm1973!(dA_small, A_small, params, 0.0)
+        
+        # dA/dt should still be positive
+        @test dA_small[1] > 0.0
+    end
+    
+    @testset "Activity Cannot Grow from Zero with RectifiedZeroedSigmoidNonlinearity" begin
+        # Test that Wilson-Cowan dynamics do NOT allow activity to grow from A=0
+        # when using RectifiedZeroedSigmoidNonlinearity (this is the problem!)
+        
+        lattice = PointLattice()
+        params = WilsonCowanParameters{1}(
+            α = (1.0,),
+            β = (1.0,),
+            τ = (1.0,),
+            connectivity = nothing,
+            nonlinearity = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5),
+            stimulus = nothing,
+            lattice = lattice,
+            pop_names = ("E",)
+        )
+        
+        # Test at A=0
+        A_zero = reshape([0.0], 1, 1)
+        dA_zero = zeros(1, 1)
+        wcm1973!(dA_zero, A_zero, params, 0.0)
+        
+        # dA/dt should be exactly zero at A=0 (this is the problem!)
+        @test dA_zero[1] == 0.0
+        # Activity is stuck at zero and cannot grow!
+    end
+end
+
 @testset "Model Integration Tests" begin
     # FIXME needs more integration testing
     @testset "Function Availability" begin
