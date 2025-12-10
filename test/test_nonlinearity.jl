@@ -421,7 +421,9 @@ end
         # This ensures activity can grow from zero in Wilson-Cowan dynamics
         sig_at_zero = simple_sigmoid(0.0, a, θ)
         @test sig_at_zero > 0.0
-        @test sig_at_zero ≈ 0.2689414213699951  # Expected value
+        # Verify against computed value: sigmoid(0, a=2.0, θ=0.5) = 1/(1 + exp(-2.0*(-0.5)))
+        expected_value = 1.0 / (1.0 + exp(-a * (0.0 - θ)))
+        @test sig_at_zero ≈ expected_value
     end
     
     @testset "RectifiedZeroedSigmoid is Zero at Origin" begin
@@ -454,19 +456,19 @@ end
         
         # Test at A=0
         A_zero = reshape([0.0], 1, 1)
-        dA_zero = zeros(1, 1)
-        wcm1973!(dA_zero, A_zero, params, 0.0)
+        dA_at_zero = zeros(1, 1)
+        wcm1973!(dA_at_zero, A_zero, params, 0.0)
         
         # dA/dt should be positive at A=0
-        @test dA_zero[1] > 0.0
+        @test dA_at_zero[1] > 0.0
         
         # Test at very small A
         A_small = reshape([0.001], 1, 1)
-        dA_small = zeros(1, 1)
-        wcm1973!(dA_small, A_small, params, 0.0)
+        dA_at_small = zeros(1, 1)
+        wcm1973!(dA_at_small, A_small, params, 0.0)
         
         # dA/dt should still be positive
-        @test dA_small[1] > 0.0
+        @test dA_at_small[1] > 0.0
     end
     
     @testset "Activity Cannot Grow from Zero with RectifiedZeroedSigmoidNonlinearity" begin
@@ -487,11 +489,11 @@ end
         
         # Test at A=0
         A_zero = reshape([0.0], 1, 1)
-        dA_zero = zeros(1, 1)
-        wcm1973!(dA_zero, A_zero, params, 0.0)
+        dA_at_zero = zeros(1, 1)
+        wcm1973!(dA_at_zero, A_zero, params, 0.0)
         
         # dA/dt should be exactly zero at A=0 (this is the problem!)
-        @test dA_zero[1] == 0.0
+        @test dA_at_zero[1] == 0.0
         # Activity is stuck at zero and cannot grow!
     end
 end
