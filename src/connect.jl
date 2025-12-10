@@ -1,5 +1,6 @@
 using FFTW
 import LinearAlgebra: mul!
+import ConstructionBase
 
 struct WithDistances{C}
     connectivity::C
@@ -118,6 +119,11 @@ end
 # Indexing support
 Base.getindex(cm::ConnectivityMatrix, i, j) = cm.matrix[i, j]
 Base.size(cm::ConnectivityMatrix) = size(cm.matrix)
+
+# ConstructionBase support for BifurcationKit lenses
+function ConstructionBase.constructorof(::Type{<:ConnectivityMatrix{P}}) where {P}
+    return ConnectivityMatrix{P}
+end
 
 """
     prepare_connectivity(connectivity::ConnectivityMatrix{P}, lattice)
