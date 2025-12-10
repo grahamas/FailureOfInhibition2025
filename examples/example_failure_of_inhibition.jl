@@ -33,10 +33,10 @@ lattice = PointLattice()
 # Define connectivity for E-I system
 # Stronger E→E and E→I connections to support sustained activity
 # Moderate inhibition to allow for failure dynamics
-conn_ee = ScalarConnectivity(2.5)    # Strong excitatory self-connection
-conn_ei = ScalarConnectivity(-1.5)   # Moderate inhibitory to excitatory
-conn_ie = ScalarConnectivity(2.0)    # Strong excitatory to inhibitory
-conn_ii = ScalarConnectivity(-0.5)   # Weak inhibitory self-connection
+conn_ee = ScalarConnectivity(4.0)    # Strong excitatory self-connection
+conn_ei = ScalarConnectivity(-2.5)   # Moderate inhibitory to excitatory
+conn_ie = ScalarConnectivity(5.0)    # Very strong excitatory to inhibitory (to drive I high)
+conn_ii = ScalarConnectivity(-0.2)   # Very weak inhibitory self-connection
 
 connectivity = ConnectivityMatrix{2}([
     conn_ee conn_ei;
@@ -44,16 +44,16 @@ connectivity = ConnectivityMatrix{2}([
 ])
 
 # Create ramping stimulus
-# Ramp up over 50 time units, hold for 30, then ramp down over 50
+# Ramp up over 50 time units, hold for 50, then ramp down over 50
 # This allows time to observe:
 # 1. Initial activation (ramp up)
-# 2. Inhibitory failure at high stimulus
+# 2. Inhibitory failure at high stimulus (longer plateau to see effect)
 # 3. Persistent activity after stimulus removal (ramp down)
 stimulus = RampStimulus(
     ramp_up_time=50.0,
-    plateau_time=30.0,
+    plateau_time=50.0,
     ramp_down_time=50.0,
-    max_strength=8.0,
+    max_strength=10.0,
     start_time=10.0,
     lattice=lattice,
     baseline=0.0
@@ -62,15 +62,17 @@ stimulus = RampStimulus(
 # Create FoI parameters
 # The key feature: inhibitory population uses DifferenceOfSigmoidsNonlinearity
 # This creates a non-monotonic response that fails at high activity
+# The two sigmoids create a "bump" - activation rises then falls
+# Key: the failing sigmoid needs to have a lower threshold to kick in at moderate-high activity
 params = FailureOfInhibitionParameters(
-    α = (1.0, 1.5),           # Decay rates
+    α = (1.0, 2.0),           # Decay rates (faster decay for I)
     β = (1.0, 1.0),           # Saturation coefficients
-    τ = (10.0, 8.0),          # Time constants
+    τ = (10.0, 6.0),          # Time constants (faster for I)
     connectivity = connectivity,
-    nonlinearity_E = RectifiedZeroedSigmoidNonlinearity(a=1.5, θ=2.0),
+    nonlinearity_E = RectifiedZeroedSigmoidNonlinearity(a=3.0, θ=2.5),
     nonlinearity_I = DifferenceOfSigmoidsNonlinearity(
-        a_activating=4.0, θ_activating=1.0,  # Initial activation
-        a_failing=2.5, θ_failing=4.0         # Failure at higher activity
+        a_activating=8.0, θ_activating=1.5,  # Activates moderately
+        a_failing=6.0, θ_failing=2.5         # Fails at higher input (closer threshold)
     ),
     stimulus = stimulus,
     lattice = lattice
