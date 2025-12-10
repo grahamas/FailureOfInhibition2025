@@ -104,17 +104,19 @@ println("\n### Wilson-Cowan Model with Interesting Nullclines ###\n")
 # with a fixed point at moderate activity levels
 lattice = PointLattice()
 
-# Adjusted parameters for better nullcline visualization with RectifiedZeroedSigmoidNonlinearity
-# The rectified zeroed sigmoid subtracts baseline, so we need:
-# - Lower thresholds to activate at lower input values
-# - Stronger connectivity to provide sufficient input
-# - Parameters tuned to get fixed point at moderate activity with interesting nullcline shapes
-vₑ, θₑ = 4.0, -0.5   # Sigmoid steepness and threshold for E (negative threshold compensates for rectification)
-vᵢ, θᵢ = 4.0, -0.3   # Sigmoid steepness and threshold for I
-bₑₑ = 3.0            # E → E (strong excitatory self-connection)
-bᵢₑ = 2.5            # I → E (inhibitory to excitatory)
-bₑᵢ = 4.5            # E → I (strong excitatory to inhibitory)
-bᵢᵢ = 0.3            # I → I (weak inhibitory self-connection)
+# Adjusted parameters for nullcline visualization with fixed point away from origin
+# Using RectifiedZeroedSigmoidNonlinearity with parameters that produce:
+# - N-shaped E-nullcline to enable multiple intersections
+# - Fixed point at moderate activity (not near origin)
+# Strategy: Moderate excitation, balanced inhibition, very negative thresholds, lower decay
+vₑ, θₑ = 5.0, -0.8   # Sigmoid steepness and threshold for E (steep and negative)
+vᵢ, θᵢ = 3.5, -0.6   # Sigmoid steepness and threshold for I (less steep)
+bₑₑ = 2.5            # E → E (moderate excitatory self-connection)
+bᵢₑ = 1.8            # I → E (moderate inhibitory to excitatory)
+bₑᵢ = 4.0            # E → I (strong excitatory to inhibitory)
+bᵢᵢ = 0.2            # I → I (weak inhibitory self-connection)
+α_E = 0.3            # Very low decay rate for E to allow buildup
+α_I = 0.4            # Low decay rate for I
 
 # Create nonlinearity - use RectifiedZeroedSigmoidNonlinearity
 nonlinearity_e = RectifiedZeroedSigmoidNonlinearity(a=vₑ, θ=θₑ)
@@ -134,7 +136,7 @@ connectivity = ConnectivityMatrix{2}([
 
 # Create parameters
 params_osc = WilsonCowanParameters{2}(
-    α = (1.0, 1.0),
+    α = (α_E, α_I),
     β = (1.0, 1.0),
     τ = (10.0, 10.0),
     connectivity = connectivity,
