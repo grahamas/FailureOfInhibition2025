@@ -1,3 +1,4 @@
+import ConstructionBase
 
 """
     population(array, index)
@@ -136,6 +137,14 @@ struct WilsonCowanParameters{T,P}
         prepared_connectivity = prepare_connectivity(connectivity, lattice)
         new{T,P}(α, β, τ, prepared_connectivity, nonlinearity, stimulus, lattice, pop_names)
     end
+    
+    # Bypass constructor for ConstructionBase (doesn't prepare connectivity)
+    # This is used when BifurcationKit modifies parameters - connectivity is already prepared
+    function WilsonCowanParameters{T,P}(α::NTuple{P}, β::NTuple{P}, τ::NTuple{P},
+                                        connectivity, nonlinearity, stimulus, lattice,
+                                        pop_names::NTuple{P,String}, ::Val{:bypass_prepare}) where {T,P}
+        new{T,P}(α, β, τ, connectivity, nonlinearity, stimulus, lattice, pop_names)
+    end
 end
 
 # Constructor with keyword arguments for convenience
@@ -144,6 +153,23 @@ function WilsonCowanParameters{P}(; α, β, τ, connectivity, nonlinearity, stim
     T = eltype(α)
     # Call the positional constructor which now handles prepare_connectivity
     WilsonCowanParameters{T,P}(α, β, τ, connectivity, nonlinearity, stimulus, lattice, pop_names)
+end
+
+# ConstructionBase support for BifurcationKit lenses
+# This allows BifurcationKit to modify WilsonCowanParameters fields
+function ConstructionBase.constructorof(::Type{<:WilsonCowanParameters{T,P}}) where {T,P}
+    # Return a function that creates WilsonCowanParameters without calling prepare_connectivity again
+    # Use the bypass constructor to avoid double-preparation
+    return (α, β, τ, connectivity, nonlinearity, stimulus, lattice, pop_names) -> begin
+        WilsonCowanParameters{T,P}(α, β, τ, connectivity, nonlinearity, stimulus, lattice, pop_names, Val(:bypass_prepare))
+    end
+end
+
+# Provide a getproperties method for ConstructionBase
+function ConstructionBase.getproperties(p::WilsonCowanParameters{T,P}) where {T,P}
+    return (α=p.α, β=p.β, τ=p.τ, connectivity=p.connectivity, 
+            nonlinearity=p.nonlinearity, stimulus=p.stimulus,
+            lattice=p.lattice, pop_names=p.pop_names)
 end
 
 """
