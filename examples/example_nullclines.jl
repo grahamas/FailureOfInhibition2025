@@ -37,43 +37,20 @@ Nullcline Computation Functions
 =============================================================================#
 
 """
-    compute_dE_dt_field(E_grid, I_grid, params)
+    compute_derivative_fields(E_grid, I_grid, params)
 
-Compute dE/dt on a grid of (E, I) values for E-nullcline plotting.
-The E-nullcline is the zero-level contour of this field.
+Compute both dE/dt and dI/dt fields on a grid of (E, I) values.
+The E-nullcline is the zero-level contour of dE/dt field.
+The I-nullcline is the zero-level contour of dI/dt field.
 Uses wcm1973! to compute derivatives properly.
+
+Returns (dE_dt_field, dI_dt_field)
 """
-function compute_dE_dt_field(E_grid, I_grid, params)
-    # Compute dE/dt at each grid point using wcm1973!
+function compute_derivative_fields(E_grid, I_grid, params)
+    # Compute both dE/dt and dI/dt at each grid point using wcm1973!
     dE_dt = similar(E_grid)
-    for i in eachindex(E_grid)
-        E = E_grid[i]
-        I = I_grid[i]
-        
-        # Create state array for this point
-        A = reshape([E, I], 1, 2)
-        dA = zeros(1, 2)
-        
-        # Use wcm1973! to compute derivatives
-        wcm1973!(dA, A, params, 0.0)
-        
-        # Extract dE/dt
-        dE_dt[i] = dA[1, 1]
-    end
-    
-    return dE_dt
-end
-
-"""
-    compute_dI_dt_field(E_grid, I_grid, params)
-
-Compute dI/dt on a grid of (E, I) values for I-nullcline plotting.
-The I-nullcline is the zero-level contour of this field.
-Uses wcm1973! to compute derivatives properly.
-"""
-function compute_dI_dt_field(E_grid, I_grid, params)
-    # Compute dI/dt at each grid point using wcm1973!
     dI_dt = similar(E_grid)
+    
     for i in eachindex(E_grid)
         E = E_grid[i]
         I = I_grid[i]
@@ -85,11 +62,12 @@ function compute_dI_dt_field(E_grid, I_grid, params)
         # Use wcm1973! to compute derivatives
         wcm1973!(dA, A, params, 0.0)
         
-        # Extract dI/dt
+        # Extract both dE/dt and dI/dt
+        dE_dt[i] = dA[1, 1]
         dI_dt[i] = dA[1, 2]
     end
     
-    return dI_dt
+    return dE_dt, dI_dt
 end
 
 
@@ -163,9 +141,8 @@ I_range = range(0.0, 0.5, length=200)
 E_grid = [E for E in E_range, I in I_range]
 I_grid = [I for E in E_range, I in I_range]
 
-# Compute dE/dt and dI/dt fields using wcm1973!
-dE_dt_field = compute_dE_dt_field(E_grid, I_grid, params_osc)
-dI_dt_field = compute_dI_dt_field(E_grid, I_grid, params_osc)
+# Compute dE/dt and dI/dt fields using wcm1973! (computed together for efficiency)
+dE_dt_field, dI_dt_field = compute_derivative_fields(E_grid, I_grid, params_osc)
 
 println("✓ Nullcline fields computed")
 
