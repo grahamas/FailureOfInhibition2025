@@ -26,6 +26,10 @@ using FailureOfInhibition2025
         test_stimulate_2d()
         test_time_windows()
         test_edge_cases()
+        test_ramp_stimulus_construction()
+        test_ramp_stimulus_phases()
+        test_ramp_stimulus_with_baseline()
+        test_ramp_stimulus_with_spatial_lattice()
     end
     
     # Run Wilson-Cowan model tests
