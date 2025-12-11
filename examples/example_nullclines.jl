@@ -86,15 +86,16 @@ lattice = PointLattice()
 # Using RectifiedZeroedSigmoidNonlinearity with parameters that produce:
 # - N-shaped E-nullcline to enable multiple intersections
 # - Fixed point at moderate activity (not near origin)
-# Strategy: Moderate excitation, balanced inhibition, very negative thresholds, lower decay
-vₑ, θₑ = 5.0, -0.8   # Sigmoid steepness and threshold for E (steep and negative)
-vᵢ, θᵢ = 3.5, -0.6   # Sigmoid steepness and threshold for I (less steep)
+# - Activity that stays positive (important for rectified sigmoid)
+# Strategy: Moderate excitation, balanced inhibition, negative thresholds, moderate decay
+vₑ, θₑ = 5.0, -0.5   # Sigmoid steepness and threshold for E (steep and negative)
+vᵢ, θᵢ = 3.5, -0.3   # Sigmoid steepness and threshold for I (less steep)
 bₑₑ = 2.5            # E → E (moderate excitatory self-connection)
 bᵢₑ = 1.8            # I → E (moderate inhibitory to excitatory)
-bₑᵢ = 4.0            # E → I (strong excitatory to inhibitory)
+bₑᵢ = 3.5            # E → I (strong excitatory to inhibitory)
 bᵢᵢ = 0.2            # I → I (weak inhibitory self-connection)
-α_E = 0.3            # Very low decay rate for E to allow buildup
-α_I = 0.4            # Low decay rate for I
+α_E = 1.0            # Moderate decay rate for E to prevent negative activity
+α_I = 1.0            # Moderate decay rate for I to prevent negative activity
 
 # Create nonlinearity - use RectifiedZeroedSigmoidNonlinearity
 nonlinearity_e = RectifiedZeroedSigmoidNonlinearity(a=vₑ, θ=θₑ)
@@ -146,11 +147,34 @@ dE_dt_field, dI_dt_field = compute_derivative_fields(E_grid, I_grid, params_osc)
 
 println("✓ Nullcline fields computed")
 
-# Simulate trajectory - use solve_model with initial condition that shows oscillations
+# Simulate trajectory - use custom solve with positive domain constraint
+# This ensures activity never goes below zero, which is required for RectifiedZeroedSigmoidNonlinearity
 println("\nSimulating trajectory...")
+using DifferentialEquations
 A₀_osc = reshape([0.3, 0.2], 1, 2)  # Initial condition that produces oscillations
 tspan = (0.0, 300.0)
-sol = solve_model(A₀_osc, tspan, params_osc, saveat=0.5)
+
+# Create ODE problem
+prob = ODEProblem(wcm1973!, A₀_osc, tspan, params_osc)
+
+# Create a callback to enforce non-negative activity
+# This is necessary because RectifiedZeroedSigmoidNonlinearity requires non-negative inputs
+# The decay term in WCM can push activity negative, so we clamp at each time step
+function affect_clamp!(integrator)
+    # Clamp all values to be non-negative
+    for i in eachindex(integrator.u)
+        if integrator.u[i] < 0.0
+            integrator.u[i] = 0.0
+        end
+    end
+    u_modified!(integrator, true)
+end
+
+# Use PeriodicCallback to clamp frequently (every 0.001 time units)
+cb = PeriodicCallback(affect_clamp!, 0.001, save_positions=(false,false))
+
+# Solve with callback
+sol = solve(prob, Tsit5(), callback=cb, saveat=0.5)
 
 times_osc = sol.t
 E_activity = [sol.u[i][1, 1] for i in 1:length(times_osc)]
