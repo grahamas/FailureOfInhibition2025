@@ -30,13 +30,13 @@ println("\n### Setting up FoI Model ###\n")
 # Use a point lattice for simplicity (non-spatial model)
 lattice = PointLattice()
 
-# Define connectivity for E-I system
-# Stronger E→E and E→I connections to support sustained activity
-# Moderate inhibition to allow for failure dynamics
-conn_ee = ScalarConnectivity(4.0)    # Strong excitatory self-connection
-conn_ei = ScalarConnectivity(-2.5)   # Moderate inhibitory to excitatory
-conn_ie = ScalarConnectivity(5.0)    # Very strong excitatory to inhibitory (to drive I high)
-conn_ii = ScalarConnectivity(-0.2)   # Very weak inhibitory self-connection
+# Define connectivity for E-I system  
+# STRATEGY: Use moderate E→E so E grows from 0.7 to 0.95+ during stimulus
+# Use conn_ie=3.2 so E range 0.7-0.95 maps to I_input range 2.24-3.04 (through entire bump)
+conn_ee = ScalarConnectivity(2.5)    # Moderate E→E for gradual growth
+conn_ei = ScalarConnectivity(-0.04)  # Minimal inhibitory to excitatory
+conn_ie = ScalarConnectivity(3.2)    # Strong E→I: E=0.7→2.24, E=0.75→2.4, E=0.95→3.04
+conn_ii = ScalarConnectivity(-0.001) # Negligible I→I
 
 connectivity = ConnectivityMatrix{2}([
     conn_ee conn_ei;
@@ -44,35 +44,31 @@ connectivity = ConnectivityMatrix{2}([
 ])
 
 # Create ramping stimulus
-# Ramp up over 50 time units, hold for 50, then ramp down over 50
-# This allows time to observe:
-# 1. Initial activation (ramp up)
-# 2. Inhibitory failure at high stimulus (longer plateau to see effect)
-# 3. Persistent activity after stimulus removal (ramp down)
+# Higher stimulus to push E through full range
 stimulus = RampStimulus(
-    ramp_up_time=50.0,
-    plateau_time=50.0,
+    ramp_up_time=120.0,      # Long ramp for gradual E growth
+    plateau_time=100.0,      # Long plateau to see full failure
     ramp_down_time=50.0,
-    max_strength=10.0,
+    max_strength=3.0,
     start_time=10.0,
     lattice=lattice,
     baseline=0.0
 )
 
 # Create FoI parameters
-# The key feature: inhibitory population uses DifferenceOfSigmoidsNonlinearity
-# This creates a non-monotonic response that fails at high activity
-# The two sigmoids create a "bump" - activation rises then falls
-# Key: the failing sigmoid needs to have a lower threshold to kick in at moderate-high activity
+# FINAL STRATEGY: Use very large α_I so decay dominates when NL drops
+# dI/dt = (-α*I + β*(1-I)*NL) / τ
+# When NL drops from 0.95 to 0.02, the growth term β*(1-I)*NL becomes tiny
+# With large α, the -α*I decay term dominates → I drops fast
 params = FailureOfInhibitionParameters(
-    α = (1.0, 2.0),           # Decay rates (faster decay for I)
-    β = (1.0, 1.0),           # Saturation coefficients
-    τ = (10.0, 6.0),          # Time constants (faster for I)
+    α = (0.3, 25.0),          # Moderate E decay, VERY LARGE I decay (key!)
+    β = (1.0, 2.0),           # Normal E, larger I growth when active
+    τ = (25.0, 0.2),          # Slow E integration, ultra-fast I response
     connectivity = connectivity,
-    nonlinearity_E = RectifiedZeroedSigmoidNonlinearity(a=3.0, θ=2.5),
+    nonlinearity_E = RectifiedZeroedSigmoidNonlinearity(a=5.0, θ=0.5),
     nonlinearity_I = DifferenceOfSigmoidsNonlinearity(
-        a_activating=8.0, θ_activating=1.5,  # Activates moderately
-        a_failing=6.0, θ_failing=2.5         # Fails at higher input (closer threshold)
+        a_activating=15.0, θ_activating=2.2,   # Bump rises at E~0.7
+        a_failing=15.0, θ_failing=2.8          # Drops at E~0.9
     ),
     stimulus = stimulus,
     lattice = lattice
@@ -82,7 +78,7 @@ println("Model configuration:")
 println("  - Excitatory nonlinearity: RectifiedZeroedSigmoid (standard)")
 println("  - Inhibitory nonlinearity: DifferenceOfSigmoids (non-monotonic)")
 println("  - Stimulus: Ramping (up → plateau → down)")
-println("  - Time course: 10ms start, 50ms ramp-up, 30ms plateau, 50ms ramp-down")
+println("  - Time course: 10ms start, 120ms ramp-up, 100ms plateau, 50ms ramp-down")
 
 #=============================================================================
 Simulation: Run FoI Model
@@ -90,11 +86,11 @@ Simulation: Run FoI Model
 
 println("\n### Running Simulation ###\n")
 
-# Initial condition: low activity
-A₀ = reshape([0.05, 0.05], 1, 2)
+# Initial condition: very low activity to allow gradual buildup
+A₀ = reshape([0.01, 0.01], 1, 2)
 
 # Time span: cover full stimulus cycle plus aftermath
-tspan = (0.0, 200.0)
+tspan = (0.0, 320.0)
 
 # Solve the model
 println("Solving FoI model...")
@@ -126,8 +122,8 @@ Analysis: Identify FoI Phases
 println("\n### Analyzing FoI Dynamics ###\n")
 
 # Find key time points
-ramp_up_end = 10.0 + 50.0
-plateau_end = ramp_up_end + 30.0
+ramp_up_end = 10.0 + 120.0
+plateau_end = ramp_up_end + 100.0
 ramp_down_end = plateau_end + 50.0
 
 # Find peak inhibitory activity
@@ -140,11 +136,11 @@ plateau_end_idx = findfirst(t -> t >= plateau_end, times)
 if !isnothing(plateau_start_idx) && !isnothing(plateau_end_idx)
     I_plateau = I_activity[plateau_start_idx:plateau_end_idx]
     I_min_plateau = minimum(I_plateau)
-    println("Phase 1 (Ramp-up, t=10-60ms):")
+    println("Phase 1 (Ramp-up, t=10-130ms):")
     println("  Both E and I populations activate")
     println("  Peak I activity: $(round(I_max, digits=4)) at t=$(round(I_max_time, digits=2))ms")
     
-    println("\nPhase 2 (Plateau, t=60-90ms):")
+    println("\nPhase 2 (Plateau, t=130-230ms):")
     println("  Paradoxical decrease in I activity (failure of inhibition)")
     println("  Min I activity during plateau: $(round(I_min_plateau, digits=4))")
     println("  I activity reduction: $(round(I_max - I_min_plateau, digits=4))")
@@ -156,7 +152,7 @@ if !isnothing(final_idx)
     E_final = E_activity[final_idx]
     I_final = I_activity[final_idx]
     S_final = stimulus_values[final_idx]
-    println("\nPhase 3 (Post-stimulus, t>140ms):")
+    println("\nPhase 3 (Post-stimulus, t>280ms):")
     println("  Stimulus has ramped down to: $(round(S_final, digits=4))")
     println("  E activity persists at: $(round(E_final, digits=4))")
     println("  I activity remains low: $(round(I_final, digits=4))")
