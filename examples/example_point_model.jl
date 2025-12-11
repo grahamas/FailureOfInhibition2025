@@ -24,9 +24,9 @@ function demo_point_model()
     # 2. Create model components (same as spatial models)
     println("\n2. Creating model components:")
     
-    # Sigmoid nonlinearity
-    nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5)
-    println("   Nonlinearity: SigmoidNonlinearity(a=2.0, θ=0.5)")
+    # Rectified zeroed sigmoid nonlinearity (biologically realistic)
+    nonlinearity = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5)
+    println("   Nonlinearity: RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5)")
     
     # Scalar connectivity for point model (population-to-population weights)
     println("\n   Connectivity: ScalarConnectivity for population interactions")
@@ -178,7 +178,7 @@ function demo_point_model()
         β = (1.0,),
         τ = (1.0,),
         connectivity = nothing,
-        nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
+        nonlinearity = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5),
         stimulus = nothing,
         lattice = lattice
     )

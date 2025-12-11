@@ -403,6 +403,100 @@ end
     end
 end
 
+@testset "Rectification Properties" begin
+    @testset "SimpleSigmoid is Always Positive" begin
+        # Test that simple_sigmoid is always positive (always in range 0 to 1)
+        a, θ = 2.0, 0.5
+        
+        # Test at various points including zero and negative values
+        test_values = [-10.0, -5.0, -1.0, 0.0, 0.5, 1.0, 5.0, 10.0]
+        for x in test_values
+            result = simple_sigmoid(x, a, θ)
+            @test result > 0.0  # Always positive
+            @test result < 1.0  # Always less than 1
+            @test 0.0 < result < 1.0  # In range (0, 1)
+        end
+        
+        # At A=0, sigmoid is positive (non-zero)
+        sig_at_zero = simple_sigmoid(0.0, a, θ)
+        @test sig_at_zero > 0.0
+        # Verify against computed value: sigmoid(0, a=2.0, θ=0.5) = 1/(1 + exp(-2.0*(-0.5)))
+        expected_value = 1.0 / (1.0 + exp(-a * (0.0 - θ)))
+        @test sig_at_zero ≈ expected_value
+    end
+    
+    @testset "RectifiedZeroedSigmoid is Zero at Origin" begin
+        # Test that rectified_zeroed_sigmoid is zero at x=0
+        a, θ = 2.0, 0.5
+        
+        result_at_zero = rectified_zeroed_sigmoid(0.0, a, θ)
+        @test result_at_zero == 0.0  # Exactly zero
+        
+        # This is the biologically correct behavior:
+        # At A=0, the nonlinearity returns 0, so dA/dt = 0
+        # No neurons firing means no change in activity
+    end
+    
+    @testset "Activity Growth from Zero with SigmoidNonlinearity (Non-zero at A=0)" begin
+        # Test that Wilson-Cowan dynamics with SigmoidNonlinearity
+        # have dA/dt ≠ 0 at A=0 (not biologically realistic)
+        
+        lattice = PointLattice()
+        params = WilsonCowanParameters{1}(
+            α = (1.0,),
+            β = (1.0,),
+            τ = (1.0,),
+            connectivity = nothing,
+            nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
+            stimulus = nothing,
+            lattice = lattice,
+            pop_names = ("E",)
+        )
+        
+        # Test at A=0
+        A_zero = reshape([0.0], 1, 1)
+        dA_at_zero = zeros(1, 1)
+        wcm1973!(dA_at_zero, A_zero, params, 0.0)
+        
+        # dA/dt is positive at A=0 (activity changes even with no neurons firing)
+        @test dA_at_zero[1] > 0.0
+        
+        # Test at very small A
+        A_small = reshape([0.001], 1, 1)
+        dA_at_small = zeros(1, 1)
+        wcm1973!(dA_at_small, A_small, params, 0.0)
+        
+        # dA/dt should still be positive
+        @test dA_at_small[1] > 0.0
+    end
+    
+    @testset "Biologically Correct Behavior with RectifiedZeroedSigmoidNonlinearity" begin
+        # Test that Wilson-Cowan dynamics with RectifiedZeroedSigmoidNonlinearity
+        # correctly have dA/dt = 0 at A=0 (biologically realistic)
+        
+        lattice = PointLattice()
+        params = WilsonCowanParameters{1}(
+            α = (1.0,),
+            β = (1.0,),
+            τ = (1.0,),
+            connectivity = nothing,
+            nonlinearity = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5),
+            stimulus = nothing,
+            lattice = lattice,
+            pop_names = ("E",)
+        )
+        
+        # Test at A=0
+        A_zero = reshape([0.0], 1, 1)
+        dA_at_zero = zeros(1, 1)
+        wcm1973!(dA_at_zero, A_zero, params, 0.0)
+        
+        # dA/dt should be exactly zero at A=0 (biologically correct!)
+        @test dA_at_zero[1] == 0.0
+        # No neurons firing means no change in activity
+    end
+end
+
 @testset "Model Integration Tests" begin
     # FIXME needs more integration testing
     @testset "Function Availability" begin

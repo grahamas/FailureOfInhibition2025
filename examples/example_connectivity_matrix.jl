@@ -63,9 +63,9 @@ function demo_connectivity_matrix()
     stimulus = nothing
     println("   Stimulus: none")
     
-    # Sigmoid nonlinearity
-    nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5)
-    println("   Nonlinearity: SigmoidNonlinearity(a=2.0, θ=0.5)")
+    # Rectified zeroed sigmoid nonlinearity (biologically realistic)
+    nonlinearity = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5)
+    println("   Nonlinearity: RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5)")
     
     # 4. Create Wilson-Cowan model parameters
     println("\n4. Creating Wilson-Cowan model parameters:")

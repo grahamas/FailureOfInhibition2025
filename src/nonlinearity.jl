@@ -8,6 +8,8 @@
 
 The sigmoid function: 1/(1 + exp(-a*(x - theta)))
 where a describes the slope's steepness and theta describes translation of the slope's center.
+
+This function has range (0, 1) and is always positive.
 """
 function simple_sigmoid(x, a, theta)
     1.0 / (1 + exp(-a * (x - theta)))
@@ -17,6 +19,12 @@ end
     rectified_zeroed_sigmoid(x, a, theta)
 
 A rectified version of the zeroed sigmoid function.
+Computes max(0, sigmoid(x) - sigmoid(0)), ensuring the function is zero at x=0.
+
+This ensures that when all activity is zero (A=0), there is no change in activity (dA/dt=0),
+which is the biologically correct behavior: if there are no neurons firing, there should be
+no change in activity.
+
 In practice, we use rectified sigmoid functions because firing rates cannot be negative.
 """
 function rectified_zeroed_sigmoid(x, a, theta)
@@ -50,6 +58,13 @@ end
     SigmoidNonlinearity{T}
 
 Simple sigmoid nonlinearity parameter type with slope a and threshold theta.
+
+This nonlinearity uses `simple_sigmoid(x, a, θ) = 1/(1 + exp(-a*(x-θ)))`, which has
+range (0, 1) and is always positive.
+
+**Note**: This nonlinearity is NOT zero at A=0, which means dA/dt ≠ 0 even when activity is zero.
+For biologically realistic models where dA/dt should be zero when no neurons are firing,
+use `RectifiedZeroedSigmoidNonlinearity` instead.
 """
 struct SigmoidNonlinearity{T}
     a::T
@@ -63,7 +78,15 @@ SigmoidNonlinearity(; a, θ) = SigmoidNonlinearity(a, θ)
     RectifiedZeroedSigmoidNonlinearity{T}
 
 Rectified zeroed sigmoid nonlinearity parameter type with slope a and threshold theta.
-In practice, we use rectified sigmoid functions because firing rates cannot be negative.
+
+This nonlinearity uses `max(0, sigmoid(x) - sigmoid(0))`, which is zero at x=0.
+
+This ensures the biologically correct behavior: when all activity is zero (A=0), there is
+no change in activity (dA/dt = 0). If there are no neurons firing, there should be no change
+in activity. This is the **recommended nonlinearity** for Wilson-Cowan models.
+
+The rectification (max with 0) ensures firing rates cannot be negative, maintaining
+biological realism.
 """
 struct RectifiedZeroedSigmoidNonlinearity{T}
     a::T
