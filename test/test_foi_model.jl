@@ -227,4 +227,58 @@ using FailureOfInhibition2025
         # They should produce identical results
         @test dA_foi ≈ dA_wcm
     end
+    
+    @testset "FoI with RampStimulus" begin
+        lattice = PointLattice()
+        
+        conn_ee = ScalarConnectivity(2.5)
+        conn_ei = ScalarConnectivity(-1.5)
+        conn_ie = ScalarConnectivity(2.0)
+        conn_ii = ScalarConnectivity(-0.5)
+        connectivity = ConnectivityMatrix{2}([
+            conn_ee conn_ei;
+            conn_ie conn_ii
+        ])
+        
+        # Create ramping stimulus
+        stimulus = RampStimulus(
+            ramp_up_time=50.0,
+            plateau_time=30.0,
+            ramp_down_time=50.0,
+            max_strength=8.0,
+            start_time=10.0,
+            lattice=lattice,
+            baseline=0.0
+        )
+        
+        params = FailureOfInhibitionParameters(
+            α = (1.0, 1.5),
+            β = (1.0, 1.0),
+            τ = (10.0, 8.0),
+            connectivity = connectivity,
+            nonlinearity_E = RectifiedZeroedSigmoidNonlinearity(a=1.5, θ=2.0),
+            nonlinearity_I = DifferenceOfSigmoidsNonlinearity(
+                a_activating=4.0, θ_activating=1.0,
+                a_failing=2.5, θ_failing=4.0
+            ),
+            stimulus = stimulus,
+            lattice = lattice
+        )
+        
+        # Test that FoI dynamics work with ramping stimulus
+        A = reshape([0.05, 0.05], 1, 2)
+        dA = zeros(1, 2)
+        
+        # Test at various time points
+        foi!(dA, A, params, 20.0)  # During ramp-up
+        @test !all(dA .== 0.0)
+        
+        fill!(dA, 0.0)
+        foi!(dA, A, params, 75.0)  # During plateau
+        @test !all(dA .== 0.0)
+        
+        fill!(dA, 0.0)
+        foi!(dA, A, params, 120.0)  # During ramp-down
+        @test !all(dA .== 0.0)
+    end
 end

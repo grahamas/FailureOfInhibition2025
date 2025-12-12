@@ -142,3 +142,93 @@ function stimulate!(dA, A, stim::ConstantStimulus{T,L}, t) where {T,L}
         dA .+= stim.strength
     end
 end
+
+struct RampStimulus{T,L}
+    ramp_up_time::T
+    plateau_time::T
+    ramp_down_time::T
+    max_strength::T
+    start_time::T
+    baseline::T
+    lattice::L
+end
+
+"""
+    RampStimulus(; ramp_up_time, plateau_time, ramp_down_time, max_strength, start_time=0.0, lattice, baseline=0.0)
+
+Construct a RampStimulus with keyword arguments.
+
+This stimulus ramps up linearly from baseline to max_strength, holds at max_strength for a plateau period,
+then ramps down linearly back to baseline. This is useful for demonstrating failure of inhibition dynamics
+where gradual stimulus increase leads to activation followed by paradoxical inhibitory suppression.
+
+# Arguments
+- `ramp_up_time`: Duration of the ramp-up phase (time to reach max_strength from baseline)
+- `plateau_time`: Duration of the plateau phase (time to hold at max_strength)
+- `ramp_down_time`: Duration of the ramp-down phase (time to return to baseline from max_strength)
+- `max_strength`: Maximum strength of the stimulus at plateau
+- `start_time`: Time when the ramp-up begins (default 0.0)
+- `lattice`: The spatial lattice on which the stimulus will be applied
+- `baseline`: Baseline value to set everywhere (default 0.0)
+
+# Example
+```julia
+# Create a ramping stimulus for a point model
+lattice = PointLattice()
+stim = RampStimulus(
+    ramp_up_time=50.0,
+    plateau_time=50.0,
+    ramp_down_time=50.0,
+    max_strength=10.0,
+    start_time=10.0,
+    lattice=lattice
+)
+```
+"""
+function RampStimulus(; ramp_up_time::T, plateau_time::T, ramp_down_time::T, 
+                       max_strength::T, start_time::T=zero(typeof(ramp_up_time)),
+                       lattice::L, baseline=zero(typeof(max_strength))) where {T,L}
+    RampStimulus{T,L}(ramp_up_time, plateau_time, ramp_down_time, max_strength, 
+                       start_time, convert(T, baseline), lattice)
+end
+
+"""
+    stimulate!(dA, A, stim::RampStimulus, t)
+
+Applies a ramping stimulus to the entire field `dA`.
+
+The stimulus ramps up linearly from baseline to max_strength, holds at max_strength for a plateau period,
+then ramps down linearly back to baseline. The time progression is:
+- [start_time, start_time + ramp_up_time]: Linear ramp from baseline to max_strength
+- [start_time + ramp_up_time, start_time + ramp_up_time + plateau_time]: Hold at max_strength
+- [start_time + ramp_up_time + plateau_time, start_time + ramp_up_time + plateau_time + ramp_down_time]: Linear ramp from max_strength to baseline
+- Outside these time ranges: baseline only
+"""
+function stimulate!(dA, A, stim::RampStimulus{T,L}, t) where {T,L}
+    # Start with baseline
+    dA .= stim.baseline
+    
+    # Calculate phase boundaries
+    ramp_up_end = stim.start_time + stim.ramp_up_time
+    plateau_end = ramp_up_end + stim.plateau_time
+    ramp_down_end = plateau_end + stim.ramp_down_time
+    
+    if t < stim.start_time
+        # Before stimulus starts: baseline only
+        return
+    elseif t <= ramp_up_end
+        # Ramp-up phase: linear increase from baseline to max_strength
+        progress = (t - stim.start_time) / stim.ramp_up_time
+        current_strength = stim.baseline + progress * stim.max_strength
+        dA .+= (current_strength - stim.baseline)
+    elseif t <= plateau_end
+        # Plateau phase: hold at max_strength
+        dA .+= stim.max_strength
+    elseif t <= ramp_down_end
+        # Ramp-down phase: linear decrease from max_strength to baseline
+        progress = (t - plateau_end) / stim.ramp_down_time
+        current_strength = stim.max_strength * (1.0 - progress)
+        dA .+= current_strength
+    end
+    # After ramp_down_end: baseline only (already set)
+end

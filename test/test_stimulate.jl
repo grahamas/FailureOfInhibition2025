@@ -286,6 +286,168 @@ function test_edge_cases()
     @test any(dA .> stim_neg.baseline)  # Some points get extra strength
 end
 
+function test_ramp_stimulus_construction()
+    # Create a simple lattice for construction tests
+    lattice = PointLattice()
+    
+    # Test basic construction
+    stim = RampStimulus(
+        ramp_up_time=10.0,
+        plateau_time=20.0,
+        ramp_down_time=15.0,
+        max_strength=5.0,
+        start_time=0.0,
+        lattice=lattice,
+        baseline=0.0
+    )
+    @test stim.ramp_up_time == 10.0
+    @test stim.plateau_time == 20.0
+    @test stim.ramp_down_time == 15.0
+    @test stim.max_strength == 5.0
+    @test stim.start_time == 0.0
+    @test stim.baseline == 0.0
+    @test stim.lattice === lattice
+    
+    # Test construction with non-zero start time and baseline
+    stim_offset = RampStimulus(
+        ramp_up_time=5.0,
+        plateau_time=10.0,
+        ramp_down_time=5.0,
+        max_strength=3.0,
+        start_time=10.0,
+        lattice=lattice,
+        baseline=1.0
+    )
+    @test stim_offset.start_time == 10.0
+    @test stim_offset.baseline == 1.0
+end
+
+function test_ramp_stimulus_phases()
+    lattice = PointLattice()
+    
+    stim = RampStimulus(
+        ramp_up_time=10.0,
+        plateau_time=20.0,
+        ramp_down_time=10.0,
+        max_strength=5.0,
+        start_time=0.0,
+        lattice=lattice,
+        baseline=0.0
+    )
+    
+    dA = zeros(Float64, 1, 2)  # Point model with 2 populations
+    A = zeros(Float64, 1, 2)
+    
+    # Test before stimulus starts
+    stimulate!(dA, A, stim, -1.0)
+    @test dA[1, 1] ≈ 0.0
+    @test dA[1, 2] ≈ 0.0
+    
+    # Test at start of ramp-up
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 0.0)
+    @test dA[1, 1] ≈ 0.0  # Just starting, no strength yet
+    
+    # Test middle of ramp-up (should be at 50% strength)
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 5.0)
+    @test dA[1, 1] ≈ 2.5  # 50% of max_strength
+    
+    # Test end of ramp-up (should be at max_strength)
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 10.0)
+    @test dA[1, 1] ≈ 5.0
+    
+    # Test middle of plateau (should be at max_strength)
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 20.0)
+    @test dA[1, 1] ≈ 5.0
+    
+    # Test end of plateau (should still be at max_strength)
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 30.0)
+    @test dA[1, 1] ≈ 5.0
+    
+    # Test middle of ramp-down (should be at 50% strength)
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 35.0)
+    @test dA[1, 1] ≈ 2.5
+    
+    # Test end of ramp-down (should be back to baseline)
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 40.0)
+    @test dA[1, 1] ≈ 0.0
+    
+    # Test after stimulus ends
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 50.0)
+    @test dA[1, 1] ≈ 0.0
+end
+
+function test_ramp_stimulus_with_baseline()
+    lattice = PointLattice()
+    
+    stim = RampStimulus(
+        ramp_up_time=10.0,
+        plateau_time=10.0,
+        ramp_down_time=10.0,
+        max_strength=4.0,
+        start_time=5.0,
+        lattice=lattice,
+        baseline=2.0
+    )
+    
+    dA = zeros(Float64, 1, 2)
+    A = zeros(Float64, 1, 2)
+    
+    # Before stimulus: should have baseline
+    stimulate!(dA, A, stim, 0.0)
+    @test dA[1, 1] ≈ 2.0
+    
+    # During ramp-up: baseline + partial strength
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 10.0)  # Midpoint of ramp-up
+    @test dA[1, 1] ≈ 4.0  # baseline (2) + 50% of max_strength (2)
+    
+    # During plateau: baseline + full strength
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 20.0)
+    @test dA[1, 1] ≈ 6.0  # baseline (2) + max_strength (4)
+    
+    # After stimulus: back to baseline
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 50.0)
+    @test dA[1, 1] ≈ 2.0
+end
+
+function test_ramp_stimulus_with_spatial_lattice()
+    # Test that RampStimulus works with spatial lattices
+    lattice = CompactLattice(-5.0, 5.0, 11)
+    
+    stim = RampStimulus(
+        ramp_up_time=10.0,
+        plateau_time=10.0,
+        ramp_down_time=10.0,
+        max_strength=3.0,
+        start_time=0.0,
+        lattice=lattice,
+        baseline=0.0
+    )
+    
+    dA = zeros(Float64, size(lattice)...)
+    A = zeros(Float64, size(lattice)...)
+    
+    # Test that stimulus is applied uniformly across space
+    stimulate!(dA, A, stim, 5.0)  # Middle of ramp-up
+    expected = 1.5  # 50% of max_strength
+    @test all(dA .≈ expected)
+    
+    # Test at plateau
+    fill!(dA, 0.0)
+    stimulate!(dA, A, stim, 15.0)
+    @test all(dA .≈ 3.0)
+end
+
 if abspath(PROGRAM_FILE) == @__FILE__
     test_euclidean_distance()
     test_circle_stimulus_construction()
@@ -293,4 +455,8 @@ if abspath(PROGRAM_FILE) == @__FILE__
     test_stimulate_2d()
     test_time_windows()
     test_edge_cases()
+    test_ramp_stimulus_construction()
+    test_ramp_stimulus_phases()
+    test_ramp_stimulus_with_baseline()
+    test_ramp_stimulus_with_spatial_lattice()
 end
