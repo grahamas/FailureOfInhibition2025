@@ -89,14 +89,14 @@ A₀ = zeros(128, 2) .+ 0.001  # Very low initial condition to avoid numerical i
 tspan = (0.0, 20.0)
 
 # Solve the model with careful solver settings for steep nonlinearities
-# Using small timesteps and conservative tolerances
+# Using very tight tolerances to prevent numerical errors that could lead to negative activities
 println("Solving FoI model...")
 global sol = solve_model(A₀, tspan, params, 
                         saveat=0.05, 
-                        abstol=1e-10, 
-                        reltol=1e-8,
-                        dt=0.001,
-                        dtmax=0.01,
+                        abstol=1e-12, 
+                        reltol=1e-10,
+                        dt=0.0001,
+                        dtmax=0.005,
                         adaptive=true,
                         maxiters=Int(1e7))
 
@@ -128,10 +128,10 @@ println("  Final stimulus: $(round(stimulus_values[end], digits=4))")
 
 # Note about negative activities
 if minimum(E_activity) < 0 || minimum(I_activity) < 0
-    println("\nNote: Activities go negative in the unconstrained Wilson-Cowan model.")
-    println("  This occurs when the decay term (-α*A) dominates over the growth term.")
-    println("  Physically, negative firing rates are non-sensical, so we clamp to 0 in plots.")
+    println("\nWarning: Activities go negative, which may indicate an issue:")
     println("  Min E: $(round(minimum(E_activity), digits=4)), Min I: $(round(minimum(I_activity), digits=4))")
+    println("  This occurs when strong inhibition from I overwhelms excitatory drive to E.")
+    println("  The model implementation may need review - dA/dt = -α*A should prevent negativity.")
 end
 
 #=============================================================================
@@ -192,15 +192,9 @@ Visualization: Plot FoI Dynamics
 
 println("\n### Creating Visualization ###\n")
 
-# Note: The Wilson-Cowan model can produce negative activities when the decay term
-# dominates (when nonlinearity output is near zero). Since negative firing rates are
-# non-physical, we clamp activities to [0, ∞) for visualization.
-E_activity_clamped = max.(E_activity, 0.0)
-I_activity_clamped = max.(I_activity, 0.0)
-
-# Create plot showing only activity (no stimulus), clamped to non-negative values
+# Create plot showing only activity (no stimulus)
 p = plot(
-    times, E_activity_clamped,
+    times, E_activity,
     label="Excitatory (E)",
     xlabel="Time",
     ylabel="Activity",
@@ -208,11 +202,10 @@ p = plot(
     linewidth=2,
     color=:blue,
     legend=:topright,
-    size=(800, 500),
-    ylims=(0, :auto)
+    size=(800, 500)
 )
 
-plot!(p, times, I_activity_clamped,
+plot!(p, times, I_activity,
     label="Inhibitory (I)",
     linewidth=2,
     color=:red
@@ -228,7 +221,7 @@ vline!(p, [stim_end],
 )
 
 # Add phase annotations
-max_activity = max(maximum(E_activity_clamped), maximum(I_activity_clamped))
+max_activity = max(maximum(E_activity), maximum(I_activity))
 if max_activity > 0
     annotate!(p, [
         (stim_end/3, max_activity * 0.95, text("Phase 1:\nActivation", 8, :center)),
