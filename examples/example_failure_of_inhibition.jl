@@ -126,6 +126,14 @@ println("  Final E activity (max): $(round(E_max_spatial[end], digits=4))")
 println("  Final I activity (max): $(round(I_max_spatial[end], digits=4))")
 println("  Final stimulus: $(round(stimulus_values[end], digits=4))")
 
+# Note about negative activities
+if minimum(E_activity) < 0 || minimum(I_activity) < 0
+    println("\nNote: Activities go negative in the unconstrained Wilson-Cowan model.")
+    println("  This occurs when the decay term (-α*A) dominates over the growth term.")
+    println("  Physically, negative firing rates are non-sensical, so we clamp to 0 in plots.")
+    println("  Min E: $(round(minimum(E_activity), digits=4)), Min I: $(round(minimum(I_activity), digits=4))")
+end
+
 #=============================================================================
 Analysis: Identify FoI Phases
 =============================================================================#
@@ -184,30 +192,30 @@ Visualization: Plot FoI Dynamics
 
 println("\n### Creating Visualization ###\n")
 
-# Create comprehensive plot showing activity at center
+# Note: The Wilson-Cowan model can produce negative activities when the decay term
+# dominates (when nonlinearity output is near zero). Since negative firing rates are
+# non-physical, we clamp activities to [0, ∞) for visualization.
+E_activity_clamped = max.(E_activity, 0.0)
+I_activity_clamped = max.(I_activity, 0.0)
+
+# Create plot showing only activity (no stimulus), clamped to non-negative values
 p = plot(
-    times, E_activity,
-    label="Excitatory (E) - center",
+    times, E_activity_clamped,
+    label="Excitatory (E)",
     xlabel="Time",
-    ylabel="Activity / Stimulus",
-    title="Failure of Inhibition Dynamics (Center of Spatial Domain)",
+    ylabel="Activity",
+    title="Failure of Inhibition: Population Activities",
     linewidth=2,
     color=:blue,
     legend=:topright,
-    size=(800, 500)
+    size=(800, 500),
+    ylims=(0, :auto)
 )
 
-plot!(p, times, I_activity,
-    label="Inhibitory (I) - center",
+plot!(p, times, I_activity_clamped,
+    label="Inhibitory (I)",
     linewidth=2,
     color=:red
-)
-
-plot!(p, times, stimulus_values,
-    label="Stimulus",
-    linewidth=2,
-    linestyle=:dash,
-    color=:green
 )
 
 # Add vertical line at stimulus end
@@ -220,11 +228,12 @@ vline!(p, [stim_end],
 )
 
 # Add phase annotations
-if !isempty(E_activity) && maximum(E_activity) > 0
+max_activity = max(maximum(E_activity_clamped), maximum(I_activity_clamped))
+if max_activity > 0
     annotate!(p, [
-        (stim_end/3, maximum(E_activity) * 0.95, text("Phase 1:\nActivation", 8, :center)),
-        (2*stim_end/3, maximum(E_activity) * 0.95, text("Phase 2:\nInhibition\nFailure", 8, :center)),
-        (stim_end + (times[end]-stim_end)/2, maximum(E_activity) * 0.95, text("Phase 3:\nPersistent\nActivity", 8, :center))
+        (stim_end/3, max_activity * 0.95, text("Phase 1:\nActivation", 8, :center)),
+        (2*stim_end/3, max_activity * 0.95, text("Phase 2:\nInhibition\nFailure", 8, :center)),
+        (stim_end + (times[end]-stim_end)/2, max_activity * 0.95, text("Phase 3:\nPost-Stimulus", 8, :center))
     ])
 end
 
