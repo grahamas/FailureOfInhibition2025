@@ -142,15 +142,15 @@ The nonlinearity acts on the total input (stimulus + connectivity), transforming
 """
 function apply_nonlinearity!(dA, A, nonlinearity::Tuple, t)
     P = length(nonlinearity)
+    
+    # For tuple nonlinearities, we need a 2D array where the second dimension is populations
+    if ndims(dA) != 2
+        error("Tuple nonlinearities require 2D arrays with shape (n_spatial_points, n_populations)")
+    end
+    
     for i in 1:P
         # Extract population i
-        if ndims(dA) == 1
-            dAi = dA
-        elseif ndims(dA) == 2
-            dAi = view(dA, :, i)
-        else
-            error("Unsupported array dimensionality")
-        end
+        dAi = view(dA, :, i)
         
         # Apply nonlinearity for this population to its accumulated input
         nl_i = nonlinearity[i]
