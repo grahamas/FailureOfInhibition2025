@@ -744,6 +744,7 @@ This package uses GitHub Actions for automated testing across multiple Julia ver
 - **Coverage reporting**: Automated coverage analysis with Codecov integration
 - **Documentation building**: Automatic documentation generation (when available)
 - **Performance benchmarking**: Automated benchmarks run as part of integration tests
+- **Optimized setup**: Uses preloaded Julia images on GitHub runners (setup-julia@v2) for faster CI runs
 
 ## Contributing
 
