@@ -250,9 +250,10 @@ end
         @test nl.a == 2.0
         @test nl.θ == 1.0
         
-        # Test apply_nonlinearity!
-        dA = zeros(3)
-        A = [0.0, 1.0, 2.0]
+        # Test apply_nonlinearity! with input values
+        input = [0.0, 1.0, 2.0]
+        dA = copy(input)  # dA contains the accumulated input
+        A = [0.5, 0.6, 0.7]  # Current activity (not used by nonlinearity)
         original_A = copy(A)
         
         apply_nonlinearity!(dA, A, nl, 0.0)
@@ -260,14 +261,11 @@ end
         # A should be unchanged
         @test A == original_A
         
-        # dA should contain sigmoid(A) - A
+        # dA should now contain f(input), where input was the original dA
         for i in 1:3
-            expected = simple_sigmoid(A[i], nl.a, nl.θ) - A[i]
+            expected = simple_sigmoid(input[i], nl.a, nl.θ)
             @test abs(dA[i] - expected) < 1e-10
         end
-        
-        # dA should have been modified
-        @test !all(dA .== 0.0)
     end
     
     @testset "RectifiedZeroedSigmoidNonlinearity" begin
@@ -276,9 +274,10 @@ end
         @test nl.a == 2.0
         @test nl.θ == 1.0
         
-        # Test apply_nonlinearity!
-        dA = zeros(3)
-        A = [0.0, 1.0, 2.0]
+        # Test apply_nonlinearity! with input values
+        input = [0.0, 1.0, 2.0]
+        dA = copy(input)  # dA contains the accumulated input
+        A = [0.5, 0.6, 0.7]  # Current activity (not used by nonlinearity)
         original_A = copy(A)
         
         apply_nonlinearity!(dA, A, nl, 0.0)
@@ -286,14 +285,11 @@ end
         # A should be unchanged
         @test A == original_A
         
-        # dA should contain rectified_zeroed_sigmoid(A) - A
+        # dA should now contain f(input), where input was the original dA
         for i in 1:3
-            expected = rectified_zeroed_sigmoid(A[i], nl.a, nl.θ) - A[i]
+            expected = rectified_zeroed_sigmoid(input[i], nl.a, nl.θ)
             @test abs(dA[i] - expected) < 1e-10
         end
-        
-        # dA should have been modified
-        @test !all(dA .== 0.0)
     end
     
     @testset "DifferenceOfSigmoidsNonlinearity" begin
@@ -311,9 +307,10 @@ end
         @test nl2.a_failing == 1.0
         @test nl2.θ_failing == 0.7
         
-        # Test apply_nonlinearity!
-        dA = zeros(3)
-        A = [0.0, 1.0, 2.0]
+        # Test apply_nonlinearity! with input values
+        input = [0.0, 1.0, 2.0]
+        dA = copy(input)  # dA contains the accumulated input
+        A = [0.5, 0.6, 0.7]  # Current activity (not used by nonlinearity)
         original_A = copy(A)
         
         apply_nonlinearity!(dA, A, nl, 0.0)
@@ -321,24 +318,22 @@ end
         # A should be unchanged
         @test A == original_A
         
-        # dA should contain difference_of_rectified_zeroed_sigmoids(A) - A
+        # dA should now contain f(input), where input was the original dA
         for i in 1:3
-            expected = difference_of_rectified_zeroed_sigmoids(A[i], nl.a_activating, nl.θ_activating, nl.a_failing, nl.θ_failing) - A[i]
+            expected = difference_of_rectified_zeroed_sigmoids(input[i], nl.a_activating, nl.θ_activating, nl.a_failing, nl.θ_failing)
             @test abs(dA[i] - expected) < 1e-10
         end
-        
-        # dA should have been modified
-        @test !all(dA .== 0.0)
         
         # Test with specific parameters from test_sigmoid
         a_activating, θ_activating = 5.0, 0.5
         a_failing, θ_failing = 5.0, 1.5
         diff_nl = DifferenceOfSigmoidsNonlinearity(a_activating=a_activating, θ_activating=θ_activating, a_failing=a_failing, θ_failing=θ_failing)
-        dA_test = zeros(1)
-        A_test = [1.0]
+        input_test = [1.0]
+        dA_test = copy(input_test)
+        A_test = [0.5]
         apply_nonlinearity!(dA_test, A_test, diff_nl, 0.0)
         
-        expected = difference_of_rectified_zeroed_sigmoids(1.0, a_activating, θ_activating, a_failing, θ_failing) - 1.0
+        expected = difference_of_rectified_zeroed_sigmoids(input_test[1], a_activating, θ_activating, a_failing, θ_failing)
         @test abs(dA_test[1] - expected) < 1e-10
     end
 end
@@ -348,23 +343,25 @@ end
         # Test that apply_nonlinearity! works correctly with arrays
         nl = SigmoidNonlinearity(a=2.0, θ=0.5)
         
-        # 1D array
-        dA = zeros(5)
-        A = [-1.0, -0.5, 0.0, 0.5, 1.0]
+        # 1D array - dA contains accumulated input
+        input_1d = [-1.0, -0.5, 0.0, 0.5, 1.0]
+        dA = copy(input_1d)
+        A = [0.3, 0.4, 0.5, 0.6, 0.7]  # Current activity
         apply_nonlinearity!(dA, A, nl, 0.0)
         
         for i in 1:5
-            expected = simple_sigmoid(A[i], nl.a, nl.θ) - A[i]
+            expected = simple_sigmoid(input_1d[i], nl.a, nl.θ)
             @test abs(dA[i] - expected) < 1e-10
         end
         
-        # 2D array
-        dA_2d = zeros(3, 2)
-        A_2d = [0.0 1.0; 0.5 1.5; 1.0 2.0]
+        # 2D array - dA contains accumulated input
+        input_2d = [0.0 1.0; 0.5 1.5; 1.0 2.0]
+        dA_2d = copy(input_2d)
+        A_2d = [0.3 0.4; 0.5 0.6; 0.7 0.8]  # Current activity
         apply_nonlinearity!(dA_2d, A_2d, nl, 0.0)
         
         for i in 1:3, j in 1:2
-            expected = simple_sigmoid(A_2d[i, j], nl.a, nl.θ) - A_2d[i, j]
+            expected = simple_sigmoid(input_2d[i, j], nl.a, nl.θ)
             @test abs(dA_2d[i, j] - expected) < 1e-10
         end
     end

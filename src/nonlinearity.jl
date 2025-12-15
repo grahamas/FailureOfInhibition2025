@@ -102,65 +102,69 @@ DifferenceOfSigmoidsNonlinearity(; a_activating, θ_activating, a_failing, θ_fa
 """
     apply_nonlinearity!(dA, A, nonlinearity::SigmoidNonlinearity, t)
 
-Apply simple sigmoid nonlinearity to the activation array A, modifying dA.
-Implements sigmoid logic directly without unnecessary copies.
+Apply simple sigmoid nonlinearity to the input accumulated in dA.
+The nonlinearity acts on the total input (stimulus + connectivity), transforming dA in-place.
 """
 function apply_nonlinearity!(dA, A, nonlinearity::SigmoidNonlinearity, t)
-    # Apply sigmoid nonlinearity directly: dA += sigmoid(A) - A
-    @. dA += simple_sigmoid(A, nonlinearity.a, nonlinearity.θ) - A
+    # Apply sigmoid nonlinearity to the accumulated input: dA = f(dA)
+    @. dA = simple_sigmoid(dA, nonlinearity.a, nonlinearity.θ)
 end
 
 """
     apply_nonlinearity!(dA, A, nonlinearity::RectifiedZeroedSigmoidNonlinearity, t)
 
-Apply rectified zeroed sigmoid nonlinearity to the activation array A, modifying dA.
-Implements rectified zeroed sigmoid logic directly without unnecessary copies.
+Apply rectified zeroed sigmoid nonlinearity to the input accumulated in dA.
+The nonlinearity acts on the total input (stimulus + connectivity), transforming dA in-place.
 """
 function apply_nonlinearity!(dA, A, nonlinearity::RectifiedZeroedSigmoidNonlinearity, t)
-    # Apply rectified zeroed sigmoid nonlinearity directly: dA += rectified_zeroed_sigmoid(A) - A
-    @. dA += rectified_zeroed_sigmoid(A, nonlinearity.a, nonlinearity.θ) - A
+    # Apply rectified zeroed sigmoid nonlinearity to the accumulated input: dA = f(dA)
+    @. dA = rectified_zeroed_sigmoid(dA, nonlinearity.a, nonlinearity.θ)
 end
 
 """
     apply_nonlinearity!(dA, A, nonlinearity::DifferenceOfSigmoidsNonlinearity, t)
 
-Apply difference of sigmoids nonlinearity to the activation array A, modifying dA.
-Implements difference of rectified zeroed sigmoids logic for Failure of Inhibition (FoI) models
-directly without unnecessary copies.
+Apply difference of sigmoids nonlinearity to the input accumulated in dA.
+Implements difference of rectified zeroed sigmoids logic for Failure of Inhibition (FoI) models.
+The nonlinearity acts on the total input (stimulus + connectivity), transforming dA in-place.
 """
 function apply_nonlinearity!(dA, A, nonlinearity::DifferenceOfSigmoidsNonlinearity, t)
-    # Apply difference of rectified zeroed sigmoids nonlinearity directly: dA += difference_of_rectified_zeroed_sigmoids(A) - A
-    @. dA += difference_of_rectified_zeroed_sigmoids(A, nonlinearity.a_activating, nonlinearity.θ_activating, nonlinearity.a_failing, nonlinearity.θ_failing) - A
+    # Apply difference of rectified zeroed sigmoids nonlinearity to the accumulated input: dA = f(dA)
+    @. dA = difference_of_rectified_zeroed_sigmoids(dA, nonlinearity.a_activating, nonlinearity.θ_activating, nonlinearity.a_failing, nonlinearity.θ_failing)
 end
 
 """
     apply_nonlinearity!(dA, A, nonlinearity::Tuple, t)
 
 Apply per-population nonlinearities when nonlinearity is a tuple.
-Each element of the tuple is applied to the corresponding population.
+Each element of the tuple is applied to the corresponding population's accumulated input.
+The nonlinearity acts on the total input (stimulus + connectivity), transforming dA in-place.
 """
 function apply_nonlinearity!(dA, A, nonlinearity::Tuple, t)
     P = length(nonlinearity)
+    
+    # For tuple nonlinearities, we need a 2D array where the second dimension is populations
+    if ndims(dA) != 2
+        error("Tuple nonlinearities require 2D arrays with shape (n_spatial_points, n_populations)")
+    end
+    
+    # Validate that the number of populations matches the array dimensions
+    if size(dA, 2) != P
+        error("Number of nonlinearities ($P) does not match number of populations in array ($(size(dA, 2)))")
+    end
+    
     for i in 1:P
         # Extract population i
-        if ndims(dA) == 1
-            dAi = dA
-            Ai = A
-        elseif ndims(dA) == 2
-            dAi = view(dA, :, i)
-            Ai = view(A, :, i)
-        else
-            error("Unsupported array dimensionality")
-        end
+        dAi = view(dA, :, i)
         
-        # Apply nonlinearity for this population
+        # Apply nonlinearity for this population to its accumulated input
         nl_i = nonlinearity[i]
         if nl_i isa SigmoidNonlinearity
-            @. dAi += simple_sigmoid(Ai, nl_i.a, nl_i.θ) - Ai
+            @. dAi = simple_sigmoid(dAi, nl_i.a, nl_i.θ)
         elseif nl_i isa RectifiedZeroedSigmoidNonlinearity
-            @. dAi += rectified_zeroed_sigmoid(Ai, nl_i.a, nl_i.θ) - Ai
+            @. dAi = rectified_zeroed_sigmoid(dAi, nl_i.a, nl_i.θ)
         elseif nl_i isa DifferenceOfSigmoidsNonlinearity
-            @. dAi += difference_of_rectified_zeroed_sigmoids(Ai, nl_i.a_activating, nl_i.θ_activating, nl_i.a_failing, nl_i.θ_failing) - Ai
+            @. dAi = difference_of_rectified_zeroed_sigmoids(dAi, nl_i.a_activating, nl_i.θ_activating, nl_i.a_failing, nl_i.θ_failing)
         else
             error("Unsupported nonlinearity type: $(typeof(nl_i))")
         end
