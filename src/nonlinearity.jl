@@ -148,6 +148,11 @@ function apply_nonlinearity!(dA, A, nonlinearity::Tuple, t)
         error("Tuple nonlinearities require 2D arrays with shape (n_spatial_points, n_populations)")
     end
     
+    # Validate that the number of populations matches the array dimensions
+    if size(dA, 2) != P
+        error("Number of nonlinearities ($P) does not match number of populations in array ($(size(dA, 2)))")
+    end
+    
     for i in 1:P
         # Extract population i
         dAi = view(dA, :, i)
