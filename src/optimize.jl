@@ -51,10 +51,13 @@ end
         tspan;
         saveat=0.2,
         method=BFGS(),
-        maxiter=100
+        maxiter=100,
+        use_gpu=nothing
     ) where P
 
 Optimize Wilson-Cowan parameters to achieve desired traveling wave behavior.
+
+Automatically uses GPU acceleration if CUDA is available and functional.
 
 # Arguments
 - `base_params`: Base parameter set to start from
@@ -66,6 +69,7 @@ Optimize Wilson-Cowan parameters to achieve desired traveling wave behavior.
 - `saveat`: Time step for saving simulation results (default: 0.2)
 - `method`: Optimization method from Optim.jl (default: BFGS())
 - `maxiter`: Maximum number of iterations (default: 100)
+- `use_gpu`: Whether to use GPU acceleration (default: nothing = auto-detect)
 
 # Returns
 - `result`: Optim.jl optimization result
@@ -100,7 +104,7 @@ objective = TravelingWaveObjective(
 A₀ = zeros(101, 1)
 A₀[15:20, 1] .= 0.6
 
-# Optimize
+# Optimize (automatically uses GPU if available)
 result, best_params = optimize_for_traveling_wave(
     params, param_ranges, objective, A₀, (0.0, 40.0)
 )
@@ -114,7 +118,8 @@ function optimize_for_traveling_wave(
     tspan;
     saveat=0.2,
     method=BFGS(),
-    maxiter=100
+    maxiter=100,
+    use_gpu=nothing
 ) where P
     # Extract parameter names and bounds
     param_names = keys(param_ranges)
@@ -131,7 +136,7 @@ function optimize_for_traveling_wave(
         
         # Run simulation
         try
-            sol = solve_model(A₀, tspan, current_params, saveat=saveat)
+            sol = solve_model(A₀, tspan, current_params, saveat=saveat, use_gpu=use_gpu)
             
             # Compute metrics
             has_peak, _, _ = detect_traveling_peak(sol, 1, threshold=objective.threshold)

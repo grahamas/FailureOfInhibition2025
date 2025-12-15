@@ -48,10 +48,10 @@ if has_cuda
             tspan = (0.0, 10.0)
             
             # Run on GPU
-            sol_gpu = solve_model_gpu(A₀, tspan, params, saveat=0.1)
+            sol_gpu = solve_model(A₀, tspan, params, saveat=0.1, use_gpu=true)
             
             # Run on CPU for comparison
-            sol_cpu = solve_model(A₀, tspan, params, saveat=0.1)
+            sol_cpu = solve_model(A₀, tspan, params, saveat=0.1, use_gpu=false)
             
             # Check that solutions are similar
             @test length(sol_gpu.t) == length(sol_cpu.t)
@@ -87,10 +87,10 @@ if has_cuda
             tspan = (0.0, 10.0)
             
             # Run on GPU
-            sol_gpu = solve_model_gpu(A₀, tspan, params, saveat=0.1)
+            sol_gpu = solve_model(A₀, tspan, params, saveat=0.1, use_gpu=true)
             
             # Run on CPU for comparison
-            sol_cpu = solve_model(A₀, tspan, params, saveat=0.1)
+            sol_cpu = solve_model(A₀, tspan, params, saveat=0.1, use_gpu=false)
             
             # Check that solutions are similar
             @test length(sol_gpu.t) == length(sol_cpu.t)
@@ -131,12 +131,13 @@ if has_cuda
             ]
             
             # Run GPU Sobol analysis with small sample size
-            result_gpu = sobol_sensitivity_analysis_gpu(
+            result_gpu = sobol_sensitivity_analysis(
                 base_params,
                 param_ranges,
                 100,  # Small sample for testing
                 tspan=(0.0, 10.0),
-                output_metric=:final_mean
+                output_metric=:final_mean,
+                use_gpu=true
             )
             
             # Check that result has expected structure
@@ -182,12 +183,13 @@ if has_cuda
             ]
             
             # Run GPU Morris analysis with small sample size
-            result_gpu = morris_sensitivity_analysis_gpu(
+            result_gpu = morris_sensitivity_analysis(
                 base_params,
                 param_ranges,
                 10,  # Small trajectory count for testing
                 tspan=(0.0, 10.0),
-                output_metric=:final_mean
+                output_metric=:final_mean,
+                use_gpu=true
             )
             
             # Check that result has expected structure
@@ -236,9 +238,10 @@ if has_cuda
             A₀[8:13, 1] .= 0.4
             
             # Run GPU optimization with limited iterations
-            result, best_params = optimize_for_traveling_wave_gpu(
+            result, best_params = optimize_for_traveling_wave(
                 params, param_ranges, objective, A₀, (0.0, 10.0),
-                maxiter=5  # Very few iterations for testing
+                maxiter=5,  # Very few iterations for testing
+                use_gpu=true
             )
             
             # Check that optimization completed

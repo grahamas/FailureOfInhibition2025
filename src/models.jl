@@ -126,16 +126,24 @@ struct WilsonCowanParameters{T,P}
     stimulus
     lattice
     pop_names::NTuple{P,String}
+    
+    # Inner constructor that ensures connectivity is always prepared
+    # This makes both positional and keyword constructors safe
+    function WilsonCowanParameters{T,P}(α::NTuple{P}, β::NTuple{P}, τ::NTuple{P},
+                                        connectivity, nonlinearity, stimulus, lattice,
+                                        pop_names::NTuple{P,String}) where {T,P}
+        # Prepare connectivity to ensure kernels are pre-computed
+        prepared_connectivity = prepare_connectivity(connectivity, lattice)
+        new{T,P}(α, β, τ, prepared_connectivity, nonlinearity, stimulus, lattice, pop_names)
+    end
 end
 
 # Constructor with keyword arguments for convenience
 function WilsonCowanParameters{P}(; α, β, τ, connectivity, nonlinearity, stimulus, lattice,
                                    pop_names=ntuple(i -> "Pop$i", P)) where {P}
     T = eltype(α)
-    # Prepare connectivity: pre-compute GaussianConnectivity objects from parameters
-    # to ensure kernels are only calculated once
-    prepared_connectivity = prepare_connectivity(connectivity, lattice)
-    WilsonCowanParameters{T,P}(α, β, τ, prepared_connectivity, nonlinearity, stimulus, lattice, pop_names)
+    # Call the positional constructor which now handles prepare_connectivity
+    WilsonCowanParameters{T,P}(α, β, τ, connectivity, nonlinearity, stimulus, lattice, pop_names)
 end
 
 """
@@ -187,3 +195,107 @@ function wcm1973!(dA, A, p::WilsonCowanParameters{T,P}, t) where {T,P}
         dAi ./= p.τ[i]
     end
 end
+
+############## Failure of Inhibition (FoI) Model ##############
+
+"""
+    FailureOfInhibitionParameters(; α, β, τ, connectivity, nonlinearity_E, nonlinearity_I, stimulus, lattice)
+
+Construct WilsonCowanParameters for a Failure of Inhibition (FoI) model.
+
+An FoI model is a 2-population Wilson-Cowan model where:
+- The excitatory population uses a standard sigmoid nonlinearity
+- The inhibitory population uses a non-monotonic difference of sigmoids nonlinearity
+
+This creates dynamics where inhibition can fail at higher activity levels, leading to
+characteristic FoI behaviors such as traveling waves and sustained activity patterns.
+
+# Arguments
+- `α`: Decay rates for [E, I] populations
+- `β`: Saturation coefficients for [E, I] populations (typically 1.0)
+- `τ`: Time constants for [E, I] populations
+- `connectivity`: Connectivity parameter (defines how populations interact)
+- `nonlinearity_E`: Nonlinearity for excitatory population (SigmoidNonlinearity or RectifiedZeroedSigmoidNonlinearity)
+- `nonlinearity_I`: Nonlinearity for inhibitory population (DifferenceOfSigmoidsNonlinearity)
+- `stimulus`: Stimulus parameter (defines external inputs)
+- `lattice`: Spatial lattice for the model
+
+# Returns
+WilsonCowanParameters{T,2} with per-population nonlinearities as a tuple (nonlinearity_E, nonlinearity_I)
+
+# Example
+
+```julia
+using FailureOfInhibition2025
+
+# Create spatial lattice
+lattice = CompactLattice(extent=(10.0,), n_points=(21,))
+
+# Define connectivity
+conn_ee = GaussianConnectivityParameter(1.0, (2.0,))
+conn_ei = GaussianConnectivityParameter(-0.5, (1.5,))
+conn_ie = GaussianConnectivityParameter(0.8, (2.5,))
+conn_ii = GaussianConnectivityParameter(-0.3, (1.0,))
+connectivity = ConnectivityMatrix{2}([
+    conn_ee conn_ei;
+    conn_ie conn_ii
+])
+
+# Create FoI parameters
+params = FailureOfInhibitionParameters(
+    α = (1.0, 1.5),
+    β = (1.0, 1.0),
+    τ = (10.0, 8.0),
+    connectivity = connectivity,
+    nonlinearity_E = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5),
+    nonlinearity_I = DifferenceOfSigmoidsNonlinearity(
+        a_activating=5.0, θ_activating=0.3,
+        a_failing=3.0, θ_failing=0.7
+    ),
+    stimulus = nothing,
+    lattice = lattice
+)
+
+# Use with wcm1973! (or foi! which is an alias)
+wcm1973!(dA, A, params, 0.0)
+```
+"""
+function FailureOfInhibitionParameters(; α, β, τ, connectivity, nonlinearity_E, nonlinearity_I, stimulus, lattice)
+    # Create tuple of nonlinearities: (E, I)
+    nonlinearity = (nonlinearity_E, nonlinearity_I)
+    
+    # Use WilsonCowanParameters constructor which will prepare connectivity
+    return WilsonCowanParameters{2}(
+        α = α,
+        β = β,
+        τ = τ,
+        connectivity = connectivity,
+        nonlinearity = nonlinearity,
+        stimulus = stimulus,
+        lattice = lattice,
+        pop_names = ("E", "I")
+    )
+end
+
+"""
+    foi!(dA, A, p::WilsonCowanParameters, t)
+
+Failure of Inhibition model differential equation.
+
+This is an alias for wcm1973! that can be used for clarity when working with FoI models.
+
+# Expected Parameter Structure
+For proper FoI dynamics, the WilsonCowanParameters should be configured with:
+- Two populations (E and I)
+- `p.nonlinearity` as a tuple: `(nonlinearity_E, nonlinearity_I)` where:
+  - First element (E): Standard nonlinearity (SigmoidNonlinearity or RectifiedZeroedSigmoidNonlinearity)
+  - Second element (I): DifferenceOfSigmoidsNonlinearity (non-monotonic, characteristic of FoI)
+
+Use `FailureOfInhibitionParameters()` constructor to ensure correct configuration.
+
+# Note
+There is no separate FoI parameter type. FoI models use WilsonCowanParameters directly to
+avoid object construction in the ODE solver inner loop. This function is purely an alias 
+to wcm1973! with zero overhead.
+"""
+foi!(dA, A, p::WilsonCowanParameters, t) = wcm1973!(dA, A, p, t)

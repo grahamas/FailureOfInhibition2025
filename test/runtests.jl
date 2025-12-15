@@ -169,6 +169,16 @@ using FailureOfInhibition2025
     @testset "Oscillation Analysis - Synthetic Validation" begin
         include("test_oscillation_analysis_synthetic.jl")
     end
+    
+    # Run analytical traveling wave tests
+    @testset "Analytical Traveling Waves" begin
+        include("test_analytical_waves.jl")
+    end
+
+    # Run parameter optimization tests
+    @testset "Parameter Optimization" begin
+        include("test_optimize.jl")
+    end
 
     # Run GPU tests (only if CUDA is available)
     @testset "GPU Acceleration" begin

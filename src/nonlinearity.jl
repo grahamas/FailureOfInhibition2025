@@ -33,23 +33,24 @@ function rectified_zeroed_sigmoid(x, a, theta)
 end
 
 """
-    difference_of_simple_sigmoids(x, a_up, θ_up, a_down, θ_down)
+    difference_of_simple_sigmoids(x, a_activating, θ_activating, a_failing, θ_failing)
 
-The difference of two sigmoid functions: sigmoid_up(x) - sigmoid_down(x).
-This can create bump-like or other complex nonlinear shapes.
+The difference of two sigmoid functions: sigmoid_activating(x) - sigmoid_failing(x).
+This can create bump-like or other complex nonlinear shapes characteristic of failure of inhibition.
 """
-function difference_of_simple_sigmoids(x, a_up, θ_up, a_down, θ_down)
-    simple_sigmoid(x, a_up, θ_up) - simple_sigmoid(x, a_down, θ_down)
+function difference_of_simple_sigmoids(x, a_activating, θ_activating, a_failing, θ_failing)
+    simple_sigmoid(x, a_activating, θ_activating) - simple_sigmoid(x, a_failing, θ_failing)
 end
 
 """
-    difference_of_rectified_zeroed_sigmoids(x, a_up, θ_up, a_down, θ_down)
+    difference_of_rectified_zeroed_sigmoids(x, a_activating, θ_activating, a_failing, θ_failing)
 
-The difference of two rectified zeroed sigmoid functions: rectified_zeroed_sigmoid_up(x) - rectified_zeroed_sigmoid_down(x).
-This ensures the result cannot be negative and creates more biologically realistic bump-like functions.
+The difference of two rectified zeroed sigmoid functions: rectified_zeroed_sigmoid_activating(x) - rectified_zeroed_sigmoid_failing(x).
+This ensures the result cannot be negative and creates more biologically realistic bump-like functions
+characteristic of failure of inhibition dynamics.
 """
-function difference_of_rectified_zeroed_sigmoids(x, a_up, θ_up, a_down, θ_down)
-    rectified_zeroed_sigmoid(x, a_up, θ_up) - rectified_zeroed_sigmoid(x, a_down, θ_down)
+function difference_of_rectified_zeroed_sigmoids(x, a_activating, θ_activating, a_failing, θ_failing)
+    rectified_zeroed_sigmoid(x, a_activating, θ_activating) - rectified_zeroed_sigmoid(x, a_failing, θ_failing)
 end
 
 ############## Sigmoid Parameter Types ##############
@@ -99,85 +100,94 @@ RectifiedZeroedSigmoidNonlinearity(; a, θ) = RectifiedZeroedSigmoidNonlinearity
 """
     DifferenceOfSigmoidsNonlinearity{T}
 
-Difference of sigmoids nonlinearity parameter type with parameters for two sigmoids:
-- a_up, θ_up: parameters for the "up" sigmoid
-- a_down, θ_down: parameters for the "down" sigmoid
-The result is rectified_zeroed_sigmoid_up(x) - rectified_zeroed_sigmoid_down(x).
+Difference of sigmoids nonlinearity parameter type for Failure of Inhibition (FoI) models.
+This creates a non-monotonic nonlinearity using two sigmoids:
+- a_activating, θ_activating: slope and threshold for the activating sigmoid
+- a_failing, θ_failing: slope and threshold for the failing (inhibitory) sigmoid
+The result is rectified_zeroed_sigmoid_activating(x) - rectified_zeroed_sigmoid_failing(x).
 This defaults to using rectified zeroed sigmoids for biological realism.
+
+In an FoI model, the "failing" sigmoid represents inhibition that fails at higher activity levels,
+creating a bump-like or non-monotonic response function characteristic of failure of inhibition dynamics.
 """
 struct DifferenceOfSigmoidsNonlinearity{T}
-    a_up::T
-    θ_up::T
-    a_down::T
-    θ_down::T
+    a_activating::T
+    θ_activating::T
+    a_failing::T
+    θ_failing::T
 end
 
 # Constructor with keyword arguments
-DifferenceOfSigmoidsNonlinearity(; a_up, θ_up, a_down, θ_down) = DifferenceOfSigmoidsNonlinearity(a_up, θ_up, a_down, θ_down)
+DifferenceOfSigmoidsNonlinearity(; a_activating, θ_activating, a_failing, θ_failing) = DifferenceOfSigmoidsNonlinearity(a_activating, θ_activating, a_failing, θ_failing)
 
 ############## Apply Nonlinearity Interface ##############
 
 """
     apply_nonlinearity!(dA, A, nonlinearity::SigmoidNonlinearity, t)
 
-Apply simple sigmoid nonlinearity to the activation array A, modifying dA.
-Implements sigmoid logic directly without unnecessary copies.
+Apply simple sigmoid nonlinearity to the input accumulated in dA.
+The nonlinearity acts on the total input (stimulus + connectivity), transforming dA in-place.
 """
 function apply_nonlinearity!(dA, A, nonlinearity::SigmoidNonlinearity, t)
-    # Apply sigmoid nonlinearity directly: dA += sigmoid(A) - A
-    @. dA += simple_sigmoid(A, nonlinearity.a, nonlinearity.θ) - A
+    # Apply sigmoid nonlinearity to the accumulated input: dA = f(dA)
+    @. dA = simple_sigmoid(dA, nonlinearity.a, nonlinearity.θ)
 end
 
 """
     apply_nonlinearity!(dA, A, nonlinearity::RectifiedZeroedSigmoidNonlinearity, t)
 
-Apply rectified zeroed sigmoid nonlinearity to the activation array A, modifying dA.
-Implements rectified zeroed sigmoid logic directly without unnecessary copies.
+Apply rectified zeroed sigmoid nonlinearity to the input accumulated in dA.
+The nonlinearity acts on the total input (stimulus + connectivity), transforming dA in-place.
 """
 function apply_nonlinearity!(dA, A, nonlinearity::RectifiedZeroedSigmoidNonlinearity, t)
-    # Apply rectified zeroed sigmoid nonlinearity directly: dA += rectified_zeroed_sigmoid(A) - A
-    @. dA += rectified_zeroed_sigmoid(A, nonlinearity.a, nonlinearity.θ) - A
+    # Apply rectified zeroed sigmoid nonlinearity to the accumulated input: dA = f(dA)
+    @. dA = rectified_zeroed_sigmoid(dA, nonlinearity.a, nonlinearity.θ)
 end
 
 """
     apply_nonlinearity!(dA, A, nonlinearity::DifferenceOfSigmoidsNonlinearity, t)
 
-Apply difference of sigmoids nonlinearity to the activation array A, modifying dA.
-Implements difference of rectified zeroed sigmoids logic directly without unnecessary copies.
+Apply difference of sigmoids nonlinearity to the input accumulated in dA.
+Implements difference of rectified zeroed sigmoids logic for Failure of Inhibition (FoI) models.
+The nonlinearity acts on the total input (stimulus + connectivity), transforming dA in-place.
 """
 function apply_nonlinearity!(dA, A, nonlinearity::DifferenceOfSigmoidsNonlinearity, t)
-    # Apply difference of rectified zeroed sigmoids nonlinearity directly: dA += difference_of_rectified_zeroed_sigmoids(A) - A
-    @. dA += difference_of_rectified_zeroed_sigmoids(A, nonlinearity.a_up, nonlinearity.θ_up, nonlinearity.a_down, nonlinearity.θ_down) - A
+    # Apply difference of rectified zeroed sigmoids nonlinearity to the accumulated input: dA = f(dA)
+    @. dA = difference_of_rectified_zeroed_sigmoids(dA, nonlinearity.a_activating, nonlinearity.θ_activating, nonlinearity.a_failing, nonlinearity.θ_failing)
 end
 
 """
     apply_nonlinearity!(dA, A, nonlinearity::Tuple, t)
 
 Apply per-population nonlinearities when nonlinearity is a tuple.
-Each element of the tuple is applied to the corresponding population.
+Each element of the tuple is applied to the corresponding population's accumulated input.
+The nonlinearity acts on the total input (stimulus + connectivity), transforming dA in-place.
 """
 function apply_nonlinearity!(dA, A, nonlinearity::Tuple, t)
     P = length(nonlinearity)
+    
+    # For tuple nonlinearities, we need a 2D array where the second dimension is populations
+    if ndims(dA) != 2
+        error("Tuple nonlinearities require 2D arrays with shape (n_spatial_points, n_populations)")
+    end
+    
+    # Validate that the number of populations matches the array dimensions
+    if size(dA, 2) != P
+        error("Number of nonlinearities ($P) does not match number of populations in array ($(size(dA, 2)))")
+    end
+    
     for i in 1:P
         # Extract population i
-        if ndims(dA) == 1
-            dAi = dA
-            Ai = A
-        elseif ndims(dA) == 2
-            dAi = view(dA, :, i)
-            Ai = view(A, :, i)
-        else
-            error("Unsupported array dimensionality")
-        end
+        dAi = view(dA, :, i)
         
-        # Apply nonlinearity for this population
+        # Apply nonlinearity for this population to its accumulated input
         nl_i = nonlinearity[i]
         if nl_i isa SigmoidNonlinearity
-            @. dAi += simple_sigmoid(Ai, nl_i.a, nl_i.θ) - Ai
+            @. dAi = simple_sigmoid(dAi, nl_i.a, nl_i.θ)
         elseif nl_i isa RectifiedZeroedSigmoidNonlinearity
-            @. dAi += rectified_zeroed_sigmoid(Ai, nl_i.a, nl_i.θ) - Ai
+            @. dAi = rectified_zeroed_sigmoid(dAi, nl_i.a, nl_i.θ)
         elseif nl_i isa DifferenceOfSigmoidsNonlinearity
-            @. dAi += difference_of_rectified_zeroed_sigmoids(Ai, nl_i.a_up, nl_i.θ_up, nl_i.a_down, nl_i.θ_down) - Ai
+            @. dAi = difference_of_rectified_zeroed_sigmoids(dAi, nl_i.a_activating, nl_i.θ_activating, nl_i.a_failing, nl_i.θ_failing)
         else
             error("Unsupported nonlinearity type: $(typeof(nl_i))")
         end

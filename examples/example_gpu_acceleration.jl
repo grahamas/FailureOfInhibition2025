@@ -11,11 +11,16 @@ This example demonstrates how to use GPU acceleration for:
 GPU acceleration can significantly speed up computationally intensive tasks,
 especially for large-scale parameter searches and spatial models.
 
+All functions support a `use_gpu` parameter that can be set to:
+- `nothing` (default): Automatically use GPU if CUDA is functional
+- `true`: Force GPU usage (error if CUDA not available)
+- `false`: Force CPU usage
+
 Prerequisites:
 - CUDA-capable GPU
 - CUDA.jl package installed: `using Pkg; Pkg.add("CUDA")`
 
-Note: If CUDA is not available, the functions will automatically fall back to CPU versions.
+Note: When `use_gpu` is not specified, functions automatically detect and use GPU if available.
 """
 
 using FailureOfInhibition2025
@@ -70,12 +75,12 @@ tspan = (0.0, 40.0)
 
 if has_cuda
     println("Running simulation on GPU...")
-    @time sol_gpu = solve_model_gpu(A₀, tspan, params, saveat=0.1)
+    @time sol_gpu = solve_model(A₀, tspan, params, saveat=0.1, use_gpu=true)
     println("Final mean activity (GPU): ", mean(sol_gpu.u[end]))
     println()
 else
     println("Running simulation on CPU (CUDA not available)...")
-    @time sol_cpu = solve_model(A₀, tspan, params, saveat=0.1)
+    @time sol_cpu = solve_model(A₀, tspan, params, saveat=0.1, use_gpu=false)
     println("Final mean activity (CPU): ", mean(sol_cpu.u[end]))
     println()
 end
@@ -113,12 +118,13 @@ param_ranges = [
 
 if has_cuda
     println("Running Sobol analysis on GPU with 500 samples...")
-    @time result = sobol_sensitivity_analysis_gpu(
+    @time result = sobol_sensitivity_analysis(
         base_params,
         param_ranges,
         500,
         tspan=(0.0, 100.0),
-        output_metric=:final_mean
+        output_metric=:final_mean,
+        use_gpu=true
     )
     
     println("\nResults:")
@@ -158,12 +164,13 @@ println()
 
 if has_cuda
     println("Running Morris screening on GPU with 100 trajectories...")
-    @time result_morris = morris_sensitivity_analysis_gpu(
+    @time result_morris = morris_sensitivity_analysis(
         base_params,
         param_ranges,
         100,
         tspan=(0.0, 100.0),
-        output_metric=:final_mean
+        output_metric=:final_mean,
+        use_gpu=true
     )
     
     println("\nResults:")
@@ -216,13 +223,14 @@ objective = TravelingWaveObjective(
 
 if has_cuda
     println("Running parameter optimization on GPU...")
-    @time result_opt, best_params = optimize_for_traveling_wave_gpu(
+    @time result_opt, best_params = optimize_for_traveling_wave(
         params,
         param_ranges_opt,
         objective,
         A₀,
         (0.0, 40.0),
-        maxiter=20
+        maxiter=20,
+        use_gpu=true
     )
     
     println("\nOptimization converged: ", Optim.converged(result_opt))
@@ -253,10 +261,10 @@ println()
 
 if has_cuda
     println("✓ GPU acceleration is enabled for:")
-    println("  - Simulation (solve_model_gpu)")
-    println("  - Sobol sensitivity analysis (sobol_sensitivity_analysis_gpu)")
-    println("  - Morris screening (morris_sensitivity_analysis_gpu)")
-    println("  - Parameter optimization (optimize_for_traveling_wave_gpu)")
+    println("  - Simulation (solve_model with use_gpu=true)")
+    println("  - Sobol sensitivity analysis (sobol_sensitivity_analysis with use_gpu=true)")
+    println("  - Morris screening (morris_sensitivity_analysis with use_gpu=true)")
+    println("  - Parameter optimization (optimize_for_traveling_wave with use_gpu=true)")
     println()
     println("GPU acceleration provides significant speedup for:")
     println("  - Large spatial models (many grid points)")
