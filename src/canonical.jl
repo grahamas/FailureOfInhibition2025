@@ -715,6 +715,9 @@ function create_propagating_torus_parameters(;
     nonlinearity = (nonlinearity_e, nonlinearity_i)
     
     # Create connectivity matrix - 2D spreads
+    # Using isotropic spreads (same in both x and y dimensions) for simplicity
+    # in the canonical model. For anisotropic connectivity, users can create
+    # custom parameters with different spreads per dimension.
     conn_ee = GaussianConnectivityParameter(Aee, (See, See))
     conn_ei = GaussianConnectivityParameter(-Aei, (Sei, Sei))
     conn_ie = GaussianConnectivityParameter(Aie, (Sie, Sie))
