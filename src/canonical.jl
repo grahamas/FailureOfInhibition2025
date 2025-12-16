@@ -347,3 +347,395 @@ function create_point_model_wcm1973(mode::Symbol)
     
     return params
 end
+
+"""
+Canonical model parameter sets from prototypes.
+
+These models are adapted from TravelingWaveSimulations prototypes.jl:
+https://github.com/grahamas/TravelingWaveSimulations/blob/c15473966d764a5f4be60f8215575fac1f7f1bee/src/prototypes/prototypes.jl
+
+The prototypes represent various dynamical regimes including:
+- Harris & Ermentrout 2018 traveling wave model
+- Full dynamics with monotonic and blocking inhibition
+- Oscillating pulse dynamics
+- Propagating patterns on torus geometries
+"""
+
+"""
+    create_harris_ermentrout_parameters(; lattice=nothing, kwargs...)
+
+Create WilsonCowanParameters matching Harris & Ermentrout 2018 traveling wave model.
+
+This parameterization is designed to produce propagating traveling waves in 
+excitatory-inhibitory neural field models.
+
+# Reference
+Harris, K. D., & Ermentrout, G. B. (2018). Bifurcations in the Wilson-Cowan equations 
+with distributed delays, and application to the stability of cortical spreading depression.
+SIAM Journal on Applied Dynamical Systems, 17(1), 501-520.
+
+# Keyword Arguments
+- `lattice`: Spatial lattice (defaults to 1D periodic lattice if not provided)
+- `Aee`, `See`: Excitatory-to-excitatory amplitude and spread (default: 1.0, 25.0)
+- `Aii`, `Sii`: Inhibitory-to-inhibitory amplitude and spread (default: 0.25, 27.0)
+- `Aie`, `Sie`: Excitatory-to-inhibitory amplitude and spread (default: 1.0, 25.0)
+- `Aei`, `Sei`: Inhibitory-to-excitatory amplitude and spread (default: 1.5, 27.0)
+- `aE`, `θE`: Excitatory nonlinearity slope and threshold (default: 50.0, 0.125)
+- `aI`, `θI`: Inhibitory nonlinearity slope and threshold (default: 50.0, 0.4)
+- `α`: Decay rates for (E, I) (default: (1.0, 1.0))
+- `β`: Saturation coefficients for (E, I) (default: (1.0, 1.0))
+- `τ`: Time constants for (E, I) (default: (1.0, 0.4))
+
+# Returns
+WilsonCowanParameters{2} configured for Harris-Ermentrout traveling waves
+
+# Example
+```julia
+params = create_harris_ermentrout_parameters()
+A₀ = 0.1 .+ 0.01 .* rand(size(params.lattice.n_points)..., 2)
+sol = solve_model(A₀, (0.0, 300.0), params)
+```
+"""
+function create_harris_ermentrout_parameters(;
+    lattice=nothing,
+    Aee=1.0, See=25.0,
+    Aii=0.25, Sii=27.0,
+    Aie=1.0, Sie=25.0,
+    Aei=1.5, Sei=27.0,
+    aE=50.0, θE=0.125,
+    aI=50.0, θI=0.4,
+    α=(1.0, 1.0),
+    β=(1.0, 1.0),
+    τ=(1.0, 0.4))
+    
+    # Create default lattice if not provided
+    # Use 1D periodic lattice with parameters from prototype
+    if lattice === nothing
+        lattice = PeriodicLattice(extent=(1400.0,), n_points=(512,))
+    end
+    
+    # Create nonlinearity for each population
+    nonlinearity_e = SigmoidNonlinearity(a=aE, θ=θE)
+    nonlinearity_i = SigmoidNonlinearity(a=aI, θ=θI)
+    nonlinearity = (nonlinearity_e, nonlinearity_i)
+    
+    # Create connectivity matrix
+    conn_ee = GaussianConnectivityParameter(Aee, (See,))
+    conn_ei = GaussianConnectivityParameter(-Aei, (Sei,))
+    conn_ie = GaussianConnectivityParameter(Aie, (Sie,))
+    conn_ii = GaussianConnectivityParameter(-Aii, (Sii,))
+    
+    connectivity = ConnectivityMatrix{2}([
+        conn_ee conn_ei;
+        conn_ie conn_ii
+    ])
+    
+    # Create parameters
+    params = WilsonCowanParameters{2}(
+        α = α,
+        β = β,
+        τ = τ,
+        connectivity = connectivity,
+        nonlinearity = nonlinearity,
+        stimulus = nothing,
+        lattice = lattice,
+        pop_names = ("E", "I")
+    )
+    
+    return params
+end
+
+"""
+    create_harris_ermentrout_rectified_parameters(; kwargs...)
+
+Create Harris-Ermentrout parameters with rectified sigmoid nonlinearities.
+
+This is a variant that uses RectifiedZeroedSigmoidNonlinearity instead of
+simple sigmoids for more biologically realistic dynamics (firing rates cannot be negative).
+
+See `create_harris_ermentrout_parameters` for parameter descriptions.
+"""
+function create_harris_ermentrout_rectified_parameters(;
+    aE=50.0, θE=0.125,
+    aI=50.0, θI=0.4,
+    kwargs...)
+    
+    # Create rectified nonlinearities
+    nonlinearity_e = RectifiedZeroedSigmoidNonlinearity(a=aE, θ=θE)
+    nonlinearity_i = RectifiedZeroedSigmoidNonlinearity(a=aI, θ=θI)
+    
+    # Create base parameters
+    base_params = create_harris_ermentrout_parameters(; aE=aE, θE=θE, aI=aI, θI=θI, kwargs...)
+    
+    # Replace nonlinearity with rectified version
+    return WilsonCowanParameters{2}(
+        α = base_params.α,
+        β = base_params.β,
+        τ = base_params.τ,
+        connectivity = base_params.connectivity,
+        nonlinearity = (nonlinearity_e, nonlinearity_i),
+        stimulus = base_params.stimulus,
+        lattice = base_params.lattice,
+        pop_names = base_params.pop_names
+    )
+end
+
+"""
+    create_full_dynamics_monotonic_parameters(; lattice=nothing, kwargs...)
+
+Create parameters for full dynamics model with monotonic inhibition.
+
+This parameterization uses more realistic time constants and decay rates
+compared to the Harris-Ermentrout model, suitable for studying full neural
+field dynamics including spread and propagation phenomena.
+
+# Keyword Arguments
+- `lattice`: Spatial lattice (defaults to 1D periodic lattice if not provided)
+- `Aee`, `See`: Excitatory-to-excitatory amplitude and spread (default: 1.0, 25.0)
+- `Aii`, `Sii`: Inhibitory-to-inhibitory amplitude and spread (default: 0.25, 27.0)
+- `Aie`, `Sie`: Excitatory-to-inhibitory amplitude and spread (default: 1.0, 25.0)
+- `Aei`, `Sei`: Inhibitory-to-excitatory amplitude and spread (default: 1.5, 27.0)
+- `aE`, `θE`: Excitatory nonlinearity slope and threshold (default: 50.0, 0.125)
+- `aI`, `θI`: Inhibitory nonlinearity slope and threshold (default: 50.0, 0.2)
+- `αE`, `αI`: Decay rates for E and I (default: 0.4, 0.7)
+- `β`: Saturation coefficients for (E, I) (default: (1.0, 1.0))
+- `τE`, `τI`: Time constants for E and I (default: 1.0, 0.4)
+
+# Returns
+WilsonCowanParameters{2} configured for full dynamics with monotonic inhibition
+"""
+function create_full_dynamics_monotonic_parameters(;
+    lattice=nothing,
+    Aee=1.0, See=25.0,
+    Aii=0.25, Sii=27.0,
+    Aie=1.0, Sie=25.0,
+    Aei=1.5, Sei=27.0,
+    aE=50.0, θE=0.125,
+    aI=50.0, θI=0.2,
+    αE=0.4, αI=0.7,
+    β=(1.0, 1.0),
+    τE=1.0, τI=0.4)
+    
+    # Create default lattice if not provided
+    if lattice === nothing
+        lattice = PeriodicLattice(extent=(1400.0,), n_points=(512,))
+    end
+    
+    # Create nonlinearity for each population
+    nonlinearity_e = SigmoidNonlinearity(a=aE, θ=θE)
+    nonlinearity_i = SigmoidNonlinearity(a=aI, θ=θI)
+    nonlinearity = (nonlinearity_e, nonlinearity_i)
+    
+    # Create connectivity matrix
+    conn_ee = GaussianConnectivityParameter(Aee, (See,))
+    conn_ei = GaussianConnectivityParameter(-Aei, (Sei,))
+    conn_ie = GaussianConnectivityParameter(Aie, (Sie,))
+    conn_ii = GaussianConnectivityParameter(-Aii, (Sii,))
+    
+    connectivity = ConnectivityMatrix{2}([
+        conn_ee conn_ei;
+        conn_ie conn_ii
+    ])
+    
+    # Create parameters
+    params = WilsonCowanParameters{2}(
+        α = (αE, αI),
+        β = β,
+        τ = (τE, τI),
+        connectivity = connectivity,
+        nonlinearity = nonlinearity,
+        stimulus = nothing,
+        lattice = lattice,
+        pop_names = ("E", "I")
+    )
+    
+    return params
+end
+
+"""
+    create_full_dynamics_blocking_parameters(; kwargs...)
+
+Create parameters for full dynamics model with blocking (non-monotonic) inhibition.
+
+This parameterization uses a difference of sigmoids for the inhibitory population,
+creating a non-monotonic response characteristic of failure of inhibition dynamics.
+
+# Keyword Arguments
+- `firing_aI`, `firing_θI`: Activating sigmoid parameters for inhibition (default: 50.0, 0.2)
+- `blocking_aI`, `blocking_θI`: Blocking sigmoid parameters for inhibition (default: 50.0, 0.5)
+- Other parameters same as `create_full_dynamics_monotonic_parameters`
+
+# Returns
+WilsonCowanParameters{2} configured for full dynamics with blocking inhibition
+"""
+function create_full_dynamics_blocking_parameters(;
+    firing_aI=50.0, firing_θI=0.2,
+    blocking_aI=50.0, blocking_θI=0.5,
+    aE=50.0, θE=0.125,
+    αE=0.4, αI=0.7,
+    kwargs...)
+    
+    # Get base parameters with monotonic inhibition
+    base_params = create_full_dynamics_monotonic_parameters(;
+        aE=aE, θE=θE, aI=firing_aI, θI=firing_θI,
+        αE=αE, αI=αI, kwargs...)
+    
+    # Create blocking inhibition nonlinearity
+    nonlinearity_e = RectifiedZeroedSigmoidNonlinearity(a=aE, θ=θE)
+    nonlinearity_i = DifferenceOfSigmoidsNonlinearity(
+        a_activating=firing_aI,
+        θ_activating=firing_θI,
+        a_failing=blocking_aI,
+        θ_failing=blocking_θI
+    )
+    
+    # Replace nonlinearity with blocking version
+    return WilsonCowanParameters{2}(
+        α = base_params.α,
+        β = base_params.β,
+        τ = base_params.τ,
+        connectivity = base_params.connectivity,
+        nonlinearity = (nonlinearity_e, nonlinearity_i),
+        stimulus = base_params.stimulus,
+        lattice = base_params.lattice,
+        pop_names = base_params.pop_names
+    )
+end
+
+"""
+    create_oscillating_pulse_parameters(; lattice=nothing, kwargs...)
+
+Create parameters for oscillating pulse dynamics in 1D.
+
+This parameterization is designed to produce oscillatory pulses that can
+propagate along a 1D neural field.
+
+# Keyword Arguments
+- `lattice`: Spatial lattice (defaults to 1D periodic lattice if not provided)
+- `Aee`, `See`: Excitatory-to-excitatory amplitude and spread (default: 16.0, 2.5)
+- `Aii`, `Sii`: Inhibitory-to-inhibitory amplitude and spread (default: 4.0, 2.7)
+- `Aie`, `Sie`: Excitatory-to-inhibitory amplitude and spread (default: 27.0, 2.5)
+- `Aei`, `Sei`: Inhibitory-to-excitatory amplitude and spread (default: 18.2, 2.7)
+- `aE`, `θE`: Excitatory nonlinearity slope and threshold (default: 1.2, 2.6)
+- `aI`, `θI`: Inhibitory nonlinearity slope and threshold (default: 1.0, 8.0)
+- `α`: Decay rates for (E, I) (default: (1.5, 1.0))
+- `β`: Saturation coefficients for (E, I) (default: (1.1, 1.1))
+- `τ`: Time constants for (E, I) (default: (10.0, 18.0))
+
+# Returns
+WilsonCowanParameters{2} configured for oscillating pulse dynamics
+"""
+function create_oscillating_pulse_parameters(;
+    lattice=nothing,
+    Aee=16.0, See=2.5,
+    Aii=4.0, Sii=2.7,
+    Aie=27.0, Sie=2.5,
+    Aei=18.2, Sei=2.7,
+    aE=1.2, θE=2.6,
+    aI=1.0, θI=8.0,
+    α=(1.5, 1.0),
+    β=(1.1, 1.1),
+    τ=(10.0, 18.0))
+    
+    # Create default lattice if not provided
+    if lattice === nothing
+        lattice = PeriodicLattice(extent=(100.0,), n_points=(100,))
+    end
+    
+    # Create nonlinearity for each population
+    # Use rectified nonlinearities for biological realism
+    nonlinearity_e = RectifiedZeroedSigmoidNonlinearity(a=aE, θ=θE)
+    nonlinearity_i = RectifiedZeroedSigmoidNonlinearity(a=aI, θ=θI)
+    nonlinearity = (nonlinearity_e, nonlinearity_i)
+    
+    # Create connectivity matrix
+    conn_ee = GaussianConnectivityParameter(Aee, (See,))
+    conn_ei = GaussianConnectivityParameter(-Aei, (Sei,))
+    conn_ie = GaussianConnectivityParameter(Aie, (Sie,))
+    conn_ii = GaussianConnectivityParameter(-Aii, (Sii,))
+    
+    connectivity = ConnectivityMatrix{2}([
+        conn_ee conn_ei;
+        conn_ie conn_ii
+    ])
+    
+    # Create parameters
+    params = WilsonCowanParameters{2}(
+        α = α,
+        β = β,
+        τ = τ,
+        connectivity = connectivity,
+        nonlinearity = nonlinearity,
+        stimulus = nothing,
+        lattice = lattice,
+        pop_names = ("E", "I")
+    )
+    
+    return params
+end
+
+"""
+    create_propagating_torus_parameters(; lattice=nothing, kwargs...)
+
+Create parameters for propagating patterns on 2D torus (periodic lattice).
+
+This parameterization is designed to produce propagating wave patterns
+on a 2D periodic lattice (torus topology).
+
+# Keyword Arguments
+- `lattice`: Spatial lattice (defaults to 2D periodic lattice if not provided)
+- Connectivity and nonlinearity parameters similar to `create_oscillating_pulse_parameters`
+- `α`: Decay rates for (E, I) (default: (1.0, 1.0))
+- `β`: Saturation coefficients for (E, I) (default: (1.0, 1.0))
+- `τ`: Time constants for (E, I) (default: (3.0, 3.0))
+
+# Returns
+WilsonCowanParameters{2} configured for propagating patterns on torus
+"""
+function create_propagating_torus_parameters(;
+    lattice=nothing,
+    Aee=16.0, See=2.5,
+    Aii=4.0, Sii=2.7,
+    Aie=27.0, Sie=2.5,
+    Aei=18.2, Sei=2.7,
+    aE=1.2, θE=2.6,
+    aI=1.0, θI=8.0,
+    α=(1.0, 1.0),
+    β=(1.0, 1.0),
+    τ=(3.0, 3.0))
+    
+    # Create default lattice if not provided - 2D torus
+    if lattice === nothing
+        lattice = PeriodicLattice(extent=(100.0, 100.0), n_points=(100, 100))
+    end
+    
+    # Create nonlinearity for each population
+    nonlinearity_e = RectifiedZeroedSigmoidNonlinearity(a=aE, θ=θE)
+    nonlinearity_i = RectifiedZeroedSigmoidNonlinearity(a=aI, θ=θI)
+    nonlinearity = (nonlinearity_e, nonlinearity_i)
+    
+    # Create connectivity matrix - 2D spreads
+    conn_ee = GaussianConnectivityParameter(Aee, (See, See))
+    conn_ei = GaussianConnectivityParameter(-Aei, (Sei, Sei))
+    conn_ie = GaussianConnectivityParameter(Aie, (Sie, Sie))
+    conn_ii = GaussianConnectivityParameter(-Aii, (Sii, Sii))
+    
+    connectivity = ConnectivityMatrix{2}([
+        conn_ee conn_ei;
+        conn_ie conn_ii
+    ])
+    
+    # Create parameters
+    params = WilsonCowanParameters{2}(
+        α = α,
+        β = β,
+        τ = τ,
+        connectivity = connectivity,
+        nonlinearity = nonlinearity,
+        stimulus = nothing,
+        lattice = lattice,
+        pop_names = ("E", "I")
+    )
+    
+    return params
+end
