@@ -3,17 +3,20 @@
 """
 Illustrate nullclines for Wilson-Cowan Model.
 
-This script demonstrates phase space analysis with nullclines for an oscillatory
-Wilson-Cowan model. Nullclines show where each population's rate of change is zero,
+This script demonstrates phase space analysis with nullclines using the Wilson & Cowan 1973
+oscillatory mode parameters. Nullclines show where each population's rate of change is zero,
 revealing fixed points and the structure of phase space dynamics.
 
 The nullclines are curves in (E, I) phase space where:
 - E-nullcline: dE/dt = 0 (vertical flow along nullcline)
 - I-nullcline: dI/dt = 0 (horizontal flow along nullcline)
 
-Fixed points occur where nullclines intersect. This example uses parameters
-tuned to show interesting nullcline shapes with a fixed point at moderate
-activity levels.
+Fixed points occur where nullclines intersect.
+
+Note: With the corrected nonlinearity implementation (where the nonlinearity is applied
+to inputs rather than current activity), the WCM 1973 oscillatory parameters converge
+to a stable fixed point rather than showing sustained oscillations. The nullcline analysis
+remains valid for understanding the phase space structure.
 """
 
 using FailureOfInhibition2025
@@ -30,6 +33,7 @@ end
 
 println("\n" * "="^70)
 println("Wilson-Cowan Model: Nullcline Analysis")
+println("Using WCM 1973 Oscillatory Mode Parameters")
 println("="^70)
 
 #=============================================================================
@@ -76,30 +80,33 @@ end
 Main Analysis: Oscillatory Mode
 =============================================================================#
 
-println("\n### Wilson-Cowan Model with Interesting Nullclines ###\n")
+println("\n### WCM 1973 Oscillatory Mode ###\n")
 
 # Create custom parameters that produce interesting nullcline shapes
 # with a fixed point at moderate activity levels
 lattice = PointLattice()
 
-# Adjusted parameters for nullcline visualization with fixed point away from origin
-# Using RectifiedZeroedSigmoidNonlinearity with parameters that produce:
-# - N-shaped E-nullcline to enable multiple intersections
-# - Fixed point at moderate activity (not near origin)
-# - Activity that stays positive (important for rectified sigmoid)
-# Strategy: Moderate excitation, balanced inhibition, negative thresholds, moderate decay
-vₑ, θₑ = 5.0, -0.5   # Sigmoid steepness and threshold for E (steep and negative)
-vᵢ, θᵢ = 3.5, -0.3   # Sigmoid steepness and threshold for I (less steep)
-bₑₑ = 2.5            # E → E (moderate excitatory self-connection)
-bᵢₑ = 1.8            # I → E (moderate inhibitory to excitatory)
-bₑᵢ = 3.5            # E → I (strong excitatory to inhibitory)
-bᵢᵢ = 0.2            # I → I (weak inhibitory self-connection)
-α_E = 1.0            # Moderate decay rate for E to prevent negative activity
-α_I = 1.0            # Moderate decay rate for I to prevent negative activity
+# Use Wilson & Cowan 1973 oscillatory mode parameters
+# Note: With the corrected nonlinearity implementation (applied to inputs, not activity),
+# the original WCM1973 parameters may show different dynamics than in the 1973 paper
+println("Using Wilson & Cowan 1973 oscillatory mode parameters")
+params_wcm = create_point_model_wcm1973(:oscillatory)
 
-# Create nonlinearity - use RectifiedZeroedSigmoidNonlinearity
-nonlinearity_e = RectifiedZeroedSigmoidNonlinearity(a=vₑ, θ=θₑ)
-nonlinearity_i = RectifiedZeroedSigmoidNonlinearity(a=vᵢ, θ=θᵢ)
+# Extract parameters from WCM model
+α_E = params_wcm.α[1]
+α_I = params_wcm.α[2]
+vₑ = params_wcm.nonlinearity[1].a
+θₑ = params_wcm.nonlinearity[1].θ
+vᵢ = params_wcm.nonlinearity[2].a
+θᵢ = params_wcm.nonlinearity[2].θ
+bₑₑ = params_wcm.connectivity[1,1].weight
+bᵢₑ = -params_wcm.connectivity[1,2].weight  # Note: stored as negative in matrix
+bₑᵢ = params_wcm.connectivity[2,1].weight
+bᵢᵢ = -params_wcm.connectivity[2,2].weight  # Note: stored as negative in matrix
+
+# Use the same nonlinearity type as WCM1973 (SigmoidNonlinearity)
+nonlinearity_e = SigmoidNonlinearity(a=vₑ, θ=θₑ)
+nonlinearity_i = SigmoidNonlinearity(a=vᵢ, θ=θᵢ)
 nonlinearity = (nonlinearity_e, nonlinearity_i)
 
 # Create connectivity
@@ -147,34 +154,13 @@ dE_dt_field, dI_dt_field = compute_derivative_fields(E_grid, I_grid, params_osc)
 
 println("✓ Nullcline fields computed")
 
-# Simulate trajectory - use custom solve with positive domain constraint
-# This ensures activity never goes below zero, which is required for RectifiedZeroedSigmoidNonlinearity
+# Simulate trajectory
 println("\nSimulating trajectory...")
-using DifferentialEquations
-A₀_osc = reshape([0.3, 0.2], 1, 2)  # Initial condition that produces oscillations
+A₀_osc = reshape([0.3, 0.2], 1, 2)  # Initial condition
 tspan = (0.0, 300.0)
 
-# Create ODE problem
-prob = ODEProblem(wcm1973!, A₀_osc, tspan, params_osc)
-
-# Create a callback to enforce non-negative activity
-# This is necessary because RectifiedZeroedSigmoidNonlinearity requires non-negative inputs
-# The decay term in WCM can push activity negative, so we clamp at each time step
-function affect_clamp!(integrator)
-    # Clamp all values to be non-negative
-    for i in eachindex(integrator.u)
-        if integrator.u[i] < 0.0
-            integrator.u[i] = 0.0
-        end
-    end
-    u_modified!(integrator, true)
-end
-
-# Use PeriodicCallback to clamp frequently (every 0.001 time units)
-cb = PeriodicCallback(affect_clamp!, 0.001, save_positions=(false,false))
-
-# Solve with callback
-sol = solve(prob, Tsit5(), callback=cb, saveat=0.5)
+# Solve with the standard ODE solver (no clamping needed for SigmoidNonlinearity)
+sol = solve_model(A₀_osc, tspan, params_osc, saveat=0.5)
 
 times_osc = sol.t
 E_activity = [sol.u[i][1, 1] for i in 1:length(times_osc)]
@@ -317,19 +303,21 @@ println("Summary")
 println("="^70)
 println()
 println("This example demonstrates phase space analysis with nullclines for")
-println("an oscillatory Wilson-Cowan model:")
+println("the Wilson-Cowan 1973 oscillatory mode:")
 println()
 println("Key observations:")
 println("  • E-nullcline (blue): curve where dE/dt = 0")
 println("  • I-nullcline (red): curve where dI/dt = 0")
-println("  • Fixed point (gold star): intersection of nullclines (unstable)")
-println("  • Limit cycle (purple): stable oscillation in phase space")
+println("  • Fixed point (gold star): intersection of nullclines")
+println("  • Trajectory (gray/purple): system evolution in phase space")
 println()
-println("The trajectory is attracted to a stable limit cycle around the unstable")
-println("fixed point, which is characteristic of the oscillatory mode. The nullclines")
-println("reveal the structure of the phase space that produces these dynamics.")
-println("When E is high, the system crosses the E-nullcline and E decreases.")
-println("When I is high, the system crosses the I-nullcline and I decreases.")
+println("The nullclines reveal the structure of the phase space. The intersection of")
+println("nullclines indicates the fixed point where both dE/dt=0 and dI/dt=0.")
+println()
+println("Note: With the corrected nonlinearity implementation (applied to inputs, not activity),")
+println("these WCM 1973 parameters converge to a stable fixed point at low activity rather than")
+println("producing sustained oscillations. This demonstrates how the nonlinearity application")
+println("method fundamentally affects model dynamics.")
 println()
 println("Files generated:")
 println("  • $output_file")
