@@ -33,9 +33,10 @@ lattice = CompactLattice(extent=(1400.0,), n_points=(128,))  # Reduced from 512 
 
 # Define connectivity with Gaussian spatial kernels
 # Connectivity parameters: A=amplitude, S=spatial scale (μm)
+# Using Aie=2.0 (E→I) to ensure full E activity completely suppresses I, preventing rebound
 conn_ee = GaussianConnectivityParameter(1.0, (25.0,))    # E→E: Aee=1.0, See=25.0
 conn_ei = GaussianConnectivityParameter(-1.5, (27.0,))   # I→E: Aei=1.5, Sei=27.0 (inhibitory)
-conn_ie = GaussianConnectivityParameter(1.0, (25.0,))    # E→I: Aie=1.0, Sie=25.0
+conn_ie = GaussianConnectivityParameter(2.0, (25.0,))    # E→I: Aie=2.0, Sie=25.0 (increased for I suppression)
 conn_ii = GaussianConnectivityParameter(-0.25, (27.0,))  # I→I: Aii=0.25, Sii=27.0 (inhibitory)
 
 connectivity = ConnectivityMatrix{2}([
@@ -160,6 +161,11 @@ if !isnothing(stim_idx)
     I_max_stim = maximum(I_during_stim)
     I_end_stim = I_activity[stim_idx]
     
+    # Check if I rebounds post-stimulus (any I value > 0.05 after stimulus)
+    I_post_stim = I_activity[stim_idx:end]
+    I_max_post = maximum(I_post_stim)
+    I_rebounds = I_max_post > 0.05
+    
     println("Phase 1 (During stimulus, t=0-$stim_end):")
     println("  E activity rises to: $(round(E_activity[stim_idx], digits=4))")
     println("  I activity suppressed, max during stimulus: $(round(I_max_stim, digits=4))")
@@ -168,28 +174,44 @@ if !isnothing(stim_idx)
         println("  → Inhibition is BLOCKED during stimulus (failure of inhibition)")
     end
     
-    println("\nPhase 2 (Post-stimulus rebound, t=$stim_end-$(round(I_max_time, digits=1))):")
-    println("  After stimulus ends, I rebounds to peak: $(round(I_max_overall, digits=4))")
-    println("  This occurs at t=$(round(I_max_time, digits=2))")
-    
-    println("\nPhase 3 (Decay phase, t>$(round(I_max_time, digits=1))):")
-    println("  Both populations decay from their peaks")
-    println("  E decays from $(round(E_max_overall, digits=4)) to $(round(E_activity[end], digits=4))")
-    println("  I decays from $(round(I_max_overall, digits=4)) to $(round(I_activity[end], digits=4))")
+    if I_rebounds
+        println("\nPhase 2 (Post-stimulus rebound, t=$stim_end-$(round(I_max_time, digits=1))):")
+        println("  After stimulus ends, I rebounds to peak: $(round(I_max_overall, digits=4))")
+        println("  This occurs at t=$(round(I_max_time, digits=2))")
+        
+        println("\nPhase 3 (Decay phase, t>$(round(I_max_time, digits=1))):")
+        println("  Both populations decay from their peaks")
+        println("  E decays from $(round(E_max_overall, digits=4)) to $(round(E_activity[end], digits=4))")
+        println("  I decays from $(round(I_max_overall, digits=4)) to $(round(I_activity[end], digits=4))")
+    else
+        println("\nPhase 2 (Post-stimulus, t>$stim_end):")
+        println("  I remains suppressed (max post-stimulus: $(round(I_max_post, digits=4)))")
+        println("  High E→I connectivity keeps I blocked")
+        println("  E self-sustains at high level: $(round(E_activity[stim_idx], digits=4))")
+        
+        println("\nPhase 3 (Long-term dynamics, t>10):")
+        println("  E slowly decays from $(round(E_max_overall, digits=4)) to $(round(E_activity[end], digits=4))")
+        println("  I stays near zero throughout")
+    end
 end
 
 # Final state summary
 E_final = E_activity[end]
 I_final = I_activity[end]
 E_max_final = E_max_spatial[end]
+E_at_stim_end = !isnothing(stim_idx) ? E_activity[stim_idx] : 0.0
 
 if stimulus_values[end] == 0.0
     println("\nFinal State (t=$(round(times[end], digits=1))):")
     println("  E activity: $(round(E_final, digits=4))")
     println("  I activity: $(round(I_final, digits=4))")
     
-    # Consider activity as "persistent" if it's above initial conditions
-    if E_max_final > 0.002  # Well above initial 0.001
+    # Determine if E self-sustains (maintains high level) vs just persists at low level
+    if E_at_stim_end > 0.5 && E_final > 0.5 * E_at_stim_end
+        println("\n  ✓✓ STRONG SELF-SUSTAINING: E maintains high level ($(round(E_final, digits=4)))")
+        println("    E→I connectivity (Aie=2.0) keeps I suppressed, preventing decay")
+        println("    This demonstrates the full FoI mechanism with sustained high activity!")
+    elseif E_max_final > 0.002  # Well above initial 0.001
         println("\n  ✓ Excitatory activity persists at $(round(E_final, digits=4)) without external stimulation!")
         println("    FoI mechanism (blocked inhibition during stimulus) enables this persistence")
     else
