@@ -382,9 +382,9 @@ SIAM Journal on Applied Dynamical Systems, 17(1), 501-520.
 - `Aei`, `Sei`: Inhibitory-to-excitatory amplitude and spread (default: 1.5, 27.0)
 - `aE`, `θE`: Excitatory nonlinearity slope and threshold (default: 50.0, 0.125)
 - `aI`, `θI`: Inhibitory nonlinearity slope and threshold (default: 50.0, 0.4)
-- `α`: Decay rates for (E, I) (default: (1.0, 1.0))
-- `β`: Saturation coefficients for (E, I) (default: (1.0, 1.0))
-- `τ`: Time constants for (E, I) (default: (1.0, 0.4))
+- `αE`, `αI`: Decay rates for E and I (default: 1.0, 1.0)
+- `βE`, `βI`: Saturation coefficients for E and I (default: 1.0, 1.0)
+- `τE`, `τI`: Time constants for E and I (default: 1.0, 0.4)
 
 # Returns
 WilsonCowanParameters{2} configured for Harris-Ermentrout traveling waves
@@ -404,9 +404,9 @@ function create_harris_ermentrout_parameters(;
     Aei=1.5, Sei=27.0,
     aE=50.0, θE=0.125,
     aI=50.0, θI=0.4,
-    α=(1.0, 1.0),
-    β=(1.0, 1.0),
-    τ=(1.0, 0.4))
+    αE=1.0, αI=1.0,
+    βE=1.0, βI=1.0,
+    τE=1.0, τI=0.4)
     
     # Create default lattice if not provided
     # Use 1D periodic lattice with parameters from prototype
@@ -432,9 +432,9 @@ function create_harris_ermentrout_parameters(;
     
     # Create parameters
     params = WilsonCowanParameters{2}(
-        α = α,
-        β = β,
-        τ = τ,
+        α = (αE, αI),
+        β = (βE, βI),
+        τ = (τE, τI),
         connectivity = connectivity,
         nonlinearity = nonlinearity,
         stimulus = nothing,
@@ -498,7 +498,7 @@ field dynamics including spread and propagation phenomena.
 - `aE`, `θE`: Excitatory nonlinearity slope and threshold (default: 50.0, 0.125)
 - `aI`, `θI`: Inhibitory nonlinearity slope and threshold (default: 50.0, 0.2)
 - `αE`, `αI`: Decay rates for E and I (default: 0.4, 0.7)
-- `β`: Saturation coefficients for (E, I) (default: (1.0, 1.0))
+- `βE`, `βI`: Saturation coefficients for E and I (default: 1.0, 1.0)
 - `τE`, `τI`: Time constants for E and I (default: 1.0, 0.4)
 
 # Returns
@@ -513,7 +513,7 @@ function create_full_dynamics_monotonic_parameters(;
     aE=50.0, θE=0.125,
     aI=50.0, θI=0.2,
     αE=0.4, αI=0.7,
-    β=(1.0, 1.0),
+    βE=1.0, βI=1.0,
     τE=1.0, τI=0.4)
     
     # Create default lattice if not provided
@@ -540,7 +540,7 @@ function create_full_dynamics_monotonic_parameters(;
     # Create parameters
     params = WilsonCowanParameters{2}(
         α = (αE, αI),
-        β = β,
+        β = (βE, βI),
         τ = (τE, τI),
         connectivity = connectivity,
         nonlinearity = nonlinearity,
@@ -618,9 +618,9 @@ propagate along a 1D neural field.
 - `Aei`, `Sei`: Inhibitory-to-excitatory amplitude and spread (default: 18.2, 2.7)
 - `aE`, `θE`: Excitatory nonlinearity slope and threshold (default: 1.2, 2.6)
 - `aI`, `θI`: Inhibitory nonlinearity slope and threshold (default: 1.0, 8.0)
-- `α`: Decay rates for (E, I) (default: (1.5, 1.0))
-- `β`: Saturation coefficients for (E, I) (default: (1.1, 1.1))
-- `τ`: Time constants for (E, I) (default: (10.0, 18.0))
+- `αE`, `αI`: Decay rates for E and I (default: 1.5, 1.0)
+- `βE`, `βI`: Saturation coefficients for E and I (default: 1.1, 1.1)
+- `τE`, `τI`: Time constants for E and I (default: 10.0, 18.0)
 
 # Returns
 WilsonCowanParameters{2} configured for oscillating pulse dynamics
@@ -633,9 +633,9 @@ function create_oscillating_pulse_parameters(;
     Aei=18.2, Sei=2.7,
     aE=1.2, θE=2.6,
     aI=1.0, θI=8.0,
-    α=(1.5, 1.0),
-    β=(1.1, 1.1),
-    τ=(10.0, 18.0))
+    αE=1.5, αI=1.0,
+    βE=1.1, βI=1.1,
+    τE=10.0, τI=18.0)
     
     # Create default lattice if not provided
     if lattice === nothing
@@ -661,9 +661,9 @@ function create_oscillating_pulse_parameters(;
     
     # Create parameters
     params = WilsonCowanParameters{2}(
-        α = α,
-        β = β,
-        τ = τ,
+        α = (αE, αI),
+        β = (βE, βI),
+        τ = (τE, τI),
         connectivity = connectivity,
         nonlinearity = nonlinearity,
         stimulus = nothing,
@@ -685,9 +685,9 @@ on a 2D periodic lattice (torus topology).
 # Keyword Arguments
 - `lattice`: Spatial lattice (defaults to 2D periodic lattice if not provided)
 - Connectivity and nonlinearity parameters similar to `create_oscillating_pulse_parameters`
-- `α`: Decay rates for (E, I) (default: (1.0, 1.0))
-- `β`: Saturation coefficients for (E, I) (default: (1.0, 1.0))
-- `τ`: Time constants for (E, I) (default: (3.0, 3.0))
+- `αE`, `αI`: Decay rates for E and I (default: 1.0, 1.0)
+- `βE`, `βI`: Saturation coefficients for E and I (default: 1.0, 1.0)
+- `τE`, `τI`: Time constants for E and I (default: 3.0, 3.0)
 
 # Returns
 WilsonCowanParameters{2} configured for propagating patterns on torus
@@ -700,9 +700,9 @@ function create_propagating_torus_parameters(;
     Aei=18.2, Sei=2.7,
     aE=1.2, θE=2.6,
     aI=1.0, θI=8.0,
-    α=(1.0, 1.0),
-    β=(1.0, 1.0),
-    τ=(3.0, 3.0))
+    αE=1.0, αI=1.0,
+    βE=1.0, βI=1.0,
+    τE=3.0, τI=3.0)
     
     # Create default lattice if not provided - 2D torus
     if lattice === nothing
@@ -730,9 +730,9 @@ function create_propagating_torus_parameters(;
     
     # Create parameters
     params = WilsonCowanParameters{2}(
-        α = α,
-        β = β,
-        τ = τ,
+        α = (αE, αI),
+        β = (βE, βI),
+        τ = (τE, τI),
         connectivity = connectivity,
         nonlinearity = nonlinearity,
         stimulus = nothing,
