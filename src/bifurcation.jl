@@ -658,7 +658,8 @@ function optimize_for_stable_fixed_points(base_params::WilsonCowanParameters{T,P
             # Update nonlinearity parameters
             elseif name == :sigmoid_a_e
                 nl_e = new_params.nonlinearity[1]
-                new_nl_e = typeof(nl_e)(a=val, θ=nl_e.θ)
+                # Use the base constructor name instead of typeof
+                new_nl_e = SigmoidNonlinearity(a=val, θ=nl_e.θ)
                 new_nonlinearity = (new_nl_e, new_params.nonlinearity[2])
                 new_params = WilsonCowanParameters{P}(
                     α=new_params.α, β=new_params.β, τ=new_params.τ,
@@ -667,7 +668,7 @@ function optimize_for_stable_fixed_points(base_params::WilsonCowanParameters{T,P
                 )
             elseif name == :sigmoid_theta_e
                 nl_e = new_params.nonlinearity[1]
-                new_nl_e = typeof(nl_e)(a=nl_e.a, θ=val)
+                new_nl_e = SigmoidNonlinearity(a=nl_e.a, θ=val)
                 new_nonlinearity = (new_nl_e, new_params.nonlinearity[2])
                 new_params = WilsonCowanParameters{P}(
                     α=new_params.α, β=new_params.β, τ=new_params.τ,
@@ -676,7 +677,7 @@ function optimize_for_stable_fixed_points(base_params::WilsonCowanParameters{T,P
                 )
             elseif name == :sigmoid_a_i
                 nl_i = new_params.nonlinearity[2]
-                new_nl_i = typeof(nl_i)(a=val, θ=nl_i.θ)
+                new_nl_i = SigmoidNonlinearity(a=val, θ=nl_i.θ)
                 new_nonlinearity = (new_params.nonlinearity[1], new_nl_i)
                 new_params = WilsonCowanParameters{P}(
                     α=new_params.α, β=new_params.β, τ=new_params.τ,
@@ -685,7 +686,7 @@ function optimize_for_stable_fixed_points(base_params::WilsonCowanParameters{T,P
                 )
             elseif name == :sigmoid_theta_i
                 nl_i = new_params.nonlinearity[2]
-                new_nl_i = typeof(nl_i)(a=nl_i.a, θ=val)
+                new_nl_i = SigmoidNonlinearity(a=nl_i.a, θ=val)
                 new_nonlinearity = (new_params.nonlinearity[1], new_nl_i)
                 new_params = WilsonCowanParameters{P}(
                     α=new_params.α, β=new_params.β, τ=new_params.τ,
