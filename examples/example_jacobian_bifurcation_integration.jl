@@ -66,7 +66,9 @@ println()
 
 # Create parameter lens for varying connectivity weight
 # We'll vary the E→E connection strength
-lens = @optic _.connectivity.matrix[1,1].weight
+# Note: The actual lens creation requires the @optic macro from Accessors/Setfield
+# Here we just use the built-in helper function from FailureOfInhibition2025
+lens = create_connectivity_lens(1, 1)  # E→E connectivity
 
 println("Parameter to vary: E→E connectivity weight")
 println("  Current value: $(params.connectivity.matrix[1,1].weight)")

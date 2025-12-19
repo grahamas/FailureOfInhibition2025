@@ -8,8 +8,32 @@ using FailureOfInhibition2025
 using Test
 using LinearAlgebra
 
-# Helper function to compute numerical Jacobian using finite differences
-# For point models, A should be (1, P) matrix or P-vector
+using FailureOfInhibition2025
+using Test
+using LinearAlgebra
+
+# Tolerance constants for numerical comparisons
+const JACOBIAN_ATOL = 1e-5
+const JACOBIAN_RTOL = 1e-4
+
+"""
+    numerical_jacobian(f!, A, p, t; h=1e-7)
+
+Compute numerical Jacobian using finite differences for point models.
+
+For point models, A should be (1, P) matrix or P-vector.
+Uses forward differences to approximate ∂f/∂A.
+
+# Arguments
+- `f!`: ODE function that computes dA/dt
+- `A`: Current state (vector or matrix)
+- `p`: Parameters (WilsonCowanParameters)
+- `t`: Current time
+- `h`: Step size for finite differences (default: 1e-7)
+
+# Returns
+- `J`: PxP Jacobian matrix
+"""
 function numerical_jacobian(f!, A, p, t; h=1e-7)
     # Determine if this is a point model
     is_point_model = p.lattice isa PointLattice
@@ -82,7 +106,7 @@ end
         println(J_analytical - J_numerical)
         
         # Test that they match (within numerical tolerance)
-        @test isapprox(J_analytical, J_numerical, atol=1e-5, rtol=1e-4)
+        @test isapprox(J_analytical, J_numerical, atol=JACOBIAN_ATOL, rtol=JACOBIAN_RTOL)
     end
     
     @testset "Point Model - Different States" begin
@@ -105,7 +129,7 @@ end
             
             J_numerical = numerical_jacobian(wcm1973!, A_vec, params, 0.0)
             
-            @test isapprox(J_analytical, J_numerical, atol=1e-5, rtol=1e-4)
+            @test isapprox(J_analytical, J_numerical, atol=JACOBIAN_ATOL, rtol=JACOBIAN_RTOL)
         end
         
         println("✓ All states tested successfully")
@@ -127,7 +151,7 @@ end
         println("\nNumerical Jacobian:")
         println(J_numerical)
         
-        @test isapprox(J_analytical, J_numerical, atol=1e-5, rtol=1e-4)
+        @test isapprox(J_analytical, J_numerical, atol=JACOBIAN_ATOL, rtol=JACOBIAN_RTOL)
     end
     
     @testset "Per-Population Nonlinearities" begin
@@ -176,7 +200,7 @@ end
         println("\nNumerical Jacobian:")
         println(J_numerical)
         
-        @test isapprox(J_analytical, J_numerical, atol=1e-5, rtol=1e-4)
+        @test isapprox(J_analytical, J_numerical, atol=JACOBIAN_ATOL, rtol=JACOBIAN_RTOL)
     end
     
     @testset "DifferenceOfSigmoids Nonlinearity" begin
@@ -225,7 +249,7 @@ end
         println("\nNumerical Jacobian:")
         println(J_numerical)
         
-        @test isapprox(J_analytical, J_numerical, atol=1e-5, rtol=1e-4)
+        @test isapprox(J_analytical, J_numerical, atol=JACOBIAN_ATOL, rtol=JACOBIAN_RTOL)
     end
     
     @testset "No Connectivity" begin
@@ -261,7 +285,7 @@ end
         @test J_analytical[1, 2] ≈ 0.0 atol=1e-10
         @test J_analytical[2, 1] ≈ 0.0 atol=1e-10
         
-        @test isapprox(J_analytical, J_numerical, atol=1e-5, rtol=1e-4)
+        @test isapprox(J_analytical, J_numerical, atol=JACOBIAN_ATOL, rtol=JACOBIAN_RTOL)
     end
     
     @testset "Jacobian Structure" begin
