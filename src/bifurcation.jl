@@ -731,24 +731,19 @@ function optimize_for_stable_fixed_points(base_params::WilsonCowanParameters{T,P
     
     # Objective function: minimize deviation from target number of stable FPs
     function objective(param_values)
-        try
-            # Update parameters
-            params = update_parameters(base_params, param_values)
-            
-            # Count stable fixed points
-            n_stable, _, _ = count_stable_fixed_points(params; n_trials=n_trials_per_eval)
-            
-            # Return deviation from target
-            # Allow some tolerance
-            deviation = abs(n_stable - target_n_stable)
-            if deviation <= tolerance
-                return 0.0
-            else
-                return Float64(deviation)
-            end
-        catch e
-            # If there's an error, return a large penalty
-            return 1e6
+        # Update parameters
+        params = update_parameters(base_params, param_values)
+        
+        # Count stable fixed points
+        n_stable, _, _ = count_stable_fixed_points(params; n_trials=n_trials_per_eval)
+        
+        # Return deviation from target
+        # Allow some tolerance
+        deviation = abs(n_stable - target_n_stable)
+        if deviation <= tolerance
+            return 0.0
+        else
+            return Float64(deviation)
         end
     end
     
