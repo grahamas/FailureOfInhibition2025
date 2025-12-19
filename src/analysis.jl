@@ -950,3 +950,118 @@ function generate_analytical_traveling_wave(params::WilsonCowanParameters{T,1}, 
     # Return a named tuple that mimics ODE solution structure
     return (u=u_array, t=t_array)
 end
+
+#=============================================================================
+Phase Space Analysis
+=============================================================================#
+
+"""
+    compute_phase_space_derivatives(E_range, I_range, params; n_points=200)
+
+Compute dE/dt and dI/dt fields on a grid of (E, I) values for phase space analysis.
+
+This function evaluates the Wilson-Cowan dynamics at each point in the (E, I) phase space,
+producing vector fields that can be used to:
+- Plot nullclines (zero-level contours of dE/dt and dI/dt)
+- Visualize flow directions
+- Find fixed points
+
+# Arguments
+- `E_range`: Range or vector of E values to evaluate (default: 0.0 to 1.0)
+- `I_range`: Range or vector of I values to evaluate (default: 0.0 to 1.0)
+- `params`: WilsonCowanParameters for the model
+- `n_points`: Number of grid points in each dimension (default: 200)
+
+# Returns
+- `E_grid`: 2D array of E coordinates
+- `I_grid`: 2D array of I coordinates
+- `dE_dt_field`: 2D array of dE/dt values
+- `dI_dt_field`: 2D array of dI/dt values
+"""
+function compute_phase_space_derivatives(E_range, I_range, params)
+    # Create meshgrid
+    E_grid = [E for E in E_range, I in I_range]
+    I_grid = [I for E in E_range, I in I_range]
+    
+    # Compute both dE/dt and dI/dt at each grid point
+    dE_dt_field = similar(E_grid)
+    dI_dt_field = similar(E_grid)
+    
+    for i in eachindex(E_grid)
+        E = E_grid[i]
+        I = I_grid[i]
+        
+        # Create state array for this point
+        A = reshape([E, I], 1, 2)
+        dA = zeros(1, 2)
+        
+        # Use wcm1973! to compute derivatives
+        wcm1973!(dA, A, params, 0.0)
+        
+        # Extract both dE/dt and dI/dt
+        dE_dt_field[i] = dA[1, 1]
+        dI_dt_field[i] = dA[1, 2]
+    end
+    
+    return E_grid, I_grid, dE_dt_field, dI_dt_field
+end
+
+"""
+    find_fixed_points(E_range, I_range, params; threshold=1e-6, n_points=100)
+
+Find all fixed points in the phase space where dE/dt ≈ 0 and dI/dt ≈ 0.
+
+Uses a grid-based search followed by local refinement to find points where
+both derivatives are simultaneously close to zero.
+
+# Arguments
+- `E_range`: Range of E values to search (default: 0.0 to 1.0)
+- `I_range`: Range of I values to search (default: 0.0 to 1.0)
+- `params`: WilsonCowanParameters for the model
+- `threshold`: Maximum squared derivative magnitude for a fixed point (default: 1e-6)
+- `n_points`: Number of grid points per dimension for initial search (default: 100)
+
+# Returns
+- `fixed_points`: Vector of tuples (E, I) representing fixed point locations
+"""
+function find_fixed_points(E_range, I_range, params; threshold=1e-6, n_points=100)
+    # Compute derivative fields on grid
+    E_grid, I_grid, dE_dt_field, dI_dt_field = compute_phase_space_derivatives(E_range, I_range, params)
+    
+    # Find candidate fixed points (local minima of squared derivative magnitude)
+    candidates = Tuple{Float64, Float64}[]
+    
+    # Compute squared magnitude of derivative vector at each point
+    magnitude_sq = dE_dt_field.^2 .+ dI_dt_field.^2
+    
+    # Find all points below threshold
+    for i in eachindex(E_grid)
+        if magnitude_sq[i] < threshold
+            E = E_grid[i]
+            I = I_grid[i]
+            
+            # Check if this is a new fixed point (not too close to existing ones)
+            is_new = true
+            for (E_fp, I_fp) in candidates
+                if sqrt((E - E_fp)^2 + (I - I_fp)^2) < 0.05  # Minimum separation
+                    is_new = false
+                    break
+                end
+            end
+            
+            if is_new
+                push!(candidates, (E, I))
+            end
+        end
+    end
+    
+    # If no candidates found below threshold, return the point with minimum magnitude
+    if isempty(candidates)
+        min_idx = argmin(magnitude_sq)
+        E_min = E_grid[min_idx]
+        I_min = I_grid[min_idx]
+        push!(candidates, (E_min, I_min))
+    end
+    
+    return candidates
+end

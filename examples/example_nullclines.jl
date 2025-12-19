@@ -3,9 +3,9 @@
 """
 Illustrate nullclines for Wilson-Cowan Model with Blocking Inhibition.
 
-This script demonstrates phase space analysis with nullclines using the full dynamics
-model with blocking (non-monotonic) inhibition. This parameterization uses a difference
-of sigmoids for the inhibitory population, creating the characteristic "failure of inhibition"
+This example demonstrates phase space analysis using library functions from
+FailureOfInhibition2025.jl. It uses the full dynamics model with blocking 
+(non-monotonic) inhibition which creates the characteristic "failure of inhibition"
 dynamics where inhibition fails at high activity levels.
 
 The nullclines are curves in (E, I) phase space where:
@@ -34,186 +34,103 @@ println("Full Dynamics with Blocking Inhibition")
 println("="^70)
 
 #=============================================================================
-Nullcline Computation Functions
-=============================================================================#
-
-"""
-    compute_derivative_fields(E_grid, I_grid, params)
-
-Compute both dE/dt and dI/dt fields on a grid of (E, I) values.
-The E-nullcline is the zero-level contour of dE/dt field.
-The I-nullcline is the zero-level contour of dI/dt field.
-Uses wcm1973! to compute derivatives properly.
-
-Returns (dE_dt_field, dI_dt_field)
-"""
-function compute_derivative_fields(E_grid, I_grid, params)
-    # Compute both dE/dt and dI/dt at each grid point using wcm1973!
-    dE_dt = similar(E_grid)
-    dI_dt = similar(E_grid)
-    
-    for i in eachindex(E_grid)
-        E = E_grid[i]
-        I = I_grid[i]
-        
-        # Create state array for this point
-        A = reshape([E, I], 1, 2)
-        dA = zeros(1, 2)
-        
-        # Use wcm1973! to compute derivatives
-        wcm1973!(dA, A, params, 0.0)
-        
-        # Extract both dE/dt and dI/dt
-        dE_dt[i] = dA[1, 1]
-        dI_dt[i] = dA[1, 2]
-    end
-    
-    return dE_dt, dI_dt
-end
-
-
-
-#=============================================================================
-Main Analysis: Oscillatory Mode
+Main Analysis: Full Dynamics with Blocking Inhibition
 =============================================================================#
 
 println("\n### Full Dynamics with Blocking Inhibition ###\n")
 
-# Create parameters using the canonical constructor for full dynamics with
-# blocking (difference-of-sigmoids) inhibition. Use a point model lattice so
-# this example performs phase-space analysis (non-spatial).
-println("Using `create_full_dynamics_blocking_parameters` for model parameters")
-
-# Use PointLattice for a point-model analysis and prefer canonical defaults
+# Create parameters for point model using full_dynamics_blocking
 lattice = PointLattice()
+params_blocking = create_full_dynamics_blocking_parameters(lattice=lattice)
 
-# Only specify the lattice here — other parameters use the defaults from
-# `create_full_dynamics_blocking_parameters` in `src/canonical.jl`.
-params_osc = create_full_dynamics_blocking_parameters(lattice = lattice)
-
-println("Model parameters loaded from canonical constructor (defaults used)")
-println("  α = $(params_osc.α), β = $(params_osc.β), τ = $(params_osc.τ)")
-println("  Lattice: $(typeof(params_osc.lattice))")
-
-# Compute nullclines using grid-based approach for contour plotting
-println("\nComputing nullcline fields...")
-E_range = range(0.0, 1.0, length=200)
-I_range = range(0.0, 1.0, length=200)
-
-# Create meshgrid for contour plotting
-E_grid = [E for E in E_range, I in I_range]
-I_grid = [I for E in E_range, I in I_range]
-
-# Compute dE/dt and dI/dt fields using wcm1973! (computed together for efficiency)
-dE_dt_field, dI_dt_field = compute_derivative_fields(E_grid, I_grid, params_osc)
-
-println("✓ Nullcline fields computed")
+println("Using full dynamics with blocking inhibition parameters")
+println("Model parameters:")
+println("  α_E = $(params_blocking.α[1]), α_I = $(params_blocking.α[2])")
+println("  β_E = $(params_blocking.β[1]), β_I = $(params_blocking.β[2])")
+println("  τ_E = $(params_blocking.τ[1]), τ_I = $(params_blocking.τ[2])")
+println("  E nonlinearity: $(typeof(params_blocking.nonlinearity[1]))")
+println("  I nonlinearity: $(typeof(params_blocking.nonlinearity[2]))")
 
 # Simulate trajectory
 println("\nSimulating trajectory...")
-A₀_osc = reshape([0.3, 0.2], 1, 2)  # Initial condition
+A₀ = reshape([0.3, 0.2], 1, 2)  # Initial condition
 tspan = (0.0, 300.0)
 
 # Solve with the standard ODE solver
-sol = solve_model(A₀_osc, tspan, params_osc, saveat=0.5)
+sol = solve_model(A₀, tspan, params_blocking, saveat=0.5)
 
-times_osc = sol.t
-E_activity = [sol.u[i][1, 1] for i in 1:length(times_osc)]
-I_activity = [sol.u[i][1, 2] for i in 1:length(times_osc)]
+times = sol.t
+E_activity = [sol.u[i][1, 1] for i in 1:length(times)]
+I_activity = [sol.u[i][1, 2] for i in 1:length(times)]
 
 println("✓ Trajectory simulated")
 
-# Extract just the oscillatory portion (skip initial transient)
-osc_start_idx = findfirst(t -> t > 50.0, times_osc)
-osc_end_idx = length(times_osc)
-E_activity_osc = E_activity[osc_start_idx:osc_end_idx]
-I_activity_osc = I_activity[osc_start_idx:osc_end_idx]
+# Generate phase portrait using library functions
+println("\nGenerating phase portrait with nullclines...")
 
-#=============================================================================
-Plotting
-=============================================================================#
+# Use library functions to compute phase space
+E_range = 0.0:0.005:1.0
+I_range = 0.0:0.005:1.0
+E_grid, I_grid, dE_dt_field, dI_dt_field = compute_phase_space_derivatives(E_range, I_range, params_blocking)
 
-println("\nGenerating plots...")
+# Find all fixed points
+fixed_points = find_fixed_points(E_range, I_range, params_blocking)
 
-# Create phase portrait with nullclines
-p = plot(size=(800, 600), dpi=150)
+# Create phase portrait plot
+p = plot(size=(900, 900), dpi=150)
 
-# Plot nullclines using contour with level 0
-contour!(p, E_range, I_range, dE_dt_field',
+# Plot E-nullcline (dE/dt = 0)
+contour!(p, collect(E_range), collect(I_range), dE_dt_field',
     levels=[0.0],
     linewidth=2.5,
     color=:blue,
-    linestyle=:solid,
     colorbar=false,
-    label="")  # Disable automatic label from contour
+    label="")
 
-contour!(p, E_range, I_range, dI_dt_field',
+# Plot I-nullcline (dI/dt = 0)
+contour!(p, collect(E_range), collect(I_range), dI_dt_field',
     levels=[0.0],
     linewidth=2.5,
     color=:red,
-    linestyle=:solid,
     colorbar=false,
-    label="")  # Disable automatic label from contour
+    label="")
 
-# Add dummy lines for legend entries (they won't be visible but will appear in legend)
+# Add legend entries
 plot!(p, [NaN], [NaN], 
     label="E-nullcline (dE/dt=0)",
     linewidth=2.5,
-    color=:blue,
-    linestyle=:solid)
+    color=:blue)
 
 plot!(p, [NaN], [NaN],
     label="I-nullcline (dI/dt=0)",
     linewidth=2.5,
-    color=:red,
-    linestyle=:solid)
+    color=:red)
 
-# Plot full trajectory (lighter)
+# Plot trajectory
 plot!(p, E_activity, I_activity,
-    label="Full trajectory",
+    label="Trajectory",
     linewidth=1,
     linestyle=:dot,
     color=:gray,
-    alpha=0.4)
+    alpha=0.6)
 
-# Plot oscillatory portion (emphasized)
-plot!(p, E_activity_osc, I_activity_osc,
-    label="Limit cycle",
-    linewidth=2,
-    linestyle=:solid,
-    color=:purple,
-    alpha=0.8)
-
-# Mark starting point of oscillations
-scatter!(p, [E_activity_osc[1]], [I_activity_osc[1]],
-    label="Cycle start",
+# Mark start
+scatter!(p, [E_activity[1]], [I_activity[1]],
+    label="Start",
     marker=:circle,
     markersize=6,
-    color=:purple)
+    color=:green)
 
-# Find and mark approximate fixed point (where both dE/dt ≈ 0 and dI/dt ≈ 0)
-function find_fixed_point(E_grid, I_grid, dE_dt_field, dI_dt_field)
-    # Find point where both derivatives are closest to zero
-    min_sum = Inf
-    fixed_E, fixed_I = 0.0, 0.0
-    for i in eachindex(E_grid)
-        sum_sq = dE_dt_field[i]^2 + dI_dt_field[i]^2
-        if sum_sq < min_sum
-            min_sum = sum_sq
-            fixed_E = E_grid[i]
-            fixed_I = I_grid[i]
-        end
-    end
-    return fixed_E, fixed_I
+# Plot all fixed points
+if !isempty(fixed_points)
+    E_fps = [fp[1] for fp in fixed_points]
+    I_fps = [fp[2] for fp in fixed_points]
+    scatter!(p, E_fps, I_fps,
+        label="Fixed points ($(length(fixed_points)))",
+        marker=:star,
+        markersize=10,
+        color=:gold)
 end
-
-fixed_E, fixed_I = find_fixed_point(E_grid, I_grid, dE_dt_field, dI_dt_field)
-
-scatter!(p, [fixed_E], [fixed_I],
-    label="Fixed point",
-    marker=:star,
-    markersize=10,
-    color=:gold)
 
 # Format plot
 xlabel!(p, "E Activity (Excitatory)")
@@ -225,17 +142,17 @@ plot!(p, legend=:topright)
 plot!(p, grid=true, gridalpha=0.3)
 
 # Save plot
-output_file = "wcm_nullclines_oscillatory.png"
+output_file = "wcm_nullclines_blocking.png"
 savefig(p, output_file)
 println("✓ Plot saved to: $output_file")
 
 # Also create time series plot
 p2 = plot(size=(800, 400), dpi=150)
-plot!(p2, times_osc, E_activity,
+plot!(p2, times, E_activity,
     label="E (Excitatory)",
     linewidth=2,
     color=:blue)
-plot!(p2, times_osc, I_activity,
+plot!(p2, times, I_activity,
     label="I (Inhibitory)",
     linewidth=2,
     color=:red)
@@ -245,9 +162,15 @@ title!(p2, "Activity Dynamics\nFull Dynamics with Blocking Inhibition")
 plot!(p2, legend=:topright)
 plot!(p2, grid=true, gridalpha=0.3)
 
-output_file2 = "wcm_timeseries_oscillatory.png"
+output_file2 = "wcm_timeseries_blocking.png"
 savefig(p2, output_file2)
 println("✓ Time series saved to: $output_file2")
+
+# Report fixed points found
+println("\nFixed points found:")
+for (i, (E, I)) in enumerate(fixed_points)
+    println("  FP $i: E = $(round(E, digits=4)), I = $(round(I, digits=4))")
+end
 
 #=============================================================================
 Summary
@@ -257,14 +180,18 @@ println("\n" * "="^70)
 println("Summary")
 println("="^70)
 println()
-println("This example demonstrates phase space analysis with nullclines for")
-println("the full dynamics model with blocking (non-monotonic) inhibition:")
+println("This example demonstrates phase space analysis using library functions")
+println("for the full dynamics model with blocking (non-monotonic) inhibition:")
+println()
+println("Library functions used:")
+println("  • compute_phase_space_derivatives() - Compute dE/dt and dI/dt fields")
+println("  • find_fixed_points() - Find all fixed points in phase space")
 println()
 println("Key observations:")
 println("  • E-nullcline (blue): curve where dE/dt = 0")
 println("  • I-nullcline (red): curve where dI/dt = 0")
-println("  • Fixed point (gold star): intersection of nullclines")
-println("  • Trajectory (gray/purple): system evolution in phase space")
+println("  • Fixed points (gold stars): intersections of nullclines")
+println("  • Trajectory (gray): system evolution in phase space")
 println()
 println("The blocking inhibition creates a non-monotonic response in the I population,")
 println("characteristic of 'failure of inhibition' dynamics where inhibition fails at")

@@ -82,6 +82,7 @@ export detect_oscillations, compute_oscillation_frequency, compute_oscillation_a
 export compute_oscillation_decay, compute_oscillation_duration
 export generate_analytical_traveling_wave
 export coordinates
+export compute_phase_space_derivatives, find_fixed_points
 
 # Export optimization functions
 export TravelingWaveObjective, optimize_for_traveling_wave, _update_params
