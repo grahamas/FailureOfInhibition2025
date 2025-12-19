@@ -447,9 +447,9 @@ function plot_multi_population_snapshot(sol, params::WilsonCowanParameters{T,N},
 end
 
 """
-    plot_phase_portrait(sol, params::WilsonCowanParameters{2};
+    plot_phase_portrait(sol, params::WilsonCowanParameters{T,2};
                        title="Phase Portrait",
-                       kwargs...)
+                       kwargs...) where T
 
 Plot phase portrait for 2-population models.
 
@@ -473,9 +473,9 @@ sol = solve_model(A₀, tspan, params)
 p = plot_phase_portrait(sol, params)
 ```
 """
-function plot_phase_portrait(sol, params::WilsonCowanParameters{2};
+function plot_phase_portrait(sol, params::WilsonCowanParameters{T,2};
                             title="Phase Portrait",
-                            kwargs...)
+                            kwargs...) where T
     # Extract activities for both populations
     if ndims(sol.u[1]) == 1
         # Point model: simple 1D array
