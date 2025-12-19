@@ -79,86 +79,26 @@ Main Analysis: Oscillatory Mode
 
 println("\n### Full Dynamics with Blocking Inhibition ###\n")
 
-# Create parameters for point model using full_dynamics_blocking
-# This uses a PointLattice for phase space analysis
+# Create parameters using the canonical constructor for full dynamics with
+# blocking (difference-of-sigmoids) inhibition. Use a point model lattice so
+# this example performs phase-space analysis (non-spatial).
+println("Using `create_full_dynamics_blocking_parameters` for model parameters")
+
+# Use PointLattice for a point-model analysis and prefer canonical defaults
 lattice = PointLattice()
 
-# Create full dynamics blocking parameters adapted for point model
-# Use scalar connectivity for point model instead of spatial fields
-println("Using full dynamics with blocking inhibition parameters")
+# Only specify the lattice here — other parameters use the defaults from
+# `create_full_dynamics_blocking_parameters` in `src/canonical.jl`.
+params_osc = create_full_dynamics_blocking_parameters(lattice = lattice)
 
-# Parameters from create_full_dynamics_blocking_parameters
-# Adapted for point (non-spatial) model
-α_E = 0.4
-α_I = 0.7
-β_E = 1.0
-β_I = 1.0
-τ_E = 1.0
-τ_I = 0.4
-
-# Connectivity strengths (scalar for point model)
-bₑₑ = 1.0    # E → E
-bᵢₑ = 1.5    # I → E (inhibitory, so negative)
-bₑᵢ = 1.0    # E → I
-bᵢᵢ = 0.25   # I → I (inhibitory, so negative)
-
-# Nonlinearity parameters
-# E population uses rectified zeroed sigmoid
-vₑ = 50.0
-θₑ = 0.125
-
-# I population uses difference of sigmoids for blocking inhibition
-firing_aI = 50.0
-firing_θI = 0.2
-blocking_aI = 50.0
-blocking_θI = 0.5
-
-# Create nonlinearity
-nonlinearity_e = RectifiedZeroedSigmoidNonlinearity(a=vₑ, θ=θₑ)
-nonlinearity_i = DifferenceOfSigmoidsNonlinearity(
-    a_activating=firing_aI,
-    θ_activating=firing_θI,
-    a_failing=blocking_aI,
-    θ_failing=blocking_θI
-)
-nonlinearity = (nonlinearity_e, nonlinearity_i)
-
-# Create connectivity
-conn_ee = ScalarConnectivity(bₑₑ)
-conn_ei = ScalarConnectivity(-bᵢₑ)
-conn_ie = ScalarConnectivity(bₑᵢ)
-conn_ii = ScalarConnectivity(-bᵢᵢ)
-
-connectivity = ConnectivityMatrix{2}([
-    conn_ee conn_ei;
-    conn_ie conn_ii
-])
-
-# Create parameters
-params_osc = WilsonCowanParameters{2}(
-    α = (α_E, α_I),
-    β = (β_E, β_I),
-    τ = (τ_E, τ_I),
-    connectivity = connectivity,
-    nonlinearity = nonlinearity,
-    stimulus = nothing,
-    lattice = lattice,
-    pop_names = ("E", "I")
-)
-
-println("Model parameters:")
-println("  α_E = $(params_osc.α[1]), α_I = $(params_osc.α[2])")
-println("  β_E = $(params_osc.β[1]), β_I = $(params_osc.β[2])")
-println("  τ_E = $(params_osc.τ[1]), τ_I = $(params_osc.τ[2])")
-println("  b_EE = $bₑₑ, b_EI = -$bᵢₑ")
-println("  b_IE = $bₑᵢ, b_II = -$bᵢᵢ")
-println("  E nonlinearity: RectifiedZeroedSigmoid(a=$vₑ, θ=$θₑ)")
-println("  I nonlinearity: DifferenceOfSigmoids(firing: a=$firing_aI, θ=$firing_θI; blocking: a=$blocking_aI, θ=$blocking_θI)")
+println("Model parameters loaded from canonical constructor (defaults used)")
+println("  α = $(params_osc.α), β = $(params_osc.β), τ = $(params_osc.τ)")
+println("  Lattice: $(typeof(params_osc.lattice))")
 
 # Compute nullclines using grid-based approach for contour plotting
 println("\nComputing nullcline fields...")
-E_range = range(0.0, 0.5, length=200)
-I_range = range(0.0, 0.5, length=200)
+E_range = range(0.0, 1.0, length=200)
+I_range = range(0.0, 1.0, length=200)
 
 # Create meshgrid for contour plotting
 E_grid = [E for E in E_range, I in I_range]
@@ -174,7 +114,7 @@ println("\nSimulating trajectory...")
 A₀_osc = reshape([0.3, 0.2], 1, 2)  # Initial condition
 tspan = (0.0, 300.0)
 
-# Solve with the standard ODE solver (no clamping needed for SigmoidNonlinearity)
+# Solve with the standard ODE solver
 sol = solve_model(A₀_osc, tspan, params_osc, saveat=0.5)
 
 times_osc = sol.t
@@ -279,8 +219,8 @@ scatter!(p, [fixed_E], [fixed_I],
 xlabel!(p, "E Activity (Excitatory)")
 ylabel!(p, "I Activity (Inhibitory)")
 title!(p, "Phase Portrait with Nullclines\nFull Dynamics with Blocking Inhibition")
-xlims!(p, 0, 0.5)
-ylims!(p, 0, 0.5)
+xlims!(p, 0, 1.0)
+ylims!(p, 0, 1.0)
 plot!(p, legend=:topright)
 plot!(p, grid=true, gridalpha=0.3)
 

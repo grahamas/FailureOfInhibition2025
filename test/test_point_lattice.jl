@@ -365,6 +365,38 @@ function test_point_lattice_with_scalar_connectivity()
     println("\n=== ScalarConnectivity Tests Passed! ===")
 end
 
+function test_point_lattice_with_gaussian_connectivity()
+    println("\n=== Testing PointLattice with GaussianConnectivityParameter ===")
+    lattice = PointLattice()
+
+    println("\n1. Preparing GaussianConnectivityParameter on PointLattice:")
+    conn_param = GaussianConnectivityParameter{Float64,1}(1.2, (2.0,))
+    connectivity = ConnectivityMatrix{1}([conn_param])
+    prepared = prepare_connectivity(connectivity, lattice)
+    @test prepared[1,1] isa ScalarConnectivity
+    @test prepared[1,1].weight == conn_param.amplitude
+    println("   ✓ Preparation collapses to ScalarConnectivity")
+
+    println("\n2. Wilson-Cowan dynamics with GaussianConnectivityParameter:")
+    params = WilsonCowanParameters{1}(
+        α = (1.0,),
+        β = (1.0,),
+        τ = (1.0,),
+        connectivity = connectivity,
+        nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5),
+        stimulus = nothing,
+        lattice = lattice
+    )
+
+    A = reshape([0.4], 1, 1)
+    dA = zeros(1, 1)
+    wcm1973!(dA, A, params, 0.0)
+    @test !all(dA .== 0.0)
+    println("   ✓ Dynamics run with collapsed connectivity")
+
+    println("\n=== GaussianConnectivityParameter PointLattice Tests Passed! ===")
+end
+
 function run_all_point_lattice_tests()
     @testset "PointLattice Tests" begin
         
@@ -390,6 +422,10 @@ function run_all_point_lattice_tests()
         
         @testset "PointLattice with ScalarConnectivity" begin
             test_point_lattice_with_scalar_connectivity()
+        end
+
+        @testset "PointLattice with GaussianConnectivityParameter" begin
+            test_point_lattice_with_gaussian_connectivity()
         end
     end
 end
