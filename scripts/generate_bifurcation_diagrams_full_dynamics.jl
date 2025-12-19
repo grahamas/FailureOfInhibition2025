@@ -121,25 +121,63 @@ end
 Save bifurcation branch data to CSV file.
 """
 function save_branch_to_csv(br, filename, param_name)
-    # Extract parameter values and solution data
-    param_vals = br.branch[:, 1]  # Parameter values
+    # BifurcationKit stores the branch as a vector of named tuples
+    # The .x field can be either a scalar (norm) or the full solution vector
+    # We need to access the full solution from the ContResult
     
-    # Get number of populations from solution dimension
-    n_vars = size(br.branch, 2) - 1  # Subtract 1 for parameter column
-    
-    # Create dataframe with parameter and all variables
-    df = DataFrame(parameter=param_vals)
-    for i in 1:n_vars
-        df[!, Symbol("var_$i")] = br.branch[:, i+1]
+    n_points = length(br.branch)
+    if n_points == 0
+        println("  ⚠ Empty branch, cannot save")
+        return
     end
     
-    # Add stability information if available
-    if hasfield(typeof(br), :stability)
-        df.stable = br.stable
+    # Try to get the full solution from the ContResult structure
+    # br.sol contains the full solutions
+    if hasfield(typeof(br), :sol) && length(br.sol) > 0
+        # Extract full solutions
+        params = [pt.param for pt in br.branch]
+        stable = [pt.stable for pt in br.branch]
+        
+        # Get solution dimension from first solution
+        first_sol = br.sol[1].x
+        sol_dim = length(first_sol)
+        
+        # Create dataframe
+        df = DataFrame(parameter=params)
+        
+        # Add solution variables
+        for i in 1:sol_dim
+            df[!, Symbol("var_$i")] = [sol.x[i] for sol in br.sol]
+        end
+        
+        # Add stability
+        df.stable = stable
+        
+        CSV.write(filename, df)
+        println("  ✓ Saved branch data to: $filename ($(sol_dim) variables)")
+    else
+        # Fallback to using .x from branch (which might be scalar/norm)
+        params = [pt.param for pt in br.branch]
+        x_values = [pt.x for pt in br.branch]
+        stable = [pt.stable for pt in br.branch]
+        
+        # Handle scalar vs vector
+        if isa(x_values[1], Number)
+            # Scalar case
+            df = DataFrame(parameter=params, var_1=x_values, stable=stable)
+        else
+            # Vector case
+            sol_dim = length(x_values[1])
+            df = DataFrame(parameter=params)
+            for i in 1:sol_dim
+                df[!, Symbol("var_$i")] = [x[i] for x in x_values]
+            end
+            df.stable = stable
+        end
+        
+        CSV.write(filename, df)
+        println("  ✓ Saved branch data to: $filename")
     end
-    
-    CSV.write(filename, df)
-    println("  ✓ Saved branch data to: $filename")
 end
 
 """
@@ -556,9 +594,9 @@ println("  • Full Dynamics Blocking Model")
 println()
 println("Parameter variations analyzed:")
 println("  1. Stimulus strength (0.0 to 5.0)")
-println("  2. E→E connectivity amplitude (0.1 to 3.0)")
-println("  3. I→E connectivity amplitude (-3.0 to -0.1)")
-println("  4. E population threshold θ (0.05 to 0.5)")
+println("  2. E→E connectivity weight (0.5 to 2.0)")
+println("  3. I→E connectivity weight (-2.0 to -0.5)")
+println("  4. E population threshold θ (0.10 to 0.20)")
 println()
 println("Output files saved to: $output_dir")
 println("  • PNG plots for visualization")
