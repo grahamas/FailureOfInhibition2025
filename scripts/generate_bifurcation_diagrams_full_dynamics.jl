@@ -277,11 +277,24 @@ function analyze_connectivity_ee(model_name::Symbol, output_prefix::String)
         )
     end
     
-    # Initial condition
-    u0 = reshape([0.05, 0.05], 1, 2)
+    # Find better initial condition by solving to steady state at starting parameter
+    initial_ee = base_params.connectivity.matrix[1,1].weight
+    start_params = build_params_with_ee(initial_ee)
+    
+    println("  Finding steady state for initial condition...")
+    u0 = nothing
+    try
+        # Solve system to steady state
+        u0_test = reshape([0.05, 0.05], 1, 2)
+        sol = solve_model(u0_test, (0.0, 200.0), start_params, saveat=1.0)
+        u0 = sol.u[end]  # Use final state as initial condition
+        println("  ✓ Found steady state: E=$(round(u0[1,1], digits=4)), I=$(round(u0[1,2], digits=4))")
+    catch e
+        println("  ⚠ Could not find steady state, using default: $e")
+        u0 = reshape([0.1, 0.08], 1, 2)
+    end
     
     # Create parameter wrapper
-    initial_ee = base_params.connectivity.matrix[1,1].weight
     p_wrap = BifurcationParamWrapper(initial_ee, build_params_with_ee)
     
     # Create bifurcation problem
@@ -292,18 +305,18 @@ function analyze_connectivity_ee(model_name::Symbol, output_prefix::String)
         @optic _.value
     )
     
-    # Continuation parameters
+    # Continuation parameters - smaller range and steps for stability
     opts = create_default_continuation_opts(
-        p_min=0.2,
-        p_max=2.5,
-        max_steps=250,
-        dsmax=0.03,
-        ds=0.01
+        p_min=0.5,
+        p_max=2.0,
+        max_steps=200,
+        dsmax=0.02,
+        ds=0.005
     )
     
     println("  Running continuation...")
     try
-        br = continuation(prob, PALC(), opts; bothside=true)
+        br = continuation(prob, PALC(), opts; bothside=false)
         
         # Save results
         csv_file = joinpath(output_dir, "$(output_prefix)_ee_connectivity.csv")
@@ -364,11 +377,23 @@ function analyze_connectivity_ie(model_name::Symbol, output_prefix::String)
         )
     end
     
-    # Initial condition
-    u0 = reshape([0.05, 0.05], 1, 2)
+    # Find better initial condition
+    initial_ei = base_params.connectivity.matrix[1,2].weight
+    start_params = build_params_with_ie(initial_ei)
+    
+    println("  Finding steady state for initial condition...")
+    u0 = nothing
+    try
+        u0_test = reshape([0.05, 0.05], 1, 2)
+        sol = solve_model(u0_test, (0.0, 200.0), start_params, saveat=1.0)
+        u0 = sol.u[end]
+        println("  ✓ Found steady state: E=$(round(u0[1,1], digits=4)), I=$(round(u0[1,2], digits=4))")
+    catch e
+        println("  ⚠ Could not find steady state, using default: $e")
+        u0 = reshape([0.1, 0.08], 1, 2)
+    end
     
     # Create parameter wrapper
-    initial_ei = base_params.connectivity.matrix[1,2].weight
     p_wrap = BifurcationParamWrapper(initial_ei, build_params_with_ie)
     
     # Create bifurcation problem
@@ -380,18 +405,18 @@ function analyze_connectivity_ie(model_name::Symbol, output_prefix::String)
     )
     
     # Continuation parameters - varying inhibitory strength
-    # Note: weight is negative, so we vary from -2.5 to -0.2
+    # Note: weight is negative, so we vary from -2.0 to -0.5
     opts = create_default_continuation_opts(
-        p_min=-2.5,
-        p_max=-0.2,
-        max_steps=250,
-        dsmax=0.03,
-        ds=0.01
+        p_min=-2.0,
+        p_max=-0.5,
+        max_steps=200,
+        dsmax=0.02,
+        ds=0.005
     )
     
     println("  Running continuation...")
     try
-        br = continuation(prob, PALC(), opts; bothside=true)
+        br = continuation(prob, PALC(), opts; bothside=false)
         
         # Save results
         csv_file = joinpath(output_dir, "$(output_prefix)_ie_connectivity.csv")
@@ -453,11 +478,23 @@ function analyze_threshold_e(model_name::Symbol, output_prefix::String)
         )
     end
     
-    # Initial condition
-    u0 = reshape([0.05, 0.05], 1, 2)
+    # Find better initial condition
+    initial_theta = base_params.nonlinearity[1].θ
+    start_params = build_params_with_threshold(initial_theta)
+    
+    println("  Finding steady state for initial condition...")
+    u0 = nothing
+    try
+        u0_test = reshape([0.05, 0.05], 1, 2)
+        sol = solve_model(u0_test, (0.0, 200.0), start_params, saveat=1.0)
+        u0 = sol.u[end]
+        println("  ✓ Found steady state: E=$(round(u0[1,1], digits=4)), I=$(round(u0[1,2], digits=4))")
+    catch e
+        println("  ⚠ Could not find steady state, using default: $e")
+        u0 = reshape([0.1, 0.08], 1, 2)
+    end
     
     # Create parameter wrapper
-    initial_theta = base_params.nonlinearity[1].θ
     p_wrap = BifurcationParamWrapper(initial_theta, build_params_with_threshold)
     
     # Create bifurcation problem
@@ -468,18 +505,18 @@ function analyze_threshold_e(model_name::Symbol, output_prefix::String)
         @optic _.value
     )
     
-    # Continuation parameters
+    # Continuation parameters - smaller range for stability
     opts = create_default_continuation_opts(
-        p_min=0.08,
-        p_max=0.3,
-        max_steps=250,
-        dsmax=0.008,
-        ds=0.003
+        p_min=0.10,
+        p_max=0.20,
+        max_steps=150,
+        dsmax=0.005,
+        ds=0.002
     )
     
     println("  Running continuation...")
     try
-        br = continuation(prob, PALC(), opts; bothside=true)
+        br = continuation(prob, PALC(), opts; bothside=false)
         
         # Save results
         csv_file = joinpath(output_dir, "$(output_prefix)_e_threshold.csv")
