@@ -1,22 +1,19 @@
 #!/usr/bin/env julia
 
 """
-Illustrate nullclines for Wilson-Cowan Model.
+Illustrate nullclines for Wilson-Cowan Model with Blocking Inhibition.
 
-This script demonstrates phase space analysis with nullclines using the Wilson & Cowan 1973
-oscillatory mode parameters. Nullclines show where each population's rate of change is zero,
-revealing fixed points and the structure of phase space dynamics.
+This script demonstrates phase space analysis with nullclines using the full dynamics
+model with blocking (non-monotonic) inhibition. This parameterization uses a difference
+of sigmoids for the inhibitory population, creating the characteristic "failure of inhibition"
+dynamics where inhibition fails at high activity levels.
 
 The nullclines are curves in (E, I) phase space where:
 - E-nullcline: dE/dt = 0 (vertical flow along nullcline)
 - I-nullcline: dI/dt = 0 (horizontal flow along nullcline)
 
-Fixed points occur where nullclines intersect.
-
-Note: With the corrected nonlinearity implementation (where the nonlinearity is applied
-to inputs rather than current activity), the WCM 1973 oscillatory parameters converge
-to a stable fixed point rather than showing sustained oscillations. The nullcline analysis
-remains valid for understanding the phase space structure.
+Fixed points occur where nullclines intersect. The non-monotonic inhibition creates
+interesting nullcline shapes that can support multiple fixed points and complex dynamics.
 """
 
 using FailureOfInhibition2025
@@ -33,7 +30,7 @@ end
 
 println("\n" * "="^70)
 println("Wilson-Cowan Model: Nullcline Analysis")
-println("Using WCM 1973 Oscillatory Mode Parameters")
+println("Full Dynamics with Blocking Inhibition")
 println("="^70)
 
 #=============================================================================
@@ -80,33 +77,50 @@ end
 Main Analysis: Oscillatory Mode
 =============================================================================#
 
-println("\n### WCM 1973 Oscillatory Mode ###\n")
+println("\n### Full Dynamics with Blocking Inhibition ###\n")
 
-# Create custom parameters that produce interesting nullcline shapes
-# with a fixed point at moderate activity levels
+# Create parameters for point model using full_dynamics_blocking
+# This uses a PointLattice for phase space analysis
 lattice = PointLattice()
 
-# Use Wilson & Cowan 1973 oscillatory mode parameters
-# Note: With the corrected nonlinearity implementation (applied to inputs, not activity),
-# the original WCM1973 parameters may show different dynamics than in the 1973 paper
-println("Using Wilson & Cowan 1973 oscillatory mode parameters")
-params_wcm = create_point_model_wcm1973(:oscillatory)
+# Create full dynamics blocking parameters adapted for point model
+# Use scalar connectivity for point model instead of spatial fields
+println("Using full dynamics with blocking inhibition parameters")
 
-# Extract parameters from WCM model
-α_E = params_wcm.α[1]
-α_I = params_wcm.α[2]
-vₑ = params_wcm.nonlinearity[1].a
-θₑ = params_wcm.nonlinearity[1].θ
-vᵢ = params_wcm.nonlinearity[2].a
-θᵢ = params_wcm.nonlinearity[2].θ
-bₑₑ = params_wcm.connectivity[1,1].weight
-bᵢₑ = -params_wcm.connectivity[1,2].weight  # Note: stored as negative in matrix
-bₑᵢ = params_wcm.connectivity[2,1].weight
-bᵢᵢ = -params_wcm.connectivity[2,2].weight  # Note: stored as negative in matrix
+# Parameters from create_full_dynamics_blocking_parameters
+# Adapted for point (non-spatial) model
+α_E = 0.4
+α_I = 0.7
+β_E = 1.0
+β_I = 1.0
+τ_E = 1.0
+τ_I = 0.4
 
-# Use the same nonlinearity type as WCM1973 (SigmoidNonlinearity)
-nonlinearity_e = SigmoidNonlinearity(a=vₑ, θ=θₑ)
-nonlinearity_i = SigmoidNonlinearity(a=vᵢ, θ=θᵢ)
+# Connectivity strengths (scalar for point model)
+bₑₑ = 1.0    # E → E
+bᵢₑ = 1.5    # I → E (inhibitory, so negative)
+bₑᵢ = 1.0    # E → I
+bᵢᵢ = 0.25   # I → I (inhibitory, so negative)
+
+# Nonlinearity parameters
+# E population uses rectified zeroed sigmoid
+vₑ = 50.0
+θₑ = 0.125
+
+# I population uses difference of sigmoids for blocking inhibition
+firing_aI = 50.0
+firing_θI = 0.2
+blocking_aI = 50.0
+blocking_θI = 0.5
+
+# Create nonlinearity
+nonlinearity_e = RectifiedZeroedSigmoidNonlinearity(a=vₑ, θ=θₑ)
+nonlinearity_i = DifferenceOfSigmoidsNonlinearity(
+    a_activating=firing_aI,
+    θ_activating=firing_θI,
+    a_failing=blocking_aI,
+    θ_failing=blocking_θI
+)
 nonlinearity = (nonlinearity_e, nonlinearity_i)
 
 # Create connectivity
@@ -123,8 +137,8 @@ connectivity = ConnectivityMatrix{2}([
 # Create parameters
 params_osc = WilsonCowanParameters{2}(
     α = (α_E, α_I),
-    β = (1.0, 1.0),
-    τ = (10.0, 10.0),
+    β = (β_E, β_I),
+    τ = (τ_E, τ_I),
     connectivity = connectivity,
     nonlinearity = nonlinearity,
     stimulus = nothing,
@@ -138,7 +152,8 @@ println("  β_E = $(params_osc.β[1]), β_I = $(params_osc.β[2])")
 println("  τ_E = $(params_osc.τ[1]), τ_I = $(params_osc.τ[2])")
 println("  b_EE = $bₑₑ, b_EI = -$bᵢₑ")
 println("  b_IE = $bₑᵢ, b_II = -$bᵢᵢ")
-println("  θ_E = $θₑ, θ_I = $θᵢ")
+println("  E nonlinearity: RectifiedZeroedSigmoid(a=$vₑ, θ=$θₑ)")
+println("  I nonlinearity: DifferenceOfSigmoids(firing: a=$firing_aI, θ=$firing_θI; blocking: a=$blocking_aI, θ=$blocking_θI)")
 
 # Compute nullclines using grid-based approach for contour plotting
 println("\nComputing nullcline fields...")
@@ -263,7 +278,7 @@ scatter!(p, [fixed_E], [fixed_I],
 # Format plot
 xlabel!(p, "E Activity (Excitatory)")
 ylabel!(p, "I Activity (Inhibitory)")
-title!(p, "Phase Portrait with Nullclines\nWilson-Cowan Model")
+title!(p, "Phase Portrait with Nullclines\nFull Dynamics with Blocking Inhibition")
 xlims!(p, 0, 0.5)
 ylims!(p, 0, 0.5)
 plot!(p, legend=:topright)
@@ -286,7 +301,7 @@ plot!(p2, times_osc, I_activity,
     color=:red)
 xlabel!(p2, "Time (msec)")
 ylabel!(p2, "Activity")
-title!(p2, "Oscillatory Dynamics\nSustained oscillations after stimulus")
+title!(p2, "Activity Dynamics\nFull Dynamics with Blocking Inhibition")
 plot!(p2, legend=:topright)
 plot!(p2, grid=true, gridalpha=0.3)
 
@@ -303,7 +318,7 @@ println("Summary")
 println("="^70)
 println()
 println("This example demonstrates phase space analysis with nullclines for")
-println("the Wilson-Cowan 1973 oscillatory mode:")
+println("the full dynamics model with blocking (non-monotonic) inhibition:")
 println()
 println("Key observations:")
 println("  • E-nullcline (blue): curve where dE/dt = 0")
@@ -311,13 +326,10 @@ println("  • I-nullcline (red): curve where dI/dt = 0")
 println("  • Fixed point (gold star): intersection of nullclines")
 println("  • Trajectory (gray/purple): system evolution in phase space")
 println()
-println("The nullclines reveal the structure of the phase space. The intersection of")
-println("nullclines indicates the fixed point where both dE/dt=0 and dI/dt=0.")
-println()
-println("Note: With the corrected nonlinearity implementation (applied to inputs, not activity),")
-println("these WCM 1973 parameters converge to a stable fixed point at low activity rather than")
-println("producing sustained oscillations. This demonstrates how the nonlinearity application")
-println("method fundamentally affects model dynamics.")
+println("The blocking inhibition creates a non-monotonic response in the I population,")
+println("characteristic of 'failure of inhibition' dynamics where inhibition fails at")
+println("high activity levels. This can produce interesting nullcline shapes with")
+println("multiple intersections and complex phase space structure.")
 println()
 println("Files generated:")
 println("  • $output_file")
