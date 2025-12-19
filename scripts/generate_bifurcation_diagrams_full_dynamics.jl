@@ -38,6 +38,9 @@ output_dir = joinpath(@__DIR__, "..", "data", "bifurcation_diagrams")
 mkpath(output_dir)
 println("\nOutput directory: $output_dir")
 
+# Default initial condition for bifurcation analyses
+const DEFAULT_INITIAL_CONDITION = reshape([0.05, 0.05], 1, 2)
+
 #=============================================================================
 Helper Functions
 =============================================================================#
@@ -229,7 +232,7 @@ function analyze_stimulus_effect(model_name::Symbol, output_prefix::String)
     end
     
     # Initial condition
-    u0 = reshape([0.05, 0.05], 1, 2)
+    u0 = DEFAULT_INITIAL_CONDITION
     
     # Create parameter wrapper with initial stimulus strength
     p_wrap = BifurcationParamWrapper(1.0, build_params_with_stimulus)
@@ -323,7 +326,7 @@ function analyze_connectivity_ee(model_name::Symbol, output_prefix::String)
     u0 = nothing
     try
         # Solve system to steady state
-        u0_test = reshape([0.05, 0.05], 1, 2)
+        u0_test = copy(DEFAULT_INITIAL_CONDITION)
         sol = solve_model(u0_test, (0.0, 200.0), start_params, saveat=1.0)
         u0 = sol.u[end]  # Use final state as initial condition
         println("  ✓ Found steady state: E=$(round(u0[1,1], digits=4)), I=$(round(u0[1,2], digits=4))")
@@ -422,7 +425,7 @@ function analyze_connectivity_ie(model_name::Symbol, output_prefix::String)
     println("  Finding steady state for initial condition...")
     u0 = nothing
     try
-        u0_test = reshape([0.05, 0.05], 1, 2)
+        u0_test = copy(DEFAULT_INITIAL_CONDITION)
         sol = solve_model(u0_test, (0.0, 200.0), start_params, saveat=1.0)
         u0 = sol.u[end]
         println("  ✓ Found steady state: E=$(round(u0[1,1], digits=4)), I=$(round(u0[1,2], digits=4))")
@@ -523,7 +526,7 @@ function analyze_threshold_e(model_name::Symbol, output_prefix::String)
     println("  Finding steady state for initial condition...")
     u0 = nothing
     try
-        u0_test = reshape([0.05, 0.05], 1, 2)
+        u0_test = copy(DEFAULT_INITIAL_CONDITION)
         sol = solve_model(u0_test, (0.0, 200.0), start_params, saveat=1.0)
         u0 = sol.u[end]
         println("  ✓ Found steady state: E=$(round(u0[1,1], digits=4)), I=$(round(u0[1,2], digits=4))")
