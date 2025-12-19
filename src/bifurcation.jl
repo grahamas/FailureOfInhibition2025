@@ -605,9 +605,9 @@ function optimize_for_stable_fixed_points(base_params::WilsonCowanParameters{T,P
                 new_matrix[1,1] = new_conn
                 new_connectivity = ConnectivityMatrix{P}(new_matrix)
                 new_params = WilsonCowanParameters{P}(
-                    new_params.α, new_params.β, new_params.τ,
-                    new_connectivity, new_params.nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_params.α, β=new_params.β, τ=new_params.τ,
+                    connectivity=new_connectivity, nonlinearity=new_params.nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
             elseif name == :connectivity_ei
                 conn = new_params.connectivity.matrix[1,2]
@@ -620,9 +620,9 @@ function optimize_for_stable_fixed_points(base_params::WilsonCowanParameters{T,P
                 new_matrix[1,2] = new_conn
                 new_connectivity = ConnectivityMatrix{P}(new_matrix)
                 new_params = WilsonCowanParameters{P}(
-                    new_params.α, new_params.β, new_params.τ,
-                    new_connectivity, new_params.nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_params.α, β=new_params.β, τ=new_params.τ,
+                    connectivity=new_connectivity, nonlinearity=new_params.nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
             elseif name == :connectivity_ie
                 conn = new_params.connectivity.matrix[2,1]
@@ -635,9 +635,9 @@ function optimize_for_stable_fixed_points(base_params::WilsonCowanParameters{T,P
                 new_matrix[2,1] = new_conn
                 new_connectivity = ConnectivityMatrix{P}(new_matrix)
                 new_params = WilsonCowanParameters{P}(
-                    new_params.α, new_params.β, new_params.τ,
-                    new_connectivity, new_params.nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_params.α, β=new_params.β, τ=new_params.τ,
+                    connectivity=new_connectivity, nonlinearity=new_params.nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
             elseif name == :connectivity_ii
                 conn = new_params.connectivity.matrix[2,2]
@@ -650,9 +650,9 @@ function optimize_for_stable_fixed_points(base_params::WilsonCowanParameters{T,P
                 new_matrix[2,2] = new_conn
                 new_connectivity = ConnectivityMatrix{P}(new_matrix)
                 new_params = WilsonCowanParameters{P}(
-                    new_params.α, new_params.β, new_params.τ,
-                    new_connectivity, new_params.nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_params.α, β=new_params.β, τ=new_params.τ,
+                    connectivity=new_connectivity, nonlinearity=new_params.nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
                 
             # Update nonlinearity parameters
@@ -661,66 +661,66 @@ function optimize_for_stable_fixed_points(base_params::WilsonCowanParameters{T,P
                 new_nl_e = typeof(nl_e)(a=val, θ=nl_e.θ)
                 new_nonlinearity = (new_nl_e, new_params.nonlinearity[2])
                 new_params = WilsonCowanParameters{P}(
-                    new_params.α, new_params.β, new_params.τ,
-                    new_params.connectivity, new_nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_params.α, β=new_params.β, τ=new_params.τ,
+                    connectivity=new_params.connectivity, nonlinearity=new_nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
             elseif name == :sigmoid_theta_e
                 nl_e = new_params.nonlinearity[1]
                 new_nl_e = typeof(nl_e)(a=nl_e.a, θ=val)
                 new_nonlinearity = (new_nl_e, new_params.nonlinearity[2])
                 new_params = WilsonCowanParameters{P}(
-                    new_params.α, new_params.β, new_params.τ,
-                    new_params.connectivity, new_nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_params.α, β=new_params.β, τ=new_params.τ,
+                    connectivity=new_params.connectivity, nonlinearity=new_nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
             elseif name == :sigmoid_a_i
                 nl_i = new_params.nonlinearity[2]
                 new_nl_i = typeof(nl_i)(a=val, θ=nl_i.θ)
                 new_nonlinearity = (new_params.nonlinearity[1], new_nl_i)
                 new_params = WilsonCowanParameters{P}(
-                    new_params.α, new_params.β, new_params.τ,
-                    new_params.connectivity, new_nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_params.α, β=new_params.β, τ=new_params.τ,
+                    connectivity=new_params.connectivity, nonlinearity=new_nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
             elseif name == :sigmoid_theta_i
                 nl_i = new_params.nonlinearity[2]
                 new_nl_i = typeof(nl_i)(a=nl_i.a, θ=val)
                 new_nonlinearity = (new_params.nonlinearity[1], new_nl_i)
                 new_params = WilsonCowanParameters{P}(
-                    new_params.α, new_params.β, new_params.τ,
-                    new_params.connectivity, new_nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_params.α, β=new_params.β, τ=new_params.τ,
+                    connectivity=new_params.connectivity, nonlinearity=new_nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
                 
             # Update time constants and decay rates
             elseif name == :tau_e
                 new_tau = (val, new_params.τ[2])
                 new_params = WilsonCowanParameters{P}(
-                    new_params.α, new_params.β, new_tau,
-                    new_params.connectivity, new_params.nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_params.α, β=new_params.β, τ=new_tau,
+                    connectivity=new_params.connectivity, nonlinearity=new_params.nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
             elseif name == :tau_i
                 new_tau = (new_params.τ[1], val)
                 new_params = WilsonCowanParameters{P}(
-                    new_params.α, new_params.β, new_tau,
-                    new_params.connectivity, new_params.nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_params.α, β=new_params.β, τ=new_tau,
+                    connectivity=new_params.connectivity, nonlinearity=new_params.nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
             elseif name == :alpha_e
                 new_alpha = (val, new_params.α[2])
                 new_params = WilsonCowanParameters{P}(
-                    new_alpha, new_params.β, new_params.τ,
-                    new_params.connectivity, new_params.nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_alpha, β=new_params.β, τ=new_params.τ,
+                    connectivity=new_params.connectivity, nonlinearity=new_params.nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
             elseif name == :alpha_i
                 new_alpha = (new_params.α[1], val)
                 new_params = WilsonCowanParameters{P}(
-                    new_alpha, new_params.β, new_params.τ,
-                    new_params.connectivity, new_params.nonlinearity,
-                    new_params.stimulus, new_params.lattice, new_params.pop_names
+                    α=new_alpha, β=new_params.β, τ=new_params.τ,
+                    connectivity=new_params.connectivity, nonlinearity=new_params.nonlinearity,
+                    stimulus=new_params.stimulus, lattice=new_params.lattice, pop_names=new_params.pop_names
                 )
             end
         end
