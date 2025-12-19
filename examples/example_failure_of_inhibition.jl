@@ -27,25 +27,10 @@ Setup: Create FoI Model Parameters
 
 println("\n### Setting up FoI Model ###\n")
 
-# Parameters from @grahamas demonstrating blocking/failure of inhibition
 # Create spatial lattice (1D) - using smaller lattice for numerical stability
 lattice = CompactLattice(extent=(1400.0,), n_points=(128,))  # Reduced from 512 for stability
 
-# Define connectivity with Gaussian spatial kernels
-# Connectivity parameters: A=amplitude, S=spatial scale (μm)
-# Using Aie=2.0 (E→I) to ensure full E activity completely suppresses I, preventing rebound
-conn_ee = GaussianConnectivityParameter(1.0, (25.0,))    # E→E: Aee=1.0, See=25.0
-conn_ei = GaussianConnectivityParameter(-1.5, (27.0,))   # I→E: Aei=1.5, Sei=27.0 (inhibitory)
-conn_ie = GaussianConnectivityParameter(2.0, (25.0,))    # E→I: Aie=2.0, Sie=25.0 (increased for I suppression)
-conn_ii = GaussianConnectivityParameter(-0.25, (27.0,))  # I→I: Aii=0.25, Sii=27.0 (inhibitory)
-
-connectivity = ConnectivityMatrix{2}([
-    conn_ee conn_ei;
-    conn_ie conn_ii
-])
-
 # Create constant stimulus across entire spatial domain
-# Using ConstantStimulus as CircleStimulus has a bug with 2D arrays
 stimulus = ConstantStimulus(
     strength=0.5,
     time_windows=[(0.0, 7.0)],  # stim_duration=7.0
@@ -53,28 +38,51 @@ stimulus = ConstantStimulus(
     baseline=0.0
 )
 
-# Create FoI parameters with user-specified values
-# Inhibitory nonlinearity: DifferenceOfSigmoids with firing and blocking components
-params = FailureOfInhibitionParameters(
-    α = (0.4, 0.7),           # αE=0.4, αI=0.7
-    β = (1.0, 1.0),           # Standard saturation
-    τ = (1.0, 0.4),           # τE=1.0, τI=0.4
-    connectivity = connectivity,
-    nonlinearity_E = RectifiedZeroedSigmoidNonlinearity(a=50.0, θ=0.125),  # aE=50, θE=0.125
-    nonlinearity_I = DifferenceOfSigmoidsNonlinearity(
-        a_activating=50.0, θ_activating=0.2,    # firing_aI=50, firing_θI=0.2
-        a_failing=50.0, θ_failing=0.5           # blocking_aI=50, blocking_θI=0.5
-    ),
-    stimulus = stimulus,
-    lattice = lattice
+# Use canonical full_dynamics_blocking parameters from canonical.jl
+# This provides the standard FoI parameterization with:
+# - Blocking (non-monotonic) inhibition via DifferenceOfSigmoids
+# - Steep sigmoids (a=50) for sharp transitions
+# - Optimized E→I connectivity (Aie=2.0) for self-sustaining E without I rebound
+params = create_full_dynamics_blocking_parameters(
+    lattice=lattice,
+    # Connectivity parameters
+    Aee=1.0, See=25.0,
+    Aii=0.25, Sii=27.0,
+    Aie=2.0, Sie=25.0,  # Increased E→I to suppress I rebound
+    Aei=1.5, Sei=27.0,
+    # Excitatory nonlinearity
+    aE=50.0, θE=0.125,
+    # Inhibitory nonlinearity (blocking)
+    firing_aI=50.0, firing_θI=0.2,
+    blocking_aI=50.0, blocking_θI=0.5,
+    # Dynamics parameters
+    αE=0.4, αI=0.7,
+    βE=1.0, βI=1.0,
+    τE=1.0, τI=0.4
 )
 
+# Replace stimulus in parameters
+params = WilsonCowanParameters{2}(
+    α = params.α,
+    β = params.β,
+    τ = params.τ,
+    connectivity = params.connectivity,
+    nonlinearity = params.nonlinearity,
+    stimulus = stimulus,
+    lattice = params.lattice,
+    pop_names = params.pop_names
+)
+
+# Verify connectivity parameters
+println("  - Connectivity E→I (Aie): ", params.connectivity.matrix[2,1].amplitude)
+
 println("Model configuration:")
+println("  - Using canonical full_dynamics_blocking parameters")
 println("  - Spatial lattice: 1D, 128 points, 1400 μm extent")
 println("  - Excitatory nonlinearity: RectifiedZeroedSigmoid (a=50, θ=0.125)")
 println("  - Inhibitory nonlinearity: DifferenceOfSigmoids (firing at θ=0.2, blocking at θ=0.5)")
 println("  - Stimulus: Constant across space (strength=0.5, duration=7 time units)")
-println("  - Connectivity: Gaussian spatial kernels")
+println("  - Connectivity: Gaussian kernels with Aie=2.0 for I suppression")
 
 #=============================================================================
 Simulation: Run FoI Model
