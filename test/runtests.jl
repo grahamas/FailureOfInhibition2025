@@ -124,6 +124,11 @@ using FailureOfInhibition2025
         run_all_wcm1973_tests()
     end
 
+    # Run canonical prototype models tests
+    @testset "Canonical Prototype Models" begin
+        include("test_canonical_prototypes.jl")
+    end
+
     # Run simulation tests
     @testset "Simulation Functionality" begin
         include("test_simulate.jl")

@@ -88,5 +88,8 @@ export TravelingWaveObjective, optimize_for_traveling_wave, _update_params
 
 # Export canonical model parameter functions
 export create_wcm1973_parameters, create_point_model_wcm1973
+export create_harris_ermentrout_parameters, create_harris_ermentrout_rectified_parameters
+export create_full_dynamics_monotonic_parameters, create_full_dynamics_blocking_parameters
+export create_oscillating_pulse_parameters, create_propagating_torus_parameters
 
 end # module FailureOfInhibition2025
