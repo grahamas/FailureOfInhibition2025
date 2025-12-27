@@ -23,9 +23,12 @@ end
     stimulate!(dA, A, ::Nothing, t)
 
 No-op stimulation when stimulus is nothing.
+Initializes dA to zero since there is no stimulus.
 """
 function stimulate!(dA, A, ::Nothing, t)
-    # Do nothing when no stimulus is present
+    # Initialize to zero when no stimulus is present
+    # This ensures propagate_activation starts with clean input
+    dA .= 0
     return nothing
 end
 
@@ -299,3 +302,202 @@ avoid object construction in the ODE solver inner loop. This function is purely 
 to wcm1973! with zero overhead.
 """
 foi!(dA, A, p::WilsonCowanParameters, t) = wcm1973!(dA, A, p, t)
+
+############## Analytical Jacobian ##############
+
+"""
+    wcm1973_jacobian!(J, A, p::WilsonCowanParameters{T,P}, t) where {T,P}
+
+Compute the analytical Jacobian ∂(dA/dt)/∂A for the Wilson-Cowan model.
+
+The Wilson-Cowan equations are:
+```
+τᵢ dAᵢ/dt = -αᵢ Aᵢ + βᵢ (1 - Aᵢ) fᵢ(Sᵢ(t) + ∑ⱼ Cᵢⱼ Aⱼ)
+```
+
+The Jacobian elements are:
+```
+∂(dAᵢ/dt)/∂Aₖ = 1/τᵢ * [
+    -αᵢ δᵢₖ                                    (decay term)
+    - βᵢ fᵢ(Input) δᵢₖ                         (saturation term)
+    + βᵢ (1 - Aᵢ) f'ᵢ(Input) Cᵢₖ              (connectivity term)
+]
+```
+
+where:
+- δᵢₖ is the Kronecker delta (1 if i=k, 0 otherwise)
+- Input = Sᵢ(t) + ∑ⱼ Cᵢⱼ Aⱼ (total input to population i)
+- f'ᵢ is the derivative of the nonlinearity function
+
+# Arguments
+- `J`: Output Jacobian matrix (modified in-place). For point models: PxP matrix.
+       For spatial models: (N*P)x(N*P) block matrix where N is number of spatial points.
+- `A`: Current activity state (same format as in wcm1973!)
+- `p`: WilsonCowanParameters containing model parameters
+- `t`: Current time
+
+# Implementation Notes
+- For point models (PointLattice), J is a simple PxP matrix
+- For spatial models with ScalarConnectivity, J has a block-diagonal structure
+  with PxP blocks repeated for each spatial point
+- For spatial models with GaussianConnectivity, J has off-diagonal blocks
+  representing spatial coupling through convolution
+
+# Example
+```julia
+using FailureOfInhibition2025
+
+# Point model example
+params = create_point_model_wcm1973(:oscillatory)
+A = reshape([0.1, 0.1], 1, 2)  # 1 spatial point, 2 populations
+J = zeros(2, 2)
+wcm1973_jacobian!(J, A, params, 0.0)
+
+# Spatial model example
+lattice = CompactLattice(extent=(10.0,), n_points=(11,))
+# ... create spatial params ...
+A_spatial = rand(11, 2)  # 11 spatial points, 2 populations
+J_spatial = zeros(22, 22)  # Flattened: 11*2 = 22 state variables
+A_flat = vec(A_spatial)
+wcm1973_jacobian!(J_spatial, A_flat, params_spatial, 0.0)
+```
+"""
+function wcm1973_jacobian!(J, A, p::WilsonCowanParameters{T,P}, t) where {T,P}
+    # Determine if this is a point model or spatial model
+    is_point_model = p.lattice isa PointLattice
+    
+    if is_point_model
+        # Point model: J is PxP, A is vector or (1, P) matrix
+        wcm1973_jacobian_point!(J, A, p, t)
+    else
+        # Spatial model: more complex
+        # For now, implement only the point model case
+        error("Analytical Jacobian for spatial models is not yet implemented. " *
+              "Use point models (PointLattice) or numerical differentiation for spatial cases.")
+    end
+end
+
+"""
+    wcm1973_jacobian_point!(J, A, p::WilsonCowanParameters{T,P}, t) where {T,P}
+
+Compute analytical Jacobian for point models (zero-dimensional, no spatial structure).
+
+For point models, the state A is (1, P) or a P-vector, and the Jacobian J is a PxP matrix.
+Each element J[i,k] = ∂(dAᵢ/dt)/∂Aₖ.
+"""
+function wcm1973_jacobian_point!(J, A, p::WilsonCowanParameters{T,P}, t) where {T,P}
+    # Ensure A is in the right shape - convert to matrix if needed
+    if A isa AbstractVector
+        if length(A) == P
+            A_mat = reshape(A, 1, P)
+        else
+            error("For point models, A must be a vector of length P=$P or a (1, P) matrix")
+        end
+    else
+        A_mat = A
+        if size(A_mat) != (1, P)
+            error("For point models, A must have shape (1, P), got $(size(A_mat))")
+        end
+    end
+    
+    # Compute inputs to each population: Input_i = S_i + sum_j C_ij * A_j
+    inputs = zeros(T, P)
+    
+    # Add stimulus (if present)
+    if p.stimulus !== nothing
+        stim_temp = zeros(T, 1, P)
+        stimulate!(stim_temp, A_mat, p.stimulus, t)
+        for i in 1:P
+            inputs[i] = stim_temp[1, i]
+        end
+    end
+    
+    # Add connectivity: sum_j C_ij * A_j
+    if p.connectivity !== nothing && p.connectivity isa ConnectivityMatrix
+        for i in 1:P
+            for j in 1:P
+                conn_ij = p.connectivity[i, j]
+                if conn_ij isa ScalarConnectivity
+                    inputs[i] += conn_ij.weight * A_mat[1, j]
+                elseif conn_ij !== nothing
+                    error("Jacobian only supports ScalarConnectivity for point models, got $(typeof(conn_ij))")
+                end
+            end
+        end
+    end
+    
+    # Compute nonlinearity values f(Input) and derivatives f'(Input) for each population
+    f_values = zeros(T, P)
+    df_values = zeros(T, P)
+    
+    if p.nonlinearity isa Tuple
+        # Per-population nonlinearities
+        for i in 1:P
+            nl_i = p.nonlinearity[i]
+            # Compute f(input)
+            if nl_i isa SigmoidNonlinearity
+                f_values[i] = simple_sigmoid(inputs[i], nl_i.a, nl_i.θ)
+            elseif nl_i isa RectifiedZeroedSigmoidNonlinearity
+                f_values[i] = rectified_zeroed_sigmoid(inputs[i], nl_i.a, nl_i.θ)
+            elseif nl_i isa DifferenceOfSigmoidsNonlinearity
+                f_values[i] = difference_of_rectified_zeroed_sigmoids(
+                    inputs[i], nl_i.a_activating, nl_i.θ_activating,
+                    nl_i.a_failing, nl_i.θ_failing
+                )
+            else
+                error("Unsupported nonlinearity type: $(typeof(nl_i))")
+            end
+            # Compute f'(input)
+            df_values[i] = nonlinearity_derivative(inputs[i], nl_i)
+        end
+    else
+        # Same nonlinearity for all populations
+        for i in 1:P
+            if p.nonlinearity isa SigmoidNonlinearity
+                f_values[i] = simple_sigmoid(inputs[i], p.nonlinearity.a, p.nonlinearity.θ)
+            elseif p.nonlinearity isa RectifiedZeroedSigmoidNonlinearity
+                f_values[i] = rectified_zeroed_sigmoid(inputs[i], p.nonlinearity.a, p.nonlinearity.θ)
+            elseif p.nonlinearity isa DifferenceOfSigmoidsNonlinearity
+                f_values[i] = difference_of_rectified_zeroed_sigmoids(
+                    inputs[i], p.nonlinearity.a_activating, p.nonlinearity.θ_activating,
+                    p.nonlinearity.a_failing, p.nonlinearity.θ_failing
+                )
+            else
+                error("Unsupported nonlinearity type: $(typeof(p.nonlinearity))")
+            end
+            df_values[i] = nonlinearity_derivative(inputs[i], p.nonlinearity)
+        end
+    end
+    
+    # Compute Jacobian elements
+    # J[i,k] = ∂(dAᵢ/dt)/∂Aₖ
+    for i in 1:P
+        for k in 1:P
+            # Get connectivity C_ik
+            C_ik = zero(T)
+            if p.connectivity !== nothing && p.connectivity isa ConnectivityMatrix
+                conn_ik = p.connectivity[i, k]
+                if conn_ik isa ScalarConnectivity
+                    C_ik = conn_ik.weight
+                end
+            end
+            
+            # Compute Jacobian element
+            if i == k
+                # Diagonal: includes decay and saturation terms
+                J[i, k] = (1/p.τ[i]) * (
+                    -p.α[i]                           # decay term
+                    - p.β[i] * f_values[i]           # saturation term  
+                    + p.β[i] * (1 - A_mat[1, i]) * df_values[i] * C_ik  # connectivity term
+                )
+            else
+                # Off-diagonal: only connectivity term
+                J[i, k] = (1/p.τ[i]) * (
+                    p.β[i] * (1 - A_mat[1, i]) * df_values[i] * C_ik
+                )
+            end
+        end
+    end
+    
+    return J
+end
