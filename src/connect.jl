@@ -102,7 +102,15 @@ struct ConnectivityMatrix{P,C}
         size(matrix) == (P, P) || throw(ArgumentError("Matrix must be $(P)x$(P), got $(size(matrix))"))
         new{P,C}(matrix)
     end
+    function ConnectivityMatrix{1}(vector::Vector{C}) where {C}
+        length(vector) == 1 || throw(ArgumentError("Vector must have length 1, got $(length(vector)). Did you mean to reshape into square matrix?"))
+        new{1,C}(reshape(vector, 1, 1))
+    end
 end
+
+# Prepare individual connectivity objects
+prepare_connectivity(conn::GaussianConnectivityParameter, lattice::AbstractPointLattice) = ScalarConnectivity(conn.amplitude)
+prepare_connectivity(conn::GaussianConnectivityParameter, lattice) = GaussianConnectivity(conn, lattice)
 
 # Constructor from a tuple of tuples for easier construction
 function ConnectivityMatrix{P}(data::NTuple{P,NTuple{P,C}}) where {P,C}
@@ -135,13 +143,8 @@ function prepare_connectivity(connectivity::ConnectivityMatrix{P}, lattice) wher
     for i in 1:P
         for j in 1:P
             conn = connectivity[i, j]
-            if conn isa GaussianConnectivityParameter
-                # Pre-compute the GaussianConnectivity object
-                prepared_matrix[i, j] = GaussianConnectivity(conn, lattice)
-            else
-                # Keep ScalarConnectivity and nothing as-is
-                prepared_matrix[i, j] = conn
-            end
+            # Pre-compute Gaussian kernels (or trivial scalar for point lattices)
+            prepared_matrix[i, j] = conn isa GaussianConnectivityParameter ? prepare_connectivity(conn, lattice) : conn
         end
     end
     
@@ -160,6 +163,15 @@ struct GaussianConnectivity{T,N}
     buffer_real
     buffer_complex
     buffer_shift
+end
+
+"""
+    GaussianConnectivity(param, lattice::AbstractPointLattice)
+
+Degenerates Gaussian connectivity to a scalar weight when there is no space.
+"""
+function GaussianConnectivity(param::GaussianConnectivityParameter{T,N}, lattice::AbstractPointLattice) where {T,N}
+    ScalarConnectivity(param.amplitude)
 end
 
 function GaussianConnectivity(param::GaussianConnectivityParameter{T,N}, lattice) where {T,N}

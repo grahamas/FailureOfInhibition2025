@@ -39,9 +39,9 @@ function demo_wilson_cowan_model()
     )
     println("   Stimulus: CircleStimulus(radius=2.0, strength=0.5, active t∈[0,10])")
     
-    # Sigmoid nonlinearity
-    nonlinearity = SigmoidNonlinearity(a=2.0, θ=0.5)
-    println("   Nonlinearity: SigmoidNonlinearity(a=2.0, θ=0.5)")
+    # Rectified zeroed sigmoid nonlinearity (biologically realistic)
+    nonlinearity = RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5)
+    println("   Nonlinearity: RectifiedZeroedSigmoidNonlinearity(a=2.0, θ=0.5)")
     
     # 3. Create Wilson-Cowan model parameters
     println("\n3. Creating Wilson-Cowan model parameters:")

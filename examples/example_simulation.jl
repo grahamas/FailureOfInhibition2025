@@ -42,7 +42,7 @@ params_point = WilsonCowanParameters{2}(
     β = (1.0, 1.0),          # Saturation coefficients
     τ = (10.0, 8.0),         # Time constants (slower dynamics for stability)
     connectivity = connectivity,
-    nonlinearity = SigmoidNonlinearity(a=1.5, θ=0.3),
+    nonlinearity = RectifiedZeroedSigmoidNonlinearity(a=1.5, θ=0.3),
     stimulus = nothing,
     lattice = lattice,
     pop_names = ("E", "I")
@@ -100,7 +100,7 @@ params_spatial = WilsonCowanParameters{1}(
     β = (1.0,),
     τ = (10.0,),
     connectivity = connectivity_spatial,
-    nonlinearity = SigmoidNonlinearity(a=1.5, θ=0.3),
+    nonlinearity = RectifiedZeroedSigmoidNonlinearity(a=1.5, θ=0.3),
     stimulus = nothing,
     lattice = lattice_spatial,
     pop_names = ("E",)
