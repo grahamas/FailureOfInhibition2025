@@ -50,6 +50,7 @@ export fft_center_idx
 
 # Export nonlinearity types and functions
 export SigmoidNonlinearity, RectifiedZeroedSigmoidNonlinearity, DifferenceOfSigmoidsNonlinearity, simple_sigmoid, rectified_zeroed_sigmoid, difference_of_simple_sigmoids, difference_of_rectified_zeroed_sigmoids, apply_nonlinearity!
+export simple_sigmoid_derivative, rectified_zeroed_sigmoid_derivative, difference_of_rectified_zeroed_sigmoids_derivative, nonlinearity_derivative
 
 # Export connectivity types and functions
 export GaussianConnectivityParameter, ScalarConnectivity, ConnectivityMatrix, propagate_activation, prepare_connectivity
@@ -58,7 +59,7 @@ export GaussianConnectivityParameter, ScalarConnectivity, ConnectivityMatrix, pr
 export CircleStimulus, ConstantStimulus, stimulate!
 
 # Export model functions
-export WilsonCowanParameters, wcm1973!, population
+export WilsonCowanParameters, wcm1973!, wcm1973_jacobian!, population
 export FailureOfInhibitionParameters, foi!
 
 # Export simulation functions

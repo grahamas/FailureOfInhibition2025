@@ -170,3 +170,61 @@ function apply_nonlinearity!(dA, A, nonlinearity::Tuple, t)
         end
     end
 end
+
+############## Nonlinearity Derivatives ##############
+
+"""
+    simple_sigmoid_derivative(x, a, theta)
+
+Derivative of the sigmoid function with respect to input x.
+d/dx [1/(1 + exp(-a*(x - theta)))] = a * sigmoid(x) * (1 - sigmoid(x))
+"""
+function simple_sigmoid_derivative(x, a, theta)
+    s = simple_sigmoid(x, a, theta)
+    return a * s * (1 - s)
+end
+
+"""
+    rectified_zeroed_sigmoid_derivative(x, a, theta)
+
+Derivative of the rectified zeroed sigmoid function with respect to input x.
+"""
+function rectified_zeroed_sigmoid_derivative(x, a, theta)
+    zeroed = simple_sigmoid(x, a, theta) - simple_sigmoid(0.0, a, theta)
+    if zeroed <= 0.0
+        return 0.0
+    else
+        return simple_sigmoid_derivative(x, a, theta)
+    end
+end
+
+"""
+    difference_of_rectified_zeroed_sigmoids_derivative(x, a_activating, θ_activating, a_failing, θ_failing)
+
+Derivative of the difference of rectified zeroed sigmoids with respect to input x.
+"""
+function difference_of_rectified_zeroed_sigmoids_derivative(x, a_activating, θ_activating, a_failing, θ_failing)
+    return rectified_zeroed_sigmoid_derivative(x, a_activating, θ_activating) - 
+           rectified_zeroed_sigmoid_derivative(x, a_failing, θ_failing)
+end
+
+"""
+    nonlinearity_derivative(x, nonlinearity)
+
+Compute derivative of nonlinearity at input x.
+Returns df/dx where f is the nonlinearity function.
+"""
+function nonlinearity_derivative(x, nonlinearity::SigmoidNonlinearity)
+    return simple_sigmoid_derivative(x, nonlinearity.a, nonlinearity.θ)
+end
+
+function nonlinearity_derivative(x, nonlinearity::RectifiedZeroedSigmoidNonlinearity)
+    return rectified_zeroed_sigmoid_derivative(x, nonlinearity.a, nonlinearity.θ)
+end
+
+function nonlinearity_derivative(x, nonlinearity::DifferenceOfSigmoidsNonlinearity)
+    return difference_of_rectified_zeroed_sigmoids_derivative(
+        x, nonlinearity.a_activating, nonlinearity.θ_activating,
+        nonlinearity.a_failing, nonlinearity.θ_failing
+    )
+end
