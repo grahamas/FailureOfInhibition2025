@@ -137,6 +137,11 @@ using FailureOfInhibition2025
     @testset "Bifurcation Analysis" begin
         include("test_bifurcation.jl")
     end
+    
+    # Run fixed point analysis tests
+    @testset "Fixed Point Analysis" begin
+        include("test_fixed_points.jl")
+    end
   
     # Run sensitivity analysis tests
     @testset "Local Sensitivity Analysis" begin
