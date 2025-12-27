@@ -603,6 +603,49 @@ GPU acceleration provides significant speedup for:
 
 See `examples/example_gpu_acceleration.jl` for comprehensive GPU usage examples.
 
+## Visualization
+
+The package provides comprehensive visualization tools for simulations on all lattice types using Plots.jl:
+
+```julia
+using FailureOfInhibition2025
+using Plots
+
+# After running a simulation
+sol = solve_model(A₀, tspan, params, saveat=0.1)
+
+# Time series plots (works for all lattice types)
+p = plot_time_series(sol, params)
+
+# For 1D lattices: spatial snapshots and spatiotemporal plots
+p_snapshot = plot_spatial_snapshot(sol, params, time_idx)
+p_spacetime = plot_spatiotemporal(sol, params)
+
+# For 2D lattices: heatmap snapshots
+p_heatmap = plot_spatial_snapshot(sol, params, time_idx)
+
+# Animations (save to GIF)
+anim = animate_1d(sol, params, filename="animation.gif")      # 1D
+anim = animate_2d(sol, params, filename="heatmap_anim.gif")   # 2D
+
+# Phase portraits for 2-population models
+p_phase = plot_phase_portrait(sol, params)
+
+# Multi-population subplots
+p_multi = plot_multi_population_snapshot(sol, params, time_idx)
+```
+
+Available visualization functions:
+- **`plot_time_series`**: Time series of population activities (all lattice types)
+- **`plot_spatial_snapshot`**: Spatial snapshots (1D line plots, 2D heatmaps)
+- **`plot_spatiotemporal`**: Space × time heatmaps (1D lattices)
+- **`animate_1d`**: Animated line plots (1D lattices, saves to GIF)
+- **`animate_2d`**: Animated heatmaps (2D lattices, saves to GIF)
+- **`plot_multi_population_snapshot`**: Multi-population subplots
+- **`plot_phase_portrait`**: Phase space trajectories (2-population models)
+
+All functions support CompactLattice, PeriodicLattice, and PointLattice. See `examples/example_visualizations.jl` for comprehensive demonstrations.
+
 ## Examples
 
 See the `examples/` directory for detailed usage examples:
@@ -612,6 +655,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_point_model.jl`: Demonstrates non-spatial (point) models using PointLattice
 - `examples/example_wcm1973_modes.jl`: Demonstrates the three dynamical modes from Wilson & Cowan 1973
 - `examples/example_simulation.jl`: Demonstrates solving models over time and saving results
+- `examples/example_visualizations.jl`: **Comprehensive visualization examples for all lattice types (point, 1D, 2D, periodic)**
 - `examples/example_sensitivity_analysis.jl`: Demonstrates parameter sensitivity analysis using SciMLSensitivity.jl
 - `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis using BifurcationKit continuation methods
 - `examples/example_bifurcation_diagrams_visual.jl`: **Ergonomic interface to BifurcationKit for WCM bifurcation analysis**
@@ -622,7 +666,6 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_optimize_traveling_waves.jl`: Demonstrates parameter optimization for traveling waves
 - `examples/example_oscillation_analysis.jl`: Demonstrates oscillation analysis for point models
 - `examples/example_optimized_oscillations.jl`: Demonstrates optimized parameters for stronger oscillations with sustained stimulus
-- `examples/example_optimize_traveling_waves.jl`: Demonstrates parameter optimization for traveling waves
 - `examples/example_gpu_acceleration.jl`: Demonstrates GPU-accelerated simulations and parameter searches
 
 ## Wilson-Cowan 1973 Validation

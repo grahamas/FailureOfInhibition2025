@@ -324,14 +324,28 @@ function propagate_activation(dA, A, connectivity::ConnectivityMatrix{P}, t, lat
             # Get source population activity
             Aj = population(A, j)
             
-            # Create temporary buffer for this connection's contribution
-            temp_contribution = zero(dAi)
-            
-            # Propagate from source j to target i
-            propagate_activation(temp_contribution, Aj, conn_ij, t, lattice)
-            
-            # Add to target population's derivative
-            dAi .+= temp_contribution
+            # For multi-dimensional lattices, reshape the 1D views to match lattice dimensions
+            # This is needed because the state matrix stores populations as columns (flattened)
+            # but FFT operations expect arrays shaped like the lattice
+            lattice_size = size(lattice)
+            if length(lattice_size) > 0  # Not a PointLattice
+                Aj_reshaped = reshape(Aj, lattice_size)
+                dAi_reshaped = reshape(dAi, lattice_size)
+                
+                # Create temporary buffer for this connection's contribution
+                temp_contribution = zero(dAi_reshaped)
+                
+                # Propagate from source j to target i
+                propagate_activation(temp_contribution, Aj_reshaped, conn_ij, t, lattice)
+                
+                # Add to target population's derivative (flatten back to 1D)
+                dAi .+= vec(temp_contribution)
+            else
+                # PointLattice case - no reshaping needed
+                temp_contribution = zero(dAi)
+                propagate_activation(temp_contribution, Aj, conn_ij, t, lattice)
+                dAi .+= temp_contribution
+            end
         end
     end
 end
