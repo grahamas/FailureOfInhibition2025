@@ -1009,7 +1009,8 @@ function compute_phase_space_derivatives(E_range, I_range, params)
 end
 
 """
-    find_fixed_points(E_range, I_range, params; tol=1e-8, n_grid=100)
+    find_fixed_points(E_range, I_range, params; tol=1e-8, n_grid=100, 
+                      zero_deriv_tol=1e-3, min_separation=0.01)
 
 Find all fixed points in the phase space where dE/dt ≈ 0 and dI/dt ≈ 0.
 
@@ -1023,6 +1024,8 @@ Uses a two-stage approach:
 - `params`: WilsonCowanParameters for the model
 - `tol`: Tolerance for nonlinear solver (default: 1e-8)
 - `n_grid`: Number of grid points per dimension for initial search (default: 100)
+- `zero_deriv_tol`: Tolerance for considering derivatives near zero during grid search (default: 1e-3)
+- `min_separation`: Minimum distance between distinct fixed points (default: 0.01)
 
 # Returns
 - `fixed_points`: Vector of tuples (E, I) representing exact fixed point locations
@@ -1037,7 +1040,8 @@ I_range = 0.0:0.01:1.0
 fixed_points = find_fixed_points(E_range, I_range, params)
 ```
 """
-function find_fixed_points(E_range, I_range, params; tol=1e-8, n_grid=100)
+function find_fixed_points(E_range, I_range, params; tol=1e-8, n_grid=100,
+                          zero_deriv_tol=1e-3, min_separation=0.01)
     # Create coarse grid for detecting sign changes
     E_grid_vals = range(first(E_range), last(E_range), length=n_grid)
     I_grid_vals = range(first(I_range), last(I_range), length=n_grid)
@@ -1076,8 +1080,11 @@ function find_fixed_points(E_range, I_range, params; tol=1e-8, n_grid=100)
             dI_corners = [dI_dt_field[idx] for idx in idx_corners]
             
             # Check if there are sign changes in both dE/dt and dI/dt
-            has_E_sign_change = (minimum(dE_corners) < 0 && maximum(dE_corners) > 0) || all(abs.(dE_corners) .< 1e-3)
-            has_I_sign_change = (minimum(dI_corners) < 0 && maximum(dI_corners) > 0) || all(abs.(dI_corners) .< 1e-3)
+            # or if derivatives are consistently near zero
+            has_E_sign_change = (minimum(dE_corners) < 0 && maximum(dE_corners) > 0) || 
+                               all(abs.(dE_corners) .< zero_deriv_tol)
+            has_I_sign_change = (minimum(dI_corners) < 0 && maximum(dI_corners) > 0) || 
+                               all(abs.(dI_corners) .< zero_deriv_tol)
             
             if has_E_sign_change && has_I_sign_change
                 # Found a candidate region - use cell center as initial guess
@@ -1104,7 +1111,8 @@ function find_fixed_points(E_range, I_range, params; tol=1e-8, n_grid=100)
     end
     
     # Define the system of equations: F([E, I]) = [dE/dt, dI/dt] = 0
-    function fixed_point_system!(F, u, p)
+    # Note: parameter p is required by NonlinearSolve.jl signature but unused
+    function fixed_point_system!(F, u, _)
         E, I = u
         A = reshape([E, I], 1, 2)
         dA = zeros(1, 2)
@@ -1125,8 +1133,8 @@ function find_fixed_points(E_range, I_range, params; tol=1e-8, n_grid=100)
         try
             sol = NonlinearSolve.solve(prob, NonlinearSolve.TrustRegion(), abstol=tol, reltol=tol)
             
-            # Check if solution converged and is within bounds
-            if sol.retcode == NonlinearSolve.SciMLBase.ReturnCode.Success
+            # Check if solution converged successfully
+            if NonlinearSolve.SciMLBase.successful(sol)
                 E_fp, I_fp = sol.u
                 
                 # Verify the fixed point is within the phase space and bounds
@@ -1136,7 +1144,7 @@ function find_fixed_points(E_range, I_range, params; tol=1e-8, n_grid=100)
                     # Check if this is a new fixed point (not too close to existing ones)
                     is_new = true
                     for (E_existing, I_existing) in fixed_points
-                        if sqrt((E_fp - E_existing)^2 + (I_fp - I_existing)^2) < 0.01
+                        if sqrt((E_fp - E_existing)^2 + (I_fp - I_existing)^2) < min_separation
                             is_new = false
                             break
                         end
