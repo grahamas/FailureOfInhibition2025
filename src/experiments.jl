@@ -192,8 +192,9 @@ save_plot(p, exp_dir, "sine_wave", format=:pdf)  # Saves as PDF
 """
 function save_plot(fig, exp_dir, filename; format=:png, kwargs...)
     # Add extension if not present
-    if !occursin(".", filename)
-        filename = "$(filename).$(format)"
+    ext = string('.', format)
+    if !endswith(filename, ext)
+        filename = filename * ext
     end
     
     # Create full path
@@ -235,8 +236,9 @@ save_experiment_results(df, exp_dir, "data")
 """
 function save_experiment_results(data, exp_dir, filename; format=:csv, params=nothing, kwargs...)
     # Add extension if not present
-    if !occursin(".", filename)
-        filename = "$(filename).$(format)"
+    ext = string('.', format)
+    if !endswith(filename, ext)
+        filename = filename * ext
     end
     
     # Create full path
@@ -248,8 +250,8 @@ function save_experiment_results(data, exp_dir, filename; format=:csv, params=no
             # Save DataFrame directly
             CSV.write(filepath, data; kwargs...)
         elseif hasfield(typeof(data), :u) && hasfield(typeof(data), :t)
-            # Looks like an ODE solution - use existing save function
-            # Import the save_simulation_results from simulate.jl
+            # Looks like an ODE solution - use save_simulation_results from simulate.jl
+            # (available in module scope since experiments.jl is included after simulate.jl)
             save_simulation_results(data, filepath; params=params)
         else
             error("Unsupported data type for CSV format: $(typeof(data))")
