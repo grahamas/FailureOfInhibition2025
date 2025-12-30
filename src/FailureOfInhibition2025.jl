@@ -36,6 +36,9 @@ include("optimize.jl")
 # Include canonical model parameter sets
 include("canonical.jl")
 
+# Include experiment management utilities
+include("experiments.jl")
+
 # Export main space types and functions
 export AbstractSpace, AbstractLattice
 export AbstractCompactLattice, CompactLattice
@@ -92,5 +95,9 @@ export create_wcm1973_parameters, create_point_model_wcm1973
 export create_harris_ermentrout_parameters, create_harris_ermentrout_rectified_parameters
 export create_full_dynamics_monotonic_parameters, create_full_dynamics_blocking_parameters
 export create_oscillating_pulse_parameters, create_propagating_torus_parameters
+
+# Export experiment management functions
+export create_experiment_dir, get_git_commit, save_experiment_metadata
+export save_plot, save_experiment_results, ExperimentContext
 
 end # module FailureOfInhibition2025
