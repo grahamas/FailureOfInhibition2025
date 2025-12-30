@@ -33,3 +33,13 @@ traveling_wave_behaviors.png
 *.png
 *.pdf
 *.svg
+
+# Experiment directories - timestamped outputs
+/experiments/
+
+# Temporary files
+*.swp
+*.swo
+*~
+.DS_Store
+Manifest.toml.orig
