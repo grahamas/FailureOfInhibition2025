@@ -1,6 +1,6 @@
 # FailureOfInhibition2025
 
-A Julia package for neural field modeling with failure of inhibition mechanisms.
+A Julia package for neural field modeling with failure of inhibition mechanisms. This package is a reimplementation of github.com/grahamas/FailureOfInhibition2022. WARNING: This package was written with substantial AI-assistance. While all outputs and most code are human-vetted, I'm not as careful about vetting the README and other massive AI word vomits. Usually I just delete the whole files, but obviously I can't just delete the README.
 
 [![CI Tests](https://github.com/grahamas/FailureOfInhibition2025/actions/workflows/ci.yml/badge.svg)](https://github.com/grahamas/FailureOfInhibition2025/actions/workflows/ci.yml)
 
