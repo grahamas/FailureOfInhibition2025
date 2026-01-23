@@ -190,4 +190,9 @@ using FailureOfInhibition2025
         include("test_gpu.jl")
     end
 
+    # Run experiment utilities tests
+    @testset "Experiment Utilities" begin
+        include("test_experiments.jl")
+    end
+
 end

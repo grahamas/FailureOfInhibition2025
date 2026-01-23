@@ -24,9 +24,14 @@ using FailureOfInhibition2025
 using Plots
 using Statistics
 
+# Create experiment directory for organized output
+experiment = ExperimentContext("traveling_wave_behaviors")
+
 println("="^80)
 println("Traveling Wave Behaviors - Comprehensive Demonstration")
 println("="^80)
+println("Outputs will be saved to: $(experiment.dir)")
+println()
 
 # Helper function to create spatiotemporal plot with metrics
 function plot_spatiotemporal_with_metrics(sol, lattice, params, title_text; 
@@ -293,10 +298,9 @@ combined_plot = plot(p1, p2, p3, p4, p5,
                     size=(1200, 1400),
                     plot_title="Traveling Wave Behaviors - Comprehensive Demonstration")
 
-# Save the plot
-output_file = "traveling_wave_behaviors.png"
-savefig(combined_plot, output_file)
-println("Saved combined visualization to: $output_file")
+# Save the plot using experiment utilities
+plot_file = save_plot(combined_plot, experiment.dir, "traveling_wave_behaviors")
+println("Saved combined visualization to: $plot_file")
 
 #=============================================================================
 Display individual metrics summary
@@ -397,5 +401,16 @@ println("  ✓ compute_amplitude() - Measures activity strength")
 println("  ✓ compute_distance_traveled() - Tracks spatial displacement")
 println("  ✓ compute_half_max_width() - Measures spatial extent")
 println()
-println("All scenarios visualized in: $output_file")
+println("All scenarios visualized in: $plot_file")
+
+# Save experiment metadata
+save_experiment_metadata(
+    experiment.dir,
+    description="Comprehensive demonstration of traveling wave behaviors using analytical solutions",
+    additional_info=Dict(
+        "n_scenarios" => 5,
+        "wave_types" => ["sustained", "decaying", "stationary", "failed", "fast"]
+    )
+)
+println("Experiment metadata saved to: $(experiment.dir)/metadata.json")
 println("="^80)
