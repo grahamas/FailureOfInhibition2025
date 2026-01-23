@@ -4,11 +4,13 @@ Analysis utilities for neural field simulations.
 This module provides functions to:
 1. Detect and measure properties of traveling waves in spatial models
 2. Analyze oscillations in point models (frequency, amplitude, decay, duration)
+3. Phase space analysis (nullclines, fixed points)
 """
 
 using Statistics
 using LinearAlgebra
 using FFTW
+import NonlinearSolve
 
 """
     detect_traveling_peak(sol, pop_idx=1; threshold=0.1, min_distance=2)
@@ -949,4 +951,225 @@ function generate_analytical_traveling_wave(params::WilsonCowanParameters{T,1}, 
     
     # Return a named tuple that mimics ODE solution structure
     return (u=u_array, t=t_array)
+end
+
+#=============================================================================
+Phase Space Analysis
+=============================================================================#
+
+"""
+    compute_phase_space_derivatives(E_range, I_range, params; n_points=200)
+
+Compute dE/dt and dI/dt fields on a grid of (E, I) values for phase space analysis.
+
+This function evaluates the Wilson-Cowan dynamics at each point in the (E, I) phase space,
+producing vector fields that can be used to:
+- Plot nullclines (zero-level contours of dE/dt and dI/dt)
+- Visualize flow directions
+- Find fixed points
+
+# Arguments
+- `E_range`: Range or vector of E values to evaluate (default: 0.0 to 1.0)
+- `I_range`: Range or vector of I values to evaluate (default: 0.0 to 1.0)
+- `params`: WilsonCowanParameters for the model
+- `n_points`: Number of grid points in each dimension (default: 200)
+
+# Returns
+- `E_grid`: 2D array of E coordinates
+- `I_grid`: 2D array of I coordinates
+- `dE_dt_field`: 2D array of dE/dt values
+- `dI_dt_field`: 2D array of dI/dt values
+"""
+function compute_phase_space_derivatives(E_range, I_range, params)
+    # Create meshgrid
+    E_grid = [E for E in E_range, I in I_range]
+    I_grid = [I for E in E_range, I in I_range]
+    
+    # Compute both dE/dt and dI/dt at each grid point
+    dE_dt_field = similar(E_grid)
+    dI_dt_field = similar(E_grid)
+    
+    for i in eachindex(E_grid)
+        E = E_grid[i]
+        I = I_grid[i]
+        
+        # Create state array for this point
+        A = reshape([E, I], 1, 2)
+        dA = zeros(1, 2)
+        
+        # Use wcm1973! to compute derivatives
+        wcm1973!(dA, A, params, 0.0)
+        
+        # Extract both dE/dt and dI/dt
+        dE_dt_field[i] = dA[1, 1]
+        dI_dt_field[i] = dA[1, 2]
+    end
+    
+    return E_grid, I_grid, dE_dt_field, dI_dt_field
+end
+
+"""
+    find_fixed_points(E_range, I_range, params; tol=1e-8, n_grid=100, 
+                      zero_deriv_tol=1e-3, min_separation=0.01)
+
+Find all fixed points in the phase space where dE/dt ≈ 0 and dI/dt ≈ 0.
+
+Uses a two-stage approach:
+1. Grid-based search to detect regions with sign changes (potential fixed points)
+2. NonlinearSolve.jl to find exact fixed point locations within those regions
+
+# Arguments
+- `E_range`: Range of E values to search (default: 0.0 to 1.0)
+- `I_range`: Range of I values to search (default: 0.0 to 1.0)
+- `params`: WilsonCowanParameters for the model
+- `tol`: Tolerance for nonlinear solver (default: 1e-8)
+- `n_grid`: Number of grid points per dimension for initial search (default: 100)
+- `zero_deriv_tol`: Tolerance for considering derivatives near zero during grid search (default: 1e-3)
+- `min_separation`: Minimum distance between distinct fixed points (default: 0.01)
+
+# Returns
+- `fixed_points`: Vector of tuples (E, I) representing exact fixed point locations
+
+# Examples
+```julia
+using FailureOfInhibition2025
+lattice = PointLattice()
+params = create_full_dynamics_blocking_parameters(lattice=lattice)
+E_range = 0.0:0.01:1.0
+I_range = 0.0:0.01:1.0
+fixed_points = find_fixed_points(E_range, I_range, params)
+```
+"""
+function find_fixed_points(E_range, I_range, params; tol=1e-8, n_grid=100,
+                          zero_deriv_tol=1e-3, min_separation=0.01)
+    # Create coarse grid for detecting sign changes
+    E_grid_vals = range(first(E_range), last(E_range), length=n_grid)
+    I_grid_vals = range(first(I_range), last(I_range), length=n_grid)
+    
+    # Compute derivative fields on coarse grid
+    E_grid = [E for E in E_grid_vals, I in I_grid_vals]
+    I_grid = [I for E in E_grid_vals, I in I_grid_vals]
+    
+    dE_dt_field = similar(E_grid)
+    dI_dt_field = similar(E_grid)
+    
+    for i in eachindex(E_grid)
+        E = E_grid[i]
+        I = I_grid[i]
+        A = reshape([E, I], 1, 2)
+        dA = zeros(1, 2)
+        wcm1973!(dA, A, params, 0.0)
+        dE_dt_field[i] = dA[1, 1]
+        dI_dt_field[i] = dA[1, 2]
+    end
+    
+    # Find cells with sign changes (indicating potential fixed points)
+    candidate_regions = []
+    
+    for i in 1:(n_grid-1)
+        for j in 1:(n_grid-1)
+            # Check for sign changes in this cell (4 corners)
+            idx_corners = [
+                CartesianIndex(i, j),
+                CartesianIndex(i+1, j),
+                CartesianIndex(i, j+1),
+                CartesianIndex(i+1, j+1)
+            ]
+            
+            dE_corners = [dE_dt_field[idx] for idx in idx_corners]
+            dI_corners = [dI_dt_field[idx] for idx in idx_corners]
+            
+            # Check if there are sign changes in both dE/dt and dI/dt
+            # or if derivatives are consistently near zero
+            has_E_sign_change = (minimum(dE_corners) < 0 && maximum(dE_corners) > 0) || 
+                               all(abs.(dE_corners) .< zero_deriv_tol)
+            has_I_sign_change = (minimum(dI_corners) < 0 && maximum(dI_corners) > 0) || 
+                               all(abs.(dI_corners) .< zero_deriv_tol)
+            
+            if has_E_sign_change && has_I_sign_change
+                # Found a candidate region - use cell center as initial guess
+                E_center = (E_grid_vals[i] + E_grid_vals[i+1]) / 2
+                I_center = (I_grid_vals[j] + I_grid_vals[j+1]) / 2
+                E_bounds = (E_grid_vals[i], E_grid_vals[i+1])
+                I_bounds = (I_grid_vals[j], I_grid_vals[j+1])
+                push!(candidate_regions, (E_center, I_center, E_bounds, I_bounds))
+            end
+        end
+    end
+    
+    # If no candidate regions found, check for global minimum
+    if isempty(candidate_regions)
+        magnitude_sq = dE_dt_field.^2 .+ dI_dt_field.^2
+        min_idx = argmin(magnitude_sq)
+        E_guess = E_grid[min_idx]
+        I_guess = I_grid[min_idx]
+        
+        # Use bounds from grid range
+        E_bounds = (first(E_range), last(E_range))
+        I_bounds = (first(I_range), last(I_range))
+        push!(candidate_regions, (E_guess, I_guess, E_bounds, I_bounds))
+    end
+    
+    # Define the system of equations: F([E, I]) = [dE/dt, dI/dt] = 0
+    # Note: parameter p is required by NonlinearSolve.jl signature but unused
+    function fixed_point_system!(F, u, _)
+        E, I = u
+        A = reshape([E, I], 1, 2)
+        dA = zeros(1, 2)
+        wcm1973!(dA, A, params, 0.0)
+        F[1] = dA[1, 1]  # dE/dt
+        F[2] = dA[1, 2]  # dI/dt
+    end
+    
+    # Solve for exact fixed points using NonlinearSolve.jl
+    fixed_points = Tuple{Float64, Float64}[]
+    
+    for (E_init, I_init, E_bounds, I_bounds) in candidate_regions
+        # Set up the nonlinear problem
+        u0 = [E_init, I_init]
+        prob = NonlinearSolve.NonlinearProblem(fixed_point_system!, u0)
+        
+        # Solve with bounds to keep solution in valid range
+        try
+            sol = NonlinearSolve.solve(prob, NonlinearSolve.TrustRegion(), abstol=tol, reltol=tol)
+            
+            # Check if solution converged successfully
+            if NonlinearSolve.SciMLBase.successful(sol)
+                E_fp, I_fp = sol.u
+                
+                # Verify the fixed point is within the phase space and bounds
+                if E_bounds[1] <= E_fp <= E_bounds[2] && I_bounds[1] <= I_fp <= I_bounds[2] &&
+                   first(E_range) <= E_fp <= last(E_range) && first(I_range) <= I_fp <= last(I_range)
+                    
+                    # Check if this is a new fixed point (not too close to existing ones)
+                    is_new = true
+                    for (E_existing, I_existing) in fixed_points
+                        if sqrt((E_fp - E_existing)^2 + (I_fp - I_existing)^2) < min_separation
+                            is_new = false
+                            break
+                        end
+                    end
+                    
+                    if is_new
+                        push!(fixed_points, (E_fp, I_fp))
+                    end
+                end
+            end
+        catch e
+            # Solver failed for this initial guess, skip it
+            @debug "NonlinearSolve failed for initial guess ($E_init, $I_init): $e"
+            continue
+        end
+    end
+    
+    # If no fixed points found by nonlinear solve, fall back to grid minimum
+    if isempty(fixed_points)
+        magnitude_sq = dE_dt_field.^2 .+ dI_dt_field.^2
+        min_idx = argmin(magnitude_sq)
+        E_min = E_grid[min_idx]
+        I_min = I_grid[min_idx]
+        push!(fixed_points, (E_min, I_min))
+    end
+    
+    return fixed_points
 end
