@@ -249,6 +249,77 @@ All standard BifurcationKit capabilities are available:
 
 See `examples/example_bifurcation_diagrams.jl` and `examples/example_bifurcation_diagrams_visual.jl` for detailed demonstrations of the ergonomic interface to BifurcationKit.
 
+## Fixed Point Analysis
+
+The package provides tools for finding and analyzing fixed points (equilibria) of Wilson-Cowan models, including searching for parameters that produce a desired number of stable fixed points.
+
+### Finding and Analyzing Fixed Points
+
+```julia
+using FailureOfInhibition2025
+
+# Create model parameters
+params = create_point_model_wcm1973(:steady_state)
+
+# Find all fixed points
+fixed_points, converged = find_fixed_points(params, n_trials=20)
+
+# Analyze stability of each fixed point
+for (i, fp) in enumerate(fixed_points)
+    eigenvalues, is_stable = compute_stability(fp, params)
+    println("FP $i: $(is_stable ? "Stable" : "Unstable")")
+    println("  Eigenvalues: ", eigenvalues)
+end
+
+# Count stable fixed points
+n_stable, fps, stabilities = count_stable_fixed_points(params, n_trials=20)
+println("Found $n_stable stable fixed points")
+```
+
+### Searching for Parameter Sets with Target Number of Stable Fixed Points
+
+A powerful feature is the ability to search parameter space for configurations that yield a specific number of stable equilibria:
+
+```julia
+# Start with base parameters
+base_params = create_point_model_wcm1973(:active_transient)
+
+# Define parameter ranges to search
+param_ranges = (
+    connectivity_ee = (1.0, 3.0),     # E→E connectivity
+    connectivity_ei = (0.8, 2.5),     # I→E connectivity
+    sigmoid_theta_e = (5.0, 15.0)     # E threshold
+)
+
+# Find parameters with exactly 2 stable fixed points
+result, best_params = optimize_for_stable_fixed_points(
+    base_params,
+    param_ranges,
+    2,  # Target: 2 stable fixed points
+    maxiter=50
+)
+
+# Verify the result
+n_stable, fps, stab = count_stable_fixed_points(best_params)
+println("Optimized parameters have $n_stable stable fixed points")
+```
+
+### Key Functions
+
+- **`find_fixed_points`**: Find equilibrium points using numerical optimization
+- **`compute_stability`**: Compute eigenvalues of Jacobian to determine stability
+- **`count_stable_fixed_points`**: Convenience function combining finding and stability analysis
+- **`optimize_for_stable_fixed_points`**: Search parameter space for target dynamics
+
+### Applications
+
+- **Bifurcation analysis**: Understand how parameter changes affect equilibria
+- **System design**: Find parameters for desired dynamical behavior
+- **Multistability**: Identify parameters with multiple stable attractors
+- **Pattern formation**: Study spatial steady states
+
+See `examples/example_fixed_point_analysis.jl` for comprehensive demonstrations.
+
 ## Global Sensitivity Analysis
 
 The package provides comprehensive global sensitivity analysis (GSA) tools to understand how model outputs respond to parameter variations. Two methods are available:
@@ -617,6 +688,7 @@ See the `examples/` directory for detailed usage examples:
 - `examples/example_sensitivity_analysis.jl`: Demonstrates parameter sensitivity analysis using SciMLSensitivity.jl
 - `examples/example_bifurcation_diagrams.jl`: Demonstrates bifurcation analysis using BifurcationKit continuation methods
 - `examples/example_bifurcation_diagrams_visual.jl`: **Ergonomic interface to BifurcationKit for WCM bifurcation analysis**
+- `examples/example_fixed_point_analysis.jl`: **Demonstrates finding fixed points, computing stability, and searching for parameters with target number of stable equilibria**
 - `examples/example_sensitivity_analysis.jl`: Demonstrates global sensitivity analysis with Sobol and Morris methods
 - `examples/example_traveling_wave_metrics.jl`: Demonstrates traveling wave analysis metrics
 - `examples/example_traveling_wave_behaviors.jl`: **Comprehensive visualization of different traveling wave behaviors using Plots.jl**

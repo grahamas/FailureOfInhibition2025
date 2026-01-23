@@ -68,6 +68,8 @@ export solve_model, save_simulation_results, save_simulation_summary
 # Export bifurcation analysis functions (BifurcationKit integration)
 export create_bifurcation_problem, wcm_rhs!
 export create_connectivity_lens, create_nonlinearity_lens, create_default_continuation_opts
+export find_fixed_points, compute_stability, count_stable_fixed_points
+export optimize_for_stable_fixed_points
 
 # Export sensitivity analysis functions
 export compute_local_sensitivities, save_local_sensitivities, summarize_sensitivities
