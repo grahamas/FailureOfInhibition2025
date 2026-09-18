@@ -4,7 +4,7 @@
 
 - Keep this package a deterministic, CPU-only two-population point model unless the task explicitly changes its scope.
 - Preserve the state order `[E, I]`, `source_to_target` coupling names, and the stable CSV column order `time,E,I`.
-- Treat the model equation and response candidates as provisional. Do not silently choose a candidate, normalize or clamp a response, or settle an open scientific question from `NEXT_STEPS.md`.
+- Document current model assumptions and numerical conventions in `docs/model.md`. When behavior changes, update the implementation, tests, and documentation together.
 
 ## Julia
 

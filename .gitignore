@@ -7,6 +7,10 @@
 LocalPreferences.toml
 JuliaLocalPreferences.toml
 
+# Authoritative local Codex context; never commit
+foi_codex_local_context/
+foi_codex_local_context.tar.gz
+
 # Generated experiment output
 output/
 *.png

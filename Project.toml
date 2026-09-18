@@ -1,7 +1,7 @@
 name = "FailureOfInhibition2025"
 uuid = "454489e0-1be5-4aa4-87b4-68f24b09b7e7"
 authors = ["Graham Smith <grahamas@gmail.com>"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
