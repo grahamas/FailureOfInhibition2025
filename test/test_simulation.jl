@@ -41,6 +41,14 @@ end
         solution = solve_point_model(initial_state, (0.0, 0.1), model)
         @test SciMLBase.successful_retcode(solution)
     end
+    integer_solution = solve_point_model([0, 0], (0.0, 0.1), model)
+    @test SciMLBase.successful_retcode(integer_solution)
+    @test eltype(first(integer_solution.u)) === Float64
+
+    bigfloat_solution = solve_point_model(BigFloat[0, 0], (0.0, 0.1), model)
+    @test SciMLBase.successful_retcode(bigfloat_solution)
+    @test eltype(first(bigfloat_solution.u)) === BigFloat
+
     zero_tolerance_solution = solve_point_model(
         [0.0, 1.0],
         (0.0, 0.1),
