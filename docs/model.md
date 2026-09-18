@@ -212,16 +212,132 @@ then the sharper rectangle is
 
 These sharper bounds do not replace `[0,1]^2` as the physical state domain.
 
-## Comparison responses and deferred work
+## Equilibrium discovery
+
+Equilibrium analysis uses the dimensionless population-balance residual
+
+```math
+g(E,I)=
+\begin{pmatrix}
+-E+(1-E)F_E(u_E)\\
+-I+(1-I)F_I(u_I)
+\end{pmatrix}.
+```
+
+Its analytical Jacobian is evaluated directly by
+`point_balance_jacobian!`. If `Df` is the Jacobian of the original ODE, then
+
+```math
+Dg=\operatorname{diag}(\tau_E,\tau_I)Df.
+```
+
+The implementation does not reconstruct `g` or `Dg` by multiplying an ODE
+derivative by possibly extreme time constants. `solve_equilibrium` and
+`find_equilibria` use `SimpleTrustRegion` with the analytical `Dg` and explicit
+iteration limits. Candidate acceptance uses a separately evaluated `g`, not
+the solver status or a small dimensional ODE derivative. Solver status and
+validation are both retained.
+
+`NoDrive()` and a `PiecewiseConstantDrive` with no pulses are autonomous. A
+model with any pulse requires an explicit finite `snapshot_time`. The package
+evaluates the original drive at that time, including half-open endpoints and
+overlapping increments, and constructs an autonomous copy that preserves the
+population and coupling objects. Results record the frozen E/I inputs and the
+source time. These are equilibria of the frozen system, not equilibria of the
+full driven protocol.
+
+The default multistart coverage is a deterministic 5-by-5 tensor grid over
+the sharper equilibrium rectangle above, including its edges and interior.
+Callers may supply any finite real trial seeds, including points outside the
+physical domain. Seeds are copied into fresh one-based floating vectors and
+are never mutated or clipped. End-to-end equilibrium and stability analysis
+supports `Float32` and `Float64`; integral inputs promote to `Float64`, while
+unsupported arbitrary-precision analysis is rejected rather than narrowed.
+
+The default numerical policies are:
+
+| Option | Default | Scale or units |
+| --- | ---: | --- |
+| `solver_abstol` | `1e-12` | dimensionless balance residual |
+| `solver_reltol` | `1e-10` | dimensionless |
+| `residual_atol` | `1e-9` | dimensionless balance residual |
+| `domain_atol` | `1e-8` | activity coordinate |
+| `dedup_atol` | `1e-7` | activity coordinate, infinity distance |
+| `singular_atol` | `1e-10` | dimensionless balance-Jacobian singular value |
+| `singular_rtol` | `1e-8` | dimensionless |
+| `maxiters` | `100` | nonlinear iterations |
+
+A finite candidate with residual infinity norm at most `residual_atol` is
+checked against both `[0,1]^2` and the sharper equilibrium rectangle. A point
+inside both closed rectangles is admissible. A point outside a boundary by no
+more than `domain_atol` is retained as boundary-ambiguous. A larger excursion,
+a large or nonfinite residual, or nonfinite diagnostics is rejected. Raw
+coordinates and reasons are retained in every case.
+
+The balance Jacobian is flagged near-singular when
+
+```math
+\sigma_{\min}(Dg)
+\leq \texttt{singular_atol}
++\texttt{singular_rtol}\,\sigma_{\max}(Dg).
+```
+
+A small residual near a singular Jacobian does not certify coordinate
+accuracy. Admissible candidates within `dedup_atol` are grouped by coordinate
+infinity distance. The representative is an actual candidate selected by
+residual norm, coordinates, and seed; roots are never averaged. A connected
+tolerance chain whose full diameter exceeds `dedup_atol` is retained as an
+unresolved-nearby diagnostic rather than collapsed to one candidate. Its
+candidate outputs are partitioned deterministically into complete-linkage
+subgroups, within each of which every pair is within `dedup_atol`; this still
+collapses repeated attempts while preserving the ambiguous original component
+for inspection. Representatives are sorted by `(E,I)`, so their order is
+invariant to seed order.
+
+Every search reports `completeness = CompletenessNotCertified` and retains all
+seeds, solver outcomes, validation failures, and duplicate memberships. An
+empty result is unresolved discovery, not evidence that no equilibrium
+exists.
+
+## Local linear stability
+
+For each admissible candidate, local stability is evaluated with
+`point_jacobian!` using the original time constants. Results retain the
+Jacobian, eigenvalues in `ms^-1`, trace in `ms^-1`, determinant in `ms^-2`,
+spectral abscissa in `ms^-1`, and the tolerance applied to each eigenvalue.
+
+With defaults `spectral_atol=1e-10 ms^-1` and
+`spectral_rtol=1e-8`, the real part of each eigenvalue is resolved only when
+
+```math
+|\operatorname{Re}\lambda|>
+\texttt{spectral_atol}+
+\texttt{spectral_rtol}|\lambda|.
+```
+
+Two resolved negative real parts are `Attracting`, two positive real parts
+are `Repelling`, and one of each is a `Saddle`. Any near-zero or poorly
+resolved real part produces `StabilityUnresolved`. Spectral geometry is
+reported separately as real-distinct, real-repeated, or complex-conjugate;
+repeated eigenvalues alone do not make stability unresolved. For geometry,
+imaginary parts no larger than the maximum per-eigenvalue tolerance are
+treated as numerically real. The resulting real parts are repeated when their
+separation is no larger than that same tolerance and distinct otherwise.
+
+These are local linear classifications. A single spectrum does not establish
+global stability, a center, a Hopf bifurcation, a limit cycle, or a scientific
+regime.
+
+## Comparison responses and analysis limitations
 
 `PointModelParameters` supports `LogisticResponse` for the excitatory
 population and either `LogisticResponse` or `FailureOfInhibitionResponse` for
 the inhibitory population. The exported rectified and unequal-slope response
 types remain available only for standalone comparisons.
 
-Equilibrium finding, physical-admissibility classification of invariant
-objects, stability and bifurcation analysis, regime diagnostics, deterministic
-experiment schemas, plotting, and manuscript claims are outside the current
-implementation. Numerical solver selection, adaptive-step settings,
-floating-point precision, and diagnostic tolerances belong to experiment
-configuration.
+Equilibrium discovery, physical-admissibility classification of equilibrium
+candidates, and local linear stability are implemented only as the numerical,
+non-certifying procedures described above. Completeness certification,
+continuation, periodic-orbit and bifurcation analysis, regime diagnostics,
+deterministic experiment schemas, plotting, and manuscript claims remain
+outside the current implementation.

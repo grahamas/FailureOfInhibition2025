@@ -210,6 +210,7 @@ function DifferenceOfRectifiedZeroedLogisticsCandidate(;
     return DifferenceOfRectifiedZeroedLogisticsCandidate(activating, failing)
 end
 
+"""Evaluate a population response at effective input `x`."""
 function response(parameters::LogisticResponse, x)
     argument = parameters.slope * (x - parameters.threshold)
     return _logistic_value(argument)
@@ -239,6 +240,7 @@ function response(parameters::DifferenceOfRectifiedZeroedLogisticsCandidate, x)
     return response(parameters.activating, x) - response(parameters.failing, x)
 end
 
+"""Evaluate the derivative of a population response with respect to its input."""
 function response_derivative(parameters::LogisticResponse, x)
     value = response(parameters, x)
     return parameters.slope * value * (one(value) - value)

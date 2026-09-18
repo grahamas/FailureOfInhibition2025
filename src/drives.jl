@@ -128,6 +128,12 @@ function PiecewiseConstantDrive(; baseline=(0, 0), pulses, interpretation)
     )
 end
 
+"""
+    drive_value(drive, time)
+
+Return the external `(E, I)` inputs supplied by `drive` at `time`. Pulse
+intervals are half-open and overlapping increments are additive.
+"""
 drive_value(::NoDrive, time) = (zero(time), zero(time))
 
 function drive_value(drive::PiecewiseConstantDrive, time)
