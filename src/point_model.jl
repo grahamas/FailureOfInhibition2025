@@ -5,59 +5,75 @@ function _finite_model_parameter(value, name)
 end
 
 """
-    PopulationParameters(; decay, saturation, timescale, response)
+    PopulationParameters(; timescale, response)
 
-Parameters for one population in the provisional point-model equation.
+Parameters for one population in the supported point-model equation.
+`timescale` must be finite and strictly positive. Population parameters are
+constructed with keywords so that the time constant and response cannot be
+confused positionally.
 """
 struct PopulationParameters{T<:Real,R<:AbstractPopulationResponse}
-    decay::T
-    saturation::T
     timescale::T
     response::R
-end
 
-function PopulationParameters(; decay, saturation, timescale, response::AbstractPopulationResponse)
-    promoted_decay, promoted_saturation, promoted_timescale =
-        promote(decay, saturation, timescale)
-    _finite_model_parameter(promoted_decay, "decay")
-    _finite_model_parameter(promoted_saturation, "saturation")
-    _finite_model_parameter(promoted_timescale, "timescale")
-    promoted_timescale > zero(promoted_timescale) ||
-        throw(ArgumentError("timescale must be positive"))
-    return PopulationParameters(
-        promoted_decay,
-        promoted_saturation,
-        promoted_timescale,
-        response,
-    )
+    function PopulationParameters(; timescale, response::R) where {R<:AbstractPopulationResponse}
+        _finite_model_parameter(timescale, "timescale")
+        timescale > zero(timescale) || throw(ArgumentError("timescale must be positive"))
+        return new{typeof(timescale),R}(timescale, response)
+    end
 end
 
 """
+    PointCoupling(e_to_e, i_to_e, e_to_i, i_to_i)
     PointCoupling(; e_to_e, i_to_e, e_to_i, i_to_i)
 
-Coupling weights named as `source_to_target`. Negative weights are allowed.
+Finite, nonnegative coupling magnitudes named as `source_to_target`.
+Inhibitory-source magnitudes (`i_to_e` and `i_to_i`) are subtracted when the
+population inputs are formed.
 """
 struct PointCoupling{T<:Real}
     e_to_e::T
     i_to_e::T
     e_to_i::T
     i_to_i::T
+
+    function PointCoupling(e_to_e, i_to_e, e_to_i, i_to_i)
+        raw_weights = (e_to_e, i_to_e, e_to_i, i_to_i)
+        names = ("e_to_e", "i_to_e", "e_to_i", "i_to_i")
+        for (name, value) in zip(names, raw_weights)
+            _finite_model_parameter(value, name)
+            value >= zero(value) || throw(ArgumentError("$name must be nonnegative"))
+        end
+
+        weights = promote(raw_weights...)
+        T = typeof(first(weights))
+        return new{T}(weights...)
+    end
 end
 
 function PointCoupling(; e_to_e, i_to_e, e_to_i, i_to_i)
-    weights = promote(e_to_e, i_to_e, e_to_i, i_to_i)
-    for (name, value) in zip(("e_to_e", "i_to_e", "e_to_i", "i_to_i"), weights)
-        _finite_model_parameter(value, name)
-    end
-    return PointCoupling(weights...)
+    return PointCoupling(e_to_e, i_to_e, e_to_i, i_to_i)
+end
+
+function _validate_supported_responses(excitatory, inhibitory)
+    excitatory.response isa LogisticResponse || throw(
+        ArgumentError("the excitatory response must be LogisticResponse"),
+    )
+    inhibitory.response isa Union{LogisticResponse,FailureOfInhibitionResponse} || throw(
+        ArgumentError(
+            "the inhibitory response must be LogisticResponse or FailureOfInhibitionResponse",
+        ),
+    )
+    return nothing
 end
 
 """
     PointModelParameters(; excitatory, inhibitory, coupling, drive=NoDrive())
 
-Typed parameters for a two-population point model. The state order is always
-`[E, I]`. The equation remains provisional until the paper's mathematical
-contract is approved.
+Typed parameters for the supported two-population point model. The state
+order is always `[E, I]`. The excitatory response must be `LogisticResponse`;
+the inhibitory response may be `LogisticResponse` or
+`FailureOfInhibitionResponse`.
 """
 struct PointModelParameters{
     E<:PopulationParameters,
@@ -69,6 +85,21 @@ struct PointModelParameters{
     inhibitory::I
     coupling::C
     drive::D
+
+    function PointModelParameters(
+        excitatory::E,
+        inhibitory::I,
+        coupling::C,
+        drive::D,
+    ) where {
+        E<:PopulationParameters,
+        I<:PopulationParameters,
+        C<:PointCoupling,
+        D<:AbstractPointDrive,
+    }
+        _validate_supported_responses(excitatory, inhibitory)
+        return new{E,I,C,D}(excitatory, inhibitory, coupling, drive)
+    end
 end
 
 function PointModelParameters(;
@@ -89,8 +120,10 @@ end
 """
     point_rhs!(derivative, state, parameters, time)
 
-Evaluate the provisional two-population Wilson-Cowan-type equation in place.
-Both `state` and `derivative` must be two-element vectors ordered `[E, I]`.
+Evaluate the supported two-population point-model equation in place:
+`dX/dt = (-X + (1 - X) F_X(u_X)) / tau_X`. Both `state` and
+`derivative` must be two-element vectors ordered `[E, I]`. This low-level
+kernel deliberately does not restrict or project the supplied state.
 """
 function point_rhs!(derivative, state, parameters::PointModelParameters, time)
     _require_point_state(state, "state")
@@ -101,10 +134,10 @@ function point_rhs!(derivative, state, parameters::PointModelParameters, time)
     coupling = parameters.coupling
 
     excitatory_input = excitatory_drive +
-                       coupling.e_to_e * excitatory_activity +
+                       coupling.e_to_e * excitatory_activity -
                        coupling.i_to_e * inhibitory_activity
     inhibitory_input = inhibitory_drive +
-                       coupling.e_to_i * excitatory_activity +
+                       coupling.e_to_i * excitatory_activity -
                        coupling.i_to_i * inhibitory_activity
 
     excitatory = parameters.excitatory
@@ -113,12 +146,12 @@ function point_rhs!(derivative, state, parameters::PointModelParameters, time)
     inhibitory_rate = response(inhibitory.response, inhibitory_input)
 
     derivative[1] = (
-        -excitatory.decay * excitatory_activity +
-        excitatory.saturation * (one(excitatory_activity) - excitatory_activity) * excitatory_rate
+        -excitatory_activity +
+        (one(excitatory_activity) - excitatory_activity) * excitatory_rate
     ) / excitatory.timescale
     derivative[2] = (
-        -inhibitory.decay * inhibitory_activity +
-        inhibitory.saturation * (one(inhibitory_activity) - inhibitory_activity) * inhibitory_rate
+        -inhibitory_activity +
+        (one(inhibitory_activity) - inhibitory_activity) * inhibitory_rate
     ) / inhibitory.timescale
 
     return nothing
@@ -127,7 +160,8 @@ end
 """
     point_jacobian!(jacobian, state, parameters, time)
 
-Evaluate the analytical Jacobian of `point_rhs!` in place.
+Evaluate the analytical Jacobian of `point_rhs!` in place. Like the RHS
+kernel, this function evaluates the supplied state without clamping it.
 """
 function point_jacobian!(jacobian, state, parameters::PointModelParameters, time)
     _require_point_state(state, "state")
@@ -141,10 +175,10 @@ function point_jacobian!(jacobian, state, parameters::PointModelParameters, time
     inhibitory = parameters.inhibitory
 
     excitatory_input = excitatory_drive +
-                       coupling.e_to_e * excitatory_activity +
+                       coupling.e_to_e * excitatory_activity -
                        coupling.i_to_e * inhibitory_activity
     inhibitory_input = inhibitory_drive +
-                       coupling.e_to_i * excitatory_activity +
+                       coupling.e_to_i * excitatory_activity -
                        coupling.i_to_i * inhibitory_activity
 
     excitatory_rate = response(excitatory.response, excitatory_input)
@@ -153,21 +187,21 @@ function point_jacobian!(jacobian, state, parameters::PointModelParameters, time
     inhibitory_slope = response_derivative(inhibitory.response, inhibitory_input)
 
     jacobian[1, 1] = (
-        -excitatory.decay - excitatory.saturation * excitatory_rate +
-        excitatory.saturation * (one(excitatory_activity) - excitatory_activity) *
+        -one(excitatory_activity) - excitatory_rate +
+        (one(excitatory_activity) - excitatory_activity) *
         excitatory_slope * coupling.e_to_e
     ) / excitatory.timescale
     jacobian[1, 2] = (
-        excitatory.saturation * (one(excitatory_activity) - excitatory_activity) *
+        -(one(excitatory_activity) - excitatory_activity) *
         excitatory_slope * coupling.i_to_e
     ) / excitatory.timescale
     jacobian[2, 1] = (
-        inhibitory.saturation * (one(inhibitory_activity) - inhibitory_activity) *
+        (one(inhibitory_activity) - inhibitory_activity) *
         inhibitory_slope * coupling.e_to_i
     ) / inhibitory.timescale
     jacobian[2, 2] = (
-        -inhibitory.decay - inhibitory.saturation * inhibitory_rate +
-        inhibitory.saturation * (one(inhibitory_activity) - inhibitory_activity) *
+        -one(inhibitory_activity) - inhibitory_rate -
+        (one(inhibitory_activity) - inhibitory_activity) *
         inhibitory_slope * coupling.i_to_i
     ) / inhibitory.timescale
 
