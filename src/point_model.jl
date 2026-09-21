@@ -117,6 +117,43 @@ function _require_point_state(state, name)
     return state
 end
 
+function _point_inputs(state, parameters::PointModelParameters, time)
+    excitatory_activity, inhibitory_activity = state
+    excitatory_drive, inhibitory_drive = drive_value(parameters.drive, time)
+    coupling = parameters.coupling
+    excitatory_input = excitatory_drive +
+                       coupling.e_to_e * excitatory_activity -
+                       coupling.i_to_e * inhibitory_activity
+    inhibitory_input = inhibitory_drive +
+                       coupling.e_to_i * excitatory_activity -
+                       coupling.i_to_i * inhibitory_activity
+    return excitatory_activity, inhibitory_activity, excitatory_input, inhibitory_input
+end
+
+"""
+    point_balance!(residual, state, parameters, time)
+
+Evaluate the dimensionless population-balance residual
+`g_X = -X + (1 - X) F_X(u_X)` in place. Both vectors must contain exactly
+`[E, I]`. The kernel permits trial states outside the physical domain and does
+not clip or project them.
+"""
+function point_balance!(residual, state, parameters::PointModelParameters, time)
+    _require_point_state(state, "state")
+    _require_point_state(residual, "residual")
+
+    excitatory_activity, inhibitory_activity, excitatory_input, inhibitory_input =
+        _point_inputs(state, parameters, time)
+    excitatory_rate = response(parameters.excitatory.response, excitatory_input)
+    inhibitory_rate = response(parameters.inhibitory.response, inhibitory_input)
+
+    residual[1] = -excitatory_activity +
+                  (one(excitatory_activity) - excitatory_activity) * excitatory_rate
+    residual[2] = -inhibitory_activity +
+                  (one(inhibitory_activity) - inhibitory_activity) * inhibitory_rate
+    return nothing
+end
+
 """
     point_rhs!(derivative, state, parameters, time)
 
@@ -126,35 +163,52 @@ Evaluate the supported two-population point-model equation in place:
 kernel deliberately does not restrict or project the supplied state.
 """
 function point_rhs!(derivative, state, parameters::PointModelParameters, time)
-    _require_point_state(state, "state")
-    _require_point_state(derivative, "derivative")
-
-    excitatory_activity, inhibitory_activity = state
-    excitatory_drive, inhibitory_drive = drive_value(parameters.drive, time)
-    coupling = parameters.coupling
-
-    excitatory_input = excitatory_drive +
-                       coupling.e_to_e * excitatory_activity -
-                       coupling.i_to_e * inhibitory_activity
-    inhibitory_input = inhibitory_drive +
-                       coupling.e_to_i * excitatory_activity -
-                       coupling.i_to_i * inhibitory_activity
-
-    excitatory = parameters.excitatory
-    inhibitory = parameters.inhibitory
-    excitatory_rate = response(excitatory.response, excitatory_input)
-    inhibitory_rate = response(inhibitory.response, inhibitory_input)
-
-    derivative[1] = (
-        -excitatory_activity +
-        (one(excitatory_activity) - excitatory_activity) * excitatory_rate
-    ) / excitatory.timescale
-    derivative[2] = (
-        -inhibitory_activity +
-        (one(inhibitory_activity) - inhibitory_activity) * inhibitory_rate
-    ) / inhibitory.timescale
+    point_balance!(derivative, state, parameters, time)
+    derivative[1] /= parameters.excitatory.timescale
+    derivative[2] /= parameters.inhibitory.timescale
 
     return nothing
+end
+
+"""
+    point_balance_jacobian!(jacobian, state, parameters, time)
+
+Evaluate the analytical Jacobian `Dg` of `point_balance!` in place. The
+result is dimensionless and is related to the ODE Jacobian by
+`Dg = Diagonal([tau_E, tau_I]) * Df`.
+"""
+function point_balance_jacobian!(
+    jacobian,
+    state,
+    parameters::PointModelParameters,
+    time,
+)
+    _require_point_state(state, "state")
+    jacobian isa AbstractMatrix || throw(ArgumentError("jacobian must be a 2x2 matrix"))
+    size(jacobian) == (2, 2) || throw(ArgumentError("jacobian must be a 2x2 matrix"))
+
+    excitatory_activity, inhibitory_activity, excitatory_input, inhibitory_input =
+        _point_inputs(state, parameters, time)
+    coupling = parameters.coupling
+    excitatory = parameters.excitatory
+    inhibitory = parameters.inhibitory
+
+    excitatory_rate = response(excitatory.response, excitatory_input)
+    inhibitory_rate = response(inhibitory.response, inhibitory_input)
+    excitatory_slope = response_derivative(excitatory.response, excitatory_input)
+    inhibitory_slope = response_derivative(inhibitory.response, inhibitory_input)
+
+    jacobian[1, 1] = -one(excitatory_activity) - excitatory_rate +
+                     (one(excitatory_activity) - excitatory_activity) *
+                     excitatory_slope * coupling.e_to_e
+    jacobian[1, 2] = -(one(excitatory_activity) - excitatory_activity) *
+                     excitatory_slope * coupling.i_to_e
+    jacobian[2, 1] = (one(inhibitory_activity) - inhibitory_activity) *
+                     inhibitory_slope * coupling.e_to_i
+    jacobian[2, 2] = -one(inhibitory_activity) - inhibitory_rate -
+                     (one(inhibitory_activity) - inhibitory_activity) *
+                     inhibitory_slope * coupling.i_to_i
+    return jacobian
 end
 
 """
@@ -164,46 +218,11 @@ Evaluate the analytical Jacobian of `point_rhs!` in place. Like the RHS
 kernel, this function evaluates the supplied state without clamping it.
 """
 function point_jacobian!(jacobian, state, parameters::PointModelParameters, time)
-    _require_point_state(state, "state")
-    jacobian isa AbstractMatrix || throw(ArgumentError("jacobian must be a 2x2 matrix"))
-    size(jacobian) == (2, 2) || throw(ArgumentError("jacobian must be a 2x2 matrix"))
-
-    excitatory_activity, inhibitory_activity = state
-    excitatory_drive, inhibitory_drive = drive_value(parameters.drive, time)
-    coupling = parameters.coupling
-    excitatory = parameters.excitatory
-    inhibitory = parameters.inhibitory
-
-    excitatory_input = excitatory_drive +
-                       coupling.e_to_e * excitatory_activity -
-                       coupling.i_to_e * inhibitory_activity
-    inhibitory_input = inhibitory_drive +
-                       coupling.e_to_i * excitatory_activity -
-                       coupling.i_to_i * inhibitory_activity
-
-    excitatory_rate = response(excitatory.response, excitatory_input)
-    inhibitory_rate = response(inhibitory.response, inhibitory_input)
-    excitatory_slope = response_derivative(excitatory.response, excitatory_input)
-    inhibitory_slope = response_derivative(inhibitory.response, inhibitory_input)
-
-    jacobian[1, 1] = (
-        -one(excitatory_activity) - excitatory_rate +
-        (one(excitatory_activity) - excitatory_activity) *
-        excitatory_slope * coupling.e_to_e
-    ) / excitatory.timescale
-    jacobian[1, 2] = (
-        -(one(excitatory_activity) - excitatory_activity) *
-        excitatory_slope * coupling.i_to_e
-    ) / excitatory.timescale
-    jacobian[2, 1] = (
-        (one(inhibitory_activity) - inhibitory_activity) *
-        inhibitory_slope * coupling.e_to_i
-    ) / inhibitory.timescale
-    jacobian[2, 2] = (
-        -one(inhibitory_activity) - inhibitory_rate -
-        (one(inhibitory_activity) - inhibitory_activity) *
-        inhibitory_slope * coupling.i_to_i
-    ) / inhibitory.timescale
+    point_balance_jacobian!(jacobian, state, parameters, time)
+    jacobian[1, 1] /= parameters.excitatory.timescale
+    jacobian[1, 2] /= parameters.excitatory.timescale
+    jacobian[2, 1] /= parameters.inhibitory.timescale
+    jacobian[2, 2] /= parameters.inhibitory.timescale
 
     return jacobian
 end

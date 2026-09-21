@@ -6,9 +6,8 @@ model assumptions and numerical conventions are documented in
 [`docs/model.md`](docs/model.md).
 
 States are dimensionless active-population fractions ordered `[E, I]` in the
-physical domain `[0,1]^2`. Physiological rest is **quiescent, not silent**:
-the logistic response can produce small nonzero recruitment at zero effective
-input, so rest need not be the exact origin.
+physical domain `[0,1]^2`. Because the logistic response can be nonzero at
+zero effective input, the origin need not be an equilibrium.
 
 Version 0.3 is an intentional pre-1.0 API break: `PopulationParameters` no
 longer has `decay` or `saturation` fields, and inhibitory couplings are supplied
@@ -85,6 +84,39 @@ write_trajectory_csv("failure_of_inhibition.csv", failure_solution)
 inhibitory onset response; only the latter subtracts the equal-slope failure
 component.
 
+## Equilibria and local stability
+
+The following is a synthetic API usage demonstration, not a scientific
+result. Because the example models use a pulsed protocol, each analysis names
+the finite source time whose E/I drive is frozen into an autonomous system:
+
+```julia
+control_local = solve_equilibrium(
+    models.control,
+    [0.1, 0.15];
+    snapshot_time=4.0,
+)
+
+control_search = find_equilibria(models.control; snapshot_time=4.0)
+failure_search = find_equilibria(
+    models.failure_of_inhibition;
+    snapshot_time=4.0,
+)
+
+control_local.attempt.solver_status
+control_local.attempt.validation
+control_local.stability.classification
+control_search.completeness  # CompletenessNotCertified
+```
+
+`solve_equilibrium` performs one local solve. `find_equilibria` performs a
+deterministic multistart search, independently validates balance residuals and
+physical bounds, deduplicates roots, and classifies local linear stability
+with the original time constants. The result retains every seed and solver
+outcome. It reports equilibria found; it never certifies that the search is
+complete. Detailed tolerances, frozen-drive semantics, and limitations are in
+[`docs/model.md`](docs/model.md).
+
 ## Responses and external drive
 
 `LogisticResponse` is the supported excitatory response and monotone
@@ -133,6 +165,7 @@ Pkg.instantiate()
 Pkg.test()
 ```
 
-Equilibria, stability and bifurcation analysis, regime diagnostics,
-deterministic experiments, plotting, and manuscript writing remain future
-work. See `NEXT_STEPS.md` for the current sequence.
+Completeness certification, continuation, periodic-orbit and bifurcation
+analysis, scientific regime diagnostics, deterministic experiments, plotting,
+and manuscript writing remain future work. See `NEXT_STEPS.md` for the current
+sequence.
