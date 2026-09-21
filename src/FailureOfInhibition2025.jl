@@ -7,6 +7,7 @@ include("stability.jl")
 include("equilibria.jl")
 include("configurations.jl")
 include("simulation.jl")
+include("diagnostics.jl")
 
 export LogisticResponse
 export FailureOfInhibitionResponse
@@ -35,5 +36,8 @@ export EquilibriumAttempt, EquilibriumSolveResult, Equilibrium, EquilibriumSearc
 export default_equilibrium_seeds, solve_equilibrium, find_equilibria
 
 export solve_point_model, write_trajectory_csv
+
+export DiagnosticOptions, TrajectoryDiagnostics, TrajectoryClassification
+export EquilibriumCompatible, TrajectoryUnresolved, diagnose_trajectory
 
 end

@@ -154,6 +154,37 @@ the physical domain for numerical methods and mathematical diagnostics.
 time,E,I
 ```
 
+## Synthetic reproducible experiment
+
+Run the matched example above under both zero baseline input and its pulsed
+protocol, with the standard settings, tighter tolerances/finer sampling, and
+a longer observation horizon:
+
+```sh
+julia --project=. scripts/run_minimal_experiment.jl \
+    --config experiments/minimal.toml --output output/minimal
+```
+
+Use a new output directory for each run. The configuration is a synthetic
+workflow check, not a scientific parameter set or biological result.
+`cases.csv` records execution status and sampled trajectory classifications;
+`comparisons.csv` records changes under numerical refinement and horizon
+extension. Trajectories keep the `time,E,I` schema. Separate equilibrium
+tables, full search-context records, and diagnostic records retain rejected
+candidates, solver failures, raw residuals, local spectra, and unresolved
+outcomes. Metadata, a snapshot of the working source and environment, and
+artifact checksums make the run traceable even before its code is committed.
+The [synthetic experiment report](docs/minimal_experiment.md) records the
+observed equilibria, unresolved outcomes, and repeat/replay verification.
+
+`diagnose_trajectory(solution, model; equilibria=search)` reports whether two
+terminal sample windows are compatible with one discovered equilibrium.
+`EquilibriumCompatible` is a finite-window observation; a stationary saddle
+can satisfy it. Local stability stays separate, all unmet criteria are
+`TrajectoryUnresolved`, and oscillatory appearance does not validate a
+periodic orbit. The exact contract and numerical defaults are in
+[`docs/model.md`](docs/model.md#sampled-trajectory-diagnostics).
+
 ## Development
 
 The repository tracks `Manifest.toml` because reproducibility takes priority
@@ -166,6 +197,6 @@ Pkg.test()
 ```
 
 Completeness certification, continuation, periodic-orbit and bifurcation
-analysis, scientific regime diagnostics, deterministic experiments, plotting,
+analysis, biological regime definitions, scientific experiments, plotting,
 and manuscript writing remain future work. See `NEXT_STEPS.md` for the current
 sequence.
