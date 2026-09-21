@@ -9,6 +9,9 @@ import CSV
 
 Solve the point model on the CPU. `initial_state` must be a
 finite two-element real vector ordered `[E, I]` and lie exactly in `[0, 1]^2`.
+The initial state is materialized as a standard one-based vector before the ODE
+is constructed. Integral coordinates are converted to floating-point values;
+existing floating-point types such as `BigFloat` are preserved.
 Adaptive steps and returned states are rejected outside
 `[-domain_atol, 1 + domain_atol]^2`; states are never clipped or projected.
 
@@ -49,7 +52,7 @@ function solve_point_model(
 
     problem = ODEProblem(
         point_rhs!,
-        collect(initial_state),
+        collect(float.(initial_state)),
         time_span,
         parameters;
         isoutofdomain=(state, _, _) -> _state_outside_domain(state, domain_atol),

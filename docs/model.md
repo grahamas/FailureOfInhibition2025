@@ -188,9 +188,12 @@ and on the upper boundaries,
 ```
 
 `solve_point_model` rejects nonfinite initial states and initial coordinates
-outside `[0,1]`. It uses an absolute numerical-domain tolerance, defaulting to
-`domain_atol=1e-8`, and rejects accepted steps or returned states outside
-`[-domain_atol, 1+domain_atol]`. States are never clipped or projected.
+outside `[0,1]`. Before constructing the ODE, it materializes the state as a
+standard one-based vector and converts integral coordinates to floating-point
+values while preserving existing floating-point types such as `BigFloat`. It
+uses an absolute numerical-domain tolerance, defaulting to `domain_atol=1e-8`,
+and rejects accepted steps or returned states outside `[-domain_atol,
+1+domain_atol]`. States are never clipped or projected.
 
 The response maxima also imply sharper forward-invariant rectangles. The
 control model has `[0,1/2]^2`. For the failure-of-inhibition model, let
