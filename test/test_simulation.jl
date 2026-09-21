@@ -1,6 +1,16 @@
 using CSV
 using SciMLBase
 
+struct TestZeroBasedVector{T} <: AbstractVector{T}
+    values::Vector{T}
+end
+
+Base.size(vector::TestZeroBasedVector) = size(vector.values)
+Base.axes(vector::TestZeroBasedVector) = (0:(length(vector) - 1),)
+Base.getindex(vector::TestZeroBasedVector, index::Int) = vector.values[index + 1]
+Base.Broadcast.broadcasted(::typeof(float), vector::TestZeroBasedVector) =
+    TestZeroBasedVector(float.(vector.values))
+
 @testset "Deterministic CPU simulation and CSV output" begin
     model = synthetic_model()
     initial_state = [0.1, 0.15]
@@ -48,6 +58,14 @@ end
     bigfloat_solution = solve_point_model(BigFloat[0, 0], (0.0, 0.1), model)
     @test SciMLBase.successful_retcode(bigfloat_solution)
     @test eltype(first(bigfloat_solution.u)) === BigFloat
+
+    zero_based_solution = solve_point_model(
+        TestZeroBasedVector([0, 0]),
+        (0.0, 0.1),
+        model,
+    )
+    @test SciMLBase.successful_retcode(zero_based_solution)
+    @test axes(first(zero_based_solution.u)) == (Base.OneTo(2),)
 
     zero_tolerance_solution = solve_point_model(
         [0.0, 1.0],
