@@ -433,6 +433,117 @@ the matched models. Repeatability is assessed with repeated runs from the
 same configuration and environment, and conclusions remain limited to the
 reported numerical checks and finite observation horizons.
 
+## Equilibrium continuation
+
+`continue_equilibria(factory, state, parameter; parameter_bounds, options)`
+traces an equilibrium branch in both initial parameter directions using
+`ContinuationOptions`. The factory returns an autonomous point model with a
+consistent concrete type. Correctors solve the two balance equations plus a
+pseudo-arclength phase plane, allowing traversal through parameter folds and
+unstable segments. Every accepted state is independently checked with the
+equilibrium acceptance policy, and stability uses the original-time Jacobian.
+
+Arclength uses scaled coordinates `(E/s_E,I/s_I,p/s_p)` with default scales
+one. These are numerical solver scales, not new model normalizations. The
+state Jacobian is analytical; the parameter derivative uses a finite
+difference with default increment `1e-5 * max(1,abs(p))`, reduced to stay
+inside the supplied bounds. Differences are centered in the interior and
+one-sided at a bound. Default arclength steps start at `0.03`, range from
+`1e-5` to `0.1`, and permit 500 accepted steps per direction. Correctors have
+12 iterations and dimensionless/scaled residual tolerance `1e-10`.
+
+Results retain the initial solve, actual model at every accepted point,
+tangents, failed correctors and retries, termination statuses, and
+`CompletenessNotCertified`. Correction failures halve the step. Parameter
+boundary termination does not guarantee an exact endpoint. Step limits and
+minimum-step failures leave partial branches. A tangent-parameter sign
+change is a fold candidate; a trace sign change with positive determinants
+and resolved complex spectra at both endpoints is a Hopf candidate. These
+are adjacent-point screening brackets, not located or certified
+bifurcations. Branch switching and nondegeneracy verification are not
+performed automatically.
+
+## Numerical periodic-orbit shooting
+
+`solve_periodic_orbit(model, state_guess, period_guess; options)` uses a
+phase-conditioned shooting solve for an autonomous point model, with the
+variational equations for the monodromy matrix. `PeriodicOrbitOptions`
+controls positive period bounds, ODE/shooting tolerances, sample count,
+nonconstant amplitude, phase degeneracy, and Floquet checks. Shooting uses
+Float64 explicitly; unsupported arbitrary precision is rejected rather than
+silently narrowed. A callback overload supports autonomous two-dimensional
+systems for mathematical verification; the point-model wrapper enforces its
+physical domain and model context.
+
+The phase condition is orthogonality to the vector field at the supplied
+reference state. A near-zero reference speed is unresolved. Integration uses
+normalized time from zero to one and is repeated with tenfold tighter ODE
+tolerances by default. Numerical validation requires nonconstant sampled
+amplitude, closure and phase residuals, agreement of the waveform, period,
+and monodromy under refinement, and a trivial Floquet multiplier near one.
+An ODE defect compares the dense interpolant derivative with `period * rhs`
+at interior sample points. The default ODE tolerances are `1e-10`, shooting
+tolerance `1e-9`, validation tolerance `1e-6`, amplitude threshold `1e-5`,
+Floquet tolerance `1e-4`, and sample count 257. These are explicit numerical
+policies, not physiological criteria or rigorous error bounds.
+
+`NumericallyValidatedPeriodicOrbit` reports this evidence, not a rigorous
+existence certificate, primitive-period proof, or exhaustive cycle search.
+Orbital stability is separate: the transverse multiplier gives
+`PeriodicOrbitAttracting` or `PeriodicOrbitRepelling` only when separated from
+the unit circle by its tolerance. Neutral or insufficient evidence stays
+unresolved. `periodic_orbit_phases(result, phases)` samples validated results
+at fractional phases in `[0,1)`; validation alone does not imply attraction.
+
+## Explicit pulse experiments
+
+`run_pulse_trial` and `run_pulse_experiments` apply rectangular pulses to a
+supplied autonomous model and matching equilibrium-search context. Targets
+are `:E`, `:I`, `:equal`, and separate `:negative_E` suppression. Pulse onset
+is zero, withdrawal occurs at the specified duration, and baseline drive
+resumes afterward. Positive targets use the afferent interpretation when the
+baseline allows it; negative E-drive uses `AbstractIntervention`.
+
+The study defaults are amplitudes `0:0.25:8`, durations
+`[1,2,5,10,20,50,100,200]` ms, and post-withdrawal follow-ups of
+`[5000,10000,20000]` ms. An unresolved observation is rerun from the same
+initial state and pulse with the longer horizon. Each terminal diagnostic
+window defaults to 100 ms with 21 samples and exact window endpoints;
+coordinate and balance tolerances remain `1e-6` and `1e-8`. Successful
+integration and compatibility with a uniquely matched locally attracting
+equilibrium are required for a resolved equilibrium destination. This remains
+a finite-window observation and is not permanent rescue or global reachability.
+Stationary saddles, near-singular or ambiguous matches, failed integrations,
+and unvalidated oscillations cannot become attracting destinations.
+
+Default starts use discovered locally attracting equilibria. Explicit
+`(id,state,provenance)` records also allow caller-verified cycle phases;
+the caller must match their autonomous model context and check orbital
+stability. The current pulse destination classifier recognizes equilibria;
+other outcomes remain unresolved even if a separate periodic orbit has been
+validated. Each attempted follow-up retains samples, diagnostic metrics,
+continuous E/I/input/slope summaries, and execution errors. Optional denser
+trajectory retention preserves the `time,E,I` CSV convention.
+
+Refinement bisects every adjacent sampled amplitude interval with different
+resolved equilibrium destinations, with two refinement levels by default.
+Unresolved brackets are retained, and no monotonic-success assumption is
+made. Islands between equal-outcome sampled endpoints can be missed. The
+component integrals are signed `duration * increment`; the sum of their
+absolute values is a defined input cost, not biological energy.
+
+## Scientific experiment configurations
+
+[The intervention study](intervention_study.md) describes the supplied
+exploration bounds, execution commands, and evidence gates. Separate TOML
+configurations drive the coexistence map, pulse experiments, and individual
+intervention/targeted robustness sweeps. All preserve matched non-inhibitory
+parameters and the approved response family, retain unstable equilibria and
+failed attempts, and archive source/configuration provenance with checksums.
+The manuscript-facing analytical restrictions are in
+[the theory notes](theory_notes.md). Numerical candidates do not inherit
+biological labels from these workflows.
+
 ## Comparison responses and analysis limitations
 
 `PointModelParameters` supports `LogisticResponse` for the excitatory
@@ -440,10 +551,9 @@ population and either `LogisticResponse` or `FailureOfInhibitionResponse` for
 the inhibitory population. The exported rectified and unequal-slope response
 types remain available only for standalone comparisons.
 
-Equilibrium discovery, physical-admissibility classification of equilibrium
-candidates, local linear stability, and sampled trajectory diagnostics are
-implemented only as the numerical, non-certifying procedures described above.
-The minimal matched-model experiment is a synthetic workflow check, not a
-scientific result. Completeness certification, continuation, periodic-orbit
-and bifurcation analysis, biological regime classification, plotting, and
-manuscript claims remain outside the current implementation.
+Equilibrium discovery, local stability, trajectory diagnostics, continuation,
+and periodic-orbit shooting are numerical procedures with the explicit limits
+above. The minimal matched-model experiment remains a synthetic workflow
+check. Search completeness, rigorous existence and bifurcation certificates,
+biological regime definitions, and publication claims are not supplied by
+these numerical labels.

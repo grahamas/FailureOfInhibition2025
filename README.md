@@ -5,6 +5,15 @@ two-population point model for a failure-of-inhibition study. The implemented
 model assumptions and numerical conventions are documented in
 [`docs/model.md`](docs/model.md).
 
+The [intervention study plan](docs/intervention_study.md) specifies the
+manuscript-anchor coexistence maps, matched controls, continuation, pulse
+experiments, periodic-orbit checks, and intervention/robustness sweeps.
+Its exploration bounds are not physiological calibration. See the
+[analytical constraints](docs/theory_notes.md) for equilibrium ordering,
+response symmetry, and the scope of positive-drive rescue claims.
+The [initial results](docs/intervention_results.md) report executed maps,
+branch continuation, pulse transitions, and remaining scientific limits.
+
 States are dimensionless active-population fractions ordered `[E, I]` in the
 physical domain `[0,1]^2`. Because the logistic response can be nonzero at
 zero effective input, the origin need not be an equilibrium.

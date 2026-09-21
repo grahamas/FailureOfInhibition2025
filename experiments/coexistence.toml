@@ -1,0 +1,55 @@
+schema_version = 1
+
+# Exploration bounds around manuscript examples, not physiological calibration.
+[model.excitatory]
+timescale = 7.8
+slope = 5.0
+threshold = 1.5
+
+[model.inhibitory]
+timescale = 34.32
+slope = 5.0
+threshold = 4.0
+
+[[anchors]]
+name = "figure3"
+e_to_e = 17.0
+i_to_e = 9.0
+i_to_i = 4.0
+
+[[anchors]]
+name = "figure4_exploration"
+e_to_e = 19.0
+i_to_e = 13.0
+i_to_i = 6.0
+
+[axes.e_to_i]
+minimum = 12.0
+maximum = 28.0
+step = 0.5
+
+[axes.failure_threshold]
+minimum = 6.0
+maximum = 12.0
+step = 0.25
+
+[search]
+seed_grid_points = 11
+
+[smoke]
+e_to_i = [19.0]
+failure_threshold = [8.0, 10.0, 12.0]
+
+[equilibrium]
+solver_abstol = 1e-12
+solver_reltol = 1e-10
+residual_atol = 1e-9
+domain_atol = 1e-8
+dedup_atol = 1e-7
+singular_atol = 1e-10
+singular_rtol = 1e-8
+maxiters = 100
+
+[stability]
+spectral_atol = 1e-10
+spectral_rtol = 1e-8

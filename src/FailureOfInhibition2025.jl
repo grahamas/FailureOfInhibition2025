@@ -8,6 +8,9 @@ include("equilibria.jl")
 include("configurations.jl")
 include("simulation.jl")
 include("diagnostics.jl")
+include("continuation.jl")
+include("periodic_orbits.jl")
+include("pulse_experiments.jl")
 
 export LogisticResponse
 export FailureOfInhibitionResponse
@@ -39,5 +42,17 @@ export solve_point_model, write_trajectory_csv
 
 export DiagnosticOptions, TrajectoryDiagnostics, TrajectoryClassification
 export EquilibriumCompatible, TrajectoryUnresolved, diagnose_trajectory
+
+export ContinuationOptions, ContinuationAttempt, ContinuationPoint
+export ContinuationBranch, ContinuationCandidate, EquilibriumContinuationResult
+export continue_equilibria
+
+export PeriodicOrbitOptions, PeriodicOrbitValidation, PeriodicOrbitStability
+export NumericallyValidatedPeriodicOrbit, PeriodicOrbitUnresolved
+export PeriodicOrbitAttracting, PeriodicOrbitRepelling, PeriodicOrbitStabilityUnresolved
+export PeriodicOrbitResult, solve_periodic_orbit, periodic_orbit_phases
+
+export PulseExperimentOptions, PulseTrialResult, PulseExperimentResult
+export run_pulse_trial, run_pulse_experiments
 
 end
