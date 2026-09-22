@@ -169,6 +169,12 @@ J(E,I,t)=
 Piecewise-constant drive contributes no state derivative, although the vector
 field and Jacobian can jump in time at a drive transition.
 
+The balance and ODE kernels share scalar calculations. The ODE kernels divide
+each balance or Jacobian entry by its time constant before assigning it to
+the caller's output array. In particular, a lower-precision output array is
+not used to store an unscaled intermediate that could underflow or overflow
+even when the final scaled value is representable.
+
 ## Domain handling
 
 The response bounds make `[0,1]^2` forward invariant. On the lower boundaries,
@@ -328,6 +334,105 @@ These are local linear classifications. A single spectrum does not establish
 global stability, a center, a Hopf bifurcation, a limit cycle, or a scientific
 regime.
 
+## Sampled trajectory diagnostics
+
+`diagnose_trajectory(solution, model; equilibria, options=DiagnosticOptions())`
+compares a trajectory with an `EquilibriumSearchResult` from the same
+population and coupling parameters. It reports finite-window observations,
+separately from the equilibrium search's local stability classifications.
+Neither result assigns a biological regime.
+
+The two consecutive terminal windows each have duration `window_duration`.
+Both windows are closed, so their shared endpoint is counted in both. All
+three window endpoints must be saved explicitly, and each window must contain
+at least `min_samples` samples. Diagnostics retain E/I arithmetic sample means
+(not time averages) and ranges,
+maximum dimensionless balance-residual norms, and the maximum coordinate
+infinity distance across both windows to each discovered equilibrium.
+
+| Option | Default | Meaning |
+| --- | ---: | --- |
+| `window_duration` | `5.0` | duration of each window in ms |
+| `coordinate_atol` | `1e-6` | coordinate-distance and within-window range tolerance |
+| `balance_atol` | `1e-8` | dimensionless balance-residual tolerance |
+| `min_samples` | `3` | minimum saved samples per window |
+
+`EquilibriumCompatible` means that integration succeeded, the two windows
+have valid coverage and physical states up to the equilibrium search's
+`domain_atol`, and the drive is constant throughout
+both windows and agrees with the equilibrium search's frozen input. Every
+sample must be within `coordinate_atol` of the same unique admissible
+equilibrium; both coordinate ranges and both maximum balance residuals must
+also satisfy their respective tolerances. Equality at a tolerance is accepted.
+The matched equilibrium must not be flagged near-singular or belong to an
+unresolved-nearby group. Drive changes are checked at pulse transitions,
+including transitions between saved samples and at the final endpoint.
+
+This label describes compatibility with an equilibrium over the saved
+windows. A stationary trajectory at a saddle can satisfy it; the saddle's
+local stability remains a separate result. It does not establish asymptotic
+convergence, attraction, global stability, or search completeness. A small
+dimensional ODE derivative alone is insufficient because large time constants
+can hide a large balance residual.
+
+All unmet criteria produce `TrajectoryUnresolved` with explicit reasons.
+Missing metrics are represented by `NaN`, and no unique coordinate match is
+represented by `nothing`. A unique match is retained even if other criteria
+leave the classification unresolved. Failed or incomplete integration, insufficient
+coverage, nonfinite samples, changing drive, ambiguous matches, and numerical
+uncertainty are retained rather than converted into a regime label. Invalid
+API arguments and mismatched population/coupling parameters raise
+`ArgumentError`. Oscillatory appearance does not validate a periodic orbit;
+periodic-orbit computation and biological classification remain separate work.
+When the solution includes its requested integration interval, the last saved
+time must reach that interval's endpoint. For a supplied sample record without
+that interval, completion is assessed only over its saved span.
+When the solution records `PointModelParameters` in its ODE problem, those
+parameters and the drive totals throughout the integration interval must agree
+with the supplied model. Sample records without a recorded model rely on the
+caller's explicit model context.
+
+## Synthetic experiment records
+
+`experiments/minimal.toml` defines a synthetic matched-model workflow check.
+It uses the README example's population parameters, coupling, initial state,
+and pulses, plus an otherwise identical zero-drive baseline. The control and
+failure-of-inhibition conditions differ only in the inhibitory failure term.
+
+The standard variant integrates from 0 to 20 ms with a 0.1-ms saved interval
+and ODE absolute/relative tolerances of `1e-10`. The refined variant retains
+the horizon, halves the saved interval, and tightens both tolerances to
+`1e-12`. The extended variant retains the standard numerical settings and
+integrates to 40 ms. The domain tolerance remains `1e-8`. These 12 cases are
+workflow checks, not biological regime tests. The refined variant changes
+sampling and integration tolerances together; it does not isolate their
+individual effects.
+
+Equilibrium searches use the explicit configured equilibrium and stability
+options and record their deterministic seeds. The pulsed protocol has segment
+source times 0, 2, 4, 5, and 7 ms. Repeated baseline inputs at different segment
+times retain separate context records. Searches are shared across trajectory
+variants with identical model and drive contexts. Terminal diagnostics use
+the corresponding final constant-drive equilibrium context.
+
+| Artifact | Contents |
+| --- | --- |
+| `config.toml` | complete experiment configuration |
+| `cases.csv` | per-case execution and trajectory classification |
+| `comparisons.csv` | classification changes under refinement and horizon extension |
+| `trajectories/` | one `time,E,I` CSV per returned trajectory |
+| `attempts.csv`, `equilibria.csv` | equilibrium discovery summaries |
+| `contexts/` | full search records, including all attempts, raw residuals, Jacobians, spectra, memberships, ambiguity, tolerances, and completeness |
+| `diagnostics/` | raw per-case window metrics, criteria, and unresolved reasons |
+| `metadata.toml`, `source/`, `checksums.toml` | execution environment, revision/local state, working source snapshot, and artifact hashes |
+
+Numerical execution failures are retained and make the command fail; an
+unresolved scientific or finite-window classification is an ordinary recorded
+outcome. Successful execution does not require a desired difference between
+the matched models. Repeatability is assessed with repeated runs from the
+same configuration and environment, and conclusions remain limited to the
+reported numerical checks and finite observation horizons.
+
 ## Comparison responses and analysis limitations
 
 `PointModelParameters` supports `LogisticResponse` for the excitatory
@@ -336,8 +441,9 @@ the inhibitory population. The exported rectified and unequal-slope response
 types remain available only for standalone comparisons.
 
 Equilibrium discovery, physical-admissibility classification of equilibrium
-candidates, and local linear stability are implemented only as the numerical,
-non-certifying procedures described above. Completeness certification,
-continuation, periodic-orbit and bifurcation analysis, regime diagnostics,
-deterministic experiment schemas, plotting, and manuscript claims remain
-outside the current implementation.
+candidates, local linear stability, and sampled trajectory diagnostics are
+implemented only as the numerical, non-certifying procedures described above.
+The minimal matched-model experiment is a synthetic workflow check, not a
+scientific result. Completeness certification, continuation, periodic-orbit
+and bifurcation analysis, biological regime classification, plotting, and
+manuscript claims remain outside the current implementation.

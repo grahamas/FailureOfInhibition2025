@@ -12,4 +12,6 @@ include("test_support.jl")
     include("test_equilibria.jl")
     include("test_configurations.jl")
     include("test_simulation.jl")
+    include("test_diagnostics.jl")
+    include("test_experiments.jl")
 end

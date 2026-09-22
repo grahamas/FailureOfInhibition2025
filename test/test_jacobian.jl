@@ -14,6 +14,43 @@ function finite_difference_jacobian(model, state, time; step=1.0e-7)
     return jacobian
 end
 
+@testset "Jacobian scales before output conversion" begin
+    flat_response = LogisticResponse(slope=1.0, threshold=0.0)
+    model = synthetic_model(
+        excitatory_response=flat_response,
+        inhibitory_response=flat_response,
+        excitatory_timescale=1.0e20,
+        inhibitory_timescale=2.0e20,
+        coupling=PointCoupling(1.0e40, 1.0e40, 1.0e40, 1.0e40),
+    )
+    state = zeros(2)
+    jacobian = zeros(Float32, 2, 2)
+    balance_jacobian = zeros(2, 2)
+    expected = Float32[
+        (-1.5 + 0.25e40) / 1.0e20 -0.25e40 / 1.0e20
+        0.25e40 / 2.0e20 (-1.5 - 0.25e40) / 2.0e20
+    ]
+    @test point_jacobian!(jacobian, state, model, 0.0) === jacobian
+    @test all(isfinite, jacobian)
+    @test jacobian ≈ expected rtol=eps(Float32)
+    @test point_balance_jacobian!(balance_jacobian, state, model, 0.0) === balance_jacobian
+    @test all(>(floatmax(Float32)), abs.(balance_jacobian))
+
+    tail_response = LogisticResponse(slope=1.0, threshold=110.0)
+    model = synthetic_model(
+        excitatory_response=tail_response,
+        inhibitory_response=tail_response,
+        excitatory_timescale=1.0e-40,
+        inhibitory_timescale=2.0e-40,
+        coupling=PointCoupling(0.0, 1.0, 1.0, 0.0),
+    )
+    tail_slope = exp(-110.0) / (1 + exp(-110.0))^2
+    point_jacobian!(jacobian, state, model, 0.0)
+    @test jacobian[1, 2] ≈ Float32(-tail_slope / 1.0e-40) rtol=eps(Float32)
+    @test jacobian[2, 1] ≈ Float32(tail_slope / 2.0e-40) rtol=eps(Float32)
+    @test jacobian[1, 2] < 0 < jacobian[2, 1]
+end
+
 function manual_point_jacobian(model, state, time)
     excitatory_activity, inhibitory_activity = state
     excitatory_drive, inhibitory_drive = drive_value(model.drive, time)
@@ -40,6 +77,19 @@ function manual_point_jacobian(model, state, time)
            (1 - inhibitory_activity) * inhibitory_slope * coupling.i_to_i) /
           model.inhibitory.timescale
     return [j11 j12; j21 j22]
+end
+
+@testset "Jacobian mixed and generic numeric types" begin
+    for model in (synthetic_model(), synthetic_foi_model())
+        for state in (Float32[0.2, 0.3], [0.2, 0.3], BigFloat[0.2, 0.3])
+            expected = manual_point_jacobian(model, state, 0.0)
+            for T in (Float32, Float64, BigFloat)
+                jacobian = zeros(T, 2, 2)
+                point_jacobian!(jacobian, state, model, 0.0)
+                @test jacobian ≈ T.(expected) rtol=8eps(T)
+            end
+        end
+    end
 end
 
 @testset "Analytical Jacobian" begin

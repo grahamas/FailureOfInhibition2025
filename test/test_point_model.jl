@@ -18,6 +18,58 @@ function direct_rhs_values(model, state, time)
     ]
 end
 
+@testset "RHS scales before output conversion" begin
+    tail_response = LogisticResponse(slope=1.0, threshold=110.0)
+    tiny_timescale = 1.0e-40
+    model = synthetic_model(
+        excitatory_response=tail_response,
+        inhibitory_response=tail_response,
+        excitatory_timescale=tiny_timescale,
+        inhibitory_timescale=2tiny_timescale,
+        coupling=PointCoupling(0.0, 0.0, 0.0, 0.0),
+    )
+    state = zeros(2)
+    derivative = zeros(Float32, 2)
+    balance = zeros(Float32, 2)
+    tail = exp(-110.0) / (1 + exp(-110.0))
+    expected = Float32[tail / tiny_timescale, tail / (2tiny_timescale)]
+    @test point_rhs!(derivative, state, model, 0.0) === nothing
+    @test all(isfinite, derivative)
+    @test all(>(0), derivative)
+    @test derivative ≈ expected rtol=eps(Float32)
+    # Unscaled balance values really are too small for this buffer.
+    @test point_balance!(balance, state, model, 0.0) === nothing
+    @test iszero(balance)
+
+    # The low-level kernel also permits trial states outside the physical domain.
+    model = synthetic_model(
+        excitatory_response=LogisticResponse(slope=1.0, threshold=0.0),
+        inhibitory_response=LogisticResponse(slope=1.0, threshold=0.0),
+        excitatory_timescale=1.0e20,
+        inhibitory_timescale=2.0e20,
+        coupling=PointCoupling(0.0, 0.0, 0.0, 0.0),
+    )
+    state = [-1.0e40, -1.0e40]
+    unscaled = -state[1] + (1 - state[1]) / 2
+    @test unscaled > floatmax(Float32)
+    point_rhs!(derivative, state, model, 0.0)
+    @test all(isfinite, derivative)
+    @test derivative ≈ Float32[unscaled / 1.0e20, unscaled / 2.0e20] rtol=eps(Float32)
+end
+
+@testset "RHS mixed and generic numeric types" begin
+    for model in (synthetic_model(), synthetic_foi_model())
+        for state in (Float32[0.2, 0.3], [0.2, 0.3], BigFloat[0.2, 0.3])
+            expected = direct_rhs_values(model, state, 0.0)
+            for T in (Float32, Float64, BigFloat)
+                derivative = zeros(T, 2)
+                point_rhs!(derivative, state, model, 0.0)
+                @test derivative ≈ T.(expected) rtol=8eps(T)
+            end
+        end
+    end
+end
+
 @testset "Typed point-model parameters" begin
     model = synthetic_model()
     @test model.excitatory isa PopulationParameters

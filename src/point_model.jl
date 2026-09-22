@@ -130,6 +130,19 @@ function _point_inputs(state, parameters::PointModelParameters, time)
     return excitatory_activity, inhibitory_activity, excitatory_input, inhibitory_input
 end
 
+function _point_balance_values(state, parameters::PointModelParameters, time)
+    excitatory_activity, inhibitory_activity, excitatory_input, inhibitory_input =
+        _point_inputs(state, parameters, time)
+    excitatory_rate = response(parameters.excitatory.response, excitatory_input)
+    inhibitory_rate = response(parameters.inhibitory.response, inhibitory_input)
+
+    excitatory_balance = -excitatory_activity +
+                        (one(excitatory_activity) - excitatory_activity) * excitatory_rate
+    inhibitory_balance = -inhibitory_activity +
+                        (one(inhibitory_activity) - inhibitory_activity) * inhibitory_rate
+    return excitatory_balance, inhibitory_balance
+end
+
 """
     point_balance!(residual, state, parameters, time)
 
@@ -141,16 +154,9 @@ not clip or project them.
 function point_balance!(residual, state, parameters::PointModelParameters, time)
     _require_point_state(state, "state")
     _require_point_state(residual, "residual")
-
-    excitatory_activity, inhibitory_activity, excitatory_input, inhibitory_input =
-        _point_inputs(state, parameters, time)
-    excitatory_rate = response(parameters.excitatory.response, excitatory_input)
-    inhibitory_rate = response(parameters.inhibitory.response, inhibitory_input)
-
-    residual[1] = -excitatory_activity +
-                  (one(excitatory_activity) - excitatory_activity) * excitatory_rate
-    residual[2] = -inhibitory_activity +
-                  (one(inhibitory_activity) - inhibitory_activity) * inhibitory_rate
+    excitatory_balance, inhibitory_balance = _point_balance_values(state, parameters, time)
+    residual[1] = excitatory_balance
+    residual[2] = inhibitory_balance
     return nothing
 end
 
@@ -163,11 +169,45 @@ Evaluate the supported two-population point-model equation in place:
 kernel deliberately does not restrict or project the supplied state.
 """
 function point_rhs!(derivative, state, parameters::PointModelParameters, time)
-    point_balance!(derivative, state, parameters, time)
-    derivative[1] /= parameters.excitatory.timescale
-    derivative[2] /= parameters.inhibitory.timescale
+    _require_point_state(state, "state")
+    _require_point_state(derivative, "derivative")
+    excitatory_balance, inhibitory_balance = _point_balance_values(state, parameters, time)
+    # Scale before assignment: the output buffer may have lower precision.
+    derivative[1] = excitatory_balance / parameters.excitatory.timescale
+    derivative[2] = inhibitory_balance / parameters.inhibitory.timescale
 
     return nothing
+end
+
+function _require_point_jacobian(jacobian)
+    jacobian isa AbstractMatrix || throw(ArgumentError("jacobian must be a 2x2 matrix"))
+    size(jacobian) == (2, 2) || throw(ArgumentError("jacobian must be a 2x2 matrix"))
+    return jacobian
+end
+
+function _point_balance_jacobian_values(state, parameters::PointModelParameters, time)
+    excitatory_activity, inhibitory_activity, excitatory_input, inhibitory_input =
+        _point_inputs(state, parameters, time)
+    coupling = parameters.coupling
+    excitatory = parameters.excitatory
+    inhibitory = parameters.inhibitory
+
+    excitatory_rate = response(excitatory.response, excitatory_input)
+    inhibitory_rate = response(inhibitory.response, inhibitory_input)
+    excitatory_slope = response_derivative(excitatory.response, excitatory_input)
+    inhibitory_slope = response_derivative(inhibitory.response, inhibitory_input)
+
+    j11 = -one(excitatory_activity) - excitatory_rate +
+          (one(excitatory_activity) - excitatory_activity) *
+          excitatory_slope * coupling.e_to_e
+    j12 = -(one(excitatory_activity) - excitatory_activity) *
+          excitatory_slope * coupling.i_to_e
+    j21 = (one(inhibitory_activity) - inhibitory_activity) *
+          inhibitory_slope * coupling.e_to_i
+    j22 = -one(inhibitory_activity) - inhibitory_rate -
+          (one(inhibitory_activity) - inhibitory_activity) *
+          inhibitory_slope * coupling.i_to_i
+    return j11, j12, j21, j22
 end
 
 """
@@ -184,30 +224,12 @@ function point_balance_jacobian!(
     time,
 )
     _require_point_state(state, "state")
-    jacobian isa AbstractMatrix || throw(ArgumentError("jacobian must be a 2x2 matrix"))
-    size(jacobian) == (2, 2) || throw(ArgumentError("jacobian must be a 2x2 matrix"))
-
-    excitatory_activity, inhibitory_activity, excitatory_input, inhibitory_input =
-        _point_inputs(state, parameters, time)
-    coupling = parameters.coupling
-    excitatory = parameters.excitatory
-    inhibitory = parameters.inhibitory
-
-    excitatory_rate = response(excitatory.response, excitatory_input)
-    inhibitory_rate = response(inhibitory.response, inhibitory_input)
-    excitatory_slope = response_derivative(excitatory.response, excitatory_input)
-    inhibitory_slope = response_derivative(inhibitory.response, inhibitory_input)
-
-    jacobian[1, 1] = -one(excitatory_activity) - excitatory_rate +
-                     (one(excitatory_activity) - excitatory_activity) *
-                     excitatory_slope * coupling.e_to_e
-    jacobian[1, 2] = -(one(excitatory_activity) - excitatory_activity) *
-                     excitatory_slope * coupling.i_to_e
-    jacobian[2, 1] = (one(inhibitory_activity) - inhibitory_activity) *
-                     inhibitory_slope * coupling.e_to_i
-    jacobian[2, 2] = -one(inhibitory_activity) - inhibitory_rate -
-                     (one(inhibitory_activity) - inhibitory_activity) *
-                     inhibitory_slope * coupling.i_to_i
+    _require_point_jacobian(jacobian)
+    j11, j12, j21, j22 = _point_balance_jacobian_values(state, parameters, time)
+    jacobian[1, 1] = j11
+    jacobian[1, 2] = j12
+    jacobian[2, 1] = j21
+    jacobian[2, 2] = j22
     return jacobian
 end
 
@@ -218,11 +240,14 @@ Evaluate the analytical Jacobian of `point_rhs!` in place. Like the RHS
 kernel, this function evaluates the supplied state without clamping it.
 """
 function point_jacobian!(jacobian, state, parameters::PointModelParameters, time)
-    point_balance_jacobian!(jacobian, state, parameters, time)
-    jacobian[1, 1] /= parameters.excitatory.timescale
-    jacobian[1, 2] /= parameters.excitatory.timescale
-    jacobian[2, 1] /= parameters.inhibitory.timescale
-    jacobian[2, 2] /= parameters.inhibitory.timescale
+    _require_point_state(state, "state")
+    _require_point_jacobian(jacobian)
+    j11, j12, j21, j22 = _point_balance_jacobian_values(state, parameters, time)
+    # Retain promoted arithmetic through row scaling, then convert on assignment.
+    jacobian[1, 1] = j11 / parameters.excitatory.timescale
+    jacobian[1, 2] = j12 / parameters.excitatory.timescale
+    jacobian[2, 1] = j21 / parameters.inhibitory.timescale
+    jacobian[2, 2] = j22 / parameters.inhibitory.timescale
 
     return jacobian
 end
