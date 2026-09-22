@@ -1,0 +1,90 @@
+# Proposed exploration nodes around the Figure 3 anchor, not calibrated physiology.
+# Times are milliseconds; couplings/thresholds are effective-input units.
+schema_version = 1
+
+[baseline]
+e_to_e = 17.0
+i_to_e = 9.0
+e_to_i = 19.0
+i_to_i = 4.0
+tau_e = 7.8
+tau_i = 34.32
+a_e = 5.0
+a_i = 5.0
+theta_e = 1.5
+theta_on = 4.0
+theta_off = 8.0
+
+[[interventions]]
+name = "theta_off"
+values = [8.0, 8.25, 8.5, 8.75, 9.0, 9.25, 9.5, 9.75, 10.0, 10.25, 10.5, 10.75, 11.0, 11.25, 11.5, 11.75, 12.0]
+
+# Nine equally spaced factors from 100% to 60% of the anchor.
+[[interventions]]
+name = "e_to_i"
+values = [19.0, 18.05, 17.1, 16.15, 15.2, 14.25, 13.3, 12.35, 11.4]
+
+[[interventions]]
+name = "e_to_e"
+values = [17.0, 16.15, 15.3, 14.45, 13.6, 12.75, 11.9, 11.05, 10.2]
+
+# Nine equally spaced factors from 100% to 150% of the anchor.
+[[interventions]]
+name = "i_to_e"
+values = [9.0, 9.5625, 10.125, 10.6875, 11.25, 11.8125, 12.375, 12.9375, 13.5]
+
+[robustness]
+joint_samples = 24
+
+# --robustness adds these one-at-a-time slices plus joint samples over the nodes.
+# Joint sample n selects floor(length(values)*radical_inverse(n, prime))+1;
+# primes 2,3,5,7,11,13,17,19 follow this axis order. No random seed is used.
+[[robustness.axes]]
+name = "e_to_e"
+values = [14.0, 16.0, 17.0, 18.0, 20.0, 22.0, 24.0]
+
+[[robustness.axes]]
+name = "i_to_e"
+values = [6.0, 8.0, 9.0, 10.0, 12.0, 14.0, 16.0, 18.0]
+
+[[robustness.axes]]
+name = "i_to_i"
+values = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0]
+
+[[robustness.axes]]
+name = "tau_ratio"
+values = [0.5, 1.0, 2.0, 4.4, 6.0, 8.0]
+
+[[robustness.axes]]
+name = "a_e"
+values = [2.5, 5.0, 10.0]
+
+# a_i changes both the onset and failure sigmoid slopes together.
+[[robustness.axes]]
+name = "a_i"
+values = [2.5, 5.0, 10.0]
+
+[[robustness.axes]]
+name = "theta_e"
+values = [1.2, 1.5, 1.8]
+
+[[robustness.axes]]
+name = "theta_on"
+values = [3.2, 4.0, 4.8]
+
+[search]
+grid_points = 11
+
+[equilibrium]
+solver_abstol = 1e-12
+solver_reltol = 1e-10
+residual_atol = 1e-9
+domain_atol = 1e-8
+dedup_atol = 1e-7
+singular_atol = 1e-10
+singular_rtol = 1e-8
+maxiters = 100
+
+[stability]
+spectral_atol = 1e-10
+spectral_rtol = 1e-8

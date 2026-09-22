@@ -1,0 +1,55 @@
+schema_version = 1
+description = "Figure 3 anchor: explicit pulse transitions and matched monotone control; exploration bounds are not physiological calibration"
+
+[model.excitatory]
+timescale = 7.8
+slope = 5.0
+threshold = 1.5
+
+[model.inhibitory]
+timescale = 34.32
+slope = 5.0
+threshold = 4.0
+failure_threshold = 8.0
+
+[model.coupling]
+e_to_e = 17.0
+i_to_e = 9.0
+e_to_i = 19.0
+i_to_i = 4.0
+
+[search]
+grid_points = 21
+
+[equilibrium]
+solver_abstol = 1e-12
+solver_reltol = 1e-10
+residual_atol = 1e-9
+domain_atol = 1e-8
+dedup_atol = 1e-7
+singular_atol = 1e-10
+singular_rtol = 1e-8
+maxiters = 100
+
+[stability]
+spectral_atol = 1e-10
+spectral_rtol = 1e-8
+
+[diagnostics]
+window_duration = 100.0
+coordinate_atol = 1e-6
+balance_atol = 1e-8
+min_samples = 21
+
+[pulses]
+amplitudes = { start = 0.0, stop = 8.0, step = 0.25 }
+durations = [1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0]
+targets = ["E", "I", "equal", "negative_E"]
+followup_times = [5000.0, 10000.0, 20000.0]
+refinement_levels = 2
+retain_trajectories = false
+trajectory_saveat = 1.0
+abstol = 1e-10
+reltol = 1e-10
+domain_atol = 1e-8
+maxiters = 1000000

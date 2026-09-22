@@ -4,20 +4,28 @@
 
 - Maintain a tested two-population point-model implementation for the failure-of-inhibition study.
 - Produce deterministic CPU experiments and traceable figure data from documented model assumptions.
-- Connect computational claims to validated mathematical objects and clearly delimited biological interpretations.
+- Test whether raising the inhibitory failure threshold preserves distinct active dynamics while suppressing a candidate pathological attractor more selectively than alternative interventions.
 
 ## Next Steps
 
-- [ ] Specify author-selected scientific parameter sets, continuation axes/ranges, and operational biological definitions; keep the synthetic workflow example separate from scientific evidence.
-- [ ] Continue equilibrium branches in both directions, including unstable branches. Refine folds and Hopf candidates, check crossing/nondegeneracy conditions, and retain residuals, spectra, coverage limits, and unresolved outcomes.
-- [ ] Compute periodic orbits with a phase condition; validate nonconstant amplitude, period, closure/equation residuals, refinement convergence, and Floquet stability before reporting cycles or their stability.
-- [ ] Specify perturbation and intervention protocols with starting attractor, E/I pulse direction, amplitude, duration, onset/phase, withdrawal, and follow-up. Test coexistence and transitions under common autonomous parameters; produce amplitude-duration maps with controls, post-withdrawal recovery, and unresolved cells.
-- [ ] Assess numerical and author-defined model-parameter sensitivity. Generate reproducible figure data and map each manuscript claim to validated results, configuration/code provenance, and limitations.
-- [ ] In parallel, reconcile existing theory and manuscript claims with the approved equations and emerging evidence. Return evidence and author revision instructions while keeping historical implementation and manuscript repositories read-only.
+- [ ] Refine coexistence boundaries in the two `e_to_i=12:0.5:28` by `theta_off=6:0.25:12` planes with matched monotone controls; track stable and unstable branches, retaining search failures and incomplete coverage.
+- [ ] Establish what retained activity represents at representative coexistence points using E, I, inhibitory input and response slope. Validate any proposed periodic orbit with phase, closure, refinement, and Floquet checks; keep biological roles unresolved until justified.
+- [ ] Compare individual changes to failure threshold, E-to-I recruitment, E-to-E excitation, and I-to-E output using continued activity branches and pulse-transition intervals. Distinguish selective suppression from loss of all nonquiescent activity.
+- [ ] Refine positive E/I/equal-input and separate negative-E amplitude-duration maps from each attracting equilibrium and validated cycle phases. Extend unresolved post-withdrawal traces beyond 5 seconds as needed; report the tested intervention class and finite horizons.
+- [ ] Test promising regions with the targeted slices and deterministic joint samples in `docs/intervention_study.md`, including time-constant ratio and numerical sensitivity; check candidate bifurcation nondegeneracy before stronger claims.
+- [ ] Reconcile manuscript claims with the arbitrary-coupling monotone ordering result, equal-slope response symmetry, and experimental evidence. Return revision instructions while keeping manuscript changes manual.
 
 ## Context
 
-The current equations and numerical policies are documented in `docs/model.md`. Equilibrium discovery, local linear stability, sampled trajectory diagnostics, and the minimal matched-model experiment are implemented. The synthetic experiment exercises baseline and pulsed conditions with standard, refined, and extended-horizon settings; it does not establish biological regimes. Continuation, validated periodic orbits, scientific protocols, and publication claims are subsequent gates.
+The current equations and numerical policies are documented in `docs/model.md`.
+The scientific sequence, supplied exploration bounds, evidence gates, and pulse
+protocols are in `docs/intervention_study.md`. These bounds are exploratory,
+not empirically calibrated. The minimal matched-model experiment remains a
+separate synthetic workflow check. `docs/intervention_results.md` records the
+executed primary map, representative continuation and pulse experiments,
+targeted robustness, and finite periodic-candidate screen. The high-E/high-I
+branch persists when the low-I branch turns under increased failure threshold;
+functional activity and exhaustive attractor discovery remain unresolved.
 
 ## Constraints
 
@@ -33,11 +41,14 @@ The current equations and numerical policies are documented in `docs/model.md`. 
 
 ## Open Questions
 
-- Which scientific parameter sets, continuation axes/ranges, and biological criteria should the author supply for the first scientific comparison?
-- Which perturbation/intervention directions, onset phases, amplitude-duration ranges, and recovery horizons support the intended claims?
+- Which discovered nonquiescent object has evidence for the manuscript's intended functional active regime? Three attracting equilibria alone do not answer this.
+- Which biological observations can distinguish pathological activity from high excitation with substantial inhibition, including when both lie on the descending response branch?
+- Do the numerical candidate bifurcations and periodic orbits survive refinement, and what remains undiscovered?
 
 ## Completed
 
+- [x] Implemented and independently reviewed pseudo-arclength continuation, numerical periodic shooting, and explicit pulse experiments with retained unresolved outcomes and replayable evidence.
+- [x] Executed both full primary parameter planes, representative continuation and pulse protocols, intervention/robustness searches, and periodic-candidate screening; documented analytical constraints and initial results.
 - [x] Added and independently reviewed the sampled diagnostic contract and reproducible matched control/FoI runner, with explicit numerical criteria, full search records, source snapshots, checksums, and retained unresolved outcomes.
 - [x] Repaired mixed-precision RHS/Jacobian scaling with independent review and underflow, overflow, and mixed-type regressions.
 - [x] Added and independently reviewed local equilibrium solving, deterministic multistart discovery, candidate validation and deduplication, and local linear stability diagnostics.
