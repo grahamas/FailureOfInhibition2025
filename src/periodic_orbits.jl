@@ -58,7 +58,8 @@ struct PeriodicOrbitOptions
         min_period < max_period || throw(ArgumentError("min_period must precede max_period"))
         for (value, name) in ((maxiters, "maxiters"), (ode_maxiters, "ode_maxiters"),
                               (samples, "samples"))
-            value isa Integer && value > 0 || throw(ArgumentError("$name must be a positive integer"))
+            value isa Integer && !(value isa Bool) && value > 0 ||
+                throw(ArgumentError("$name must be a positive integer"))
         end
         samples >= 9 || throw(ArgumentError("samples must be at least nine"))
         return new(Float64.(values)..., Int(maxiters), Int(ode_maxiters), Int(samples))
@@ -106,7 +107,7 @@ struct PeriodicOrbitResult{M,S}
 end
 
 function _periodic_float64(value, name)
-    value isa Union{Integer,Rational,Float32,Float64} || throw(
+    value isa Union{Integer,Rational,Float32,Float64} && !(value isa Bool) || throw(
         ArgumentError("$name must use integers, rationals, Float32 or Float64; periodic shooting uses Float64"),
     )
     isfinite(value) && isfinite(Float64(value)) || throw(ArgumentError("$name must be finite"))

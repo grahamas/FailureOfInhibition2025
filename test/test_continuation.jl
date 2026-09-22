@@ -138,7 +138,7 @@ end
         (; initial_step=0.001, minimum_step=0.01), (; max_steps=0),
         (; max_corrector_iters=1.5), (; parameter_difference_step=NaN),
         (; state_scales=(1.0, 0.0)), (; state_scales=[1.0, 1.0]),
-        (; parameter_scale=-2.0),
+        (; parameter_scale=-2.0), (; rank_rtol=true), (; max_steps=true),
     )
         @test_throws ArgumentError ContinuationOptions(; kwargs...)
     end

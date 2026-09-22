@@ -49,12 +49,12 @@ function ContinuationOptions(;
         throw(ArgumentError("state_scales must be a tuple of two positive numbers"))
     raw = (initial_step, minimum_step, maximum_step, corrector_atol,
         parameter_difference_step, state_scales..., parameter_scale, rank_atol, rank_rtol)
-    all(value -> value isa Real && isfinite(value) && value > 0, raw) ||
+    all(value -> value isa Real && !(value isa Bool) && isfinite(value) && value > 0, raw) ||
         throw(ArgumentError("continuation scales, steps, and tolerances must be finite and positive"))
     minimum_step <= initial_step <= maximum_step ||
         throw(ArgumentError("steps must satisfy minimum_step <= initial_step <= maximum_step"))
     for (name, value) in (("max_steps", max_steps), ("max_corrector_iters", max_corrector_iters))
-        value isa Integer && value > 0 ||
+        value isa Integer && !(value isa Bool) && value > 0 ||
             throw(ArgumentError("$name must be a positive integer"))
     end
     values = promote(float.(raw)...)

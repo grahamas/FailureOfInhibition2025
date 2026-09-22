@@ -123,7 +123,9 @@ end
 @testset "Periodic API validates precision, phase and autonomous context" begin
     for keywords in ((; ode_abstol=0.0), (; refinement_factor=1.0), (; maxiters=0),
                      (; samples=4), (; min_period=2, max_period=1),
-                     (; floquet_atol=NaN), (; validation_atol=big"1e-6"))
+                     (; floquet_atol=NaN), (; validation_atol=big"1e-6"),
+                     (; validation_atol=true), (; maxiters=true),
+                     (; ode_maxiters=true), (; samples=true))
         @test_throws ArgumentError PeriodicOrbitOptions(; keywords...)
     end
     @test_throws ArgumentError solve_periodic_orbit(hopf_test_rhs!, hopf_test_jacobian!,
@@ -134,6 +136,8 @@ end
                                                    (big"0.1", 1.0), [1.0, 0.0], 6.2)
     @test_throws ArgumentError solve_periodic_orbit(hopf_test_rhs!, hopf_test_jacobian!,
                                                    (0.1, 1.0), [1.0, 0.0], 0.0)
+    @test_throws ArgumentError solve_periodic_orbit(hopf_test_rhs!, hopf_test_jacobian!,
+                                                   (0.1, 1.0), [1.0, 0.0], true)
     model = synthetic_model()
     @test_throws DomainError solve_periodic_orbit(model, [1.1, 0.0], 2.0)
     @test_throws ArgumentError solve_periodic_orbit(model, [0.1, 0.0], 2.0; options=nothing)
