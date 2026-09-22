@@ -17,6 +17,10 @@ output/
 *.pdf
 *.svg
 
+# Python evidence utilities
+__pycache__/
+*.py[cod]
+
 # Editor and operating-system files
 .DS_Store
 *~
