@@ -22,4 +22,5 @@ include("test_support.jl")
     include("test_pulse_comparison.jl")
     include("test_rescue_replay.jl")
     include("test_claim_catalogue.jl")
+    include("test_tetrastability.jl")
 end

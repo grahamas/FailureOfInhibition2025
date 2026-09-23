@@ -463,6 +463,54 @@ are adjacent-point screening brackets, not located or certified
 bifurcations. Branch switching and nondegeneracy verification are not
 performed automatically.
 
+## Finite tetrastability search
+
+`scripts/run_tetrastability_search.jl` executes the protocol in
+`experiments/tetrastability.toml`. It searches for at least four distinct
+discovered locally attracting equilibria in one autonomous failure-of-
+inhibition model. The matched monotone control is evaluated and retained at
+every parameter cell, but it is not required to have fewer attractors.
+
+The protocol fixes zero drive, `tau_E = 7.8` ms, `tau_I/tau_E = 4.4`, response
+slopes `a_E = a_I = 5`, `theta_E = 1.5`, and `theta_on = 4`. It first repeats
+the supplied Figure 3 and Figure 4 exploration planes over
+`e_to_i = 12:0.5:28` and `theta_off = 6:0.25:12`. It then evaluates an
+unscrambled, one-indexed Halton sequence over `(e_to_e, i_to_e, e_to_i,
+i_to_i, theta_off)` with bases `(2,3,5,7,11)` and bounds `[14,24]`, `[6,18]`,
+`[12,28]`, `[0,10]`, and `[6,12]`. Indices 1--1024 form the initial batch. If
+the planes and initial batch contain no screen-positive FoI cell, indices
+1025--4096 are evaluated as one extension batch.
+
+Discovery uses the union of the default 5-by-5 equilibrium seeds and an
+11-by-11 grid over the same sharper rectangle. A screen-positive cell has at
+least four discovered FoI equilibria classified locally attracting. Only that
+FoI attracting count contributes to the threshold; total roots,
+matched-control counts, and unresolved stability do not, and a failed FoI
+search cannot qualify. Each screen-positive cell is rerun for both conditions
+with 21-by-21 and 41-by-41 grids and tenfold tighter solver, residual,
+near-singularity, and spectral tolerances. The matched-control confirmation
+searches must complete. FoI confirmation requires at least four one-to-one
+coordinate tracks within `1e-6`, pairwise separation greater than
+`100 * dedup_atol = 1e-5` at all three grid densities, recomputed residuals and
+Jacobians within the declared tolerances, spectral abscissa at most `-1e-8`,
+and no near-singular or unresolved-nearby flags. The recomputation uses the
+same package balance and Jacobian kernels, so it can reveal inconsistent
+artifacts but not a shared formula defect.
+
+Every confirmed FoI root is continued separately along each of the four
+couplings and `theta_off`, with the other parameters frozen at the candidate
+cell. Continuation starts at step `0.01`, permits steps from `1e-5` through
+`0.03`, and retains both directions, partial branches, corrector failures, and
+fold or Hopf screening brackets. The search streams every declared cell,
+matched-condition result, nonlinear attempt, equilibrium, failure,
+confirmation match, and continuation record, and archives its configuration,
+source snapshot, environment, and checksums. A completed run with no execution
+failures and no sampled cell meeting the confirmation rule is a successful
+finite negative result. Partial artifacts are diagnostic only and are not
+resumable; an interrupted run must restart in a new empty output directory.
+Neither discovery nor confirmation certifies completeness, an exact attractor
+count, general prevalence, biological states, or a publication claim.
+
 ## Numerical periodic-orbit shooting
 
 `solve_periodic_orbit(model, state_guess, period_guess; options)` uses a

@@ -1,0 +1,91 @@
+schema_version = 1
+
+# Fixed manuscript-model quantities. Times are milliseconds.
+[fixed]
+tau_e = 7.8
+tau_ratio = 4.4
+a_e = 5.0
+a_i = 5.0
+theta_e = 1.5
+theta_on = 4.0
+
+[[planes]]
+name = "figure3"
+e_to_e = 17.0
+i_to_e = 9.0
+i_to_i = 4.0
+
+[[planes]]
+name = "figure4_exploration"
+e_to_e = 19.0
+i_to_e = 13.0
+i_to_i = 6.0
+
+# Continuous exploratory bounds, not physiological calibration.
+[axes.e_to_e]
+minimum = 14.0
+maximum = 24.0
+
+[axes.i_to_e]
+minimum = 6.0
+maximum = 18.0
+
+[axes.e_to_i]
+minimum = 12.0
+maximum = 28.0
+plane_step = 0.5
+
+[axes.i_to_i]
+minimum = 0.0
+maximum = 10.0
+
+[axes.theta_off]
+minimum = 6.0
+maximum = 12.0
+plane_step = 0.25
+
+[halton]
+initial_points = 1024
+maximum_points = 4096
+bases = [2, 3, 5, 7, 11]
+
+[search]
+screen_grid_points = 11
+confirmation_grid_points = [21, 41]
+
+[smoke]
+halton_points = 2
+e_to_i = [19.0]
+theta_off = [8.0]
+
+[equilibrium]
+solver_abstol = 1.0e-12
+solver_reltol = 1.0e-10
+residual_atol = 1.0e-9
+domain_atol = 1.0e-8
+dedup_atol = 1.0e-7
+singular_atol = 1.0e-10
+singular_rtol = 1.0e-8
+maxiters = 100
+
+[stability]
+spectral_atol = 1.0e-10
+spectral_rtol = 1.0e-8
+
+[confirmation]
+tolerance_factor = 0.1
+match_atol = 1.0e-6
+separation_factor = 100.0
+spectral_margin = 1.0e-8
+
+[continuation]
+initial_step = 0.01
+minimum_step = 1.0e-5
+maximum_step = 0.03
+max_steps = 500
+smoke_max_steps = 3
+max_corrector_iters = 12
+corrector_atol = 1.0e-10
+parameter_difference_step = 1.0e-5
+rank_atol = 1.0e-12
+rank_rtol = 1.0e-10
