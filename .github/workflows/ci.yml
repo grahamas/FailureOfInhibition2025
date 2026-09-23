@@ -24,3 +24,9 @@ jobs:
         env:
           JULIA_NUM_THREADS: "1"
         run: julia --project=. -e 'using Pkg; Pkg.test()'
+      - name: Instantiate plotting environment
+        run: julia --project=plotting -e 'using Pkg; Pkg.instantiate()'
+      - name: Run plotting tests
+        env:
+          JULIA_NUM_THREADS: "1"
+        run: julia --project=plotting plotting/test/runtests.jl

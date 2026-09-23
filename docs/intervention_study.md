@@ -183,12 +183,15 @@ protocol and finite-window result. When `retain_trajectories=false`, saved
 trajectories contain pulse endpoints and terminal diagnostic samples;
 they must not be plotted as if the unsampled transient had been observed.
 
-The optional plotter uses an existing Python environment with Matplotlib and
-NumPy. It writes a standalone plot and a companion provenance JSON without
-altering the experiment artifacts:
+The claim-report figures use the repository's isolated CairoMakie environment.
+The renderer verifies consumed artifact checksums and writes three PNGs with
+companion TOML provenance without altering the experiment artifacts:
 
 ```bash
-MPLCONFIGDIR=/tmp/foi-matplotlib python scripts/plot_coexistence_map.py output/coexistence_study/map.csv output/study_figures/coexistence.png
+julia --project=plotting -e 'using Pkg; Pkg.instantiate()'
+julia --project=plotting scripts/plot_manuscript_evidence.jl \
+  --coexistence output/coexistence_study \
+  --output output/study_figures
 ```
 
 Follow the checksummed source snapshot's replay command to reproduce a
