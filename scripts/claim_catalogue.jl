@@ -11,7 +11,7 @@ const ROOT_KEYS = ("schema_version", "catalogue_id", "state", "manuscript", "evi
 const MANUSCRIPT_KEYS = ("repository", "revision", "path")
 const EVIDENCE_KEYS = ("id", "category", "summary")
 const CLAIM_KEYS = ("id", "statement", "locations", "disposition",
-    "evidence_ids", "limitation", "author_review")
+    "evidence_ids", "limitation", "author_review", "author_action")
 
 function require_keys(table, expected_keys, label)
     missing = filter(key -> !haskey(table, key), expected_keys)
@@ -48,8 +48,8 @@ end
 function validate_catalogue(raw)
     raw isa AbstractDict || throw(ArgumentError("catalogue must be a TOML table"))
     require_exact_keys(raw, ROOT_KEYS, "catalogue")
-    raw["schema_version"] === 1 ||
-        throw(ArgumentError("catalogue.schema_version must be integer 1"))
+    raw["schema_version"] === 2 ||
+        throw(ArgumentError("catalogue.schema_version must be integer 2"))
     required_id(raw, "catalogue_id", "catalogue")
     state = required_string(raw, "state", "catalogue")
     state in STATES || throw(ArgumentError("unknown catalogue.state: $state"))
@@ -95,6 +95,7 @@ function validate_catalogue(raw)
         author_review = required_string(claim, "author_review", label)
         author_review in AUTHOR_REVIEWS ||
             throw(ArgumentError("unknown $label.author_review: $author_review"))
+        required_string(claim, "author_action", label)
 
         locations = claim["locations"]
         locations isa AbstractVector && !isempty(locations) ||
