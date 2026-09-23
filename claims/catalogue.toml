@@ -1,4 +1,4 @@
-schema_version = 1
+schema_version = 2
 catalogue_id = "foi-manuscript-claims"
 state = "draft"
 
@@ -64,7 +64,8 @@ locations = [{ line_start = 264, line_end = 267 }]
 disposition = "validated"
 evidence_ids = ["response-model"]
 limitation = "The validated response is symmetric and begins descending at its midpoint."
-author_review = "pending"
+author_review = "accepted"
+author_action = "Retain the claim with the midpoint and symmetry qualification."
 
 [[claims]]
 id = "independent-slopes-and-fits"
@@ -73,7 +74,8 @@ locations = [{ line_start = 279, line_end = 279 }, { line_start = 307, line_end 
 disposition = "not_validated"
 evidence_ids = ["fitting-gap"]
 limitation = "The implementation has one shared slope and no reproducible replay of the manuscript's synthetic-data generation and fitting pipeline."
-author_review = "pending"
+author_review = "accepted"
+author_action = "Remove the independent-slope and superior-fit assertion from the Results; do not add an asymmetric response or fitting study in this revision."
 
 [[claims]]
 id = "monotone-ordering"
@@ -82,7 +84,8 @@ locations = [{ line_start = 282, line_end = 296 }]
 disposition = "validated"
 evidence_ids = ["ordering-proof"]
 limitation = "The comparison is between equilibria of the same autonomous model with the same parameters and constant drive; it does not exclude a lone high-E, low-I equilibrium, periodic attractors, or cross-parameter comparisons."
-author_review = "pending"
+author_review = "accepted"
+author_action = "Retain the same-model, same-parameter equilibrium-ordering result and its stated exclusions."
 
 [[claims]]
 id = "figure3-anchor"
@@ -90,17 +93,19 @@ statement = "Failure of inhibition adds a locally attracting high-E, low-I equil
 locations = [{ line_start = 360, line_end = 360 }]
 disposition = "validated_narrower"
 evidence_ids = ["figure3-anchor"]
-limitation = "Finite matched searches found this locally attracting root in the failure-of-inhibition model and did not find it in the control, but neither search certifies completeness; the evidence therefore does not establish that failure of inhibition adds the root."
-author_review = "pending"
+limitation = "Finite matched searches found this locally attracting root in the FoI model and did not find it in the control, but neither search certifies completeness; the evidence therefore does not establish that failure of inhibition adds the root, exhaustive attractor counts, or prevalence across parameter space."
+author_review = "accepted"
+author_action = "Revise the Figure 3 statement to the anchor-specific finite-search observation; do not infer addition, prevalence, or exhaustive attractor counts."
 
 [[claims]]
 id = "general-multistability"
 statement = "Failure of inhibition generally produces tristability or tetrastability."
 locations = [{ line_start = 340, line_end = 346 }, { line_start = 375, line_end = 375 }]
-disposition = "validated_narrower"
+disposition = "not_validated"
 evidence_ids = ["coexistence"]
 limitation = "Some sampled cells had three discovered locally attracting equilibria; no sampled cell had four, and neither general prevalence nor an exhaustive attractor count was established."
 author_review = "pending"
+author_action = "Keep the general tristability or tetrastability assertion pending while the declared tetrastability search is run; revise only after author review of that result."
 
 [[claims]]
 id = "rescue"
@@ -109,7 +114,8 @@ locations = [{ line_start = 350, line_end = 352 }]
 disposition = "counterexample"
 evidence_ids = ["rescue-obstruction", "rescue-evidence"]
 limitation = "The specified nonnegative-drive obstruction is supported and finite suppressive-input protocols provide counterexamples to the unrestricted claim; the claim that all first-arm states can be rescued remains unvalidated."
-author_review = "pending"
+author_review = "accepted"
+author_action = "Split the statement: retain the nonnegative-drive obstruction and the protocol-specific negative-E counterexample, and remove both universal rescue clauses."
 
 [[claims]]
 id = "cycles"
@@ -119,6 +125,7 @@ disposition = "not_validated"
 evidence_ids = ["cycle-screen"]
 limitation = "No manuscript-ratio periodic orbit or mapping from model trajectories to interictal observations has been validated; the finite screen cannot exclude periodic orbits in other basins or parameter neighborhoods."
 author_review = "pending"
+author_action = "Keep the cycle amplitude or frequency assertion pending until candidate-specific orbit evidence exists; do not assert interictal spikes without an observation mapping."
 
 [[claims]]
 id = "intervention-superiority"
@@ -127,7 +134,8 @@ locations = [{ line_start = 379, line_end = 379 }]
 disposition = "not_validated"
 evidence_ids = ["intervention-evidence"]
 limitation = "No functional observable, disturbance criterion, or clinical ranking model has been defined."
-author_review = "pending"
+author_review = "accepted"
+author_action = "Move this statement to the Discussion as a theoretical hypothesis, preserving that no functional or clinical ranking has been validated."
 
 [[claims]]
 id = "scope"
@@ -136,4 +144,5 @@ locations = [{ line_start = 326, line_end = 326 }, { line_start = 437, line_end 
 disposition = "not_validated"
 evidence_ids = ["scope-limit"]
 limitation = "A point model cannot represent traveling waves, so the proposed wave interpretation is unsupported; functional-state and clinical interpretations are also unsupported by the retained evidence."
-author_review = "pending"
+author_review = "accepted"
+author_action = "Keep only the non-spatial fixed-point and traveling-wave analogy in the Discussion; remove functional cortical-state and clinical conclusions."
