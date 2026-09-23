@@ -2,8 +2,9 @@
     PulseExperimentOptions(; amplitudes=0:0.25:8,
         durations=[1,2,5,10,20,50,100,200], targets=(:E,:I,:equal,:negative_E),
         followup_times=[5000,10000,20000], diagnostic_options, refinement_levels=2,
-        retain_trajectories=false, trajectory_saveat=1, abstol=1e-10,
-        reltol=1e-10, domain_atol=1e-8, maxiters=1000000)
+        duration_refinement_levels=0, retain_trajectories=false,
+        trajectory_saveat=1, abstol=1e-10, reltol=1e-10,
+        domain_atol=1e-8, maxiters=1000000)
 
 Rectangular pulse exploration policy. Durations and follow-up times are in ms;
 amplitudes are nonnegative effective-input magnitudes. `:negative_E` applies
@@ -19,7 +20,11 @@ interval on `trajectory_saveat` spacing. Boundary refinement samples every
 adjacent pair of differing resolved outcomes, without a monotonicity
 assumption. Unresolved brackets remain explicit and are not treated as
 successful or unsuccessful interventions. Neither finite sampling nor
-refinement certifies all transitions between amplitudes.
+refinement certifies all transitions between amplitudes. Duration refinement
+compares resolved-destination sets, ordered amplitude-boundary topology,
+unresolved presence, and integration-failure presence at adjacent durations.
+It inserts arithmetic midpoints where those signatures differ and retains
+finite duration brackets; it does not estimate an exact minimum duration.
 """
 struct PulseExperimentOptions{T<:AbstractFloat,D<:DiagnosticOptions}
     amplitudes::Vector{T}
@@ -28,6 +33,7 @@ struct PulseExperimentOptions{T<:AbstractFloat,D<:DiagnosticOptions}
     followup_times::Vector{T}
     diagnostic_options::D
     refinement_levels::Int
+    duration_refinement_levels::Int
     retain_trajectories::Bool
     trajectory_saveat::T
     abstol::T
@@ -51,7 +57,8 @@ function PulseExperimentOptions(;
     amplitudes=0:0.25:8, durations=[1, 2, 5, 10, 20, 50, 100, 200],
     targets=(:E, :I, :equal, :negative_E), followup_times=[5000, 10000, 20000],
     diagnostic_options=DiagnosticOptions(window_duration=100, min_samples=21),
-    refinement_levels=2, retain_trajectories=false, trajectory_saveat=1,
+    refinement_levels=2, duration_refinement_levels=0,
+    retain_trajectories=false, trajectory_saveat=1,
     abstol=1e-10, reltol=1e-10, domain_atol=1e-8, maxiters=1000000,
 )
     amplitudes = _pulse_numeric_sequence(amplitudes, "amplitudes")
@@ -66,9 +73,11 @@ function PulseExperimentOptions(;
     !isempty(targets) && all(x -> x in (:E, :I, :equal, :negative_E), targets) &&
         length(unique(targets)) == length(targets) ||
         throw(ArgumentError("targets must be unique members of (:E,:I,:equal,:negative_E)"))
-    refinement_levels isa Integer && !(refinement_levels isa Bool) &&
-        0 <= refinement_levels <= typemax(Int) ||
-        throw(ArgumentError("refinement_levels must be a nonnegative integer"))
+    for (name, value) in (("refinement_levels", refinement_levels),
+                          ("duration_refinement_levels", duration_refinement_levels))
+        value isa Integer && !(value isa Bool) && 0 <= value <= typemax(Int) ||
+            throw(ArgumentError("$name must be a nonnegative integer"))
+    end
     retain_trajectories isa Bool || throw(ArgumentError("retain_trajectories must be Boolean"))
     maxiters isa Integer && !(maxiters isa Bool) && 0 < maxiters <= typemax(Int) ||
         throw(ArgumentError("maxiters must be a positive integer"))
@@ -82,8 +91,9 @@ function PulseExperimentOptions(;
         trajectory_saveat, abstol, reltol, domain_atol))...)
     T = eltype(values)
     return PulseExperimentOptions(T.(amplitudes), T.(durations), Symbol.(targets),
-        T.(followup_times), diagnostic_options, Int(refinement_levels), retain_trajectories,
-        T(trajectory_saveat), T(abstol), T(reltol), T(domain_atol), Int(maxiters))
+        T.(followup_times), diagnostic_options, Int(refinement_levels),
+        Int(duration_refinement_levels), retain_trajectories, T(trajectory_saveat),
+        T(abstol), T(reltol), T(domain_atol), Int(maxiters))
 end
 
 """
@@ -115,7 +125,7 @@ struct PulseTrialResult{T<:AbstractFloat,O<:PulseExperimentOptions}
     options::O
 end
 
-"""Pulse trials and the final differing-outcome or unresolved amplitude brackets."""
+"""Pulse trials and retained amplitude and duration protocol-change brackets."""
 struct PulseExperimentResult{M,E,O}
     model::M
     equilibria::E
@@ -123,6 +133,8 @@ struct PulseExperimentResult{M,E,O}
     initial_states::Vector{NamedTuple}
     trials::Vector{PulseTrialResult}
     boundaries::Vector{NamedTuple}
+    duration_refinements::Vector{NamedTuple}
+    duration_brackets::Vector{NamedTuple}
 end
 
 function _pulse_context(model, equilibria)
@@ -298,6 +310,9 @@ function _pulse_equilibrium_provenance(search, index, equilibrium)
 end
 
 function _pulse_boundary_kind(left, right)
+    if left.status == :integration_failed || right.status == :integration_failed
+        return :integration_failed
+    end
     if left.outcome_equilibrium === nothing || right.outcome_equilibrium === nothing
         return :unresolved
     end
@@ -321,6 +336,78 @@ function _refine_pulse_amplitudes!(trials, indices, evaluate, levels)
     return indices
 end
 
+function _pulse_duration_signature(trials, indices)
+    ordered = [trials[index] for index in indices]
+    destinations = sort!(unique(trial.outcome_equilibrium for trial in ordered
+        if trial.outcome_equilibrium !== nothing))
+    boundary_sequence = NamedTuple[]
+    for (left, right) in zip(ordered, Iterators.drop(ordered, 1))
+        kind = _pulse_boundary_kind(left, right)
+        kind === nothing && continue
+        push!(boundary_sequence, (kind=kind, lower_outcome=left.outcome_equilibrium,
+            upper_outcome=right.outcome_equilibrium, lower_status=left.status,
+            upper_status=right.status))
+    end
+    return (destinations=Tuple(destinations),
+        boundary_sequence=Tuple(boundary_sequence),
+        unresolved_present=any(trial -> trial.status == :unresolved, ordered),
+        integration_failure_present=any(trial -> trial.status == :integration_failed, ordered))
+end
+
+function _pulse_duration_difference_reasons(lower, upper)
+    reasons = Symbol[]
+    lower.destinations != upper.destinations && push!(reasons, :destination_set)
+    lower_present = any(item -> item.kind == :outcome_change, lower.boundary_sequence)
+    upper_present = any(item -> item.kind == :outcome_change, upper.boundary_sequence)
+    lower_present != upper_present && push!(reasons, :transition_presence)
+    length(lower.boundary_sequence) != length(upper.boundary_sequence) &&
+        push!(reasons, :boundary_count)
+    length(lower.boundary_sequence) == length(upper.boundary_sequence) &&
+        lower.boundary_sequence != upper.boundary_sequence && push!(reasons, :boundary_order)
+    lower.unresolved_present != upper.unresolved_present &&
+        push!(reasons, :unresolved_presence)
+    lower.integration_failure_present != upper.integration_failure_present &&
+        push!(reasons, :integration_failure_presence)
+    return reasons
+end
+
+function _refine_pulse_durations!(durations, signatures, evaluate, levels)
+    refinements = NamedTuple[]
+    for level in 1:levels
+        sort!(durations)
+        marked = NamedTuple[]
+        for (lower, upper) in zip(durations, Iterators.drop(durations, 1))
+            reasons = _pulse_duration_difference_reasons(signatures[lower], signatures[upper])
+            isempty(reasons) && continue
+            midpoint = (lower + upper) / 2
+            midpoint in durations && continue
+            push!(marked, (; level, lower_duration=lower, inserted_duration=midpoint,
+                upper_duration=upper, reasons=Tuple(reasons)))
+        end
+        isempty(marked) && break
+        for refinement in marked
+            midpoint = refinement.inserted_duration
+            signatures[midpoint] = evaluate(midpoint)
+            push!(durations, midpoint)
+            push!(refinements, refinement)
+        end
+    end
+    sort!(durations)
+    return refinements
+end
+
+function _pulse_duration_brackets(durations, signatures)
+    brackets = NamedTuple[]
+    for (lower, upper) in zip(durations, Iterators.drop(durations, 1))
+        reasons = _pulse_duration_difference_reasons(signatures[lower], signatures[upper])
+        isempty(reasons) && continue
+        push!(brackets, (lower_duration=lower, upper_duration=upper,
+            reasons=Tuple(reasons), lower_signature=signatures[lower],
+            upper_signature=signatures[upper]))
+    end
+    return brackets
+end
+
 """
     run_pulse_experiments(model; equilibria, options=PulseExperimentOptions(),
         initial_states=nothing)
@@ -341,26 +428,50 @@ function run_pulse_experiments(model::PointModelParameters; equilibria,
     _pulse_context(model, equilibria)
     initials = _pulse_initial_states(equilibria, initial_states)
     trials = PulseTrialResult[]
-    boundaries = NamedTuple[]
-    for initial in initials, target in options.targets, duration in options.durations
-        evaluate = amplitude -> run_pulse_trial(model, equilibria, initial.state;
-            initial_id=initial.id, initial_provenance=initial.provenance,
-            target=target, amplitude=amplitude, duration=duration, options=options)
-        indices = Int[]
-        for amplitude in options.amplitudes
-            push!(trials, evaluate(amplitude))
-            push!(indices, length(trials))
+    boundaries, duration_refinements, duration_brackets = NamedTuple[], NamedTuple[], NamedTuple[]
+    for initial in initials, target in options.targets
+        indices_by_duration = Dict{eltype(options.durations),Vector{Int}}()
+        signatures = Dict{eltype(options.durations),NamedTuple}()
+        function evaluate_duration(duration)
+            evaluate = amplitude -> run_pulse_trial(model, equilibria, initial.state;
+                initial_id=initial.id, initial_provenance=initial.provenance,
+                target=target, amplitude=amplitude, duration=duration, options=options)
+            indices = Int[]
+            for amplitude in options.amplitudes
+                push!(trials, evaluate(amplitude))
+                push!(indices, length(trials))
+            end
+            _refine_pulse_amplitudes!(trials, indices, evaluate, options.refinement_levels)
+            indices_by_duration[duration] = indices
+            return _pulse_duration_signature(trials, indices)
         end
-        _refine_pulse_amplitudes!(trials, indices, evaluate, options.refinement_levels)
-        for (left, right) in zip(indices, Iterators.drop(indices, 1))
-            kind = _pulse_boundary_kind(trials[left], trials[right])
-            kind === nothing && continue
-            push!(boundaries, (initial_id=initial.id, target=target, duration=duration,
-                lower_amplitude=trials[left].amplitude, upper_amplitude=trials[right].amplitude,
-                lower_trial=left, upper_trial=right,
-                lower_outcome=trials[left].outcome_equilibrium,
-                upper_outcome=trials[right].outcome_equilibrium, kind=kind))
+        sampled_durations = copy(options.durations)
+        for duration in sampled_durations
+            signatures[duration] = evaluate_duration(duration)
         end
+        refinements = _refine_pulse_durations!(sampled_durations, signatures,
+            evaluate_duration, options.duration_refinement_levels)
+        append!(duration_refinements, [merge((initial_id=initial.id, target=target), item)
+            for item in refinements])
+        for duration in sampled_durations
+            indices = indices_by_duration[duration]
+            for (left, right) in zip(indices, Iterators.drop(indices, 1))
+                kind = _pulse_boundary_kind(trials[left], trials[right])
+                kind === nothing && continue
+                push!(boundaries, (initial_id=initial.id, target=target, duration=duration,
+                    lower_amplitude=trials[left].amplitude,
+                    upper_amplitude=trials[right].amplitude,
+                    lower_trial=left, upper_trial=right,
+                    lower_outcome=trials[left].outcome_equilibrium,
+                    upper_outcome=trials[right].outcome_equilibrium,
+                    lower_status=trials[left].status, upper_status=trials[right].status,
+                    kind=kind))
+            end
+        end
+        append!(duration_brackets,
+            [merge((initial_id=initial.id, target=target), bracket)
+             for bracket in _pulse_duration_brackets(sampled_durations, signatures)])
     end
-    return PulseExperimentResult(model, equilibria, options, initials, trials, boundaries)
+    return PulseExperimentResult(model, equilibria, options, initials, trials, boundaries,
+        duration_refinements, duration_brackets)
 end

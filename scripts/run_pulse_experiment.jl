@@ -15,7 +15,9 @@ function load_config(path)
     raw = TOML.parsefile(path)
     require_keys(raw, ("schema_version", "description", "model", "search",
         "equilibrium", "stability", "diagnostics", "pulses"), "configuration")
-    raw["schema_version"] === 1 || throw(ArgumentError("unsupported schema_version"))
+    schema_version = raw["schema_version"]
+    (schema_version === 1 || schema_version === 2) ||
+        throw(ArgumentError("unsupported schema_version"))
     raw["description"] isa AbstractString || throw(ArgumentError("description must be a string"))
     require_keys(raw["model"], ("excitatory", "inhibitory", "coupling"), "model")
     e, i = raw["model"]["excitatory"], raw["model"]["inhibitory"]
@@ -42,9 +44,11 @@ function load_config(path)
         ("window_duration", "coordinate_atol", "balance_atol", "min_samples"),
         "diagnostics"; integer_key="min_samples")
     pulses = raw["pulses"]
-    require_keys(pulses, ("amplitudes", "durations", "targets", "followup_times",
+    pulse_keys = ["amplitudes", "durations", "targets", "followup_times",
         "refinement_levels", "retain_trajectories", "trajectory_saveat", "abstol",
-        "reltol", "domain_atol", "maxiters"), "pulses")
+        "reltol", "domain_atol", "maxiters"]
+    schema_version == 2 && push!(pulse_keys, "duration_refinement_levels")
+    require_keys(pulses, pulse_keys, "pulses")
     axis = pulses["amplitudes"]
     require_keys(axis, ("start", "stop", "step"), "pulses.amplitudes")
     start = finite_number(axis["start"], "amplitudes.start"; nonnegative=true)
@@ -59,6 +63,7 @@ function load_config(path)
         durations=pulses["durations"], targets=Symbol.(pulses["targets"]),
         followup_times=pulses["followup_times"], diagnostic_options=diagnostic_options,
         refinement_levels=pulses["refinement_levels"],
+        duration_refinement_levels=schema_version == 1 ? 0 : pulses["duration_refinement_levels"],
         retain_trajectories=pulses["retain_trajectories"],
         trajectory_saveat=pulses["trajectory_saveat"], abstol=pulses["abstol"],
         reltol=pulses["reltol"], domain_atol=pulses["domain_atol"], maxiters=pulses["maxiters"])
@@ -70,6 +75,7 @@ function smoke_options(options)
         durations=unique([first(options.durations), last(options.durations)]),
         targets=options.targets, followup_times=options.followup_times,
         diagnostic_options=options.diagnostic_options, refinement_levels=0,
+        duration_refinement_levels=0,
         retain_trajectories=options.retain_trajectories,
         trajectory_saveat=options.trajectory_saveat, abstol=options.abstol,
         reltol=options.reltol, domain_atol=options.domain_atol, maxiters=options.maxiters)
@@ -86,15 +92,17 @@ function pulse_provenance(config_path, output; smoke)
     metadata["replay_from_artifact_directory"] =
         "julia --project=source source/scripts/run_pulse_experiment.jl --config config.toml --output replay" *
         (smoke ? " --smoke" : "")
-    metadata["artifact_schema"] = Dict("version" => 1,
+    metadata["artifact_schema"] = Dict("version" => 2,
         "trajectory_columns" => ["time", "E", "I"],
         "toml_unavailable_value" => "not_available",
         "outcome_equilibrium" => "local equilibrium ID only; compatibility is finite-window",
         "initial_states" => "all discovered admissible locally attracting equilibria",
-        "trials" => "one row per condition, initial equilibrium, target, amplitude, duration",
+        "trials" => "one row per condition, initial equilibrium, target, amplitude, duration; duration is also normalized by both model timescales",
         "followups" => "every attempted observation horizon, including failures and unresolved diagnostics",
         "tails" => "two closed sampled diagnostic windows with E, I, u_I and F_I_prime summaries",
-        "boundaries" => "all adjacent differing resolved outcomes and unresolved brackets; no monotonicity assumption",
+        "boundaries" => "all adjacent differing resolved outcomes, unresolved brackets, and integration-failure brackets; no monotonicity assumption",
+        "duration_refinements" => "arithmetic midpoints inserted only where adjacent duration topologies differ",
+        "duration_brackets" => "final finite adjacent intervals with differing duration topologies; not exact thresholds",
         "cost_units" => "effective-input units times ms; not biological energy")
     return metadata
 end
@@ -107,8 +115,22 @@ end
 
 missing_id(x) = x === nothing ? missing : x
 
+function signature_fields(signature)
+    destinations = join(signature.destinations, ";")
+    outcome(status, value) = value === nothing ? string(status) : string(value)
+    boundaries = join(("$(item.kind):" *
+        "$(outcome(item.lower_status, item.lower_outcome))->" *
+        "$(outcome(item.upper_status, item.upper_outcome))"
+        for item in signature.boundary_sequence), ";")
+    return (; destinations, boundaries, unresolved_present=signature.unresolved_present,
+        integration_failure_present=signature.integration_failure_present)
+end
+
 function save_condition(result, condition, output)
     trials, followups, tails, boundaries = NamedTuple[], NamedTuple[], NamedTuple[], NamedTuple[]
+    duration_refinements, duration_brackets = NamedTuple[], NamedTuple[]
+    tau_e = result.model.excitatory.timescale
+    tau_i = result.model.inhibitory.timescale
     for (index, trial) in enumerate(result.trials)
         trial_id = "$(condition)_$index"
         final = last(trial.attempts)
@@ -116,6 +138,8 @@ function save_condition(result, condition, output)
             initial_id=trial.initial_id, initial_E=trial.initial_state[1], initial_I=trial.initial_state[2],
             initial_provenance=trial.initial_provenance, target=string(trial.target),
             amplitude=trial.amplitude, duration=trial.duration,
+            duration_over_tau_e=trial.duration / tau_e,
+            duration_over_tau_i=trial.duration / tau_i,
             integrated_E=trial.integrated_E, integrated_I=trial.integrated_I,
             absolute_input_cost=trial.absolute_input_cost, status=string(trial.status),
             outcome_equilibrium=missing_id(trial.outcome_equilibrium),
@@ -155,13 +179,49 @@ function save_condition(result, condition, output)
     for boundary in result.boundaries
         push!(boundaries, (condition=string(condition), initial_id=boundary.initial_id,
             target=string(boundary.target), duration=boundary.duration,
+            duration_over_tau_e=boundary.duration / tau_e,
+            duration_over_tau_i=boundary.duration / tau_i,
             lower_amplitude=boundary.lower_amplitude, upper_amplitude=boundary.upper_amplitude,
             lower_trial="$(condition)_$(boundary.lower_trial)",
             upper_trial="$(condition)_$(boundary.upper_trial)",
             lower_outcome=missing_id(boundary.lower_outcome),
-            upper_outcome=missing_id(boundary.upper_outcome), kind=string(boundary.kind)))
+            upper_outcome=missing_id(boundary.upper_outcome),
+            lower_status=string(boundary.lower_status),
+            upper_status=string(boundary.upper_status), kind=string(boundary.kind)))
     end
-    return (; trials, followups, tails, boundaries)
+    for refinement in result.duration_refinements
+        push!(duration_refinements, (condition=string(condition),
+            initial_id=refinement.initial_id, target=string(refinement.target),
+            level=refinement.level, lower_duration=refinement.lower_duration,
+            lower_duration_over_tau_e=refinement.lower_duration / tau_e,
+            lower_duration_over_tau_i=refinement.lower_duration / tau_i,
+            inserted_duration=refinement.inserted_duration,
+            inserted_duration_over_tau_e=refinement.inserted_duration / tau_e,
+            inserted_duration_over_tau_i=refinement.inserted_duration / tau_i,
+            upper_duration=refinement.upper_duration,
+            upper_duration_over_tau_e=refinement.upper_duration / tau_e,
+            upper_duration_over_tau_i=refinement.upper_duration / tau_i,
+            reasons=join(string.(refinement.reasons), ";")))
+    end
+    for bracket in result.duration_brackets
+        lower = signature_fields(bracket.lower_signature)
+        upper = signature_fields(bracket.upper_signature)
+        push!(duration_brackets, (condition=string(condition),
+            initial_id=bracket.initial_id, target=string(bracket.target),
+            lower_duration=bracket.lower_duration, upper_duration=bracket.upper_duration,
+            lower_duration_over_tau_e=bracket.lower_duration / tau_e,
+            upper_duration_over_tau_e=bracket.upper_duration / tau_e,
+            lower_duration_over_tau_i=bracket.lower_duration / tau_i,
+            upper_duration_over_tau_i=bracket.upper_duration / tau_i,
+            reasons=join(string.(bracket.reasons), ";"),
+            lower_destinations=lower.destinations, upper_destinations=upper.destinations,
+            lower_boundaries=lower.boundaries, upper_boundaries=upper.boundaries,
+            lower_unresolved=lower.unresolved_present,
+            upper_unresolved=upper.unresolved_present,
+            lower_integration_failure=lower.integration_failure_present,
+            upper_integration_failure=upper.integration_failure_present))
+    end
+    return (; trials, followups, tails, boundaries, duration_refinements, duration_brackets)
 end
 
 """Validate, snapshot and execute; refuse to overwrite any nonempty output directory."""
@@ -178,6 +238,7 @@ function run_experiment(config_path, output_dir; smoke=false)
     metadata = pulse_provenance(config_path, output; smoke=smoke)
     all_trials, all_followups, all_tails, all_boundaries =
         NamedTuple[], NamedTuple[], NamedTuple[], NamedTuple[]
+    all_duration_refinements, all_duration_brackets = NamedTuple[], NamedTuple[]
     all_equilibria, all_attempts = NamedTuple[], NamedTuple[]
     contexts, failures = Dict{String,Any}(), String[]
     for condition in (:control, :failure_of_inhibition)
@@ -200,6 +261,8 @@ function run_experiment(config_path, output_dir; smoke=false)
             append!(all_followups, rows.followups)
             append!(all_tails, rows.tails)
             append!(all_boundaries, rows.boundaries)
+            append!(all_duration_refinements, rows.duration_refinements)
+            append!(all_duration_brackets, rows.duration_brackets)
             println("$condition: $(length(search.equilibria)) discovered equilibria, $(length(result.initial_states)) attracting starts, $(length(rows.trials)) pulse trials")
         catch error
             error isa InterruptException && rethrow()
@@ -218,10 +281,13 @@ function run_experiment(config_path, output_dir; smoke=false)
     metadata["grid_points"] = config.grid_points
     metadata["trial_count"] = length(all_trials)
     metadata["unresolved_trial_count"] = count(row -> row.status == "unresolved", all_trials)
+    metadata["duration_refinement_count"] = length(all_duration_refinements)
+    metadata["duration_bracket_count"] = length(all_duration_brackets)
     write_toml(joinpath(output, "metadata.toml"), metadata)
     write_rows(joinpath(output, "trials.csv"), all_trials,
         (:condition, :trial_id, :initial_id, :initial_E, :initial_I, :initial_provenance,
-         :target, :amplitude, :duration, :integrated_E, :integrated_I, :absolute_input_cost,
+         :target, :amplitude, :duration, :duration_over_tau_e, :duration_over_tau_i,
+         :integrated_E, :integrated_I, :absolute_input_cost,
          :status, :outcome_equilibrium, :final_followup_time, :attempts))
     write_rows(joinpath(output, "followups.csv"), all_followups,
         (:condition, :trial_id, :attempt, :followup_time, :status, :solver_status,
@@ -231,8 +297,23 @@ function run_experiment(config_path, output_dir; smoke=false)
          :E_mean, :E_minimum, :E_maximum, :I_mean, :I_minimum, :I_maximum,
          :u_I_mean, :u_I_minimum, :u_I_maximum, :F_I_prime_mean, :F_I_prime_minimum, :F_I_prime_maximum))
     write_rows(joinpath(output, "boundaries.csv"), all_boundaries,
-        (:condition, :initial_id, :target, :duration, :lower_amplitude, :upper_amplitude,
-         :lower_trial, :upper_trial, :lower_outcome, :upper_outcome, :kind))
+        (:condition, :initial_id, :target, :duration, :duration_over_tau_e,
+         :duration_over_tau_i, :lower_amplitude, :upper_amplitude,
+         :lower_trial, :upper_trial, :lower_outcome, :upper_outcome,
+         :lower_status, :upper_status, :kind))
+    write_rows(joinpath(output, "duration_refinements.csv"), all_duration_refinements,
+        (:condition, :initial_id, :target, :level, :lower_duration,
+         :lower_duration_over_tau_e, :lower_duration_over_tau_i,
+         :inserted_duration, :inserted_duration_over_tau_e,
+         :inserted_duration_over_tau_i, :upper_duration,
+         :upper_duration_over_tau_e, :upper_duration_over_tau_i, :reasons))
+    write_rows(joinpath(output, "duration_brackets.csv"), all_duration_brackets,
+        (:condition, :initial_id, :target, :lower_duration, :upper_duration,
+         :lower_duration_over_tau_e, :upper_duration_over_tau_e,
+         :lower_duration_over_tau_i, :upper_duration_over_tau_i, :reasons,
+         :lower_destinations, :upper_destinations, :lower_boundaries,
+         :upper_boundaries, :lower_unresolved, :upper_unresolved,
+         :lower_integration_failure, :upper_integration_failure))
     write_rows(joinpath(output, "equilibria.csv"), all_equilibria,
         (:context_id, :equilibrium, :E, :I, :residual_norm, :near_singular,
          :representative_attempt, :member_attempts, :stability, :geometry,

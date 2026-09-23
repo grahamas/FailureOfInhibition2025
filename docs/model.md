@@ -504,9 +504,12 @@ is zero, withdrawal occurs at the specified duration, and baseline drive
 resumes afterward. Positive targets use the afferent interpretation when the
 baseline allows it; negative E-drive uses `AbstractIntervention`.
 
-The study defaults are amplitudes `0:0.25:8`, durations
-`[1,2,5,10,20,50,100,200]` ms, and post-withdrawal follow-ups of
-`[5000,10000,20000]` ms. An unresolved observation is rerun from the same
+The API defaults are amplitudes `0:0.25:8`, discovery-grid durations
+`[1,2,5,10,20,50,100,200]` ms, no duration refinement, and post-withdrawal
+follow-ups of `[5000,10000,20000]` ms. The tracked study configuration requests
+one duration-refinement level. These values define numerical coverage; they do
+not assert that every duration is scientifically informative. An unresolved
+observation is rerun from the same
 initial state and pulse with the longer horizon. Each terminal diagnostic
 window defaults to 100 ms with 21 samples and exact window endpoints;
 coordinate and balance tolerances remain `1e-6` and `1e-8`. Successful
@@ -528,9 +531,18 @@ trajectory retention preserves the `time,E,I` CSV convention.
 Refinement bisects every adjacent sampled amplitude interval with different
 resolved equilibrium destinations, with two refinement levels by default.
 Unresolved brackets are retained, and no monotonic-success assumption is
-made. Islands between equal-outcome sampled endpoints can be missed. The
-component integrals are signed `duration * increment`; the sum of their
-absolute values is a defined input cost, not biological energy.
+made. Optional duration refinement compares adjacent durations by resolved
+destination set, ordered amplitude-boundary topology, unresolved presence, and
+integration-failure presence;
+it ignores the numerical locations of amplitude boundaries. Each requested
+level inserts arithmetic duration midpoints only where that topology differs.
+The remaining intervals are finite duration brackets, not exact minimum
+durations. Islands between equal-outcome sampled endpoints can be missed.
+Artifacts report duration in milliseconds and normalized by both population
+timescales. The component integrals are signed `duration * increment`; the sum
+of their absolute values is a defined input cost, not biological energy. A
+resolved implementation run does not by itself change a manuscript-claim
+disposition; see the claim-specific protocol in the intervention study.
 
 ## Scientific experiment configurations
 
