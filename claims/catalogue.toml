@@ -1,0 +1,139 @@
+schema_version = 1
+catalogue_id = "foi-manuscript-claims"
+state = "draft"
+
+[manuscript]
+repository = "https://github.com/grahamas/FailureOfInhibitionWCM"
+revision = "ed18f283f2c947d6a4710989664b2a05dcc74447"
+path = "sn-article.tex"
+
+[[evidence]]
+id = "response-model"
+category = "analytic"
+summary = "Implemented equal-slope inhibitory response and its derivative."
+
+[[evidence]]
+id = "fitting-gap"
+category = "scope"
+summary = "Difference between the implemented symmetric response and the manuscript fitting claim."
+
+[[evidence]]
+id = "ordering-proof"
+category = "analytic"
+summary = "Equilibrium subtraction argument for a monotone inhibitory response."
+
+[[evidence]]
+id = "figure3-anchor"
+category = "numerical"
+summary = "Matched control and failure-of-inhibition searches, coordinates, balance residuals, and local spectra at the supplied Figure 3 parameter anchor."
+
+[[evidence]]
+id = "coexistence"
+category = "numerical"
+summary = "Finite deterministic equilibrium searches over the declared coexistence protocol."
+
+[[evidence]]
+id = "rescue-obstruction"
+category = "analytic"
+summary = "Invariant-region obstruction for the specified source state on the descending inhibitory branch under the stated nonnegative-drive assumptions."
+
+[[evidence]]
+id = "rescue-evidence"
+category = "numerical"
+summary = "Finite coordinate-identified pulse protocols and selected longer rechecks."
+
+[[evidence]]
+id = "cycle-screen"
+category = "numerical"
+summary = "Finite manuscript-model candidate screen; independent machinery tests are not orbit-existence evidence."
+
+[[evidence]]
+id = "intervention-evidence"
+category = "numerical"
+summary = "Finite intervention runs without a functional observation or clinical ranking model."
+
+[[evidence]]
+id = "scope-limit"
+category = "scope"
+summary = "Capabilities excluded by the deterministic two-population point-model scope."
+
+[[claims]]
+id = "equal-slope-nonmonotonic"
+statement = "The implemented equal-slope inhibitory response is nonmonotonic."
+locations = [{ line_start = 264, line_end = 267 }]
+disposition = "validated"
+evidence_ids = ["response-model"]
+limitation = "The validated response is symmetric and begins descending at its midpoint."
+author_review = "pending"
+
+[[claims]]
+id = "independent-slopes-and-fits"
+statement = "The response has independently adjustable slopes and provides superior fits to the manuscript's synthetic population-response data."
+locations = [{ line_start = 279, line_end = 279 }, { line_start = 307, line_end = 307 }]
+disposition = "not_validated"
+evidence_ids = ["fitting-gap"]
+limitation = "The implementation has one shared slope and no reproducible replay of the manuscript's synthetic-data generation and fitting pipeline."
+author_review = "pending"
+
+[[claims]]
+id = "monotone-ordering"
+statement = "A monotone inhibitory response excludes oppositely ordered equilibrium pairs."
+locations = [{ line_start = 282, line_end = 296 }]
+disposition = "validated"
+evidence_ids = ["ordering-proof"]
+limitation = "The comparison is between equilibria of the same autonomous model with the same parameters and constant drive; it does not exclude a lone high-E, low-I equilibrium, periodic attractors, or cross-parameter comparisons."
+author_review = "pending"
+
+[[claims]]
+id = "figure3-anchor"
+statement = "Failure of inhibition adds a locally attracting high-E, low-I equilibrium at the supplied Figure 3 anchor."
+locations = [{ line_start = 360, line_end = 360 }]
+disposition = "validated_narrower"
+evidence_ids = ["figure3-anchor"]
+limitation = "Finite matched searches found this locally attracting root in the failure-of-inhibition model and did not find it in the control, but neither search certifies completeness; the evidence therefore does not establish that failure of inhibition adds the root."
+author_review = "pending"
+
+[[claims]]
+id = "general-multistability"
+statement = "Failure of inhibition generally produces tristability or tetrastability."
+locations = [{ line_start = 340, line_end = 346 }, { line_start = 375, line_end = 375 }]
+disposition = "validated_narrower"
+evidence_ids = ["coexistence"]
+limitation = "Some sampled cells had three discovered locally attracting equilibria; no sampled cell had four, and neither general prevalence nor an exhaustive attractor count was established."
+author_review = "pending"
+
+[[claims]]
+id = "rescue"
+statement = "Final-arm states cannot be rescued and all first-arm states can."
+locations = [{ line_start = 350, line_end = 352 }]
+disposition = "counterexample"
+evidence_ids = ["rescue-obstruction", "rescue-evidence"]
+limitation = "The specified nonnegative-drive obstruction is supported and finite suppressive-input protocols provide counterexamples to the unrestricted claim; the claim that all first-arm states can be rescued remains unvalidated."
+author_review = "pending"
+
+[[claims]]
+id = "cycles"
+statement = "Recruitment changes cycle amplitude or frequency and promotes interictal spikes."
+locations = [{ line_start = 377, line_end = 377 }]
+disposition = "not_validated"
+evidence_ids = ["cycle-screen"]
+limitation = "No manuscript-ratio periodic orbit or mapping from model trajectories to interictal observations has been validated; the finite screen cannot exclude periodic orbits in other basins or parameter neighborhoods."
+author_review = "pending"
+
+[[claims]]
+id = "intervention-superiority"
+statement = "Increasing the failure threshold independently of the firing threshold could theoretically treat epilepsy with less effect on cortical function."
+locations = [{ line_start = 379, line_end = 379 }]
+disposition = "not_validated"
+evidence_ids = ["intervention-evidence"]
+limitation = "No functional observable, disturbance criterion, or clinical ranking model has been defined."
+author_review = "pending"
+
+[[claims]]
+id = "scope"
+statement = "A fixed-point transition can be interpreted as a traveling wave, and the modeled states establish functional cortical or clinical conclusions."
+locations = [{ line_start = 326, line_end = 326 }, { line_start = 437, line_end = 439 }]
+disposition = "not_validated"
+evidence_ids = ["scope-limit"]
+limitation = "A point model cannot represent traveling waves, so the proposed wave interpretation is unsupported; functional-state and clinical interpretations are also unsupported by the retained evidence."
+author_review = "pending"
