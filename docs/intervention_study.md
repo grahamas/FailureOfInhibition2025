@@ -135,6 +135,28 @@ adjacent durations as finite protocol-change brackets; do not report an exact
 minimum duration. Broad-grid maps remain exploratory even when every sampled
 trajectory resolves.
 
+### Claim-specific rescue replay
+
+The rescue replay is narrower than the broad map. It selects the Figure 3 FoI
+high-E/low-I source and low-activity destination by state coordinates and
+local attraction, never by a historical root number. It applies only negative
+E drive at 10, 15, and 20 ms with amplitudes `0:0.25:8` and two amplitude
+refinement levels. Unresolved primary observations escalate from 5 to 10 to
+20 seconds. The 10-ms amplitude cap and both endpoints of each sampled
+source-to-destination boundary are independently re-integrated to 20 seconds
+with tighter tolerances.
+
+The summary records whether the coordinate-identified destination was
+observed at each tested duration and retains adjacent durations with different
+observations as finite protocol-change brackets. Each bracket carries the
+unresolved and integration-failure counts for both durations; a bracket with
+either status is marked censored and is not claim evidence. The summary has no
+minimum-duration field. A completed replay can provide a protocol-specific
+counterexample only when its supporting bracket is fully resolved and every
+selected tighter-tolerance recheck at either endpoint agrees with its primary
+result. It cannot establish global reachability, permanent rescue, or a
+biological role.
+
 ## Secondary robustness
 
 Use targeted slices and deterministic joint sampling, avoiding a full
@@ -162,6 +184,7 @@ julia --project=. scripts/run_coexistence_map.jl --config experiments/coexistenc
 julia --project=. scripts/run_continuation_experiment.jl --config experiments/coexistence.toml --output output/continuation_study
 julia --project=. scripts/run_periodic_candidates.jl --config experiments/coexistence.toml --output output/periodic_candidates
 julia --project=. scripts/run_pulse_experiment.jl --config experiments/pulses.toml --output output/pulse_study
+julia --project=. scripts/run_rescue_replay.jl --config experiments/rescue_replay.toml --output output/rescue_replay
 julia --project=. scripts/run_intervention_experiment.jl --config experiments/interventions.toml --robustness --output output/intervention_study
 julia --project=. scripts/run_pulse_comparison.jl --config experiments/pulses.toml --output output/pulse_comparison
 ```
