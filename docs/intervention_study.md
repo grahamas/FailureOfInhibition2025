@@ -100,8 +100,9 @@ objects, distinguishing induction from low-activity and other active states.
 
 ## Rectangular pulse protocol
 
-Positive targets are E alone, I alone, and equal E/I. Sweep component
-amplitudes `0:0.25:8` and durations `1,2,5,10,20,50,100,200 ms`.
+Positive targets are E alone, I alone, and equal E/I. The broad exploratory
+scan uses component amplitudes `0:0.25:8` and the coarse duration grid
+`1,2,5,10,20,50,100,200 ms`.
 Start at each discovered locally attracting equilibrium and, when available,
 multiple phases of numerically validated cycles. Measure the post-withdrawal
 destination under the same autonomous parameters. Zero-amplitude cases
@@ -111,8 +112,11 @@ single-target pulses of equal amplitude and duration.
 
 Test negative E-drive pulses separately under `AbstractIntervention`. They
 are abstract suppressive inputs and do not have the afferent-excitation
-interpretation. Signed component integrals and the sum of their absolute
-values are defined input costs, not biological energy.
+interpretation. Report amplitude, duration, signed component integrals, and
+the sum of their absolute values separately. The latter is a defined input
+cost, not biological energy. Report duration both in milliseconds and as
+`duration/tau_E` and `duration/tau_I`; this is model-timescale normalization,
+not biological calibration.
 
 Refine every sampled adjacent amplitude interval with differing resolved
 destinations; retain unresolved brackets. Do not binary-search under an
@@ -121,6 +125,15 @@ equal-outcome intervals, so reported boundaries remain conditional on grid
 and refinement coverage. A missing transition means none was observed in
 the specified targets, amplitudes, durations, starts, phases, and follow-up;
 it does not establish global unreachability or permanent rescue.
+
+For claim-specific transition work, first evaluate the coarse duration grid.
+Insert an arithmetic midpoint only where adjacent durations differ in the set
+of resolved destinations, the number or order of amplitude-boundary outcomes,
+transition presence, unresolved presence, or integration-failure presence.
+Repeat only for the configured number of refinement levels. Retain the final
+adjacent durations as finite protocol-change brackets; do not report an exact
+minimum duration. Broad-grid maps remain exploratory even when every sampled
+trajectory resolves.
 
 ## Secondary robustness
 
@@ -179,7 +192,9 @@ Primary-map `map.csv` contains one row per matched cell. `equilibria.csv`
 retains state/input/response/stability observations; `attempts.csv` and full
 context TOML retain rejected and uncertain candidates. Pulse `trials.csv`,
 `followups.csv`, `tails.csv`, and `boundaries.csv` retain every sampled
-protocol and finite-window result. When `retain_trajectories=false`, saved
+protocol and finite-window result. `duration_refinements.csv` records inserted
+midpoints and their topology-change reasons; `duration_brackets.csv` retains
+the final finite intervals. When `retain_trajectories=false`, saved
 trajectories contain pulse endpoints and terminal diagnostic samples;
 they must not be plotted as if the unsampled transient had been observed.
 
