@@ -693,6 +693,57 @@ attracting equilibria below the Hopf point. It does not establish an exact
 attractor count, search completeness, prevalence, biological states, or a
 global bifurcation diagram.
 
+The separate `experiments/figure5b_ratio44_search.toml` and
+`scripts/run_figure5b_ratio44_search.jl` define the targeted search at the
+manuscript timescale ratio `tau_I/tau_E = 4.4`. The runner accepts only a
+checksummed, clean, completed artifact from the canonical two-plane and
+4096-point tetrastability schedule. It replays every normalized seven-root
+seed with 11x11, 21x21, and 41x41 searches before following the central root
+along all five authorized parameter axes. Trace sign brackets are corrected
+by solving the two balance equations and the original-time trace equation
+together. That three-grid refinement schedule is a structural topology
+requirement even for programmatic runs that disable other canonical-value
+checks. The three configured two-parameter searches use scaled
+pseudo-arclength continuation in `[E,I,p,q]` and retain corrector failures,
+parameter reversals, bounds, and duplicate links.
+
+A fixed-ratio Hopf candidate must retain three safely attracting outer roots,
+three safe saddles, and one rising-arm neutral center across all refinements.
+Only then may periodic shooting run. Its directional transversality is
+recomputed normal to the parameter-space trace-zero set while holding the
+timescale ratio fixed. Shooting perturbations are centered on the explicitly
+matched central-root state from the refined topology, never on an equilibrium
+vector's positional index. Every directional finite-difference sample reruns
+the 11x11, 21x21, and 41x41 searches, uniquely tracks the neutral central branch
+across refinements, and uses the independently recomputed trace of the finest
+matched root. A local equilibrium solve is only a branch-consistency check;
+proximity to the original state cannot identify the branch by itself. In
+particular, neither the timescale-ratio derivative
+nor its radius slope is reused: this protocol evaluates
+`rho^2 slope = -beta_normal/real(c1)`. Periodic evidence is kept separate from
+the neutral topology and must pass the same primitive-period, multiple-seed,
+tight/doubled, winding, Jacobian, divergence, Poincare, and attraction gates.
+Completing with no trace-zero point or no validated orbit is a successful
+finite negative result, not an absence claim. Smoke mode is bounded and never
+enables scientific acceptance.
+
+A full claim-grade run additionally requires `--accepted-revision` with the
+exact 40-character revision, and the checkout must be clean and detached at
+that revision. An output destination inside the checkout must resolve through
+its existing parent directories to a Git-ignored location before the runner
+writes anything; an in-checkout path containing a symbolic-link component is
+rejected, while direct destinations outside the checkout remain permitted. The
+revision, detached state, and complete working-tree status are checked again
+at finalization, and any new dirtiness makes the artifact evidence-ineligible.
+Every trace-zero point receives the neutral topology gate;
+shooting proposals retain all unique axis solutions and curve seeds,
+endpoints, and parameter reversals, then add deterministic arclength-spaced
+samples. Skipped qualified proposals or branches that do not reach both
+authorized parameter bounds force an unresolved outcome rather than a finite
+negative. The checksummed normalized manifest supports an evidence-ineligible
+numerical replay with `--replay-artifact`; its output must be outside the
+source artifact so replay cannot invalidate the source checksums.
+
 ## Scientific experiment configurations
 
 [The intervention study](intervention_study.md) describes the supplied
