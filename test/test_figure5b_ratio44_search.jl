@@ -310,6 +310,27 @@ end
     @test proposals.effective_count == 5
     @test count(row -> !row.selected, proposals.rows) == 1
 
+    previous = (0.0, 0.0)
+    intended_track = ((0.001, 0.0), (0.001, 0.0), (0.001, 0.0))
+    nearby_track = ((0.006, 0.0), (0.006, 0.0), (0.006, 0.0))
+    distant_track = ((0.2, 0.0), (0.2, 0.0), (0.2, 0.0))
+    positive_identity = Ratio44.unique_axis_track_match(previous, [0.001, 0.0],
+        [intended_track, distant_track]; coordinate_atol=1e-6,
+        displacement_tolerance=0.01)
+    @test positive_identity.matched
+    @test positive_identity.central_track == positive_identity.solved_track == 1
+    nearby_jump = Ratio44.unique_axis_track_match(previous, [0.006, 0.0],
+        [intended_track, nearby_track]; coordinate_atol=1e-6,
+        displacement_tolerance=0.01)
+    @test !nearby_jump.matched
+    @test :central_track_ambiguous in nearby_jump.reasons
+    @test nearby_jump.solved_track == 2
+    lost_identity = Ratio44.unique_axis_track_match(previous, [0.2, 0.0],
+        [distant_track]; coordinate_atol=1e-6,
+        displacement_tolerance=0.01)
+    @test !lost_identity.matched
+    @test :central_track_lost in lost_identity.reasons
+
     synthetic_attempt = (; residual_norm=0.0, solver_status=:synthetic,
         reasons=Symbol[])
     synthetic_axis_step = function (_config, parameters, _state)
@@ -317,6 +338,13 @@ end
         return (; accepted=true, state=(0.3, 0.4), trace=parameter - 23.975,
             solved=(; attempt=synthetic_attempt,
                 stability=(; classification=Repelling)), model=nothing)
+    end
+    accepted_identity = function (_config, _parameters, _previous, solved)
+        states = ((Tuple(solved), Tuple(solved), Tuple(solved)),)
+        return (; matched=true, central_track=1, solved_track=1,
+            branch_distances=[0.0], solved_distances=[0.0], nearest_gap=Inf,
+            reasons=Symbol[], root_counts=[7, 7, 7], unresolved_counts=[0, 0, 0],
+            minimum_root_separation=0.1, track_states=states)
     end
     accepted_augmented = function (_config, parameters, axis, seed; bracket=nothing)
         parameter = sum(bracket) / 2
@@ -330,7 +358,8 @@ end
             theta_off=8.0), central_state=(0.3, 0.4))
     bounded_axis = Ratio44.continue_axis_path(config, axis_seed, :e_to_e;
         smoke=true, equilibrium_step_function=synthetic_axis_step,
-        augmented_solver=accepted_augmented)
+        augmented_solver=accepted_augmented,
+        identity_check_function=accepted_identity)
     @test any(point -> point.direction == 1 && point.parameter == 24.0,
         bounded_axis.points)
     @test any(bracket -> bracket.direction == 1 && bracket.upper == 24.0,
@@ -351,11 +380,30 @@ end
         (; e_to_e=19.0))))
     unresolved_axis = Ratio44.continue_axis_path(config, exhaustive_seed, :e_to_e;
         equilibrium_step_function=crossing_axis_step,
-        augmented_solver=failed_augmented)
+        augmented_solver=failed_augmented,
+        identity_check_function=accepted_identity)
     @test unresolved_axis.termination == "-1:parameter_bound;1:parameter_bound"
     @test any(location -> !location.success && !location.full_rank,
         unresolved_axis.locations)
     @test !Ratio44.axis_path_exhausted(unresolved_axis)
+
+    ambiguous_identity = function (_config, _parameters, _previous, solved)
+        tracks = (((0.001, 0.0), (0.001, 0.0), Tuple(solved)),
+            ((0.006, 0.0), (0.006, 0.0), Tuple(solved)))
+        return (; matched=false, central_track=nothing, solved_track=2,
+            branch_distances=[0.001, 0.006], solved_distances=[0.005, 0.0],
+            nearest_gap=0.005, reasons=[:central_track_ambiguous],
+            root_counts=[7, 7, 7], unresolved_counts=[0, 0, 0],
+            minimum_root_separation=0.005, track_states=tracks)
+    end
+    rejected_identity = Ratio44.continue_axis_path(config, axis_seed, :e_to_e;
+        smoke=true, equilibrium_step_function=synthetic_axis_step,
+        augmented_solver=accepted_augmented,
+        identity_check_function=ambiguous_identity)
+    @test any(attempt -> attempt.status == "root_identity_failed" &&
+        occursin("central_track_ambiguous", attempt.reasons),
+        rejected_identity.attempts)
+    @test isempty(filter(attempt -> attempt.accepted, rejected_identity.attempts))
 end
 
 @testset "Directional fixed-ratio transversality" begin
@@ -603,6 +651,9 @@ end
     @test directional_tracks.qualified
     @test length(directional_tracks.tracks) == 7
     @test all(track -> all(isfinite, track.traces), directional_tracks.tracks)
+    axis_tracks = Ratio44._axis_root_tracks(permuted_searches, config)
+    @test axis_tracks.qualified
+    @test length(axis_tracks.tracks) == 7
     @test permuted_topology.central_state ≈ ordinary_topology.central_state atol=1e-12
     wrapper = (; topology=permuted_topology, searches=permuted_searches,
         parameters=nothing)
@@ -627,9 +678,13 @@ end
         theta_off=8.0)
     seed = (hypothesis_id="anchor", parameters,
         central_state=(0.329934171847263, 0.367295168265613))
-    axis = Ratio44.continue_axis_path(config, seed, :e_to_e)
+    axis = Ratio44.continue_axis_path(config, seed, :e_to_e; smoke=true)
     @test isempty(axis.brackets)
-    @test any(attempt -> attempt.status == "branch_jump", axis.attempts)
+    @test any(attempt -> attempt.accepted, axis.attempts)
+    @test all(attempt -> !attempt.accepted ||
+        (attempt.identity_central_track != 0 &&
+            attempt.identity_central_track == attempt.identity_solved_track),
+        axis.attempts)
     curve = Ratio44._curve_seed_candidates(config, seed, (:e_to_e, :i_to_i),
         NamedTuple[])
     @test curve.closest.success

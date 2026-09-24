@@ -850,10 +850,135 @@ function _equilibrium_step(config, parameters, state)
         trace=accepted ? trace_at(model, solved.attempt.candidate) : NaN)
 end
 
+function _axis_root_quality(search, equilibrium, config)
+    residual = zeros(Float64, 2)
+    jacobian = zeros(Float64, 2, 2)
+    point_balance!(residual, equilibrium.state, search.frozen_model, 0.0)
+    point_balance_jacobian!(jacobian, equilibrium.state, search.frozen_model, 0.0)
+    return maximum(abs, residual) <= config.topology.residual_atol &&
+        maximum(abs, jacobian .- equilibrium.balance_jacobian) <=
+            config.topology.jacobian_atol && !equilibrium.near_singular &&
+        all(isfinite, jacobian)
+end
+
+function _axis_root_tracks(searches, config)
+    reasons = Symbol[]
+    searches isa Tuple && length(searches) == 3 ||
+        return (; qualified=false, tracks=NamedTuple[],
+            reasons=[:invalid_refinement_set], root_counts=Int[],
+            unresolved_counts=Int[], minimum_separation=NaN)
+    all(search -> search isa EquilibriumSearchResult, searches) ||
+        return (; qualified=false, tracks=NamedTuple[],
+            reasons=[:invalid_refinement_type], root_counts=Int[],
+            unresolved_counts=Int[], minimum_separation=NaN)
+    root_counts = [length(search.equilibria) for search in searches]
+    unresolved_counts = [length(search.unresolved_nearby) for search in searches]
+    all(search -> FailureOfInhibition2025._same_search_context(first(searches), search),
+        searches) || push!(reasons, :model_context_mismatch)
+    all(FailureOfInhibition2025._matches_refinement_schedule(search, grid)
+        for (search, grid) in zip(searches, ROOT_GRIDS)) ||
+        push!(reasons, :refinement_schedule_mismatch)
+    all(iszero, unresolved_counts) || push!(reasons, :unresolved_nearby_roots)
+    all(==(7), root_counts) || push!(reasons, :root_count_mismatch)
+    minimum_separation = minimum(_minimum_separation(search.equilibria)
+        for search in searches)
+    minimum_separation >= config.topology.minimum_root_separation ||
+        push!(reasons, :insufficient_root_separation)
+    tracks = NamedTuple[]
+    if all(==(7), root_counts)
+        reference = searches[1].equilibria
+        mappings = [_unique_mapping(reference, searches[index].equilibria,
+            config.topology.coordinate_match_atol) for index in 2:3]
+        any(isnothing, mappings) && push!(reasons, :ambiguous_root_matching)
+        if all(!isnothing, mappings)
+            for index in eachindex(reference)
+                roots = (reference[index], searches[2].equilibria[mappings[1][index]],
+                    searches[3].equilibria[mappings[2][index]])
+                all(_axis_root_quality(searches[refinement], roots[refinement], config)
+                    for refinement in 1:3) || push!(reasons, :root_quality_failure)
+                push!(tracks, (; root_track=index,
+                    states=Tuple(Tuple(root.state) for root in roots)))
+            end
+        end
+    end
+    unique!(reasons)
+    return (; qualified=isempty(reasons), tracks, reasons, root_counts,
+        unresolved_counts, minimum_separation)
+end
+
+function unique_axis_track_match(previous_state, solved_state, track_states;
+    coordinate_atol, displacement_tolerance)
+    previous = Float64.(previous_state)
+    solved = Float64.(solved_state)
+    tracks = [[Float64.(state) for state in track] for track in track_states]
+    reasons = Symbol[]
+    length(previous) == 2 && length(solved) == 2 &&
+        all(track -> length(track) == 3 && all(state -> length(state) == 2, track),
+            tracks) || return (; matched=false, central_track=nothing,
+                solved_track=nothing, branch_distances=Float64[],
+                solved_distances=Float64[], nearest_gap=NaN,
+                reasons=[:invalid_branch_state_dimension])
+    all(isfinite, previous) && all(isfinite, solved) &&
+        all(track -> all(state -> all(isfinite, state), track), tracks) ||
+        return (; matched=false, central_track=nothing, solved_track=nothing,
+            branch_distances=Float64[], solved_distances=Float64[], nearest_gap=NaN,
+            reasons=[:nonfinite_branch_state])
+    branch_distances = [maximum(norm(state .- previous) for state in track)
+        for track in tracks]
+    branch_matches = findall(distance -> distance <= displacement_tolerance,
+        branch_distances)
+    length(branch_matches) == 1 || push!(reasons,
+        isempty(branch_matches) ? :central_track_lost : :central_track_ambiguous)
+    central_track = length(branch_matches) == 1 ? only(branch_matches) : nothing
+    ordered = sort(branch_distances)
+    nearest_gap = length(ordered) >= 2 ? ordered[2] - ordered[1] : Inf
+    nearest_gap > 2coordinate_atol || push!(reasons,
+        :central_track_proximity_unresolved)
+    central_track !== nothing && central_track != argmin(branch_distances) &&
+        push!(reasons, :central_track_not_unique_nearest)
+    solved_distances = [norm(last(track) .- solved) for track in tracks]
+    solved_matches = findall(distance -> distance <= coordinate_atol, solved_distances)
+    length(solved_matches) == 1 || push!(reasons,
+        isempty(solved_matches) ? :solved_root_not_matched :
+        :solved_root_match_ambiguous)
+    solved_track = length(solved_matches) == 1 ? only(solved_matches) : nothing
+    central_track !== nothing && solved_track !== nothing &&
+        central_track != solved_track && push!(reasons, :solved_root_track_mismatch)
+    return (; matched=isempty(reasons), central_track, solved_track,
+        branch_distances, solved_distances, nearest_gap, reasons)
+end
+
+function _axis_trial_identity(config, parameters, previous_state, solved_state)
+    searches = equilibrium_refinements(model_at(config, parameters), config)
+    tracks = _axis_root_tracks(searches, config)
+    track_states = [track.states for track in tracks.tracks]
+    if !tracks.qualified
+        return (; matched=false, central_track=nothing, solved_track=nothing,
+            branch_distances=Float64[], solved_distances=Float64[], nearest_gap=NaN,
+            reasons=tracks.reasons, root_counts=tracks.root_counts,
+            unresolved_counts=tracks.unresolved_counts,
+            minimum_root_separation=tracks.minimum_separation, track_states)
+    end
+    matched = unique_axis_track_match(previous_state, solved_state, track_states;
+        coordinate_atol=config.topology.coordinate_match_atol,
+        displacement_tolerance=config.augmented.state_step_atol)
+    return merge(matched, (; root_counts=tracks.root_counts,
+        unresolved_counts=tracks.unresolved_counts,
+        minimum_root_separation=tracks.minimum_separation, track_states))
+end
+
+function _empty_axis_identity(reason)
+    return (; matched=false, central_track=nothing, solved_track=nothing,
+        branch_distances=Float64[], solved_distances=Float64[], nearest_gap=NaN,
+        reasons=[reason], root_counts=Int[], unresolved_counts=Int[],
+        minimum_root_separation=NaN, track_states=Tuple[])
+end
+
 """Continue one central equilibrium in both directions and retain every failure."""
 function continue_axis_path(config, seed, axis; smoke=false,
     equilibrium_step_function=_equilibrium_step,
-    augmented_solver=solve_augmented_trace_zero)
+    augmented_solver=solve_augmented_trace_zero,
+    identity_check_function=_axis_trial_identity)
     bounds = config.bounds[axis]
     extent = bounds[2] - bounds[1]
     initial_step = config.augmented.initial_step_fraction * extent
@@ -870,6 +995,11 @@ function continue_axis_path(config, seed, axis; smoke=false,
             retry=0, parameter=getproperty(seed.parameters, axis), accepted=false,
             status="seed_equilibrium_exception", candidate_E=NaN, candidate_I=NaN,
             residual_norm=Inf, solver_status="exception", reasons="",
+            identity_central_track=0, identity_solved_track=0,
+            identity_nearest_gap=NaN, identity_branch_distances=Float64[],
+            identity_solved_distances=Float64[], identity_root_counts="",
+            identity_unresolved_counts="", identity_minimum_root_separation=NaN,
+            identity_track_states=Tuple[],
             error_type=record["type"], error_message=record["message"])],
             brackets, locations, termination="seed_equilibrium_failed")
     end
@@ -878,7 +1008,12 @@ function continue_axis_path(config, seed, axis; smoke=false,
         status="seed_equilibrium_failed", candidate_E=start.state[1],
         candidate_I=start.state[2], residual_norm=start.solved.attempt.residual_norm,
         solver_status=string(start.solved.attempt.solver_status),
-        reasons=join(string.(start.solved.attempt.reasons), ";"), error_type="",
+        reasons=join(string.(start.solved.attempt.reasons), ";"),
+        identity_central_track=0, identity_solved_track=0,
+        identity_nearest_gap=NaN, identity_branch_distances=Float64[],
+        identity_solved_distances=Float64[], identity_root_counts="",
+        identity_unresolved_counts="", identity_minimum_root_separation=NaN,
+        identity_track_states=Tuple[], error_type="",
         error_message="")],
         brackets, locations, termination="seed_equilibrium_failed")
     push!(points, (; direction=0, point=0, parameter=getproperty(seed.parameters, axis),
@@ -909,24 +1044,46 @@ function continue_axis_path(config, seed, axis; smoke=false,
                 (; accepted=false, state=state, trace=NaN,
                     solved=nothing, model=nothing, error=Evidence.error_record(error))
             end
+            identity_error = nothing
+            identity = if trial.accepted
+                try
+                    identity_check_function(config, trial_parameters, state, trial.state)
+                catch error
+                    error isa InterruptException && rethrow()
+                    identity_error = Evidence.error_record(error)
+                    _empty_axis_identity(:root_identity_exception)
+                end
+            else
+                _empty_axis_identity(:equilibrium_rejected)
+            end
+            accepted = trial.accepted && identity.matched
+            solver_reasons = trial.solved === nothing ? Symbol[] :
+                Symbol.(trial.solved.attempt.reasons)
+            combined_reasons = unique(vcat(solver_reasons, identity.reasons))
             push!(attempts, (; direction, attempt=length(attempts) + 1,
-                parameter=target, step, retry=retries, accepted=trial.accepted,
-                status=trial.accepted ? "accepted" : "equilibrium_failed",
+                parameter=target, step, retry=retries, accepted,
+                status=!trial.accepted ? "equilibrium_failed" :
+                    identity.matched ? "accepted" : "root_identity_failed",
                 candidate_E=trial.state[1], candidate_I=trial.state[2],
                 residual_norm=trial.solved === nothing ? Inf :
                     trial.solved.attempt.residual_norm,
                 solver_status=trial.solved === nothing ? "exception" :
                     string(trial.solved.attempt.solver_status),
-                reasons=trial.solved === nothing ? "" :
-                    join(string.(trial.solved.attempt.reasons), ";"),
-                error_type=hasproperty(trial, :error) ? trial.error["type"] : "",
-                error_message=hasproperty(trial, :error) ? trial.error["message"] : ""))
-            branch_continuous = trial.accepted && norm(collect(trial.state) .- collect(state)) <=
-                config.augmented.state_step_atol
-            if trial.accepted && !branch_continuous
-                attempts[end] = merge(attempts[end], (; accepted=false, status="branch_jump"))
-            end
-            if !trial.accepted || !branch_continuous
+                reasons=join(string.(combined_reasons), ";"),
+                identity_central_track=something(identity.central_track, 0),
+                identity_solved_track=something(identity.solved_track, 0),
+                identity_nearest_gap=identity.nearest_gap,
+                identity_branch_distances=identity.branch_distances,
+                identity_solved_distances=identity.solved_distances,
+                identity_root_counts=join(identity.root_counts, ";"),
+                identity_unresolved_counts=join(identity.unresolved_counts, ";"),
+                identity_minimum_root_separation=identity.minimum_root_separation,
+                identity_track_states=identity.track_states,
+                error_type=identity_error !== nothing ? identity_error["type"] :
+                    hasproperty(trial, :error) ? trial.error["type"] : "",
+                error_message=identity_error !== nothing ? identity_error["message"] :
+                    hasproperty(trial, :error) ? trial.error["message"] : ""))
+            if !accepted
                 retries += 1
                 step /= 2
                 if step < minimum_step || retries > config.augmented.max_retries
@@ -2538,7 +2695,10 @@ function run_experiment(config_path::AbstractString,
     Evidence.write_rows(joinpath(output, "axis_attempts.csv"), axis_attempt_rows,
         (:branch_id, :axis, :direction, :attempt, :parameter, :step, :retry,
             :accepted, :status, :candidate_E, :candidate_I, :residual_norm,
-            :solver_status, :reasons, :error_type, :error_message))
+            :solver_status, :reasons, :identity_central_track,
+            :identity_solved_track, :identity_nearest_gap, :identity_root_counts,
+            :identity_unresolved_counts, :identity_minimum_root_separation,
+            :error_type, :error_message))
     Evidence.write_rows(joinpath(output, "axis_brackets.csv"), bracket_rows,
         (:branch_id, :axis, :direction, :lower, :upper, :first_trace, :second_trace))
     Evidence.write_rows(joinpath(output, "curve_branches.csv"), curve_branch_rows,
