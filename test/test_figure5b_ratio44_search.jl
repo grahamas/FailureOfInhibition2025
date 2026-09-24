@@ -189,6 +189,63 @@ end
         branch.points)
     @test isempty(filter(attempt -> !attempt.accepted, branch.attempts))
 
+    valid_curve_identity = function (_current, _predictor, corrected, _step)
+        states = ((Tuple(corrected[1:2]), Tuple(corrected[1:2]),
+            Tuple(corrected[1:2])),)
+        return (; matched=true, central_track=1, solved_track=1,
+            branch_distances=[0.0], solved_distances=[0.0], nearest_gap=Inf,
+            reasons=Symbol[], root_counts=[7, 7, 7], unresolved_counts=[0, 0, 0],
+            minimum_root_separation=0.1, track_states=states)
+    end
+    tracked_branch = Ratio44.continue_trace_zero_curve(curve_residual,
+        closest.candidate; scales=ones(4), bounds=[(0.0, 1.0), (0.0, 1.0),
+            (-2.0, 2.0), (-2.0, 2.0)], max_steps=1,
+        identity_check_function=valid_curve_identity)
+    @test length(tracked_branch.points) == 3
+    @test all(attempt -> attempt.accepted && attempt.is_local &&
+        attempt.identity_checked && attempt.identity_matched,
+        tracked_branch.attempts)
+
+    multicomponent_residual(z) = [z[1] - 0.25, z[2] - 0.5, z[3]^2 - 1.0]
+    component_jump(_residual, _predictor, _tangent, _scales, _options) =
+        (; success=true, candidate=[0.25, 0.5, -1.0, 0.0],
+            residual_norm=0.0, status="converged_other_component", error=nothing)
+    jumped_component = Ratio44.continue_trace_zero_curve(multicomponent_residual,
+        [0.25, 0.5, 1.0, 0.0]; scales=ones(4),
+        bounds=[(0.0, 1.0), (0.0, 1.0), (-2.0, 2.0), (-2.0, 2.0)],
+        initial_step=0.01, minimum_step=0.005, maximum_step=0.01,
+        max_steps=1, max_retries=0, corrector_function=component_jump)
+    @test all(attempt -> !attempt.accepted && !attempt.is_local &&
+        attempt.status == "nonlocal_correction", jumped_component.attempts)
+    @test !Ratio44.curve_branch_exhausted(jumped_component.termination)
+
+    function rejected_curve_identity(reason; central_track=nothing, solved_track=nothing)
+        return (_current, _predictor, _corrected, _step) ->
+            (; matched=false, central_track, solved_track,
+                branch_distances=[0.001, 0.006], solved_distances=[0.005, 0.0],
+                nearest_gap=0.005, reasons=[reason], root_counts=[7, 7, 7],
+                unresolved_counts=[0, 0, 0], minimum_root_separation=0.005,
+                track_states=Tuple[])
+    end
+    for (reason, central_track, solved_track) in (
+            (:solved_root_track_mismatch, 1, 2),
+            (:central_track_ambiguous, nothing, 2),
+            (:central_track_lost, nothing, nothing))
+        rejected_branch = Ratio44.continue_trace_zero_curve(curve_residual,
+            closest.candidate; scales=ones(4),
+            bounds=[(0.0, 1.0), (0.0, 1.0), (-2.0, 2.0), (-2.0, 2.0)],
+            initial_step=0.01, minimum_step=0.005, maximum_step=0.01,
+            max_steps=1, max_retries=0,
+            identity_check_function=rejected_curve_identity(reason;
+                central_track, solved_track))
+        @test all(attempt -> !attempt.accepted && attempt.is_local &&
+            attempt.status == "root_identity_failed" &&
+            occursin(string(reason), attempt.identity_reasons),
+            rejected_branch.attempts)
+        @test !Ratio44.curve_branch_exhausted(rejected_branch.termination)
+        @test length(rejected_branch.points) == 1
+    end
+
     rank_bad(z) = [z[1], z[1], z[3] + z[4]]
     failed = Ratio44.continue_trace_zero_curve(rank_bad, zeros(4))
     @test failed.termination == "initial_rank"
@@ -628,6 +685,36 @@ end
     @test topology.qualified
     @test isempty(topology.reasons)
     @test topology.central_index == 3
+
+    trace_at_ratio = function (ratio)
+        jacobian = zeros(2, 2)
+        point_jacobian!(jacobian, state,
+            Ratio44.Figure5b.candidate_model(figure5b, ratio), 0.0)
+        return jacobian[1, 1] + jacobian[2, 2]
+    end
+    trace_step = 1e-5
+    trace_derivative = (trace_at_ratio(diagnostics.critical_ratio + trace_step) -
+        trace_at_ratio(diagnostics.critical_ratio - trace_step)) / (2trace_step)
+    inside_target = 0.5config.topology.neutral_trace_atol
+    inside_ratio = diagnostics.critical_ratio + inside_target / trace_derivative
+    inside_searches = Ratio44.Figure5b.equilibrium_refinements(figure5b,
+        inside_ratio)
+    inside_topology = Ratio44.neutral_hopf_topology(inside_searches, state, config)
+    @test inside_topology.qualified
+    @test all(classification -> classification != StabilityUnresolved,
+        inside_topology.tracks[inside_topology.central_index].classifications)
+    @test all(trace -> config.topology.spectral_margin < abs(trace) <=
+        config.topology.neutral_trace_atol,
+        inside_topology.tracks[inside_topology.central_index].traces)
+
+    outside_target = 1.5config.topology.neutral_trace_atol
+    outside_ratio = diagnostics.critical_ratio + outside_target / trace_derivative
+    outside_searches = Ratio44.Figure5b.equilibrium_refinements(figure5b,
+        outside_ratio)
+    outside_topology = Ratio44.neutral_hopf_topology(outside_searches, state, config)
+    @test !outside_topology.qualified
+    @test :central_neutral_quality_failure in outside_topology.reasons
+    @test :central_trace_outside_neutral_tolerance in outside_topology.reasons
     wrong_center = Ratio44.neutral_hopf_topology(searches, state .+ 0.1, config)
     @test !wrong_center.qualified
     @test :central_root_not_matched in wrong_center.reasons

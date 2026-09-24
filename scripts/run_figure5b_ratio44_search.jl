@@ -684,8 +684,9 @@ function neutral_hopf_topology(searches, hopf_state, config)
                     if index != nearest]
                 count(==(Attracting), outer) == 3 || push!(reasons, :outer_attractor_count)
                 count(==(Saddle), outer) == 3 || push!(reasons, :outer_saddle_count)
-                classifications[nearest] == StabilityUnresolved ||
-                    push!(reasons, :central_not_neutral)
+                abs(tracks[nearest].traces[refinement]) <=
+                    config.topology.neutral_trace_atol ||
+                    push!(reasons, :central_trace_outside_neutral_tolerance)
             end
             central = searches[3].equilibria[mappings[2][nearest]]
             jacobian = zeros(Float64, 2, 2)
@@ -1186,12 +1187,41 @@ function _curve_corrector(residual_function, predictor, tangent, scales, options
     return _solve_square(augmented, predictor, solver_options)
 end
 
+function curve_correction_locality(current, predictor, candidate, scales, step,
+    corrector_atol)
+    current_values = Float64.(current)
+    predictor_values = Float64.(predictor)
+    candidate_values = Float64.(candidate)
+    scale_values = Float64.(scales)
+    correction_distance = norm((candidate_values .- predictor_values) ./ scale_values)
+    advance_distance = norm((candidate_values .- current_values) ./ scale_values)
+    tolerance = step + corrector_atol
+    is_local = isfinite(correction_distance) && isfinite(advance_distance) &&
+        correction_distance <= tolerance
+    return (; is_local, correction_distance, advance_distance, tolerance)
+end
+
+function _curve_trial_identity(config, base_parameters, pair, current, candidate)
+    parameters = replace_parameter(replace_parameter(base_parameters,
+        pair[1], candidate[3]), pair[2], candidate[4])
+    return _axis_trial_identity(config, parameters, view(current, 1:2),
+        view(candidate, 1:2))
+end
+
+function _unchecked_curve_identity()
+    return (; matched=true, central_track=nothing, solved_track=nothing,
+        branch_distances=Float64[], solved_distances=Float64[], nearest_gap=NaN,
+        reasons=Symbol[], root_counts=Int[], unresolved_counts=Int[],
+        minimum_root_separation=NaN, track_states=Tuple[])
+end
+
 """Injection-friendly pseudo-arclength continuation of a three-equation curve."""
 function continue_trace_zero_curve(residual_function, initial_point;
     scales=ones(4), bounds=fill((-Inf, Inf), 4), initial_step=0.01,
     minimum_step=1e-5, maximum_step=0.05, max_steps=100,
     max_corrector_iters=16, max_retries=8, corrector_atol=1e-8,
-    rank_atol=1e-10, corrector_function=_curve_corrector)
+    rank_atol=1e-10, corrector_function=_curve_corrector,
+    identity_check_function=nothing)
     length(initial_point) == 4 && length(scales) == 4 && length(bounds) == 4 ||
         throw(ArgumentError("curve point, scales and bounds must have length four"))
     all(value -> value isa Real && isfinite(value), initial_point) ||
@@ -1230,16 +1260,61 @@ function continue_trace_zero_curve(residual_function, initial_point;
                 in_bounds = corrected.success && all(bounds[index][1] <=
                     corrected.candidate[index] <= bounds[index][2] for index in 1:4)
                 last_failure_out_of_bounds = corrected.success && !in_bounds
+                locality = corrected.success ? curve_correction_locality(current,
+                    predictor, corrected.candidate, scales, step, corrector_atol) :
+                    (; is_local=false, correction_distance=Inf, advance_distance=Inf,
+                        tolerance=step + corrector_atol)
+                identity_error = nothing
+                identity_checked = identity_check_function !== nothing &&
+                    corrected.success && in_bounds && locality.is_local
+                identity = if identity_checked
+                    try
+                        identity_check_function(current, predictor,
+                            corrected.candidate, step)
+                    catch error
+                        error isa InterruptException && rethrow()
+                        identity_error = Evidence.error_record(error)
+                        _empty_axis_identity(:root_identity_exception)
+                    end
+                else
+                    identity_check_function === nothing ?
+                        _unchecked_curve_identity() :
+                        _empty_axis_identity(:root_identity_not_evaluated)
+                end
+                accepted_correction = corrected.success && in_bounds && locality.is_local &&
+                    identity.matched
                 retained_error = corrected.error === nothing &&
                     hasproperty(corrected, :primary_error) ? corrected.primary_error :
                     corrected.error
                 push!(attempts, (; direction, attempt=length(attempts) + 1,
-                    point=accepted + 1, retry, step, accepted=corrected.success && in_bounds,
+                    point=accepted + 1, retry, step, accepted=accepted_correction,
                     solver_success=corrected.success, in_bounds,
-                    residual_norm=corrected.residual_norm, status=corrected.status,
-                    error_type=retained_error === nothing ? "" : retained_error["type"],
-                    error_message=retained_error === nothing ? "" : retained_error["message"]))
-                if corrected.success && in_bounds
+                    is_local=locality.is_local,
+                    correction_distance=locality.correction_distance,
+                    advance_distance=locality.advance_distance,
+                    locality_tolerance=locality.tolerance,
+                    identity_checked, identity_matched=identity.matched,
+                    identity_central_track=something(identity.central_track, 0),
+                    identity_solved_track=something(identity.solved_track, 0),
+                    identity_nearest_gap=identity.nearest_gap,
+                    identity_branch_distances=identity.branch_distances,
+                    identity_solved_distances=identity.solved_distances,
+                    identity_root_counts=join(identity.root_counts, ";"),
+                    identity_unresolved_counts=join(identity.unresolved_counts, ";"),
+                    identity_minimum_root_separation=identity.minimum_root_separation,
+                    identity_track_states=identity.track_states,
+                    identity_reasons=join(string.(identity.reasons), ";"),
+                    residual_norm=corrected.residual_norm,
+                    status=!corrected.success ? "corrector_failed" :
+                        !in_bounds ? "out_of_bounds" :
+                        !locality.is_local ? "nonlocal_correction" :
+                        !identity.matched ? "root_identity_failed" : "accepted",
+                    solver_status=corrected.status,
+                    error_type=identity_error !== nothing ? identity_error["type"] :
+                        retained_error === nothing ? "" : retained_error["type"],
+                    error_message=identity_error !== nothing ? identity_error["message"] :
+                        retained_error === nothing ? "" : retained_error["message"]))
+                if accepted_correction
                     succeeded = true
                     break
                 end
@@ -1277,6 +1352,9 @@ function continue_trace_zero_curve(residual_function, initial_point;
     return (; points, attempts, termination=join(terminations, ";"),
         reversals=reversal_count)
 end
+
+curve_branch_exhausted(termination) =
+    termination == "-1:parameter_bound;1:parameter_bound"
 
 """Find a deterministic scaled closest point on a three-equation curve."""
 function closest_point_curve_seed(residual_function, seed, scales;
@@ -1394,6 +1472,8 @@ function continue_curve_pair(config, seed, pair, axis_locations; smoke=false)
     max_steps = smoke ? config.smoke.curve_steps : config.curve_continuation.max_steps
     for (index, candidate) in enumerate(seeds.candidates)
         residual_function = z -> curve_residual(config, seed.parameters, pair, z)
+        identity_check = (current, _predictor, corrected, _step) ->
+            _curve_trial_identity(config, seed.parameters, pair, current, corrected)
         branch = continue_trace_zero_curve(residual_function, candidate.point;
             scales, bounds, initial_step=config.curve_continuation.initial_step,
             minimum_step=config.curve_continuation.minimum_step,
@@ -1401,7 +1481,8 @@ function continue_curve_pair(config, seed, pair, axis_locations; smoke=false)
             max_steps, max_corrector_iters=config.curve_continuation.max_corrector_iters,
             max_retries=config.curve_continuation.max_retries,
             corrector_atol=config.curve_continuation.corrector_atol,
-            rank_atol=config.curve_continuation.rank_atol)
+            rank_atol=config.curve_continuation.rank_atol,
+            identity_check_function=identity_check)
         push!(branches, (; branch=index, method=candidate.method, result=branch))
     end
     return (; closest=seeds.closest, branches)
@@ -2709,8 +2790,13 @@ function run_experiment(config_path::AbstractString,
             :residual_norm, :minimum_singular_value))
     Evidence.write_rows(joinpath(output, "curve_attempts.csv"), curve_attempt_rows,
         (:branch_id, :direction, :attempt, :point, :retry, :step, :accepted,
-            :solver_success, :in_bounds, :residual_norm, :status, :error_type,
-            :error_message))
+            :solver_success, :in_bounds, :is_local, :correction_distance,
+            :advance_distance, :locality_tolerance, :identity_checked,
+            :identity_matched, :identity_central_track, :identity_solved_track,
+            :identity_nearest_gap, :identity_root_counts,
+            :identity_unresolved_counts, :identity_minimum_root_separation,
+            :identity_reasons, :residual_norm, :status, :solver_status,
+            :error_type, :error_message))
     Evidence.write_rows(joinpath(output, "trace_zero_locations.csv"), location_rows,
         (:hypothesis_id, :source_id, :method, :proposal_stratum, :shooting_selected,
             :selection_reason, :qualified, :accepted_orbits, :reasons))
@@ -2741,11 +2827,10 @@ function run_experiment(config_path::AbstractString,
     metadata["scientific_provenance_reasons"] =
         string.(combined_provenance.reasons)
 
-    exhausted_termination(value) = value == "-1:parameter_bound;1:parameter_bound"
     unexhausted_axis = count(row -> !axis_branch_exhausted(row.termination,
         row.unresolved_locations),
         axis_branch_rows)
-    unexhausted_curves = count(row -> !exhausted_termination(row.termination),
+    unexhausted_curves = count(row -> !curve_branch_exhausted(row.termination),
         curve_branch_rows)
     unexhausted_branches = unexhausted_axis + unexhausted_curves
     numerical_outcome = finite_search_numerical_outcome(
