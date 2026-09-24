@@ -656,6 +656,43 @@ The modal normal-form amplitude obeys
 coefficient. Orbit continuation and independent shooting evidence are
 required before comparing this local scaling with a finite-amplitude cycle.
 
+The tracked `experiments/figure5b_hopf.toml` and
+`scripts/run_figure5b_protocol.jl` freeze the Figure-5b anchor
+`(e_to_e,i_to_e,e_to_i,i_to_i)=(19,13,19,6)` with `theta_off=8` and zero
+drive. The candidate-specific runner independently repeats the 11×11, 21×21,
+and 41×41 root searches at timescale ratios 4.4, 0.5, and 0.4; bisects trace
+zero using finite-difference ODE Jacobians; shoots deterministic Hopf-eigenspace
+seeds; and validates any selected orbit with tighter integration, doubled
+sampling, primitive-period, winding, phase-equivalence, Jacobian, divergence,
+and finite-difference Poincare checks. A validated ratio-0.5 orbit can then be
+continued over the configured finite interval. All shooting failures and
+continuation corrector failures are retained.
+
+A non-smoke run requires `--accepted-revision` and is evidence-eligible only
+when that exact 40-character revision is checked out at detached `HEAD` with a
+clean worktree. `--replay-parent` verifies the parent artifact's complete
+checksum manifest plus its archived config and source hashes before repeating
+the parent mode from the snapshot into a sibling output directory, leaving the
+source artifact checksum-valid. Replays never become scientific evidence and
+do not require a Git checkout. Runner endpoint labels are conservative
+compatibility observations: Hopf requires a successful near-Hopf parameter
+boundary with shrinking radius and matching period; fold requires both a
+parameter reversal and near-unit transverse multipliers; global saddle and
+state-boundary labels require monotone validated terminal segments with the
+configured period, distance, and boundary checks. Unresolved solver
+termination remains recorded separately, and none of these labels is a
+bifurcation proof.
+
+The output is an ignored numerical artifact with archived source/configuration
+hashes and checksums, not tracked evidence. Smoke mode exercises the exact
+candidate with fewer orbit seeds and continuation steps but disables all
+scientific acceptance. Passing the full finite protocol can support only the
+reported coexistence of three discovered locally attracting equilibria and
+one numerically validated attracting orbit, or four discovered locally
+attracting equilibria below the Hopf point. It does not establish an exact
+attractor count, search completeness, prevalence, biological states, or a
+global bifurcation diagram.
+
 ## Scientific experiment configurations
 
 [The intervention study](intervention_study.md) describes the supplied

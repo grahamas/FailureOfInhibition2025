@@ -1,0 +1,132 @@
+schema_version = 1
+
+# Frozen Figure-5b failure-of-inhibition point model. Times are milliseconds.
+[candidate]
+tau_e = 7.8
+excitatory_slope = 5.0
+inhibitory_slope = 5.0
+theta_e = 1.5
+theta_on = 4.0
+theta_off = 8.0
+e_to_e = 19.0
+i_to_e = 13.0
+e_to_i = 19.0
+i_to_i = 6.0
+
+[ratios]
+manuscript = 4.4
+below_hopf = 0.4
+orbit_anchor = 0.5
+hopf_bracket = [0.4, 0.5]
+continuation_bounds = [0.2, 8.0]
+
+[search]
+root_grids = [11, 21, 41]
+
+[equilibrium]
+solver_abstol = 1.0e-12
+solver_reltol = 1.0e-10
+residual_atol = 1.0e-9
+domain_atol = 1.0e-8
+dedup_atol = 1.0e-7
+singular_atol = 1.0e-10
+singular_rtol = 1.0e-8
+maxiters = 100
+
+[stability]
+spectral_atol = 1.0e-10
+spectral_rtol = 1.0e-8
+
+[topology]
+coordinate_match_atol = 1.0e-6
+minimum_root_separation = 1.0e-5
+residual_atol = 1.0e-9
+jacobian_atol = 1.0e-9
+slope_atol = 1.0e-8
+spectral_margin = 1.0e-8
+
+[hopf]
+balance_residual_atol = 1.0e-10
+diagonal_atol = 1.0e-10
+determinant_atol = 1.0e-10
+transversality_atol = 1.0e-8
+lyapunov_atol = 1.0e-7
+lyapunov_agreement_atol = 1.0e-4
+lyapunov_agreement_rtol = 1.0e-4
+fd_plateau_atol = 1.0e-4
+fd_plateau_rtol = 1.0e-4
+fd_steps = [5.0e-4, 7.5e-4, 1.0e-3]
+
+[seeding]
+ratio_offsets = [0.002, 0.01]
+phase_fractions = [0.0, 0.25, 0.5, 0.75]
+amplitude_factors = [0.75, 1.0, 1.25]
+period_factors = [0.9, 1.0, 1.1]
+
+[shooting]
+ode_abstol = 1.0e-10
+ode_reltol = 1.0e-10
+shooting_atol = 1.0e-9
+validation_atol = 1.0e-6
+amplitude_atol = 1.0e-5
+phase_speed_atol = 1.0e-10
+floquet_atol = 1.0e-4
+refinement_factor = 0.1
+min_period = 1.0e-3
+max_period = 100.0
+maxiters = 30
+ode_maxiters = 1000000
+samples = 257
+
+[continuation]
+initial_step = 0.002
+minimum_step = 1.0e-6
+maximum_step = 0.05
+max_steps = 500
+max_corrector_iters = 16
+corrector_atol = 1.0e-8
+parameter_difference_step = 1.0e-5
+state_scales = [0.1, 0.1]
+log_period_scale = 1.0
+parameter_scale = 1.0
+rank_atol = 1.0e-12
+rank_rtol = 1.0e-10
+tangent_alignment_min = 0.25
+
+[independent]
+tighter_factor = 0.1
+tight_samples = 513
+trace_ratio_atol = 1.0e-10
+trace_agreement_atol = 1.0e-8
+trace_maxiters = 80
+jacobian_steps = [1.0e-5, 5.0e-6, 2.5e-6]
+jacobian_atol = 1.0e-6
+poincare_steps = [1.0e-5, 5.0e-6, 2.5e-6]
+poincare_intervals = 1024
+poincare_plateau_atol = 2.0e-3
+multiplier_atol = 5.0e-3
+orbit_equivalence_atol = 1.0e-5
+period_rtol = 1.0e-5
+minimum_phase_seeds = 2
+minimum_period_seeds = 2
+winding_center_atol = 1.0e-8
+fit_offset_max = 0.05
+fit_minimum_points = 4
+fit_slope_rtol = 0.25
+fit_intercept_atol = 1.0e-4
+fit_r_squared_minimum = 0.9
+hopf_radius_atol = 0.02
+hopf_period_rtol = 0.05
+hopf_target_offset = 1.0e-5
+hopf_ratio_atol = 5.0e-4
+fold_multiplier_atol = 2.0e-2
+homoclinic_period_factor = 5.0
+homoclinic_saddle_distance_atol = 2.0e-2
+boundary_state_atol = 1.0e-4
+
+[smoke]
+phase_fractions = [0.0, 0.5]
+amplitude_factors = [1.0]
+period_factors = [0.9, 1.1]
+continuation_steps = 1
+hopf_continuation_steps = 8
