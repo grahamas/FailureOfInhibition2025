@@ -1,0 +1,167 @@
+schema_version = 1
+
+# This protocol consumes the clean, checksummed tetrastability-search artifact
+# made at the accepted pre-investigation revision. It never treats that finite
+# seed search as a completeness certificate.
+[seed_artifact]
+experiment = "tetrastability_search"
+accepted_revision = "b365f02d433bdad86069dc5c52dbbfeb1e2ae98e"
+initial_halton_points = 1024
+maximum_halton_points = 4096
+last_halton_index = 4096
+parameter_cells = 5746
+planes = ["figure3", "figure4_exploration"]
+
+[fixed]
+tau_e = 7.8
+tau_ratio = 4.4
+excitatory_slope = 5.0
+inhibitory_slope = 5.0
+theta_e = 1.5
+theta_on = 4.0
+
+[axes.e_to_e]
+minimum = 14.0
+maximum = 24.0
+
+[axes.i_to_e]
+minimum = 6.0
+maximum = 18.0
+
+[axes.e_to_i]
+minimum = 12.0
+maximum = 28.0
+
+[axes.i_to_i]
+minimum = 0.0
+maximum = 10.0
+
+[axes.theta_off]
+minimum = 6.0
+maximum = 12.0
+
+[paths]
+axes = ["e_to_e", "i_to_e", "e_to_i", "i_to_i", "theta_off"]
+
+[[curves]]
+first = "e_to_e"
+second = "i_to_i"
+
+[[curves]]
+first = "e_to_i"
+second = "i_to_e"
+
+[[curves]]
+first = "theta_off"
+second = "e_to_i"
+
+[search]
+root_grids = [11, 21, 41]
+
+[equilibrium]
+solver_abstol = 1.0e-12
+solver_reltol = 1.0e-10
+residual_atol = 1.0e-9
+domain_atol = 1.0e-8
+dedup_atol = 1.0e-7
+singular_atol = 1.0e-10
+singular_rtol = 1.0e-8
+maxiters = 100
+
+[stability]
+spectral_atol = 1.0e-10
+spectral_rtol = 1.0e-8
+
+[topology]
+coordinate_match_atol = 1.0e-6
+minimum_root_separation = 1.0e-5
+residual_atol = 1.0e-9
+jacobian_atol = 1.0e-9
+slope_atol = 1.0e-8
+spectral_margin = 1.0e-8
+neutral_trace_atol = 1.0e-7
+neutral_determinant_atol = 1.0e-8
+
+[hopf]
+balance_residual_atol = 1.0e-10
+diagonal_atol = 1.0e-10
+determinant_atol = 1.0e-10
+transversality_atol = 1.0e-8
+lyapunov_atol = 1.0e-7
+lyapunov_agreement_atol = 1.0e-4
+lyapunov_agreement_rtol = 1.0e-4
+fd_plateau_atol = 1.0e-4
+fd_plateau_rtol = 1.0e-4
+fd_steps = [5.0e-4, 7.5e-4, 1.0e-3]
+
+[augmented]
+solver_abstol = 1.0e-11
+solver_reltol = 1.0e-10
+residual_atol = 1.0e-8
+maxiters = 100
+initial_step_fraction = 0.01
+minimum_step_fraction = 1.0e-5
+maximum_step_fraction = 0.05
+max_steps = 200
+max_retries = 8
+dedup_atol = 1.0e-6
+rank_atol = 1.0e-10
+state_step_atol = 0.05
+
+[curve_continuation]
+initial_step = 0.01
+minimum_step = 1.0e-5
+maximum_step = 0.05
+max_steps = 300
+max_corrector_iters = 16
+max_retries = 8
+corrector_atol = 1.0e-8
+rank_atol = 1.0e-10
+state_scales = [0.1, 0.1]
+
+[directional]
+fd_steps = [1.0e-3, 5.0e-4, 2.5e-4]
+plateau_atol = 1.0e-4
+plateau_rtol = 0.05
+offset = 0.01
+state_match_factor = 10.0
+
+[shooting]
+maximum_hopf_points = 32
+phase_fractions = [0.0, 0.25, 0.5, 0.75]
+amplitude_factors = [0.75, 1.0, 1.25]
+period_factors = [0.9, 1.0, 1.1]
+ode_abstol = 1.0e-10
+ode_reltol = 1.0e-10
+shooting_atol = 1.0e-9
+validation_atol = 1.0e-6
+amplitude_atol = 1.0e-5
+phase_speed_atol = 1.0e-10
+floquet_atol = 1.0e-4
+refinement_factor = 0.1
+min_period = 1.0e-3
+max_period = 100.0
+maxiters = 30
+ode_maxiters = 1000000
+samples = 257
+
+[independent]
+tighter_factor = 0.1
+tight_samples = 513
+jacobian_steps = [1.0e-5, 5.0e-6, 2.5e-6]
+jacobian_atol = 1.0e-6
+poincare_steps = [1.0e-5, 5.0e-6, 2.5e-6]
+poincare_intervals = 1024
+poincare_plateau_atol = 2.0e-3
+multiplier_atol = 5.0e-3
+orbit_equivalence_atol = 1.0e-5
+period_rtol = 1.0e-5
+minimum_phase_seeds = 2
+minimum_period_seeds = 2
+winding_center_atol = 1.0e-8
+
+[smoke]
+maximum_seeds = 1
+path_steps = 1
+curve_steps = 1
+shooting = false

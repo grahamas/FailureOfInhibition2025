@@ -26,4 +26,5 @@ include("test_support.jl")
     include("test_claim_catalogue.jl")
     include("test_tetrastability.jl")
     include("test_figure5b_protocol.jl")
+    include("test_figure5b_ratio44_search.jl")
 end
