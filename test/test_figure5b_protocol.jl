@@ -104,6 +104,27 @@ end
     mapping = Figure5b.unique_root_mapping(searches[1].equilibria,
         below[1].equilibria, config.topology_options.coordinate_match_atol)
     @test mapping !== nothing
+
+    fake_stability(classification) = (; classification,
+        eigenvalues=classification == Attracting ? ComplexF64[-2, -1] :
+            ComplexF64[-1, 1])
+    fake_roots(classifications) = [(; state=[0.1index, 0.05index],
+        near_singular=false, balance_residual=zeros(2),
+        stability=fake_stability(classification))
+        for (index, classification) in enumerate(classifications)]
+    reference_classes = [fill(Attracting, 4); fill(Saddle, 3)]
+    flipped_classes = copy(reference_classes)
+    flipped_classes[4], flipped_classes[5] = flipped_classes[5], flipped_classes[4]
+    fake_searches = ((; equilibria=fake_roots(reference_classes),
+            unresolved_nearby=Vector{Vector{Int}}()),
+        (; equilibria=fake_roots(flipped_classes),
+            unresolved_nearby=Vector{Vector{Int}}()),
+        (; equilibria=fake_roots(reference_classes),
+            unresolved_nearby=Vector{Vector{Int}}()))
+    flipped = Figure5b.below_hopf_assessment(fake_searches,
+        config.topology_options)
+    @test !flipped.qualified
+    @test :stability_track_mismatch in flipped.reasons
 end
 
 @testset "Accepted revision and endpoint gates fail closed" begin
@@ -112,6 +133,16 @@ end
     @test accepted.eligible
     @test accepted.detached
     @test accepted.revision_match
+    @test accepted.status_porcelain == ""
+    @test Figure5b.scientific_evidence_eligible(false, false, true, true,
+        nothing, true)
+    @test !Figure5b.scientific_evidence_eligible(false, false, true, true,
+        nothing, false)
+    diagnostics = (resolved=true, classification=:supercritical_candidate)
+    @test Figure5b.supercritical_hopf_candidate(true, true, diagnostics,
+        true, true, true, true, Dict{String,Any}())
+    @test !Figure5b.supercritical_hopf_candidate(true, false, diagnostics,
+        true, true, true, true, Dict{String,Any}())
     for (actual, status, head, reason) in (
         (revision, " M file", "HEAD", :working_tree_dirty),
         (revision, "", "codex/branch", :head_not_detached),
@@ -123,6 +154,24 @@ end
     end
     @test :accepted_revision_missing in Figure5b.provenance_assessment(
         nothing, revision, "", "HEAD").reasons
+
+    mktempdir() do directory
+        config_path = joinpath(@__DIR__, "..", "experiments", "figure5b_hopf.toml")
+        config = Figure5b.load_config(config_path)
+        snapshot_status = " M preexisting-review-fixture"
+        snapshot = Figure5b.provenance_assessment(revision, revision,
+            snapshot_status, "codex/review-fixture")
+        metadata, archived = Figure5b._archive_provenance(config_path,
+            joinpath(directory, "archive"), config, false, snapshot, true, nothing)
+        @test archived == snapshot
+        @test metadata["git_revision"] == revision
+        @test metadata["git_status_porcelain"] == snapshot_status
+        @test metadata["head_name"] == "codex/review-fixture"
+        @test !metadata["clean_working_tree"]
+        @test !metadata["provenance_eligible"]
+        @test sort(metadata["provenance_reasons"]) ==
+            sort(string.([:head_not_detached, :working_tree_dirty]))
+    end
 
     mktempdir() do directory
         output = joinpath(directory, "provenance_failure")
@@ -140,13 +189,13 @@ end
     config = Figure5b.load_config(joinpath(@__DIR__, "..", "experiments",
         "figure5b_hopf.toml"))
     r_h, period = 0.43, 3.84
-    observation(ratio, radius, multiplier=0.5; validated=true,
+    observation(ratio, radius, multiplier=0.5; validated=true, attracting=true,
         saddle_distance=1.0, boundary_distance=0.1, period_value=period,
         branch="negative", divergence_resolved=true,
         divergence_multiplier=multiplier, divergence_discrepancy=0.0,
         primitive=true, primitive_alias=0) =
         (; ratio, modal_radius=radius, radius_squared=radius^2,
-            period=period_value, transverse_multiplier=multiplier, validated,
+            period=period_value, transverse_multiplier=multiplier, validated, attracting,
             divergence_resolved, divergence_multiplier, divergence_discrepancy,
             primitive, primitive_alias,
             saddle_distance, boundary_distance, branch, point=1)
@@ -164,6 +213,13 @@ end
         Int[], r_h, period, r_h + config.independent.hopf_target_offset, config)
     @test hopf.classification == :hopf_compatible
     @test hopf.hopf_compatible
+    repelling_hopf_rows = copy(hopf_rows)
+    repelling_hopf_rows[end] = merge(repelling_hopf_rows[end], (; attracting=false))
+    repelling_hopf = Figure5b.endpoint_classification(:parameter_boundary,
+        repelling_hopf_rows, Int[], r_h, period,
+        r_h + config.independent.hopf_target_offset, config)
+    @test !repelling_hopf.hopf_compatible
+    @test :nonattracting_branch_orbit in repelling_hopf.reasons
     unresolved_hopf_rows = copy(hopf_rows)
     unresolved_hopf_rows[2] = merge(unresolved_hopf_rows[2],
         (; divergence_resolved=false))
@@ -329,6 +385,27 @@ end
     accepted_assessment = Figure5b.fit_acceptance_assessment(accepted_fit,
         Dict(:negative => accepted_endpoint), fit_diagnostics, config)
     @test accepted_assessment.accepted
+
+    bumped_rows = copy(accepted_fit.rows)
+    bumped_radius = 1.1 * bumped_rows[2].modal_radius
+    bumped_rows[3] = merge(bumped_rows[3],
+        (; modal_radius=bumped_radius, radius_squared=bumped_radius^2))
+    bumped_fit = merge(accepted_fit, (; rows=bumped_rows))
+    bumped_assessment = Figure5b.fit_acceptance_assessment(bumped_fit,
+        Dict(:negative => accepted_endpoint), fit_diagnostics, config)
+    @test !bumped_assessment.accepted
+    @test :radius_not_strictly_decreasing_to_endpoint in bumped_assessment.reasons
+
+    repelling_fit_rows = copy(accepted_fit_rows)
+    repelling_fit_rows[2] = merge(repelling_fit_rows[2], (; attracting=false))
+    repelling_fit = Figure5b.branch_fit(fit_continuation,
+        Dict(:negative => repelling_fit_rows,
+            :positive => fit_observations[:positive]), r_h, config)
+    repelling_fit_assessment = Figure5b.fit_acceptance_assessment(
+        repelling_fit, Dict(:negative => accepted_endpoint), fit_diagnostics,
+        config)
+    @test !repelling_fit_assessment.accepted
+    @test :fit_nonattracting_orbit in repelling_fit_assessment.reasons
 
     unresolved_fit_rows = copy(accepted_fit_rows)
     unresolved_fit_rows[2] = merge(unresolved_fit_rows[2],

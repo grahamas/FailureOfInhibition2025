@@ -420,6 +420,17 @@ function below_hopf_assessment(searches, options)
         mappings[2] = unique_root_mapping(searches[1].equilibria,
             searches[3].equilibria, options.coordinate_match_atol)
         any(isnothing, mappings) && push!(reasons, :ambiguous_root_matching)
+        if all(mapping -> !isnothing(mapping), mappings)
+            reference = searches[1].equilibria
+            for (offset, mapping) in enumerate(mappings)
+                candidate = searches[offset + 1].equilibria
+                for track in eachindex(reference)
+                    reference[track].stability.classification ==
+                        candidate[mapping[track]].stability.classification ||
+                        push!(reasons, :stability_track_mismatch)
+                end
+            end
+        end
         for search in searches
             counts = (count(root -> root.stability.classification == Attracting,
                 search.equilibria), count(root -> root.stability.classification == Saddle,
@@ -802,6 +813,7 @@ branch_primitive_observation(point) = (
 
 function branch_evidence_resolved(row)
     return hasproperty(row, :validated) && row.validated === true &&
+        hasproperty(row, :attracting) && row.attracting === true &&
         hasproperty(row, :divergence_resolved) && row.divergence_resolved === true &&
         hasproperty(row, :primitive) && row.primitive === true
 end
@@ -825,6 +837,7 @@ function branch_observations(continuation, center, p, roots, config)
                 radius_squared=radius^2, period=point.period,
                 transverse_multiplier=real(point.orbit.transverse_multiplier),
                 validated=point.orbit.validation == NumericallyValidatedPeriodicOrbit,
+                attracting=point.orbit.stability == PeriodicOrbitAttracting,
                 divergence...,
                 primitive...,
                 saddle_distance=isempty(saddle_distances) ? Inf : minimum(saddle_distances),
@@ -847,6 +860,8 @@ function endpoint_classification(termination, observations, reversals,
         for index in 1:(length(observations) - 1))
     no_reversal = isempty(reversals)
     validated = all(row -> hasproperty(row, :validated) && row.validated === true,
+        observations)
+    attracting = all(row -> hasproperty(row, :attracting) && row.attracting === true,
         observations)
     divergence_resolved = all(row -> hasproperty(row, :divergence_resolved) &&
         row.divergence_resolved === true, observations)
@@ -907,6 +922,7 @@ function endpoint_classification(termination, observations, reversals,
     !monotone_toward_hopf && push!(reasons, :not_monotone_toward_hopf)
     !no_reversal && !fold_compatible && push!(reasons, :unresolved_parameter_reversal)
     !validated && push!(reasons, :unvalidated_branch_point)
+    !attracting && push!(reasons, :nonattracting_branch_orbit)
     !divergence_resolved && push!(reasons, :divergence_multiplier_unresolved)
     !primitive && push!(reasons, :nonprimitive_branch_orbit)
     termination in (:minimum_step, :step_limit, :initial_tangent_unresolved,
@@ -976,6 +992,8 @@ function fit_acceptance_assessment(fit, endpoints, diagnostics, config)
     if !fit_evidence_resolved
         all(row -> hasproperty(row, :validated) && row.validated === true,
             fit.rows) || push!(reasons, :fit_orbit_validation_unresolved)
+        all(row -> hasproperty(row, :attracting) && row.attracting === true,
+            fit.rows) || push!(reasons, :fit_nonattracting_orbit)
         all(row -> hasproperty(row, :divergence_resolved) &&
             row.divergence_resolved === true, fit.rows) ||
             push!(reasons, :fit_divergence_unresolved)
@@ -1006,6 +1024,9 @@ function fit_acceptance_assessment(fit, endpoints, diagnostics, config)
             push!(reasons, :endpoint_period_disagreement)
         nearest.modal_radius == minimum(row.modal_radius for row in fit.rows) ||
             push!(reasons, :radius_not_decreasing_to_endpoint)
+        all(fit.rows[index + 1].modal_radius < fit.rows[index].modal_radius
+            for index in 1:(length(fit.rows) - 1)) ||
+            push!(reasons, :radius_not_strictly_decreasing_to_endpoint)
     end
     unique!(reasons)
     return (accepted=isempty(reasons), branch, endpoint, nearest, reasons)
@@ -1055,8 +1076,32 @@ function provenance_assessment(expected_revision, actual_revision, status_porcel
     unique!(reasons)
     return (eligible=isempty(reasons), expected_revision=expected,
         actual_revision=actual, detached, head_name=String(head_name), clean,
-        revision_match, reasons)
+        status_porcelain=String(status_porcelain), revision_match, reasons)
 end
+
+function capture_provenance(expected_revision)
+    actual_revision = Evidence.git_output(REPOSITORY_ROOT, "rev-parse", "HEAD")
+    status_porcelain = Evidence.git_output(REPOSITORY_ROOT, "status", "--porcelain=v1",
+        "--untracked-files=all")
+    head_name = Evidence.git_output(REPOSITORY_ROOT, "rev-parse", "--abbrev-ref", "HEAD")
+    return provenance_assessment(expected_revision, actual_revision, status_porcelain,
+        head_name)
+end
+
+scientific_evidence_eligible(smoke, replay_mode, provenance_eligible,
+    execution_success, failure_injection, canonical_config) =
+    !smoke && !replay_mode && provenance_eligible && execution_success &&
+    failure_injection === nothing && canonical_config
+
+supercritical_hopf_candidate(numerical_four_attractor,
+    manuscript_topology_qualified, diagnostics, hopf_agreement,
+    below_hopf_qualified, central_below_attracting, fit_acceptance,
+    stage_errors) =
+    numerical_four_attractor && manuscript_topology_qualified &&
+    diagnostics.resolved &&
+    diagnostics.classification == :supercritical_candidate && hopf_agreement &&
+    below_hopf_qualified && central_below_attracting && fit_acceptance &&
+    isempty(stage_errors)
 
 function validate_replay_parent(parent_directory, config_path)
     parent = realpath(parent_directory)
@@ -1305,8 +1350,8 @@ function hopf_continuation_options(config; smoke=false)
         tangent_alignment_min=source.tangent_alignment_min)
 end
 
-function _archive_provenance(config_path, output, config, smoke, accepted_revision,
-    replay_info)
+function _archive_provenance(config_path, output, config, smoke, provenance,
+    canonical_config, replay_info)
     metadata = Evidence.archive_provenance(config_path, output)
     relative = joinpath("scripts", "run_figure5b_protocol.jl")
     destination = joinpath(output, "source", relative)
@@ -1314,15 +1359,15 @@ function _archive_provenance(config_path, output, config, smoke, accepted_revisi
     metadata["source_sha256"][relative] = Evidence.file_hash(destination)
     candidate_text = join((string(key) * "=" * string(getproperty(config.candidate, key))
         for key in propertynames(config.candidate)), "\n")
-    head_name = Evidence.git_output(REPOSITORY_ROOT, "rev-parse", "--abbrev-ref", "HEAD")
-    provenance = provenance_assessment(accepted_revision,
-        metadata["git_revision"], metadata["git_status_porcelain"], head_name)
+    metadata["git_revision"] = provenance.actual_revision
+    metadata["git_status_porcelain"] = provenance.status_porcelain
     replay_mode = replay_info !== nothing
     merge!(metadata, Dict(
         "purpose" => "candidate-specific Figure-5b Hopf and periodic-orbit numerical validation",
         "experiment" => "figure5b_hopf_protocol", "smoke" => smoke,
         "replay_mode" => replay_mode,
-        "scientific_acceptance_enabled" => !smoke && !replay_mode,
+        "scientific_acceptance_enabled" => !smoke && !replay_mode && canonical_config,
+        "canonical_config_validated" => canonical_config,
         "accepted_revision_expected" => isnothing(provenance.expected_revision) ?
             "not_supplied" : provenance.expected_revision,
         "accepted_revision_actual" => provenance.actual_revision,
@@ -1519,6 +1564,7 @@ function run_experiment(config_path::AbstractString, output_dir::AbstractString;
     config = load_config(config_path; require_canonical)
     ispath(output) && (!isdir(output) || !isempty(readdir(output))) &&
         throw(ArgumentError("output must be absent or an empty directory"))
+    provenance = capture_provenance(accepted_revision)
     mkpath(joinpath(output, "orbits", "shooting"))
     current_stage = "provenance_archive"
     metadata = Dict{String,Any}(
@@ -1528,7 +1574,7 @@ function run_experiment(config_path::AbstractString, output_dir::AbstractString;
         "stage_errors" => Dict{String,Any}())
     try
     metadata, provenance = _archive_provenance(config_path, output, config, smoke,
-        accepted_revision, replay_info)
+        provenance, require_canonical, replay_info)
     metadata["failure_injection"] = failure_injection === nothing ?
         "not_active" : string(failure_injection)
     metadata["stage_status"] = Dict{String,Any}()
@@ -1786,15 +1832,15 @@ function run_experiment(config_path::AbstractString, output_dir::AbstractString;
         diagnostics, config)
     hopf_endpoint = fit_assessment.endpoint
     fit_acceptance = fit_assessment.accepted
-    supercritical_candidate = numerical_four_attractor && diagnostics.resolved &&
-        diagnostics.classification == :supercritical_candidate && hopf_agreement &&
-        below.qualified && central_below_attracting && fit_acceptance &&
-        isempty(metadata["stage_errors"])
+    supercritical_candidate = supercritical_hopf_candidate(
+        numerical_four_attractor, topology_manuscript.qualified, diagnostics,
+        hopf_agreement, below.qualified, central_below_attracting,
+        fit_acceptance, metadata["stage_errors"])
     clean_provenance = provenance.eligible
     execution_success = isempty(metadata["stage_errors"])
     replay_mode = replay_info !== nothing
-    evidence_eligible = !smoke && !replay_mode && provenance.eligible &&
-        execution_success && failure_injection === nothing
+    evidence_eligible = scientific_evidence_eligible(smoke, replay_mode,
+        provenance.eligible, execution_success, failure_injection, require_canonical)
     metadata["execution_success"] = execution_success
     metadata["run_status"] = execution_success ?
         (replay_mode ? "replay_completed_evidence_ineligible" : "completed") :
@@ -1820,6 +1866,7 @@ function run_experiment(config_path::AbstractString, output_dir::AbstractString;
     ineligible_label = !execution_success ? "execution_failed" :
         replay_mode ? "replay_evidence_ineligible" :
         smoke ? "disabled_in_smoke" :
+        !require_canonical ? "noncanonical_configuration_evidence_ineligible" :
         "ineligible_dirty_or_unresolved_provenance"
     metadata["numerical_four_attractor_coexistence"] = !evidence_eligible ?
         ineligible_label : numerical_four_attractor
@@ -1830,6 +1877,8 @@ function run_experiment(config_path::AbstractString, output_dir::AbstractString;
         replay_mode ?
             "artifact-local replay completed; replay is always evidence-ineligible" :
         smoke ? "smoke execution only; no scientific acceptance" :
+        !require_canonical ?
+            "canonical configuration validation was disabled; no scientific acceptance" :
         !clean_provenance ?
             "numerical execution used dirty or unresolved source provenance and is not scientific evidence" :
         numerical_four_attractor ?
