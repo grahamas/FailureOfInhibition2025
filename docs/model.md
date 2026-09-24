@@ -543,6 +543,31 @@ the unit circle by its tolerance. Neutral or insufficient evidence stays
 unresolved. `periodic_orbit_phases(result, phases)` samples validated results
 at fractional phases in `[0,1)`; validation alone does not imply attraction.
 
+`continue_periodic_orbit(model_at_parameter, state, period, parameter;
+parameter_bounds, options, periodic_options)` follows one validated periodic
+branch in both initial parameter directions. A callback overload accepts
+autonomous planar `rhs!`, `jacobian!`, and `parameters_at_parameter` functions.
+The pseudo-arclength corrector uses scaled
+`[state[1], state[2], log(period), parameter]` coordinates, so it can traverse
+parameter reversals. Every accepted point is independently re-shot with the
+periodic-orbit validation policy; failed correctors, retries, tangent
+reversals, boundary stops, and unresolved termination states are retained.
+Attempts retain separate corrector and post-shoot residuals. Acceptance is
+gated again after independent shooting against the original phase and
+arclength equations, so a stored orbit cannot inherit stale residuals from
+its pre-shoot candidate.
+
+Generic helpers report coordinate half-ranges, Euclidean distances from a
+caller-supplied center, signed phase-plane area, winding about a supplied
+center, a finite integer-divisor primitive-period screen, phase-invariant
+sample equivalence, and a sampled planar divergence/Floquet cross-check.
+Phase equivalence refines the best discrete offset continuously. Winding uses
+per-segment angular-rate resolution and requires agreement after doubling its
+sampling grid; it stays unresolved if an adaptive finite cap is exhausted.
+These observables do not classify branch endpoints or certify a primitive period.
+In particular, parameter reversal alone is not a certified fold of cycles,
+and runner-level Hopf, fold, or homoclinic interpretation remains separate.
+
 ## Explicit pulse experiments
 
 `run_pulse_trial` and `run_pulse_experiments` apply rectangular pulses to a

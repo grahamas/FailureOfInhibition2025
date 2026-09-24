@@ -10,6 +10,7 @@ include("simulation.jl")
 include("diagnostics.jl")
 include("continuation.jl")
 include("periodic_orbits.jl")
+include("periodic_continuation.jl")
 include("hopf_diagnostics.jl")
 include("pulse_experiments.jl")
 
@@ -52,6 +53,12 @@ export PeriodicOrbitOptions, PeriodicOrbitValidation, PeriodicOrbitStability
 export NumericallyValidatedPeriodicOrbit, PeriodicOrbitUnresolved
 export PeriodicOrbitAttracting, PeriodicOrbitRepelling, PeriodicOrbitStabilityUnresolved
 export PeriodicOrbitResult, solve_periodic_orbit, periodic_orbit_phases
+export PeriodicContinuationOptions, PeriodicContinuationAttempt
+export PeriodicContinuationPoint, PeriodicContinuationBranch, PeriodicContinuationResult
+export continue_periodic_orbit
+export periodic_orbit_half_ranges, periodic_orbit_distances, periodic_orbit_signed_area
+export periodic_orbit_winding, periodic_orbit_primitive_check
+export phase_invariant_orbit_equivalence, periodic_orbit_divergence_check
 
 export Figure5bTopologyOptions, Figure5bTopologyResult
 export classify_figure5b_topology
