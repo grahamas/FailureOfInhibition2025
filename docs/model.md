@@ -592,6 +592,45 @@ of their absolute values is a defined input cost, not biological energy. A
 resolved implementation run does not by itself change a manuscript-claim
 disposition; see the claim-specific protocol in the intervention study.
 
+## Figure-5b topology and local Hopf candidates
+
+`classify_figure5b_topology` compares the independently generated 11×11,
+21×21, and 41×41 equilibrium-search refinements. The schedule is fixed and
+each search must contain the exact deterministic union of the default seeds
+and the declared sharper grid. It requires seven uniquely coordinate-matched
+roots at every refinement, with three locally attracting equilibria, three
+saddles, and one repeller. Every root is checked against a recomputed balance
+residual, balance Jacobian, and original-time spectrum with a fixed safety
+margin. Matched roots cannot change classification across refinements. The
+repeller must lie where both implicit nullclines rise:
+`-g_E,E/g_E,I > 0` and `-g_I,E/g_I,I > 0`. Passing this classifier describes
+a finite discovered topology; it does not certify that all equilibria or
+attractors have been found.
+
+For a fixed balance field and `r = tau_I/tau_E`, `hopf_diagnostics` evaluates
+the local trace-zero candidate `r_H = -Dg[2,2] / Dg[1,1]`. It requires a
+positive determinant and nonzero eigenvalue transversality. The calculation
+is explicitly `Float64`: state coordinates and `tau_E` may be integers,
+rationals, `Float32`, or `Float64`, with exact `Float64` representability
+required for integer and rational values. Higher-precision inputs such as
+`BigFloat` are rejected rather than silently narrowed. The first
+Lyapunov coefficient uses the original-time Taylor convention
+`f = A*y + B(y,y)/2 + C(y,y,y)/6`, a unit Euclidean right eigenvector, and
+the Kuznetsov normalization `l1 = real(G21)/(2omega)`. A ForwardDiff tensor
+calculation must agree with a separately finite-differenced planar
+Guckenheimer-Holmes formula over several steps. Near-zero coefficients,
+missing finite-difference plateaus, and sign or magnitude disagreement remain
+unresolved. A negative coefficient is reported as a
+`supercritical_candidate`; the signed nonzero transversality separately says
+which parameter side contains the branch. Local diagnostics do not prove
+that a periodic orbit exists.
+
+The modal normal-form amplitude obeys
+`rho^2 approximately -beta*(r-r_H)/real(c1)`, where `c1=G21/2` and
+`l1=real(c1)/omega`. The dimensionless `l1` is not the physical-time cubic
+coefficient. Orbit continuation and independent shooting evidence are
+required before comparing this local scaling with a finite-amplitude cycle.
+
 ## Scientific experiment configurations
 
 [The intervention study](intervention_study.md) describes the supplied
