@@ -637,9 +637,21 @@ contract for later targeted continuation. At each parameter point it checks
 the deterministic 11×11, 21×21, and 41×41 searches for a common model and
 seed schedule, consistent discovered root count, unique cross-grid matches,
 root separation, no unresolved nearby roots, and independently recomputed
-balance residuals, Jacobians, and local spectra. Intermediate points may have
-a different root count from the initial seven-root topology; the full
-seven-root gate still applies separately to an initial Figure-5b seed and a
+balance residuals, Jacobians, and local spectra. A locally unresolved
+stability label passes only when every eigenvalue real part is within the
+lineage spectral margin; the label alone is insufficient. The component
+reconstructs each frozen model and drive from its source model and snapshot
+time, and rejects inconsistent stored search records. Search policies must
+retain finite, nonnegative tolerances and a positive iteration limit. Each root
+must be tied to admissible solver candidates within discovery's maximum-
+coordinate deduplication tolerance; duplicate members may have an unsuccessful
+solver return code or meet only the search residual tolerance. The selected
+representative still must meet the stricter lineage residual gate, and its
+stored residuals and local stability fields must agree with independent
+recomputation. Numerical options are validated through both keyword and
+positional construction. Intermediate points may have a different root count
+from the initial seven-root topology; the full seven-root gate still applies
+separately to an initial Figure-5b seed and a
 proposed Hopf point. A transition carries the prior three-grid root
 constellation and accepts the followed root only when forward and reciprocal
 matches, an optional predictor, the corrected root, and a displacement bound

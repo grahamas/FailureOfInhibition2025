@@ -23,11 +23,36 @@ function lineage_seeds(model, points)
 end
 
 function lineage_search_copy(search; equilibria=search.equilibria,
-    unresolved_nearby=search.unresolved_nearby)
-    return EquilibriumSearchResult(search.model, search.frozen_model,
-        search.frozen_drive, search.source_time, search.options,
-        search.stability_options, search.attempts, equilibria,
+    unresolved_nearby=search.unresolved_nearby,
+    frozen_model=search.frozen_model,
+    frozen_drive=search.frozen_drive,
+    attempts=search.attempts,
+    options=search.options,
+    stability_options=search.stability_options)
+    return EquilibriumSearchResult(search.model, frozen_model,
+        frozen_drive, search.source_time, options,
+        stability_options, attempts, equilibria,
         unresolved_nearby, search.completeness)
+end
+
+function lineage_root_copy(root; state=root.state,
+    balance_residual=root.balance_residual,
+    stability=root.stability,
+    representative_attempt=root.representative_attempt,
+    member_attempts=root.member_attempts)
+    return Equilibrium(state, balance_residual, root.balance_jacobian,
+        root.near_singular, representative_attempt, member_attempts, stability)
+end
+
+function lineage_stability_copy(stability; jacobian=stability.jacobian,
+    eigenvalues=stability.eigenvalues, trace=stability.trace,
+    determinant=stability.determinant,
+    spectral_abscissa=stability.spectral_abscissa,
+    thresholds=stability.thresholds,
+    classification=stability.classification,
+    geometry=stability.geometry)
+    return LocalStabilityResult(jacobian, eigenvalues, trace, determinant,
+        spectral_abscissa, thresholds, classification, geometry)
 end
 
 @testset "Figure-5b root lineage contract" begin
@@ -39,6 +64,12 @@ end
     @test baseline.root_counts == (7, 7, 7)
     @test length(baseline.tracks) == 7
     @test all(track -> all(isfinite, track.residuals), baseline.tracks)
+    @test_throws ArgumentError Lineage.RootLineageOptions(
+        -1.0, 1e-5, 1e-9, 1e-9, 1e-8)
+    @test_throws ArgumentError Lineage.RootLineageOptions(
+        1e-5, 1e-5, 1e-9, 1e-9, 1e-8)
+    @test_throws ArgumentError Lineage.RootLineageOptions(
+        NaN, 1e-5, 1e-9, 1e-9, 1e-8)
     safe_displacement = baseline.minimum_separation / 4
 
     central = classify_figure5b_topology(searches).central_state
@@ -226,6 +257,31 @@ end
     @test :model_context_mismatch in
         Lineage.build_root_tracks((searches[1], searches[2], altered_search)).reasons
 
+    # Stored autonomous context must come from the declared source model.
+    forged_model = lineage_search_copy(searches[3];
+        frozen_model=altered_model)
+    @test :frozen_context_mismatch in
+        Lineage.build_root_tracks((searches[1], searches[2], forged_model)).reasons
+    forged_drive = lineage_search_copy(searches[3];
+        frozen_drive=(0.1, 0.0))
+    @test :frozen_context_mismatch in
+        Lineage.build_root_tracks((searches[1], searches[2], forged_drive)).reasons
+    policy = searches[3].options
+    invalid_equilibrium_policy = EquilibriumOptions(
+        policy.solver_abstol, policy.solver_reltol, policy.residual_atol,
+        policy.domain_atol, Inf, policy.singular_atol,
+        policy.singular_rtol, policy.maxiters)
+    invalid_stability_policy = StabilityOptions(Inf,
+        searches[3].stability_options.spectral_rtol)
+    for record in (
+        lineage_search_copy(searches[3]; options=invalid_equilibrium_policy),
+        lineage_search_copy(searches[3];
+            stability_options=invalid_stability_policy))
+        result = Lineage.build_root_tracks((searches[1], searches[2], record))
+        @test !result.qualified
+        @test :invalid_numerical_policy in result.reasons
+    end
+
     root = searches[3].equilibria[1]
     corrupt = Equilibrium(root.state .+ [2e-5, 0.0], root.balance_residual,
         root.balance_jacobian, root.near_singular,
@@ -240,6 +296,108 @@ end
         central; options=Lineage.RootLineageOptions(
             coordinate_atol=3e-5,
             minimum_root_separation=1e-4)).accepted
+
+    # A plausible coordinate cannot carry fabricated residual or spectrum.
+    forged_residual = lineage_root_copy(root;
+        balance_residual=root.balance_residual .+ 1e-3)
+    forged_stabilities = (
+        lineage_stability_copy(root.stability;
+            eigenvalues=root.stability.eigenvalues .+ (1e-3 + 0im)),
+        lineage_stability_copy(root.stability;
+            trace=root.stability.trace + 1e-3),
+        lineage_stability_copy(root.stability;
+            determinant=root.stability.determinant + 1e-3),
+        lineage_stability_copy(root.stability;
+            spectral_abscissa=root.stability.spectral_abscissa + 1e-3),
+        lineage_stability_copy(root.stability;
+            thresholds=root.stability.thresholds .+ 1e-3),
+        lineage_stability_copy(root.stability;
+            trace=NaN),
+    )
+    for forged_root in (forged_residual,
+        (lineage_root_copy(root; stability=stability)
+            for stability in forged_stabilities)...)
+        record = lineage_search_copy(searches[3]; equilibria=vcat(
+            [forged_root], searches[3].equilibria[2:end]))
+        result = Lineage.build_root_tracks((searches[1], searches[2], record))
+        @test !result.qualified
+        @test :root_quality_failure in result.reasons
+    end
+
+    # Root representatives and members must name admissible candidates
+    # for this actual root, not merely in-range attempt indices.
+    invalid_index = lineage_root_copy(root; representative_attempt=0)
+    unrelated_member = lineage_root_copy(root; member_attempts=vcat(
+        root.member_attempts,
+        searches[3].equilibria[2].representative_attempt))
+    for forged_root in (invalid_index, unrelated_member)
+        record = lineage_search_copy(searches[3]; equilibria=vcat(
+            [forged_root], searches[3].equilibria[2:end]))
+        @test :root_attempt_failure in
+            Lineage.build_root_tracks((searches[1], searches[2], record)).reasons
+    end
+    representative = searches[3].attempts[root.representative_attempt]
+    failed_attempt = EquilibriumAttempt(representative.seed,
+        representative.candidate, representative.solver_status, false,
+        representative.solver_residual, representative.balance_residual,
+        representative.residual_norm, representative.balance_jacobian,
+        representative.near_singular, representative.validation,
+        representative.reasons)
+    attempts = copy(searches[3].attempts)
+    attempts[root.representative_attempt] = failed_attempt
+    failed_record = lineage_search_copy(searches[3]; attempts)
+    @test Lineage.build_root_tracks((searches[1], searches[2],
+        failed_record)).qualified
+
+    # Discovery deduplicates in maximum-coordinate distance. A diagonal
+    # member may exceed the same Euclidean radius, meet only the search
+    # residual tolerance, and have an unsuccessful solver return code.
+    loose_policy = EquilibriumOptions(residual_atol=1e-5)
+    loose_searches = Tuple(lineage_search_copy(search; options=loose_policy)
+        for search in searches)
+    member_root = first(candidate for candidate in loose_searches[3].equilibria
+        if length(candidate.member_attempts) >= 2)
+    @test length(member_root.member_attempts) >= 2
+    member_index = first(index for index in member_root.member_attempts
+        if index != member_root.representative_attempt)
+    prior_member = loose_searches[3].attempts[member_index]
+    offset = 0.75loose_policy.dedup_atol
+    diagonal = member_root.state .+ [offset, offset]
+    @test maximum(abs, diagonal .- member_root.state) <
+        loose_policy.dedup_atol
+    @test norm(diagonal .- member_root.state) > loose_policy.dedup_atol
+    diagonal_residual = zeros(2)
+    diagonal_jacobian = zeros(2, 2)
+    point_balance!(diagonal_residual, diagonal, model, 0.0)
+    point_balance_jacobian!(diagonal_jacobian, diagonal, model, 0.0)
+    @test maximum(abs, diagonal_residual) > 1e-9
+    @test maximum(abs, diagonal_residual) < loose_policy.residual_atol
+    diagonal_member = EquilibriumAttempt(prior_member.seed, diagonal,
+        :MaxIters, false, diagonal_residual, diagonal_residual,
+        maximum(abs, diagonal_residual), diagonal_jacobian, false,
+        AdmissibleCandidate, Symbol[])
+    loose_attempts = copy(loose_searches[3].attempts)
+    loose_attempts[member_index] = diagonal_member
+    diagonal_record = lineage_search_copy(loose_searches[3];
+        attempts=loose_attempts)
+    @test Lineage.build_root_tracks((loose_searches[1], loose_searches[2],
+        diagonal_record)).qualified
+
+    # A permissive classifier cannot hide resolved real parts behind an
+    # unresolved label and thereby qualify a non-neutral root lineage.
+    permissive_searches = Tuple(find_equilibria(model;
+        seeds=lineage_seeds(model, points),
+        stability_options=StabilityOptions(spectral_atol=100.0))
+        for points in Lineage.GRID_POINTS)
+    @test all(search -> all(root -> root.stability.classification ==
+        StabilityUnresolved, search.equilibria), permissive_searches)
+    @test any(root -> maximum(abs ∘ real,
+        root.stability.eigenvalues) > 1e-8,
+        permissive_searches[3].equilibria)
+    permissive_tracks = Lineage.build_root_tracks(permissive_searches)
+    @test !permissive_tracks.qualified
+    @test :root_quality_failure in permissive_tracks.reasons
+    @test !Lineage.seed_lineage(permissive_searches, central).accepted
 
     # The neutral Hopf root has unresolved local stability but valid identity.
     critical = hopf_diagnostics(model, central).critical_ratio

@@ -14,6 +14,18 @@ struct RootLineageOptions
     residual_atol::Float64
     jacobian_atol::Float64
     spectral_margin::Float64
+
+    function RootLineageOptions(coordinate_atol::Float64,
+        minimum_root_separation::Float64, residual_atol::Float64,
+        jacobian_atol::Float64, spectral_margin::Float64)
+        values = (coordinate_atol, minimum_root_separation, residual_atol,
+            jacobian_atol, spectral_margin)
+        all(value -> isfinite(value) && value > 0, values) ||
+            throw(ArgumentError("lineage tolerances must be finite and positive"))
+        coordinate_atol < minimum_root_separation / 2 ||
+            throw(ArgumentError("coordinate_atol must be less than half minimum_root_separation"))
+        return new(values...)
+    end
 end
 
 function RootLineageOptions(; coordinate_atol=1e-6,
@@ -26,8 +38,6 @@ function RootLineageOptions(; coordinate_atol=1e-6,
     converted = Float64.(values)
     all(value -> isfinite(value) && value > 0, converted) ||
         throw(ArgumentError("lineage tolerances must remain positive in Float64"))
-    converted[1] < converted[2] / 2 || throw(ArgumentError(
-        "coordinate_atol must be less than half minimum_root_separation"))
     return RootLineageOptions(converted...)
 end
 
@@ -96,6 +106,9 @@ end
 
 _distance(left::State, right::State) = hypot(left[1] - right[1], left[2] - right[2])
 
+_discovery_distance(left::State, right::State) =
+    max(abs(left[1] - right[1]), abs(left[2] - right[2]))
+
 _track_distance(left::TrackStates, right::TrackStates) =
     maximum(_distance(left[j], right[j]) for j in 1:3)
 
@@ -116,7 +129,43 @@ function _model_identity(search)
         typeof(source.drive), repr(source.drive),
         typeof(model.excitatory.response), typeof(model.inhibitory.response),
         FailureOfInhibition2025._model_numeric_values(model),
+        typeof(model.drive), repr(model.drive),
         Tuple(search.frozen_drive), search.source_time)
+end
+
+function _point_model_identity(model)
+    return (typeof(model.excitatory.response),
+        typeof(model.inhibitory.response),
+        FailureOfInhibition2025._model_numeric_values(model),
+        typeof(model.drive), repr(model.drive))
+end
+
+function _frozen_context_valid(search)
+    context = try
+        FailureOfInhibition2025._frozen_point_context(
+            search.model, search.source_time)
+    catch error
+        error isa InterruptException && rethrow()
+        return false
+    end
+    return isequal(_point_model_identity(context.frozen_model),
+        _point_model_identity(search.frozen_model)) &&
+        isequal(Tuple(context.frozen_drive), Tuple(search.frozen_drive)) &&
+        isequal(context.source_time, search.source_time)
+end
+
+function _valid_search_policy(search)
+    search.options isa EquilibriumOptions &&
+        search.stability_options isa StabilityOptions || return false
+    equilibrium = search.options
+    stability = search.stability_options
+    values = (equilibrium.solver_abstol, equilibrium.solver_reltol,
+        equilibrium.residual_atol, equilibrium.domain_atol,
+        equilibrium.dedup_atol, equilibrium.singular_atol,
+        equilibrium.singular_rtol, stability.spectral_atol,
+        stability.spectral_rtol)
+    return all(value -> isfinite(value) && value >= 0, values) &&
+        equilibrium.maxiters > 0
 end
 
 function _minimum_separation(roots)
@@ -138,8 +187,72 @@ function _unique_mapping(reference, candidate, tolerance)
     return mapping
 end
 
+function _attempts_valid(search, root)
+    members = root.member_attempts
+    n = length(search.attempts)
+    isempty(members) && return false
+    length(unique(members)) == length(members) || return false
+    all(index -> 1 <= index <= n, members) || return false
+    root.representative_attempt in members || return false
+    representative = search.attempts[root.representative_attempt]
+    isequal(representative.candidate, root.state) || return false
+    isequal(representative.balance_residual, root.balance_residual) || return false
+    isequal(representative.balance_jacobian, root.balance_jacobian) || return false
+    representative.near_singular == root.near_singular || return false
+    for index in members
+        attempt = search.attempts[index]
+        attempt.validation == AdmissibleCandidate || return false
+        length(attempt.candidate) == 2 &&
+            length(attempt.balance_residual) == 2 || return false
+        all(isfinite, attempt.candidate) &&
+            all(isfinite, attempt.balance_residual) || return false
+        _discovery_distance(_state(attempt.candidate), _state(root.state)) <=
+            search.options.dedup_atol || return false
+        residual = zeros(Float64, 2)
+        point_balance!(residual, attempt.candidate, search.frozen_model, 0.0)
+        all(isfinite, residual) || return false
+        residual_norm = maximum(abs, residual)
+        residual_norm <= search.options.residual_atol &&
+            isfinite(attempt.residual_norm) &&
+            abs(residual_norm - attempt.residual_norm) <=
+                search.options.residual_atol &&
+            maximum(abs, residual .- attempt.balance_residual) <=
+                search.options.residual_atol || return false
+    end
+    return all(_discovery_distance(_state(search.attempts[left].candidate),
+        _state(search.attempts[right].candidate)) <= search.options.dedup_atol
+        for left in members for right in members)
+end
+
+function _stored_stability_valid(root, recomputed, options)
+    stored = root.stability
+    length(stored.eigenvalues) == 2 && length(stored.thresholds) == 2 ||
+        return false
+    all(isfinite, stored.eigenvalues) && all(isfinite, stored.thresholds) &&
+        all(isfinite, stored.jacobian) &&
+        all(isfinite, (stored.trace, stored.determinant,
+            stored.spectral_abscissa)) || return false
+    tolerance = options.jacobian_atol
+    return maximum(abs, stored.eigenvalues .- recomputed.eigenvalues) <=
+            tolerance &&
+        maximum(abs, stored.thresholds .- recomputed.thresholds) <=
+            tolerance &&
+        abs(stored.trace - recomputed.trace) <= tolerance &&
+        abs(stored.determinant - recomputed.determinant) <= tolerance &&
+        abs(stored.spectral_abscissa - recomputed.spectral_abscissa) <=
+            tolerance &&
+        stored.classification == recomputed.classification &&
+        stored.geometry == recomputed.geometry
+end
+
 function _quality(search, root, options)
     state = _state(root.state)
+    if length(root.balance_residual) != 2 ||
+            size(root.balance_jacobian) != (2, 2) ||
+            size(root.stability.jacobian) != (2, 2)
+        return (; qualified=false, residual_norm=Inf, balance_error=Inf,
+            ode_error=Inf, minimum_singular=NaN)
+    end
     residual = zeros(Float64, 2)
     balance = zeros(Float64, 2, 2)
     ode = zeros(Float64, 2, 2)
@@ -151,7 +264,8 @@ function _quality(search, root, options)
     ode_error = maximum(abs, ode .- root.stability.jacobian)
     if !all(isfinite, residual) || !all(isfinite, balance) ||
             !all(isfinite, ode) || !all(isfinite, root.balance_jacobian) ||
-            !all(isfinite, root.stability.jacobian)
+            !all(isfinite, root.stability.jacobian) ||
+            !all(isfinite, root.balance_residual)
         return (; qualified=false, residual_norm, balance_error, ode_error,
             minimum_singular=NaN)
     end
@@ -163,8 +277,9 @@ function _quality(search, root, options)
         return (; qualified=false, residual_norm, balance_error, ode_error,
             minimum_singular)
     end
-    classification = classify_local_stability(ode;
-        options=search.stability_options).classification
+    recomputed = classify_local_stability(ode;
+        options=search.stability_options)
+    classification = recomputed.classification
     spectral = real.(eigvals(ode))
     spectral_ok = if classification == Attracting
         all(value -> value < -options.spectral_margin, spectral)
@@ -174,15 +289,21 @@ function _quality(search, root, options)
         minimum(spectral) < -options.spectral_margin &&
             maximum(spectral) > options.spectral_margin
     else
-        # A trace-zero Hopf candidate may legitimately be unresolved here.
-        classification == StabilityUnresolved
+        # A trace-zero Hopf candidate may be unresolved, but a permissive
+        # classifier must not admit roots far from the neutral spectrum.
+        classification == StabilityUnresolved &&
+            all(value -> abs(value) <= options.spectral_margin, spectral)
     end
     qualified = all(isfinite, residual) && all(isfinite, balance) &&
         all(isfinite, ode) && residual_norm <= options.residual_atol &&
+        maximum(abs, root.balance_residual) <= options.residual_atol &&
+        maximum(abs, residual .- root.balance_residual) <=
+            options.residual_atol &&
         balance_error <= options.jacobian_atol &&
         ode_error <= options.jacobian_atol && !root.near_singular &&
         isfinite(minimum_singular) && minimum_singular > singular_threshold &&
-        classification == root.stability.classification && spectral_ok
+        _stored_stability_valid(root, recomputed, options) &&
+        spectral_ok
     return (; qualified, residual_norm, balance_error, ode_error,
         minimum_singular)
 end
@@ -205,9 +326,13 @@ function build_root_tracks(searches; options=RootLineageOptions())
     reasons = Symbol[]
     identities = Tuple(_model_identity(search) for search in searches)
     all(==(identities[1]), identities) || push!(reasons, :model_context_mismatch)
+    all(_frozen_context_valid, searches) ||
+        push!(reasons, :frozen_context_mismatch)
     all(search -> isequal(search.options, searches[1].options) &&
         isequal(search.stability_options, searches[1].stability_options),
         searches) || push!(reasons, :numerical_policy_mismatch)
+    policy_valid = all(_valid_search_policy, searches)
+    policy_valid || push!(reasons, :invalid_numerical_policy)
     all(FailureOfInhibition2025._matches_refinement_schedule(search, grid)
         for (search, grid) in zip(searches, GRID_POINTS)) ||
         push!(reasons, :refinement_schedule_mismatch)
@@ -217,6 +342,19 @@ function build_root_tracks(searches; options=RootLineageOptions())
     separation = minimum(_minimum_separation(search.equilibria) for search in searches)
     separation >= options.minimum_root_separation ||
         push!(reasons, :insufficient_root_separation)
+    policy_valid || return RootTrackEvidence(false, Tuple(reasons),
+        identities[1], (), root_counts, unresolved_counts, separation)
+    claimed_attempts = Int[]
+    for search in searches
+        empty!(claimed_attempts)
+        for root in search.equilibria
+            _attempts_valid(search, root) ||
+                push!(reasons, :root_attempt_failure)
+            append!(claimed_attempts, root.member_attempts)
+        end
+        length(unique(claimed_attempts)) == length(claimed_attempts) ||
+            push!(reasons, :root_attempt_overlap)
+    end
     tracks = RootTrack[]
     if !(:root_count_mismatch in reasons)
         reference = sort(copy(searches[1].equilibria);
