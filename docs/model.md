@@ -695,6 +695,45 @@ both exact parameter bounds and every detected sign-change bracket or sampled
 zero endpoint resolved. This describes the finite sampled path, not model-wide
 absence.
 
+The internal two-parameter Figure-5b seed component is a separate finite
+discovery layer; it does not continue a curve. It accepts an autonomous FoI
+base model with all five coordinates inside the authorized search domain,
+two distinct parameter names from those coordinates, a bounded rectangle
+inside their authorized ranges, and a claimed central state. Box endpoints
+must already be finite Float64 values; no silent conversion can widen the
+supplied rectangle. The box must be strictly ordered, authorized, and contain
+the original base parameters and their Float64 representation.
+Regenerating the origin at Float64 precision must preserve the supplied model identity.
+It independently confirms the origin's seven-root repeller topology and
+central-root lineage. From that origin it always tries one bounded normalized
+interior stationary-distance KKT solve and all four bounded
+edge solves, retaining every numerical attempt and failed backtrack. Each
+converged candidate is assessed independently before only qualified duplicate
+seeds are collapsed. KKT stationarity does not establish a local or global
+minimum-distance or search-completeness certificate.
+
+A qualified seed needs fresh 11×11, 21×21, and 41×41 searches at its own
+model. These must contain seven well-resolved matched roots, three robust
+outer attractors, three saddles, and the same near-neutral central root on
+both rising nullcline arms, using the same robust slope tolerance as the
+origin topology gate. The center must be classified neutral on every grid,
+with trace bounded by an independent 1e-7 ceiling even if axis options are
+looser. Independently recomputed balance, original-time
+trace and determinant must resolve a simple imaginary pair. A regular
+three-equation/four-variable Jacobian must agree across three distinct,
+box-confined finite-difference scales and an independent derivative. Adaptive
+straight-line parameter homotopy from the origin uses local solves and the
+reciprocal three-grid root-lineage gate at every accepted step; any gap leaves
+the candidate unresolved. Numerical solver success or a locally
+Hopf-compatible trace zero alone never qualifies a seed. No cycles,
+biological interpretation, or manuscript claim follows from these records.
+The result distinguishes `qualified_seeds`, `no_qualified_seed` (all five
+methods completed but had resolved finite rejections),
+`search_unresolved` (one or more methods failed or were numerically
+unresolved with no qualified seed), and `origin_unresolved`. Raw attempts,
+qualifications, and unresolved method names remain available for audit. None
+of these statuses certifies global absence or completeness.
+
 For a fixed balance field and `r = tau_I/tau_E`, `hopf_diagnostics` evaluates
 the local trace-zero candidate `r_H = -Dg[2,2] / Dg[1,1]`. It requires a
 positive determinant and nonzero eigenvalue transversality. The calculation
