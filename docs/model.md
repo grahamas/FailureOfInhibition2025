@@ -668,6 +668,33 @@ These are finite numerical tracking rules, not proof that a branch cannot
 change between sampled parameter points; later continuation must adapt its
 step size and retain unresolved intervals.
 
+The internal Figure-5b axis search starts from a genuine seven-root central
+seed and searches both parameter directions. A local solve advances the path
+only after an independent three-grid search and root-lineage transition.
+Its initial, minimum, and maximum step settings are fractions of the
+authorized parameter interval width (defaults 0.01, 0.00001, and 0.05),
+not absolute coupling increments. Each trial retains an immutable snapshot
+of its local solver candidate, validation, status, residual, near-singularity
+flag, and reasons even when the solve is rejected; exceptions are separate.
+Bracket corrections retain the raw augmented-solver status, iteration
+count, and any internal exception text separately from the final validation
+status. Singleton zero-trace checks explicitly record that no augmented
+corrector ran.
+Trace sign changes retain both accepted endpoint anchors; a balance-plus-trace
+correction evaluates the model only within that bracket, then independently
+checks residuals, augmented Jacobian rank, and lineage from both endpoints.
+A trace-zero sampled point is validated as a singleton, with rank probes
+inside the authorized parameter bounds. Both rank gates compare three
+distinct, representable finite-difference scales, reducing the base step
+for narrow intervals and leaving unresolvable intervals unresolved. Full
+Jacobian changes must be small relative to the finest minimum singular value;
+this prevents a stationary trace zero from qualifying on a spurious derivative
+or three probes clipped to the same width. Failed solves, bracket corrections,
+and step retries remain typed unresolved evidence. `finite_exhausted` requires
+both exact parameter bounds and every detected sign-change bracket or sampled
+zero endpoint resolved. This describes the finite sampled path, not model-wide
+absence.
+
 For a fixed balance field and `r = tau_I/tau_E`, `hopf_diagnostics` evaluates
 the local trace-zero candidate `r_H = -Dg[2,2] / Dg[1,1]`. It requires a
 positive determinant and nonzero eigenvalue transversality. The calculation
