@@ -354,6 +354,10 @@ function build_root_tracks(searches; options=RootLineageOptions())
         end
         length(unique(claimed_attempts)) == length(claimed_attempts) ||
             push!(reasons, :root_attempt_overlap)
+        admissible_attempts = findall(attempt ->
+            attempt.validation == AdmissibleCandidate, search.attempts)
+        Set(claimed_attempts) == Set(admissible_attempts) ||
+            push!(reasons, :admissible_attempt_partition_mismatch)
     end
     tracks = RootTrack[]
     if !(:root_count_mismatch in reasons)

@@ -3,13 +3,13 @@ using LinearAlgebra: norm
 include(joinpath(@__DIR__, "..", "scripts", "figure5b_root_lineage.jl"))
 const Lineage = Figure5bRootLineage
 
-function lineage_model(; ratio=4.4)
+function lineage_model(; ratio=4.4, theta_off=8.0)
     return PointModelParameters(
         excitatory=PopulationParameters(timescale=7.8,
             response=LogisticResponse(slope=5.0, threshold=1.5)),
         inhibitory=PopulationParameters(timescale=7.8 * ratio,
             response=FailureOfInhibitionResponse(slope=5.0,
-                onset_threshold=4.0, failure_threshold=8.0)),
+                onset_threshold=4.0, failure_threshold=theta_off)),
         coupling=PointCoupling(e_to_e=19.0, i_to_e=13.0,
             e_to_i=19.0, i_to_i=6.0), drive=NoDrive())
 end
@@ -101,81 +101,58 @@ end
     @test same.source_anchor === seeded.anchor
     @test same.predicted_state == Tuple(central)
 
-    # A five-root intermediate refinement is admissible when all grids agree.
-    keep = [1, 2, 3, 4, 5]
-    five = Tuple(lineage_search_copy(search;
-        equilibria=search.equilibria[keep]) for search in searches)
-    five_tracks = Lineage.build_root_tracks(five)
-    @test five_tracks.qualified
-    @test five_tracks.root_counts == (5, 5, 5)
-    five_seed = Lineage.seed_lineage(five, five[3].equilibria[1].state)
-    @test five_seed.accepted
-    @test Lineage.transition_lineage(five_seed.anchor, five,
-        five[3].equilibria[1].state; displacement_atol=2e-6).accepted
+    # Variable root counts are a pure assignment contract. The search-record
+    # gate below must not treat a truncated equilibrium list as a real search.
+    synthetic_track(x) = ((Float64(x), 0.0), (Float64(x), 0.0),
+        (Float64(x), 0.0))
+    seven_states = Tuple(synthetic_track(i) for i in 1:7)
+    five_states = Tuple(seven_states[i] for i in (1, 2, 3, 4, 5))
+    growth_reasons = Symbol[]
+    growth = Lineage._constellation_assignment(five_states, seven_states,
+        0.01, 1e-6, growth_reasons)
+    @test isempty(growth_reasons)
+    @test growth == [1, 2, 3, 4, 5, nothing, nothing]
+    shrink_reasons = Symbol[]
+    shrink = Lineage._constellation_assignment(seven_states, five_states,
+        0.01, 1e-6, shrink_reasons)
+    @test isempty(shrink_reasons)
+    @test shrink == [1, 2, 3, 4, 5]
+    exchange_reasons = Symbol[]
+    exchange = Lineage._constellation_assignment(five_states,
+        Tuple(synthetic_track(i) for i in (1, 2, 3, 4, 6)),
+        0.01, 1e-6, exchange_reasons)
+    @test exchange == [1, 2, 3, 4, nothing]
+    @test :destination_source_lost in exchange_reasons
+    @test :destination_source_assignment_unresolved in exchange_reasons
 
-    # An unrelated new pair does not break a uniquely followed root.
-    expanded = Lineage.transition_lineage(five_seed.anchor, searches,
-        five[3].equilibria[1].state; displacement_atol=2e-6)
-    @test expanded.accepted
-    @test expanded.anchor !== nothing
-    @test length(expanded.anchor.source_tracks) == 7
-    @test count(isnothing, expanded.destination_source_matches) == 2
-    @test length(unique(filter(!isnothing,
-        expanded.destination_source_matches))) == 5
-
-    # Equal counts can conceal one vanished and one newly discovered root.
-    swapped = Tuple(lineage_search_copy(search;
-        equilibria=search.equilibria[[1, 2, 3, 4, 6]]) for search in searches)
-    equal_count_switch = Lineage.transition_lineage(five_seed.anchor, swapped,
-        five[3].equilibria[1].state; displacement_atol=2e-6)
-    @test !equal_count_switch.accepted
-    @test :destination_source_lost in equal_count_switch.reasons
-    @test equal_count_switch.anchor === nothing
-
-    # A 7-to-5 transition is allowed when the followed central root survives.
+    # Dropping roots while retaining their admissible attempts is invalid.
     central_index = seeded.corrected_match
     other_indices = [i for i in 1:7 if i != central_index]
     removed = (first(other_indices), last(other_indices))
     survivor_indices = [i for i in 1:7 if !(i in removed)]
-    survivor = Tuple(lineage_search_copy(search;
+    truncated = Tuple(lineage_search_copy(search;
         equilibria=search.equilibria[survivor_indices]) for search in searches)
-    survivor_transition = Lineage.transition_lineage(seeded.anchor, survivor,
+    truncated_tracks = Lineage.build_root_tracks(truncated)
+    @test !truncated_tracks.qualified
+    @test truncated_tracks.root_counts == (5, 5, 5)
+    @test :admissible_attempt_partition_mismatch in truncated_tracks.reasons
+    @test !Lineage.seed_lineage(truncated,
+        truncated[3].equilibria[1].state).accepted
+    truncated_transition = Lineage.transition_lineage(seeded.anchor, truncated,
         central; displacement_atol=safe_displacement)
-    @test survivor_transition.accepted
-    @test survivor_transition.anchor !== nothing
-    @test length(survivor_transition.anchor.source_tracks) == 5
-    @test survivor_transition.anchor.origin_model_identity ==
-        seeded.anchor.origin_model_identity
-    @test length(unique(survivor_transition.destination_source_matches)) == 5
+    @test !truncated_transition.accepted
+    @test :admissible_attempt_partition_mismatch in truncated_transition.reasons
+    @test truncated_transition.anchor === nothing
 
-    # Losing the central root cannot be masked by a surviving neighbor.
-    nearest_other = argmin([i == central_index ? Inf :
-        norm(searches[3].equilibria[i].state .- central)
-        for i in 1:7])
-    lost_indices = [i for i in 1:7 if i != central_index &&
-        i != (central_index == 1 ? 7 : 1)]
-    lost_five = Tuple(lineage_search_copy(search;
-        equilibria=search.equilibria[lost_indices]) for search in searches)
-    lost_five_transition = Lineage.transition_lineage(seeded.anchor, lost_five,
-        searches[3].equilibria[nearest_other].state; displacement_atol=2.0)
-    @test !lost_five_transition.accepted
-    @test :tracked_root_lost in lost_five_transition.reasons
-    @test lost_five_transition.anchor === nothing
-
-    # Independent review's one-root reproduction: forward proximity alone
-    # used to accept this surviving neighbor as the vanished central root.
-    one_neighbor = Tuple(lineage_search_copy(search;
-        equilibria=search.equilibria[nearest_other:nearest_other])
-        for search in searches)
-    neighbor_distance = norm(searches[3].equilibria[nearest_other].state .- central)
-    disappeared = Lineage.transition_lineage(seeded.anchor, one_neighbor,
-        searches[3].equilibria[nearest_other].state;
-        displacement_atol=max(neighbor_distance + 0.01, 0.168))
-    @test !disappeared.accepted
-    @test :tracked_root_lost in disappeared.reasons
-    @test disappeared.prior_match == 1
-    @test disappeared.reciprocal_match == nearest_other
-    @test disappeared.anchor === nothing
+    genuine_five_model = lineage_model(theta_off=12.0)
+    genuine_five = Tuple(find_equilibria(genuine_five_model;
+        seeds=lineage_seeds(genuine_five_model, points))
+        for points in Lineage.GRID_POINTS)
+    genuine_five_tracks = Lineage.build_root_tracks(genuine_five)
+    @test genuine_five_tracks.root_counts == (5, 5, 5)
+    @test genuine_five_tracks.qualified
+    @test Lineage.seed_lineage(genuine_five,
+        genuine_five[3].equilibria[1].state).accepted
 
     # With source roots at x=0 and x=.03 and one destination at x=.01,
     # reciprocal nearest matching alone wrongly favors the vanished x=0 root.
@@ -185,13 +162,10 @@ end
     close_source = Lineage.RootLineageAnchor(
         seeded.anchor.origin_model_identity, seeded.anchor.model_identity,
         shifted(-0.01), (shifted(-0.01), shifted(0.02)), 1)
-    central_only = Tuple(lineage_search_copy(search;
-        equilibria=search.equilibria[central_index:central_index])
-        for search in searches)
     close_disappearance = Lineage.transition_lineage(close_source,
-        central_only, central; displacement_atol=0.05)
+        searches, central; displacement_atol=0.05)
     @test !close_disappearance.accepted
-    @test close_disappearance.prior_match == 1
+    @test close_disappearance.prior_match == central_index
     @test close_disappearance.reciprocal_match == 1
     @test :source_isolation_unresolved in close_disappearance.reasons
     @test close_disappearance.anchor === nothing

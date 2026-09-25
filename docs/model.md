@@ -648,7 +648,9 @@ coordinate deduplication tolerance; duplicate members may have an unsuccessful
 solver return code or meet only the search residual tolerance. The selected
 representative still must meet the stricter lineage residual gate, and its
 stored residuals and local stability fields must agree with independent
-recomputation. Numerical options are validated through both keyword and
+recomputation. Every admissible attempt must belong to exactly one discovered
+root's member set; dropping equilibria while retaining their attempts leaves
+the search unresolved. Numerical options are validated through both keyword and
 positional construction. Intermediate points may have a different root count
 from the initial seven-root topology; the full seven-root gate still applies
 separately to an initial Figure-5b seed and a
