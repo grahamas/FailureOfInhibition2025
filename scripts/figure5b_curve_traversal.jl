@@ -40,6 +40,10 @@ struct CurveTraversalOptions
             progress_fraction < 1 && correction_fraction < 1 &&
             max_steps > 0 && max_retries >= 0 ||
             throw(ArgumentError("invalid curve traversal policy"))
+        revisit_atol < progress_fraction * minimum_step ||
+            throw(ArgumentError("revisit_atol must stay strictly below the " *
+                "smallest forward progress a legal step can make, or a " *
+                "perfectly forward step reads as a revisit"))
         new(initial_step, minimum_step, maximum_step, max_steps, max_retries,
             correction_atol, phase_atol, rank_atol, progress_fraction,
             correction_fraction, revisit_atol, boundary_atol,
@@ -51,7 +55,7 @@ function CurveTraversalOptions(; initial_step=0.01, minimum_step=1e-5,
     maximum_step=0.05, max_steps=200, max_retries=8,
     correction_atol=1e-8, phase_atol=1e-8, rank_atol=1e-10,
     progress_fraction=0.1, correction_fraction=0.75,
-    revisit_atol=1e-5, boundary_atol=1e-8,
+    revisit_atol=1e-7, boundary_atol=1e-8,
     transversality_atol=1e-6)
     raw = (initial_step, minimum_step, maximum_step, correction_atol,
         phase_atol, rank_atol, progress_fraction, correction_fraction,
@@ -146,13 +150,40 @@ struct CurveBoundaryAttempt
     error::Union{Nothing,String}
 end
 
+"""
+A validated parameter-box exit: the corrected state, the lineage anchor it was
+accepted against, its neutrality evidence, and the box face it crossed. Carried
+as a distinct field so a consumer never has to rediscover it inside a
+`boundaries` tuple that also holds rejected and ambiguous attempts.
+"""
+struct QualifiedEndpoint
+    coordinates::CurveState
+    anchor::Lineage.RootLineageAnchor
+    transition::Union{Nothing,Lineage.RootTransitionEvidence}
+    hopf::Seeds.NeutralTopologyEvidence
+    edge_axis::Int
+    edge_value::Float64
+end
+
 struct CurveDirectionResult
     direction::Int
     points::Tuple{Vararg{CurvePoint}}
     steps::Tuple{Vararg{CurveStepAttempt}}
     boundaries::Tuple{Vararg{CurveBoundaryAttempt}}
+    endpoint::Union{Nothing,QualifiedEndpoint}
+    unqualified_points::Int
     termination::Symbol
 end
+
+const BOUNDARY_TERMINATIONS = (:qualified_boundary, :unqualified_boundary)
+
+_qualified_endpoint(attempt::CurveBoundaryAttempt) =
+    QualifiedEndpoint(attempt.candidate, attempt.transition.anchor,
+        attempt.transition, attempt.hopf, attempt.edge_axis,
+        attempt.edge_value)
+
+_neutral_endpoint(attempt::CurveBoundaryAttempt) =
+    attempt.hopf !== nothing && attempt.hopf.qualified
 
 struct TraceZeroCurveResult
     seed_verification::SeedVerification
@@ -377,11 +408,12 @@ function _search_transition(seed, source_anchor, point, predictor,
             push!(reasons, :search_policy_mismatch)
         if isempty(reasons)
             source = source_anchor.states[3]
-            distance = hypot(point[1] - source[1], point[2] - source[2])
-            displacement = max(distance + 2seed.lineage_options.coordinate_atol,
-                2seed.lineage_options.coordinate_atol)
-            distance <= seed.options.axis_options.state_step_atol ||
-                push!(reasons, :state_step_exceeded)
+            # The displacement bound is shared with the axis component so the
+            # two integrations cannot drift on the one numeric limit both must
+            # agree on.
+            bound = Axis._displacement_bound(source, point[1:2],
+                seed.options.axis_options, seed.lineage_options)
+            bound === nothing && push!(reasons, :state_step_exceeded)
             predictor_error = hypot(point[1] - predictor[1],
                 point[2] - predictor[2])
             predictor_atol = max(predictor_error +
@@ -392,7 +424,7 @@ function _search_transition(seed, source_anchor, point, predictor,
             if isempty(reasons)
                 transition = Lineage.transition_lineage(source_anchor,
                     searches, point[1:2]; options=seed.lineage_options,
-                    displacement_atol=displacement,
+                    displacement_atol=bound,
                     predicted_state=predictor[1:2],
                     predictor_atol=predictor_atol)
                 transition.accepted || append!(reasons, transition.reasons)
@@ -724,6 +756,9 @@ function _mark_ambiguous(attempt::CurveBoundaryAttempt)
         attempt.transition, attempt.tangent, attempt.hopf, attempt.error)
 end
 
+_unqualified_count(points) =
+    count(point -> !point.hopf.qualified, points)
+
 function _signed_point(point, sign)
     tangent = point.tangent
     directed = CurveTangent(tangent.accepted, tangent.reasons,
@@ -742,6 +777,9 @@ function _direction(seed, initial, direction, options,
     visited = CurveState[initial.coordinates]
     step = options.initial_step
     termination = :maximum_steps_unresolved
+    direction_result(termination, endpoint) = CurveDirectionResult(direction,
+        Tuple(points), Tuple(attempts), Tuple(boundaries), endpoint,
+        _unqualified_count(points), termination)
     while length(points) - 1 < options.max_steps
         current = last(points)
         accepted = false
@@ -752,16 +790,21 @@ function _direction(seed, initial, direction, options,
                 edge_attempts = Tuple(_edge_attempt(seed, current, direction,
                     step, hit, options, solve_function, search_function)
                     for hit in hits)
-                qualified = count(attempt -> attempt.accepted, edge_attempts)
                 if length(hits) > 1
                     append!(boundaries, _mark_ambiguous.(edge_attempts))
                 else
                     append!(boundaries, edge_attempts)
                 end
-                if length(hits) == 1 && qualified == 1
-                    termination = :qualified_boundary
-                    return CurveDirectionResult(direction, Tuple(points),
-                        Tuple(attempts), Tuple(boundaries), termination)
+                # A validated exit is reported as qualified only when its own
+                # neutrality evidence agrees. Otherwise the geometry is real but
+                # the point is not an established Hopf candidate, which is a
+                # distinct recorded outcome rather than a qualified boundary.
+                if length(hits) == 1 && only(edge_attempts).accepted
+                    exit = only(edge_attempts)
+                    return direction_result(
+                        _neutral_endpoint(exit) ? :qualified_boundary :
+                            :unqualified_boundary,
+                        _qualified_endpoint(exit))
                 end
             else
                 predictor = Tuple(collect(current.coordinates) .+
@@ -777,19 +820,17 @@ function _direction(seed, initial, direction, options,
                     accepted = true
                     break
                 end
-                if :curve_revisit in attempt.reasons
-                    termination = :revisit_unresolved
-                    return CurveDirectionResult(direction, Tuple(points),
-                        Tuple(attempts), Tuple(boundaries), termination)
+                # A revisit is only conclusive on its own. Co-occurring failures
+                # mean the step never resolved, which is not evidence of a loop.
+                if :curve_revisit in attempt.reasons && length(attempt.reasons) == 1
+                    return direction_result(:revisit_unresolved, nothing)
                 end
             end
             step /= 2
             if step < options.minimum_step ||
                     current.coordinates .+ step .* current.tangent.actual ==
                     current.coordinates
-                termination = :minimum_step_unresolved
-                return CurveDirectionResult(direction, Tuple(points),
-                    Tuple(attempts), Tuple(boundaries), termination)
+                return direction_result(:minimum_step_unresolved, nothing)
             end
         end
         if !accepted
@@ -797,8 +838,7 @@ function _direction(seed, initial, direction, options,
             break
         end
     end
-    return CurveDirectionResult(direction, Tuple(points),
-        Tuple(attempts), Tuple(boundaries), termination)
+    return direction_result(termination, nothing)
 end
 
 function _continue_verified(verification::SeedVerification,
@@ -815,12 +855,37 @@ function _continue_verified(verification::SeedVerification,
         options, reasons, error, (), :seed_unresolved)
     directions = Tuple(_direction(seed, initial, direction, options,
         solve_function, search_function) for direction in (-1, 1))
-    status = all(result -> result.termination == :qualified_boundary,
-        directions) ? :finite_two_boundary_segment :
+    # A two-boundary segment is only claimed when both orientations reached a
+    # validated exit whose own neutrality evidence agrees. Validated exits that
+    # are not neutrality-qualified are reported separately, and a segment with
+    # even one unqualified point is downgraded so no consumer can read the
+    # status as a Figure-5b Hopf claim.
+    segment = all(result -> result.termination in BOUNDARY_TERMINATIONS,
+        directions)
+    neutral_segment = segment &&
+        all(result -> result.termination == :qualified_boundary &&
+            result.unqualified_points == 0, directions)
+    status = if neutral_segment
+        :finite_two_boundary_segment
+    elseif segment
+        :finite_two_unqualified_boundary_segment
+    else
         :traversal_unresolved
+    end
     return TraceZeroCurveResult(verification, options, (), nothing,
         directions, status)
 end
+
+"""
+    traverse_verified_seed(verified, options=CurveTraversalOptions())
+
+Continue a traversal from an already-verified seed token. Callers must obtain
+`verified` from a gate that freshly requalifies the seed, its model, and its
+lineage; this entry deliberately performs no qualification of its own.
+"""
+traverse_verified_seed(verified::VerifiedCurveSeed,
+    options::CurveTraversalOptions=CurveTraversalOptions()) =
+    _continue_verified(SeedVerification(true, (), verified, nothing), options)
 
 """
     trace_zero_curve(seed_result, qualified_index; options=CurveTraversalOptions())
@@ -828,6 +893,9 @@ end
 Traverse both orientations of a freshly requalified PR3 trace-zero seed.
 Only two independently validated fixed-edge exits yield a finite two-boundary
 segment; neither that result nor any sampled point certifies a complete curve.
+An exit counts as qualified only when its own neutrality evidence agrees, and
+a segment containing any unqualified point is reported as
+`:finite_two_unqualified_boundary_segment` rather than as a Hopf segment.
 """
 function trace_zero_curve(seed_result::Seeds.CurveSeedResult,
     qualified_index; options=CurveTraversalOptions())

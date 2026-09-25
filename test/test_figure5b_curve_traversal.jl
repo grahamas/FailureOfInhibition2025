@@ -1,4 +1,4 @@
-using LinearAlgebra: norm
+using LinearAlgebra: dot, norm
 
 include(joinpath(@__DIR__, "..", "scripts", "figure5b_curve_traversal.jl"))
 const Traverse = Figure5bCurveTraversal
@@ -19,7 +19,7 @@ end
     T = Traverse
     options = T.CurveTraversalOptions()
     for kwargs in ((; initial_step=0.0), (; rank_atol=Inf),
-            (; max_steps=true), (; max_retries=-1),
+            (; max_steps=true), (; max_steps=0), (; max_retries=-1),
             (; progress_fraction=1.0), (; minimum_step=0.1))
         @test_throws ArgumentError T.CurveTraversalOptions(; kwargs...)
     end
@@ -73,6 +73,32 @@ end
         0.1, true, (), nothing, nothing, nothing, nothing,
         nothing)).accepted
 
+    # Orientation ambiguity must be reported, never silently inherited, and the
+    # gate must not be so tight that an ordinary turn trips it.
+    circle(z) = [z[1], z[2], (z[3] - 0.2)^2 + (z[4] - 0.2)^2 - 0.01]
+    perpendicular = T._tangent(circle, (0.0, 0.0, 0.3, 0.2), scales,
+        options.rank_atol; prior=(0.0, 0.0, 1.0, 0.0))
+    @test !perpendicular.accepted
+    @test perpendicular.reasons == (:tangent_orientation_unresolved,)
+    @test all(isnan, perpendicular.actual)
+    @test all(isnan, perpendicular.scaled)
+    quarter_turn = 0.999 * pi / 2
+    turned = T._tangent(circle,
+        (0.0, 0.0, 0.2 + 0.1 * cos(quarter_turn),
+            0.2 + 0.1 * sin(quarter_turn)),
+        scales, options.rank_atol; prior=(0.0, 0.0, 0.0, 1.0))
+    @test turned.accepted
+    @test isempty(turned.reasons)
+    reversed_prior = T._tangent(circle, (0.0, 0.0, 0.3, 0.2), scales,
+        options.rank_atol; prior=(0.0, 0.0, 0.0, 1.0))
+    @test reversed_prior.accepted
+    @test dot(reversed_prior.scaled, collect((0.0, 0.0, 0.0, 1.0))) > 0
+    @test T._tangent(z -> error("boom"), (0.0, 0.0, 0.3, 0.2), scales,
+        options.rank_atol).reasons == (:tangent_exception,)
+    @test_throws InterruptException T._tangent(
+        z -> throw(InterruptException()), (0.0, 0.0, 0.3, 0.2), scales,
+        options.rank_atol)
+
     two_components(z) = [z[1], z[2], (z[3] - 0.2) * (z[3] - 0.8)]
     current = (0.0, 0.0, 0.2, 0.0)
     predictor = (0.0, 0.0, 0.21, 0.0)
@@ -93,10 +119,25 @@ end
     near_return = (0.0, 0.0, cos(1e-6), sin(1e-6))
     @test abs(loop(collect(first_loop))[3]) < 1e-12
     @test abs(loop(collect(near_return))[3]) < 1e-12
-    @test T._revisited((first_loop,), near_return, scales,
-        options.revisit_atol)
+    @test T._revisited((first_loop,), near_return, scales, 1e-5)
     @test !T._revisited((first_loop,), (0.0, 0.0, 0.0, 1.0),
-        scales, options.revisit_atol)
+        scales, 1e-5)
+    # A perfectly forward step must never read as a revisit. The option contract
+    # keeps revisit_atol below the smallest forward progress a legal step can
+    # make, so the shortest legal forward step clears it.
+    @test options.revisit_atol <
+        options.progress_fraction * options.minimum_step
+    smallest_forward = (0.0, 0.0,
+        1.0 - options.progress_fraction * options.minimum_step, 0.0)
+    @test !T._revisited((first_loop,), smallest_forward, scales,
+        options.revisit_atol)
+    @test_throws ArgumentError T.CurveTraversalOptions(; minimum_step=1e-5,
+        initial_step=1e-5, maximum_step=1e-3, revisit_atol=1e-5)
+    @test_throws ArgumentError T.CurveTraversalOptions(; minimum_step=1e-5,
+        initial_step=1e-5, maximum_step=1e-3, revisit_atol=1e-4)
+    @test_throws ArgumentError T.CurveTraversalOptions(; minimum_step=1e-5,
+        initial_step=1e-5, maximum_step=1e-3, revisit_atol=2e-6,
+        progress_fraction=0.1)
 end
 
 @testset "Figure-5b curve traversal verified FoI seed" begin
@@ -203,4 +244,82 @@ end
         @test wrong_edge.raw === nothing
         @test :wrong_edge_ray in wrong_edge.reasons
     end
+
+    # The public entry point must fail closed through the same requalification
+    # gate instead of reaching the traversal directly.
+    @test_throws ArgumentError Traverse.trace_zero_curve(seeds, 1;
+        options=(initial_step=1e-3,))
+    @test_throws ArgumentError Traverse.trace_zero_curve(seeds, 1;
+        options=nothing)
+    routed = Traverse.trace_zero_curve(seeds, 2; options=options)
+    rejected = Traverse._verify_seed(seeds, 2)
+    @test routed.status == :seed_unresolved
+    @test !routed.seed_verification.accepted
+    @test routed.seed_verification.reasons == rejected.reasons
+    @test routed.initial_reasons == rejected.reasons
+    @test isempty(routed.directions)
+    @test routed.options == options
+
+    # The public seam continues a verified token without requalifying it, so a
+    # caller cannot smuggle an unverified seed past the gate.
+    seam = Traverse.traverse_verified_seed(verified.seed, options)
+    @test seam.seed_verification.accepted
+    @test isempty(seam.seed_verification.reasons)
+    @test seam.options == options
+    @test seam.status == result.status
+    @test map(direction -> direction.termination, seam.directions) ==
+        map(direction -> direction.termination, result.directions)
+    @test map(direction -> length(direction.points), seam.directions) ==
+        map(direction -> length(direction.points), result.directions)
+
+    # A validated exit is reported as qualified only when its own neutrality
+    # evidence agrees, and the endpoint is a first-class field rather than
+    # something a consumer has to find inside `boundaries`.
+    for direction in result.directions
+        @test direction.unqualified_points ==
+            count(point -> !point.hopf.qualified, direction.points)
+        if direction.termination in (:qualified_boundary,
+                :unqualified_boundary)
+            @test direction.endpoint !== nothing
+            @test direction.endpoint.coordinates in
+                map(boundary -> boundary.candidate, direction.boundaries)
+            @test direction.endpoint.edge_axis in
+                map(boundary -> boundary.edge_axis, direction.boundaries)
+            @test (direction.termination == :qualified_boundary) ==
+                direction.endpoint.hopf.qualified
+        else
+            @test direction.endpoint === nothing
+        end
+        @test all(attempt -> attempt.accepted, filter(
+            boundary -> boundary.accepted, direction.boundaries))
+    end
+    @test result.status in (:finite_two_boundary_segment,
+        :finite_two_unqualified_boundary_segment, :traversal_unresolved)
+    @test (result.status == :finite_two_boundary_segment) ==
+        all(direction -> direction.termination == :qualified_boundary &&
+            direction.unqualified_points == 0, result.directions)
+
+    # The root-lineage contract, not the corrector, must be able to refuse. Forge
+    # the anchor so it no longer identifies one track across the three grids
+    # while every numerical gate still passes; the traversal must not start, and
+    # the contract's own reasons must reach the caller.
+    anchor = verified.seed.anchor
+    displaced = ntuple(grid -> grid == 3 ? anchor.states[3] :
+        (anchor.states[grid][1] + 1e-3, anchor.states[grid][2]), 3)
+    forged_anchor = Traverse.Lineage.RootLineageAnchor(
+        anchor.origin_model_identity, anchor.model_identity, displaced,
+        anchor.source_tracks, anchor.followed_source_index)
+    forged_seed = Traverse.VerifiedCurveSeed(verified.seed.context,
+        verified.seed.source, verified.seed.source_index, verified.seed.point,
+        verified.seed.options, verified.seed.lineage_options,
+        verified.seed.original_unresolved_methods,
+        verified.seed.source_evidence, forged_anchor)
+    forged = Traverse.traverse_verified_seed(forged_seed, options)
+    @test forged.status == :seed_unresolved
+    @test isempty(forged.directions)
+    @test forged.initial_reasons == (:invalid_source_anchor,
+        :source_isolation_unresolved)
+    @test all(reason -> !occursin("numerical", string(reason)),
+        forged.initial_reasons)
+    @test result.status != :seed_unresolved
 end
