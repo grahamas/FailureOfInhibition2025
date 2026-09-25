@@ -92,6 +92,15 @@ end
     @test length(unique(filter(!isnothing,
         expanded.destination_source_matches))) == 5
 
+    # Equal counts can conceal one vanished and one newly discovered root.
+    swapped = Tuple(lineage_search_copy(search;
+        equilibria=search.equilibria[[1, 2, 3, 4, 6]]) for search in searches)
+    equal_count_switch = Lineage.transition_lineage(five_seed.anchor, swapped,
+        five[3].equilibria[1].state; displacement_atol=2e-6)
+    @test !equal_count_switch.accepted
+    @test :destination_source_lost in equal_count_switch.reasons
+    @test equal_count_switch.anchor === nothing
+
     # A 7-to-5 transition is allowed when the followed central root survives.
     central_index = seeded.corrected_match
     other_indices = [i for i in 1:7 if i != central_index]

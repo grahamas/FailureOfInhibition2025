@@ -264,6 +264,31 @@ function _match(distances, bound, uncertainty, lost, ambiguous, reasons)
     return nearest
 end
 
+function _constellation_assignment(source_tracks, target_states, displacement,
+    uncertainty, reasons)
+    matches = Union{Nothing,Int}[]
+    source_count = length(source_tracks)
+    target_count = length(target_states)
+    for target in target_states
+        distances = [_track_distance(source, target) for source in source_tracks]
+        if source_count < target_count && minimum(distances) > displacement
+            # Only a net increase permits a destination without a source.
+            push!(matches, nothing)
+        else
+            push!(matches, _match(distances, displacement, uncertainty,
+                :destination_source_lost, :destination_source_ambiguous, reasons))
+        end
+    end
+    matched = filter(!isnothing, matches)
+    required = min(source_count, target_count)
+    if length(matched) != required || length(unique(matched)) != required
+        push!(reasons, source_count < target_count ?
+            :source_destination_assignment_unresolved :
+            :destination_source_assignment_unresolved)
+    end
+    return matches
+end
+
 """Seed a lineage from an independently validated three-grid root search."""
 function seed_lineage(searches, corrected_state; options=RootLineageOptions())
     tracks = build_root_tracks(searches; options)
@@ -350,40 +375,9 @@ function transition_lineage(anchor::RootLineageAnchor, searches, corrected_state
                 reciprocal_match != anchor.followed_source_index &&
                 push!(reasons, :tracked_root_lost)
         end
-        if length(anchor.source_tracks) > length(target_states)
-            for target in target_states
-                distances = [_track_distance(source, target)
-                    for source in anchor.source_tracks]
-                push!(destination_source_matches, _match(distances,
-                    displacement, options.coordinate_atol,
-                    :destination_source_lost, :destination_source_ambiguous,
-                    reasons))
-            end
-            matched = filter(!isnothing, destination_source_matches)
-            length(matched) == length(target_states) &&
-                length(unique(matched)) == length(target_states) ||
-                push!(reasons, :destination_source_assignment_unresolved)
-        elseif length(anchor.source_tracks) < length(target_states)
-            # Unmatched destinations may be new roots. Every prior root must
-            # still have exactly one distinct successor, including the
-            # followed root checked above.
-            for target in target_states
-                distances = [_track_distance(source, target)
-                    for source in anchor.source_tracks]
-                if minimum(distances) > displacement
-                    push!(destination_source_matches, nothing)
-                else
-                    push!(destination_source_matches, _match(distances,
-                        displacement, options.coordinate_atol,
-                        :destination_source_lost, :destination_source_ambiguous,
-                        reasons))
-                end
-            end
-            matched = filter(!isnothing, destination_source_matches)
-            length(matched) == length(anchor.source_tracks) &&
-                length(unique(matched)) == length(anchor.source_tracks) ||
-                push!(reasons, :source_destination_assignment_unresolved)
-        end
+        destination_source_matches = _constellation_assignment(
+            anchor.source_tracks, target_states, displacement,
+            options.coordinate_atol, reasons)
         if predicted !== nothing
             predictor_match = _match(predictor_distances,
                 predictor, options.coordinate_atol, :predictor_root_lost,

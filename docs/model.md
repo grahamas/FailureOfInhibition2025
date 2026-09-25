@@ -647,7 +647,8 @@ agree uniquely. The bound must be smaller than half the local root separation
 after coordinate uncertainty is included. When roots disappear, each
 destination root must map to a distinct prior root. When roots appear, every
 prior root must have a distinct destination; unmatched destinations are
-retained as new discoveries. Missing,
+retained as new discoveries. Equal-count transitions require a bijection,
+so a simultaneous disappearance and appearance remains unresolved. Missing,
 ambiguous, poorly resolved, or skipped required checks remain unresolved.
 These are finite numerical tracking rules, not proof that a branch cannot
 change between sampled parameter points; later continuation must adapt its
