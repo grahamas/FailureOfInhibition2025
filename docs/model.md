@@ -632,6 +632,42 @@ repeller must lie where both implicit nullclines rise:
 a finite discovered topology; it does not certify that all equilibria or
 attractors have been found.
 
+The internal Figure-5b root-lineage component is the numerical identity
+contract for later targeted continuation. At each parameter point it checks
+the deterministic 11×11, 21×21, and 41×41 searches for a common model and
+seed schedule, consistent discovered root count, unique cross-grid matches,
+root separation, no unresolved nearby roots, and independently recomputed
+balance residuals, Jacobians, and local spectra. A locally unresolved
+stability label passes only when every eigenvalue real part is within the
+lineage spectral margin; the label alone is insufficient. The component
+reconstructs each frozen model and drive from its source model and snapshot
+time, and rejects inconsistent stored search records. Search policies must
+retain finite, nonnegative tolerances and a positive iteration limit. Each root
+must be tied to admissible solver candidates within discovery's maximum-
+coordinate deduplication tolerance; duplicate members may have an unsuccessful
+solver return code or meet only the search residual tolerance. The selected
+representative still must meet the stricter lineage residual gate, and its
+stored residuals and local stability fields must agree with independent
+recomputation. Every admissible attempt must belong to exactly one discovered
+root's member set; dropping equilibria while retaining their attempts leaves
+the search unresolved. Numerical options are validated through both keyword and
+positional construction. Intermediate points may have a different root count
+from the initial seven-root topology; the full seven-root gate still applies
+separately to an initial Figure-5b seed and a
+proposed Hopf point. A transition carries the prior three-grid root
+constellation and accepts the followed root only when forward and reciprocal
+matches, an optional predictor, the corrected root, and a displacement bound
+agree uniquely. The bound must be smaller than half the local root separation
+after coordinate uncertainty is included. When roots disappear, each
+destination root must map to a distinct prior root. When roots appear, every
+prior root must have a distinct destination; unmatched destinations are
+retained as new discoveries. Equal-count transitions require a bijection,
+so a simultaneous disappearance and appearance remains unresolved. Missing,
+ambiguous, poorly resolved, or skipped required checks remain unresolved.
+These are finite numerical tracking rules, not proof that a branch cannot
+change between sampled parameter points; later continuation must adapt its
+step size and retain unresolved intervals.
+
 For a fixed balance field and `r = tau_I/tau_E`, `hopf_diagnostics` evaluates
 the local trace-zero candidate `r_H = -Dg[2,2] / Dg[1,1]`. It requires a
 positive determinant and nonzero eigenvalue transversality. The calculation
