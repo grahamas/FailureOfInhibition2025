@@ -82,6 +82,16 @@ end
     @test Lineage.transition_lineage(five_seed.anchor, five,
         five[3].equilibria[1].state; displacement_atol=2e-6).accepted
 
+    # An unrelated new pair does not break a uniquely followed root.
+    expanded = Lineage.transition_lineage(five_seed.anchor, searches,
+        five[3].equilibria[1].state; displacement_atol=2e-6)
+    @test expanded.accepted
+    @test expanded.anchor !== nothing
+    @test length(expanded.anchor.source_tracks) == 7
+    @test count(isnothing, expanded.destination_source_matches) == 2
+    @test length(unique(filter(!isnothing,
+        expanded.destination_source_matches))) == 5
+
     # A 7-to-5 transition is allowed when the followed central root survives.
     central_index = seeded.corrected_match
     other_indices = [i for i in 1:7 if i != central_index]

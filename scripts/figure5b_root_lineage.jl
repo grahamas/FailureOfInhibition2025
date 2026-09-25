@@ -350,7 +350,7 @@ function transition_lineage(anchor::RootLineageAnchor, searches, corrected_state
                 reciprocal_match != anchor.followed_source_index &&
                 push!(reasons, :tracked_root_lost)
         end
-        if length(anchor.source_tracks) != length(target_states)
+        if length(anchor.source_tracks) > length(target_states)
             for target in target_states
                 distances = [_track_distance(source, target)
                     for source in anchor.source_tracks]
@@ -363,6 +363,26 @@ function transition_lineage(anchor::RootLineageAnchor, searches, corrected_state
             length(matched) == length(target_states) &&
                 length(unique(matched)) == length(target_states) ||
                 push!(reasons, :destination_source_assignment_unresolved)
+        elseif length(anchor.source_tracks) < length(target_states)
+            # Unmatched destinations may be new roots. Every prior root must
+            # still have exactly one distinct successor, including the
+            # followed root checked above.
+            for target in target_states
+                distances = [_track_distance(source, target)
+                    for source in anchor.source_tracks]
+                if minimum(distances) > displacement
+                    push!(destination_source_matches, nothing)
+                else
+                    push!(destination_source_matches, _match(distances,
+                        displacement, options.coordinate_atol,
+                        :destination_source_lost, :destination_source_ambiguous,
+                        reasons))
+                end
+            end
+            matched = filter(!isnothing, destination_source_matches)
+            length(matched) == length(anchor.source_tracks) &&
+                length(unique(matched)) == length(anchor.source_tracks) ||
+                push!(reasons, :source_destination_assignment_unresolved)
         end
         if predicted !== nothing
             predictor_match = _match(predictor_distances,
