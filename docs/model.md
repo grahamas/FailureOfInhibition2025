@@ -632,6 +632,25 @@ repeller must lie where both implicit nullclines rise:
 a finite discovered topology; it does not certify that all equilibria or
 attractors have been found.
 
+The internal Figure-5b root-lineage component is the numerical identity
+contract for later targeted continuation. At each parameter point it checks
+the deterministic 11×11, 21×21, and 41×41 searches for a common model and
+seed schedule, consistent discovered root count, unique cross-grid matches,
+root separation, no unresolved nearby roots, and independently recomputed
+balance residuals, Jacobians, and local spectra. Intermediate points may have
+a different root count from the initial seven-root topology; the full
+seven-root gate still applies separately to an initial Figure-5b seed and a
+proposed Hopf point. A transition carries the prior three-grid root
+constellation and accepts the followed root only when forward and reciprocal
+matches, an optional predictor, the corrected root, and a displacement bound
+agree uniquely. The bound must be smaller than half the local root separation
+after coordinate uncertainty is included. When root counts change, each
+surviving destination root must also map to a distinct prior root. Missing,
+ambiguous, poorly resolved, or skipped required checks remain unresolved.
+These are finite numerical tracking rules, not proof that a branch cannot
+change between sampled parameter points; later continuation must adapt its
+step size and retain unresolved intervals.
+
 For a fixed balance field and `r = tau_I/tau_E`, `hopf_diagnostics` evaluates
 the local trace-zero candidate `r_H = -Dg[2,2] / Dg[1,1]`. It requires a
 positive determinant and nonzero eigenvalue transversality. The calculation
