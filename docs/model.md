@@ -748,7 +748,12 @@ ratio-4.4 branch when its seed search found no qualified seed.
 Two signed normalized pseudo-arclength directions use an independently
 recomputed balance/trace/phase residual, regular three-by-four curve rank,
 regular four-by-four corrector rank, positive oriented progress, and bounded
-local predictor correction. Every accepted point gets new 11×11, 21×21, and
+local predictor correction. Before any gate reads a candidate, its state is
+refined to a machine-precision equilibrium at the frozen parameters with the
+same local equilibrium solver the root search uses, so a stored point is the
+equilibrium rather than a loosely corrected state. The trace-zero comparison
+uses one shared tolerance (bounded by the neutral-trace and spectral-margin
+caps) at every gate. Every accepted point gets new 11×11, 21×21, and
 41×41 searches and reciprocal predictor/corrected central-root lineage.
 Seven-root neutral-center Hopf qualification is recorded separately for each
 point; a tracked five-root trace-zero point is not a Figure-5b Hopf candidate.

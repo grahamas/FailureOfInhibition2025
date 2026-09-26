@@ -27,6 +27,13 @@ end
         0.05, 1, 1, 1e-8, 1e-8, 1e-10, 0.1, 0.75, 1e-5,
         1e-8, 1e-6)
 
+    seed_options = TraverseSeeds.CurveSeedOptions()
+    lineage_options = Traverse.Lineage.RootLineageOptions()
+    @test TraverseSeeds._trace_zero_atol(seed_options.axis_options,
+        lineage_options) == 1e-8
+    @test TraverseSeeds._trace_zero_atol(seed_options.axis_options,
+        Traverse.Lineage.RootLineageOptions(spectral_margin=1e-9)) == 2e-9
+
     scales = (1.0, 1.0, 1.0, 1.0)
     linear(z) = [z[1], z[2], z[3] + z[4] - 1.0]
     tangent = T._tangent(linear, (0.0, 0.0, 0.5, 0.5),
@@ -164,6 +171,14 @@ end
     @test verified.seed.anchor.model_identity ==
         Traverse.Lineage._model_identity(
             verified.seed.source_evidence[2].searches[1])
+    refined = Traverse._refine_state(verified.seed, verified.seed.point)
+    @test refined !== nothing
+    @test refined[3:4] == verified.seed.point[3:4]
+    refined_residual = Float64.(TraverseSeeds._residual(
+        verified.seed.context, collect(refined)))
+    @test maximum(abs, refined_residual[1:2]) < 1e-10
+    @test Traverse._refine_state(verified.seed,
+        (NaN, NaN, NaN, NaN)) === nothing
     options = Traverse.CurveTraversalOptions(initial_step=1e-3,
         minimum_step=1e-5, maximum_step=1e-3, max_steps=1)
     result = Traverse._continue_verified(verified, options)

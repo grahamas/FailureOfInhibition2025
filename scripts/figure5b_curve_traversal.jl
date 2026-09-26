@@ -452,13 +452,15 @@ function _initial_point(seed, options, search_function)
     hopf = nothing
     error = nothing
     try
+        refined = _refine_state(seed, point)
+        refined === nothing && push!(reasons, :state_refinement_unresolved)
+        refined === nothing || (point = refined)
         values = Tuple(Float64.(Seeds._residual(seed.context, collect(point))))
         residual = values
         all(isfinite, values) && maximum(abs, values[1:2]) <=
             seed.options.axis_options.balance_atol &&
-            abs(values[3]) <= min(options.correction_atol,
-                seed.options.axis_options.trace_atol,
-                Seeds.MAX_NEUTRAL_TRACE_ATOL) ||
+            abs(values[3]) <= Seeds._trace_zero_atol(
+                seed.options.axis_options, seed.lineage_options) ||
             push!(reasons, :seed_residual_unresolved)
         rank = Seeds._regularity(seed.context, point, seed.options)
         rank.qualified || append!(reasons, rank.reasons)
@@ -517,6 +519,28 @@ function _corrector(seed, predictor, tangent, scales, options, solve_function)
         collect(predictor), bounds, _solver_options(seed, options))
 end
 
+function _refine_state(seed, candidate)
+    try
+        model = Seeds._model(seed.context, candidate[3:4])
+        solved = Axis._solve(model, candidate[1:2], seed.options.axis_options)
+        solved isa EquilibriumSolveResult &&
+            Axis._solve_context_matches(solved, model, seed.options.axis_options) ||
+            return nothing
+        attempt = solved.attempt
+        attempt.validation == AdmissibleCandidate &&
+            attempt.solver_success && !attempt.near_singular &&
+            isfinite(attempt.residual_norm) &&
+            length(attempt.candidate) == 2 &&
+            all(isfinite, attempt.candidate) ||
+            return nothing
+        state = Float64.(attempt.candidate)
+        return (state[1], state[2], candidate[3], candidate[4])
+    catch caught
+        caught isa InterruptException && rethrow()
+        return nothing
+    end
+end
+
 function _step_candidate(seed, current, predictor, direction, step, retry,
     options, solve_function, search_function, visited)
     scales = _scales(seed)
@@ -540,6 +564,14 @@ function _step_candidate(seed, current, predictor, direction, step, retry,
             push!(reasons, :invalid_correction_candidate)
             candidate = _nan_state()
         else
+            if raw.converged
+                refined = _refine_state(seed, candidate)
+                if refined === nothing
+                    push!(reasons, :state_refinement_unresolved)
+                else
+                    candidate = refined
+                end
+            end
             phase = _phase(candidate, predictor, current.tangent, scales)
             isfinite(phase) && abs(phase) <= options.phase_atol ||
                 push!(reasons, :phase_unresolved)
@@ -549,9 +581,8 @@ function _step_candidate(seed, current, predictor, direction, step, retry,
                 residual = Tuple(values)
                 all(isfinite, values) && maximum(abs, values[1:2]) <=
                     seed.options.axis_options.balance_atol &&
-                    abs(values[3]) <= min(options.correction_atol,
-                        seed.options.axis_options.trace_atol,
-                        Seeds.MAX_NEUTRAL_TRACE_ATOL) ||
+                    abs(values[3]) <= Seeds._trace_zero_atol(
+                        seed.options.axis_options, seed.lineage_options) ||
                     push!(reasons, :independent_residual_unresolved)
                 jacobian = ForwardDiff.jacobian(
                     _corrector_residual(seed, predictor, current.tangent,
@@ -664,6 +695,14 @@ function _edge_attempt(seed, current, direction, step, hit,
         if !all(isfinite, candidate)
             push!(reasons, :invalid_edge_candidate)
         else
+            if raw.converged
+                refined = _refine_state(seed, candidate)
+                if refined === nothing
+                    push!(reasons, :state_refinement_unresolved)
+                else
+                    candidate = refined
+                end
+            end
             phase = _phase(candidate, ray, current.tangent, scales)
             isfinite(phase) && abs(phase) <= options.phase_atol ||
                 push!(reasons, :edge_phase_unresolved)
@@ -673,9 +712,8 @@ function _edge_attempt(seed, current, direction, step, hit,
                 residual = Tuple(values)
                 all(isfinite, values) && maximum(abs, values[1:2]) <=
                     seed.options.axis_options.balance_atol &&
-                    abs(values[3]) <= min(options.correction_atol,
-                        seed.options.axis_options.trace_atol,
-                        Seeds.MAX_NEUTRAL_TRACE_ATOL) ||
+                    abs(values[3]) <= Seeds._trace_zero_atol(
+                        seed.options.axis_options, seed.lineage_options) ||
                     push!(reasons, :edge_residual_unresolved)
             else
                 push!(reasons, :edge_other_parameter_out_of_bounds)
