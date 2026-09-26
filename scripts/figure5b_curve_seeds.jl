@@ -18,6 +18,10 @@ const FINITE_REJECTION_REASONS = (:root_count_mismatch,
 const AUTHORIZED = (e_to_e=(14.0, 24.0), i_to_e=(6.0, 18.0),
     e_to_i=(12.0, 28.0), i_to_i=(0.0, 10.0), theta_off=(6.0, 12.0))
 
+_trace_zero_atol(axis_options, lineage_options) =
+    min(axis_options.trace_atol, MAX_NEUTRAL_TRACE_ATOL,
+        2lineage_options.spectral_margin)
+
 """Validated numerical policy for finite, bounded curve-seed discovery."""
 struct CurveSeedOptions
     axis_options::Axis.AxisOptions
@@ -513,9 +517,8 @@ function _neutral_topology(searches, state, options, lineage_options)
             tracks.tracks[central_index].classifications[grid] ==
                 StabilityUnresolved ||
                 push!(reasons, :central_not_neutral)
-            abs(traces[grid]) <= min(options.axis_options.trace_atol,
-                MAX_NEUTRAL_TRACE_ATOL,
-                2lineage_options.spectral_margin) ||
+            abs(traces[grid]) <= _trace_zero_atol(options.axis_options,
+                lineage_options) ||
                 push!(reasons, :central_trace_unresolved)
             determinants[grid] > options.rank_atol &&
                 isfinite(frequencies[grid]) &&
@@ -793,9 +796,8 @@ function _qualify(context, origin, attempt, options, lineage_options,
             residual = Tuple(values)
             all(isfinite, values) && maximum(abs, values[1:2]) <=
                 options.axis_options.balance_atol &&
-                abs(values[3]) <= min(options.axis_options.trace_atol,
-                    MAX_NEUTRAL_TRACE_ATOL,
-                    2lineage_options.spectral_margin) ||
+                abs(values[3]) <= _trace_zero_atol(options.axis_options,
+                    lineage_options) ||
                 push!(reasons, :seed_residual_unresolved)
             model = _model(context, candidate[3:4])
             ode = zeros(Float64, 2, 2)

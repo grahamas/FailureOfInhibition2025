@@ -734,6 +734,57 @@ unresolved with no qualified seed), and `origin_unresolved`. Raw attempts,
 qualifications, and unresolved method names remain available for audit. None
 of these statuses certifies global absence or completeness.
 
+The internal Figure-5b curve-traversal component starts only from an indexed,
+qualified seed record. It rechecks the frozen model, exact parameter box,
+selected method and candidate, then freshly verifies that seed's origin,
+central-root lineage, and numerical qualification. Its traversal core uses a
+source-agnostic verified-seed token, which `traverse_verified_seed` accepts so a
+later search runner can add a separate adapter that freshly verifies accepted
+one-parameter axis-zero locations and their endpoint lineages before using them.
+That entry performs no qualification of its own, so a caller must obtain its
+token from a gate that does. This component alone cannot establish a
+ratio-4.4 branch when its seed search found no qualified seed.
+
+Two signed normalized pseudo-arclength directions use an independently
+recomputed balance/trace/phase residual, regular three-by-four curve rank,
+regular four-by-four corrector rank, positive oriented progress, and bounded
+local predictor correction. Before any gate reads a candidate, its state is
+refined to a machine-precision equilibrium at the frozen parameters with the
+same local equilibrium solver the root search uses, so a stored point is the
+equilibrium rather than a loosely corrected state. The trace-zero comparison
+uses one shared tolerance (bounded by the neutral-trace and spectral-margin
+caps) at every gate. Every accepted point gets new 11×11, 21×21, and
+41×41 searches and reciprocal predictor/corrected central-root lineage.
+Seven-root neutral-center Hopf qualification is recorded separately for each
+point; a tracked five-root trace-zero point is not a Figure-5b Hopf candidate.
+That per-point record is not advisory: a directional exit is reported as a
+qualified boundary only when its own neutrality evidence qualifies it, and a
+segment containing any unqualified point is reported as
+`finite_two_unqualified_boundary_segment` rather than as a two-boundary segment.
+`finite_two_boundary_segment` is therefore a statement about geometry and
+neutrality together, and a consumer must still read `point.hopf.qualified` at
+every point it treats as a Figure-5b Hopf candidate.
+Failed correctors, retries, rank loss, loops, and iteration-cap endpoints
+remain explicit unresolved outcomes. A revisit is reported only when it is the
+sole failure of its step; `revisit_atol` is required to stay below the smallest
+forward progress a legal step can make, so a perfectly forward step can never
+read as a loop. Projection folds may be traversed.
+
+A parameter-box endpoint is qualified only by a local fixed-edge three-variable
+balance/trace solve from the first tangent-ray intersection. The remaining
+parameter must stay in range, the fixed-edge Jacobian must have stable full
+rank, the corrected tangent must cross outward, and independent residual,
+phase, locality, progress, and reciprocal lineage checks must pass. Near-corner
+hits retain both edge attempts and remain unresolved for that step, because the
+first crossed edge is not geometrically unique at that tolerance; a later
+smaller step may resolve the geometry to a single edge, which is then judged on
+its own merits. A wrong or stale edge ray is rejected before numerical correction.
+An out-of-box corrector is never itself boundary evidence. A validated exit is
+carried as a typed endpoint, so it never has to be rediscovered inside a
+boundary-attempt history that also holds rejected and ambiguous attempts. Two
+qualified directional endpoints describe only a finite sampled segment, not a
+complete curve, parameter domain, or attractor regime.
+
 For a fixed balance field and `r = tau_I/tau_E`, `hopf_diagnostics` evaluates
 the local trace-zero candidate `r_H = -Dg[2,2] / Dg[1,1]`. It requires a
 positive determinant and nonzero eigenvalue transversality. The calculation
