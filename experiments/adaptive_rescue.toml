@@ -1,0 +1,63 @@
+schema_version = 1
+description = "Finite-window adaptive drive observations for provisional mathematical exemplars"
+exemplars = "exemplar_models.toml"
+rescue_targets = ["quiescent", "active_mid"]
+
+[scan]
+stage_stops = [2.0, 4.0, 8.0]
+coarse_amplitude_step = 1.0
+baseline_probe_step = 0.5
+baseline_refinement_step = 0.25
+transition_width = 0.0625
+durations = [1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0]
+equilibrium_grid_points = 21
+branch_match_atol = 0.15
+
+[diagnostics]
+window_duration = 100.0
+coordinate_atol = 1e-6
+balance_atol = 1e-8
+min_samples = 21
+followup_times = [5000.0, 10000.0, 20000.0]
+abstol = 1e-10
+reltol = 1e-10
+domain_atol = 1e-8
+maxiters = 1000000
+
+[sensitivity]
+e_to_i_minimum = 12.0
+e_to_i_maximum = 28.0
+e_to_i_offset = 0.5
+theta_off_minimum = 6.0
+theta_off_maximum = 12.0
+theta_off_offset = 0.25
+tau_ratio_minimum = 0.2
+tau_ratio_maximum = 4.4
+tau_ratio_offset = 0.2
+
+# Approximate reference coordinates are midpoints of the zero-drive interval
+# enclosures in output/exemplar_cert_*_20260928/roots.csv. They identify
+# branches for this finite numerical protocol, not certified roles elsewhere.
+[[roles]]
+case = "three_sinks_descending"
+quiescent = [0.000582084415, 0.000000002096]
+seizure = [0.500000000000, 0.000503551044]
+herald = [0.499999911374, 0.447721078272]
+
+[[roles]]
+case = "two_sinks_ascending"
+quiescent = [0.000591570651, 0.000000001999]
+herald = [0.499999944468, 0.437409419860]
+
+[[roles]]
+case = "four_sinks_central"
+quiescent = [0.000582084415, 0.000000002096]
+seizure = [0.500000000000, 0.000503551044]
+active_mid = [0.311013988089, 0.425137086558]
+herald = [0.499999911374, 0.447721078272]
+
+[[roles]]
+case = "three_sinks_ascending"
+quiescent = [0.000588563843, 0.000000002162]
+seizure = [0.500000000000, 0.008571386565]
+herald = [0.499994676598, 0.449888340593]

@@ -1,0 +1,66 @@
+schema_version = 1
+status = "provisional mathematical exemplars; no biological interpretation or default promotion"
+description = "Four zero-drive FoI point models with distinct equilibrium and inhibitory-response structure"
+
+# Times are milliseconds. Coupling entries retain source_to_target names.
+# Each case is complete so it can be passed directly to the interval driver.
+
+[[cases]]
+name = "three_sinks_descending"
+historical_reference = "Figure 3 anchor"
+e_to_e = 17.0
+i_to_e = 9.0
+e_to_i = 19.0
+i_to_i = 4.0
+theta_off = 8.0
+tau_e = 7.8
+tau_ratio = 4.4
+slope_e = 5.0
+slope_i = 5.0
+theta_e = 1.5
+theta_on = 4.0
+
+[[cases]]
+name = "two_sinks_ascending"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+e_to_e = 17.0
+i_to_e = 9.0
+e_to_i = 12.0
+i_to_i = 4.0
+theta_off = 6.0
+tau_e = 7.8
+tau_ratio = 4.4
+slope_e = 5.0
+slope_i = 5.0
+theta_e = 1.5
+theta_on = 4.0
+
+[[cases]]
+name = "four_sinks_central"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+e_to_e = 17.0
+i_to_e = 9.0
+e_to_i = 19.0
+i_to_i = 4.0
+theta_off = 8.0
+tau_e = 7.8
+tau_ratio = 0.2
+slope_e = 5.0
+slope_i = 5.0
+theta_e = 1.5
+theta_on = 4.0
+
+[[cases]]
+name = "three_sinks_ascending"
+historical_reference = "Figure 4 rising-branch exploration cell"
+e_to_e = 19.0
+i_to_e = 13.0
+e_to_i = 14.0
+i_to_i = 6.0
+theta_off = 6.0
+tau_e = 7.8
+tau_ratio = 4.4
+slope_e = 5.0
+slope_i = 5.0
+theta_e = 1.5
+theta_on = 4.0

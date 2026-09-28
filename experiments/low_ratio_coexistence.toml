@@ -1,0 +1,7 @@
+schema_version = 1
+# Reuse the declared manuscript anchor planes and numerical search policy.
+base_config = "tetrastability.toml"
+
+[ratios]
+minimum = 0.2
+maximum = 4.4
