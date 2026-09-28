@@ -1,0 +1,74 @@
+schema_version = 1
+description = "Exploratory basin and nonnegative-total-drive measurements; no biological labels or exact-count inference"
+
+[scan]
+baseline_start = 0.0
+baseline_stop = 8.0
+baseline_step = 0.25
+e_reduction_step = 0.25
+i_amplitude_start = 0.0
+i_amplitude_stop = 8.0
+i_amplitude_step = 0.25
+durations = [1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0]
+amplitude_refinement_levels = 2
+equilibrium_grid_points = 21
+branch_match_atol = 0.15
+
+[geometry]
+grid_points = 17
+ray_samples = 16
+ray_refinements = 10
+angles = 32
+
+[diagnostics]
+window_duration = 100.0
+coordinate_atol = 1e-6
+balance_atol = 1e-8
+min_samples = 21
+followup_times = [5000.0, 10000.0, 20000.0]
+abstol = 1e-10
+reltol = 1e-10
+domain_atol = 1e-8
+maxiters = 1000000
+
+[sensitivity]
+e_to_i_minimum = 12.0
+e_to_i_maximum = 28.0
+theta_off_minimum = 6.0
+theta_off_maximum = 12.0
+tau_ratio_minimum = 0.2
+tau_ratio_maximum = 4.4
+
+[[cases]]
+name = "figure3"
+e_to_e = 17.0
+i_to_e = 9.0
+e_to_i = 19.0
+i_to_i = 4.0
+theta_off = 8.0
+tau_e = 7.8
+tau_ratio = 4.4
+slope_e = 5.0
+slope_i = 5.0
+theta_e = 1.5
+theta_on = 4.0
+low_activity = [0.000580378942, 0.000000002178]
+high_e_low_i = [0.5, 0.000558673969]
+high_e_high_i = [0.499999911374, 0.447721024061]
+
+[[cases]]
+name = "figure4_rising"
+e_to_e = 19.0
+i_to_e = 13.0
+e_to_i = 14.0
+i_to_i = 6.0
+theta_off = 6.0
+tau_e = 7.8
+tau_ratio = 4.4
+slope_e = 5.0
+slope_i = 5.0
+theta_e = 1.5
+theta_on = 4.0
+low_activity = [0.000583951064, 0.000000002147]
+high_e_low_i = [0.5, 0.008561583089]
+high_e_high_i = [0.499994674726, 0.449888503256]

@@ -604,7 +604,16 @@ These observables do not classify branch endpoints or certify a primitive period
 In particular, parameter reversal alone is not a certified fold of cycles,
 and runner-level Hopf, fold, or homoclinic interpretation remains separate.
 
+## Basin and tonic-drive measurements
+
+The separate [basin and tonic-drive study](basin_rescue.md) adds finite
+state-space basin sampling and simultaneous temporary reduction of a
+nonnegative tonic E drive with nonnegative I excitation. Its geometric
+distances, sampled area fractions, and rescue-onset brackets are numerical
+observations, not exact attractor counts or asymptotic basin proofs.
+
 ## Explicit pulse experiments
+
 
 `run_pulse_trial` and `run_pulse_experiments` apply rectangular pulses to a
 supplied autonomous model and matching equilibrium-search context. Targets

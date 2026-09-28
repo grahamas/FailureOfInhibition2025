@@ -13,6 +13,7 @@ include("periodic_orbits.jl")
 include("periodic_continuation.jl")
 include("hopf_diagnostics.jl")
 include("pulse_experiments.jl")
+include("basin_rescue.jl")
 
 export LogisticResponse
 export FailureOfInhibitionResponse
@@ -66,5 +67,6 @@ export HopfDiagnosticOptions, HopfDiagnosticResult, hopf_diagnostics
 
 export PulseExperimentOptions, PulseTrialResult, PulseExperimentResult
 export run_pulse_trial, run_pulse_experiments
+export BasinMeasurementOptions, basin_destination, measure_basin, run_tonic_rescue_trial
 
 end
