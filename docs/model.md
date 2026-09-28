@@ -544,6 +544,9 @@ not itself a confirmed result. Neither a confirmed cell nor an empty finite
 screen certifies exhaustive roots, prevalence, periodic dynamics, a functional
 state, or a manuscript claim.
 
+The completed finite-grid results and their limits are recorded in
+[`low_ratio_coexistence_results.md`](low_ratio_coexistence_results.md).
+
 ## Numerical periodic-orbit shooting
 
 `solve_periodic_orbit(model, state_guess, period_guess; options)` uses a
