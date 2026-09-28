@@ -8,6 +8,15 @@ high-E/high-I candidate on the ascending inhibitory response branch.
 
 ## Five state-space distances and basin area
 
+The area fraction is a finite-grid estimate of **basin stability** for a
+uniform initial-state distribution on the physical square. The shortest
+distance to the basin boundary is commonly called a **stability threshold**;
+the four signed-axis distances show its direction dependence. These terms
+describe state perturbations. The minimum amplitude or integrated input of
+a finite drive is a separate, protocol-dependent control threshold.
+See the original [basin stability](https://www.nature.com/articles/nphys2516)
+and [stability threshold](https://arxiv.org/abs/1504.04476) papers.
+
 `measure_basin(model, equilibria, source_index; options)` samples initial
 states in the physical `[0,1]^2` square. It reports the fraction of sampled
 cell centers compatible with the source equilibrium and an upper sampled
@@ -83,9 +92,11 @@ local, on-demand experiments.
 
 ## Exact counts
 
-The existing equilibrium search and all basin and pulse outputs retain
-`CompletenessNotCertified`. An exact attractor count additionally needs a
-global argument excluding undiscovered attracting invariant sets, including
-cycles. Numerical root matching, a filled basin grid, and finite pulse
-follow-up are not such an argument. No manuscript claim is promoted by these
-measurements.
+The existing numerical equilibrium search and all basin and pulse outputs
+retain `CompletenessNotCertified`. The separate
+[interval certification driver](../certification/README.md) proves complete
+equilibrium counts for the two selected zero-drive cases but does **not**
+certify exact counts of all attractors. Its global cycle-exclusion gate fails
+in both cases. Numerical root matching, a filled basin grid, and finite
+pulse follow-up cannot close that gap. No manuscript claim is promoted by
+these measurements.
