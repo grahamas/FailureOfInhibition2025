@@ -511,6 +511,39 @@ resumable; an interrupted run must restart in a new empty output directory.
 Neither discovery nor confirmation certifies completeness, an exact attractor
 count, general prevalence, biological states, or a publication claim.
 
+## Low-ratio equilibrium coexistence
+
+`scripts/run_low_ratio_coexistence.jl` uses the two declared manuscript anchor
+planes and their `e_to_i`/`theta_off` grids from `experiments/tetrastability.toml`.
+`experiments/low_ratio_coexistence.toml` fixes the time-constant ratio interval
+`r = tau_I/tau_E` to `[0.2, 4.4]`, with `tau_E = 7.8 ms`. Run a two-anchor smoke
+check with `--smoke --output output/low_ratio_smoke` or the full finite planes
+with `--output output/low_ratio_coexistence`.
+
+For a fixed equilibrium, let `Dg = [a b; c d]` be the balance Jacobian. Changing
+positive time constants leaves its coordinates and `Dg` unchanged. The ODE
+Jacobian has trace `(a + d/r)/tau_E` and determinant `(a*d-b*c)/(tau_E^2*r)`.
+Thus a resolved root is locally attracting where its determinant is positive
+and its trace is negative. When `a > 0` and `d < 0`, the central root can be
+attracting only for `r < -d/a`; the threshold itself is a linear trace-zero
+candidate, not a certified Hopf bifurcation. The runner computes the stability
+interval for every discovered root and screens open ratio segments for at least
+four attracting roots, rather than searching equilibria again at each ratio.
+
+Each screen-positive cell is independently searched with 11-by-11, 21-by-21,
+and 41-by-41 deterministic seed grids. Confirmation requires four distinct,
+uniquely coordinate-matched roots with recomputed balance residuals and
+Jacobians, resolved negative original-time spectral margins, adequate root
+separation, and no unresolved-nearby groups. All search attempts, failed
+contexts, root observations, interval witnesses, configuration, source snapshot,
+and checksums are retained. `cells.csv` is a finite-grid map;
+`intervals.csv` records open screen ratio segments and confirmation of a
+representative witness inside each segment, not every point in the segment;
+`anchors.csv` records the two manuscript examples. A screen-positive cell is
+not itself a confirmed result. Neither a confirmed cell nor an empty finite
+screen certifies exhaustive roots, prevalence, periodic dynamics, a functional
+state, or a manuscript claim.
+
 ## Numerical periodic-orbit shooting
 
 `solve_periodic_orbit(model, state_guess, period_guess; options)` uses a
