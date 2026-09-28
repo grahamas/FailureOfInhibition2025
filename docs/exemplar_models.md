@@ -78,8 +78,10 @@ julia --project=certification certification/certify_attractors.jl \
   --output output/four_sinks_central_recheck
 ```
 
-The current basin and tonic study runner still uses its original two-case
-configuration and three coordinate roles. It must be extended to include
-the fourth attracting equilibrium before a complete basin comparison of
-`four_sinks_central` can be made. This catalogue supplies parameter cells
-and local-equilibrium evidence, not a completed intervention comparison.
+The original basin and tonic runner still uses its two-case configuration
+and three coordinate roles. The separate
+[adaptive exemplar drive runner](basin_rescue.md#adaptive-exemplar-drive-study)
+tracks all four attracting equilibria for finite-drive comparisons. It does
+not measure basin geometry, so a complete basin comparison of
+`four_sinks_central` remains open. This catalogue supplies parameter cells
+and local-equilibrium evidence, not an intervention outcome by itself.

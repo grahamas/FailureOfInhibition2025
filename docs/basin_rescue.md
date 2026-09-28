@@ -6,8 +6,9 @@ candidates, not biological states. The first two configured zero-drive cases
 are the Figure 3 anchor and a Figure 4 exploration cell with an attracting
 high-E/high-I candidate on the ascending inhibitory response branch.
 The proposed [mathematical exemplar catalogue](exemplar_models.md) gives
-stable parameter identifiers, including a four-sink case; the study runner
-has not yet been extended to measure that fourth basin.
+stable parameter identifiers, including a four-sink case. The legacy study
+runner below retains its original two-case protocol. The adaptive exemplar
+runner described later records all attracting sinks, including the fourth.
 
 ## Five state-space distances and basin area
 
@@ -92,6 +93,65 @@ local sensitivity studies without silently changing other parameters.
 Outputs contain source snapshots, configuration, search contexts, numerical
 policy, status rows, and SHA-256 checksums. Full tonic scans are substantial
 local, on-demand experiments.
+
+## Adaptive exemplar drive study
+
+`scripts/run_adaptive_rescue_study.jl` reads
+[`adaptive_rescue.toml`](../experiments/adaptive_rescue.toml) and the four
+provisional exemplars. It tracks named zero-drive attracting branches by
+coordinate through one-at-a-time parameter changes and tonic E baselines.
+Lost or ambiguous matches stay unavailable. Every discovered attracting sink
+is still sampled as a source, with unmatched sinks recorded by local root
+index. These indices are local to one search and are not branch identities.
+
+The runner visits I-increment ranges `0–2`, `2–4`, and `4–8`, including later
+ranges if an earlier range has no transition. At each baseline and duration,
+it starts with amplitude spacing 1. For positive I alone it samples every
+interval midpoint and bisects intervals whose endpoints or midpoint differ
+or are unresolved. For E withdrawal plus I increment it samples each coarse
+cell's corners and center, then recursively divides cells with differing
+outcomes or unresolved observations. Observed amplitude transitions are
+resolved to cell width `0.0625`; uniform sampled cells remain coarse. This
+policy can miss a narrower island inside a uniform sampled cell. It does not
+assume that destination varies monotonically with drive.
+
+Tonic E baselines are probed every `0.5` from 0 through 8. An adjacent
+baseline interval with a changed tracked-source summary is also sampled at
+its midpoint, giving `0.25` resolution there. Equilibrium branches are
+searched at every `0.25` baseline for tracking even where no pulse trials
+are requested. All eight configured pulse durations are retained.
+
+Rows with `E_reduction = 0` belong to the **positive I** protocol. Rows with
+`E_reduction > 0` belong to the separate **tonic E withdrawal** protocol;
+both totals remain nonnegative. A transition is any finite-window compatible
+arrival at a different attracting equilibrium. The initial *rescue* summary
+is narrower: its source must be the tracked high-E/low-I `seizure` branch and
+its destination the tracked `quiescent` or `active_mid` branch. Arrival at
+`herald` is recorded but excluded from rescue until the explicit target set
+is changed. Transitions from other sources are recorded without a rescue
+label. These names express the author's study roles, not certified biological
+regimes.
+
+The nominal model and every distinct in-bounds neighbor at `e_to_i ±0.5`,
+`theta_off ±0.25`, and `tau_I/tau_E ±0.2` receive the same adaptive search.
+Existing rescue drives are useful first probes but cannot establish the
+absence of a different successful drive at a neighboring parameter value.
+Output units checkpoint by case, parameter cell, baseline, and source;
+rerunning the same command verifies and skips completed units. The runner
+requires at least 2 GB available RAM and 5 GB free disk before and during
+execution, and should run with one Julia worker. For example:
+
+```bash
+JULIA_NUM_THREADS=1 julia --project=. scripts/run_adaptive_rescue_study.jl \
+  --config experiments/adaptive_rescue.toml \
+  --output output/adaptive_rescue_exemplars
+```
+
+`--case` and `--cell` select a partial run; `--smoke` runs a reduced execution
+check. Artifacts retain each sampled trial, observed outcome-change bracket,
+per-protocol rescue presence, search contexts, source snapshots, and checksums.
+An unobserved rescue means only that no sampled drive in the stated finite
+domain and resolution reached a configured rescue target.
 
 ## Exact counts
 
