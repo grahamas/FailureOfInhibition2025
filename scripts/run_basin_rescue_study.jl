@@ -147,8 +147,9 @@ function match_roles(search, references, tolerance)
         end
     end
     selected = filter(value -> !isnothing(value), collect(values(choices)))
-    if length(unique(selected)) != length(selected)
-        for role in ROLES
+    for role in ROLES
+        index = choices[role]
+        if index !== nothing && count(==(index), selected) > 1
             choices[role], reasons[role] = nothing, :ambiguous
         end
     end

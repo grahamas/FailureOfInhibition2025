@@ -69,11 +69,11 @@ function basin_destination(model::PointModelParameters, equilibria, state;
 end
 
 function _basin_ray_limit(state, direction)
-    limits = Float64[]
+    limits = eltype(state)[]
     for coordinate in 1:2
         component = direction[coordinate]
         if component > 0
-            push!(limits, (1 - state[coordinate]) / component)
+            push!(limits, (one(state[coordinate]) - state[coordinate]) / component)
         elseif component < 0
             push!(limits, -state[coordinate] / component)
         end
@@ -85,7 +85,7 @@ function _basin_ray_exit(classify, state, direction, options)
     maximum_radius = _basin_ray_limit(state, direction)
     maximum_radius > 0 || return (status=:domain_edge, lower=missing,
         upper=missing, domain_limit=maximum_radius)
-    previous = 0.0
+    previous = zero(maximum_radius)
     for index in 1:options.ray_samples
         radius = maximum_radius * index / options.ray_samples
         label = classify(state .+ radius .* direction)
@@ -117,9 +117,11 @@ function _measure_basin_geometry(classify, state, options)
     source = classify(state)
     source == :source || throw(ArgumentError("source must classify as its own basin"))
     n = options.grid_points
+    T = eltype(state)
+    unit = one(T)
     counts = Dict(:source => 0, :other => 0, :unresolved => 0)
     for e_index in 1:n, i_index in 1:n
-        point = [(e_index - 0.5) / n, (i_index - 0.5) / n]
+        point = T[(T(e_index) - unit / 2) / n, (T(i_index) - unit / 2) / n]
         label = classify(point)
         label in keys(counts) || throw(ArgumentError("invalid basin classifier label"))
         counts[label] += 1
@@ -130,12 +132,12 @@ function _measure_basin_geometry(classify, state, options)
         source_samples=counts[:source], other_samples=counts[:other],
         unresolved_samples=counts[:unresolved], total_samples=total,
         cell_width=1 / n)
-    directions = ((:positive_E, [1.0, 0.0]), (:negative_E, [-1.0, 0.0]),
-        (:positive_I, [0.0, 1.0]), (:negative_I, [0.0, -1.0]))
+    directions = ((:positive_E, T[unit, 0]), (:negative_E, T[-unit, 0]),
+        (:positive_I, T[0, unit]), (:negative_I, T[0, -unit]))
     directional = Dict(name => _basin_ray_exit(classify, state, direction, options)
         for (name, direction) in directions)
     radial = [_basin_ray_exit(classify, state,
-        [cospi(2index / options.angles), sinpi(2index / options.angles)], options)
+        T[cospi(2T(index) / options.angles), sinpi(2T(index) / options.angles)], options)
         for index in 0:(options.angles - 1)]
     observed = filter(result -> result.status == :observed_exit, radial)
     nearest = isempty(observed) ?

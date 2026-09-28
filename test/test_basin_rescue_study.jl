@@ -26,3 +26,15 @@ include(joinpath(@__DIR__, "..", "scripts", "run_basin_rescue_study.jl"))
     @test_throws ArgumentError BasinRescueStudy.main(String[])
     @test_throws ArgumentError BasinRescueStudy.main(["--output", "a", "--wrong"])
 end
+
+@testset "Basin runner preserves unrelated branch matches" begin
+    search = (equilibria=[(state=[0.1, 0.1], stability=(classification=Attracting,)),
+        (state=[0.5, 0.4], stability=(classification=Attracting,))],)
+    references = Dict(:low_activity => [0.1, 0.1],
+        :high_e_low_i => [0.5, 0.4], :high_e_high_i => [0.51, 0.4])
+    matches, reasons = BasinRescueStudy.match_roles(search, references, 0.15)
+    @test matches[:low_activity] == 1
+    @test reasons[:low_activity] == :matched
+    @test all(role -> matches[role] === nothing && reasons[role] == :ambiguous,
+        (:high_e_low_i, :high_e_high_i))
+end

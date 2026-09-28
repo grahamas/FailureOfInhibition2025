@@ -45,7 +45,9 @@ These are state perturbations, not applied drive amplitudes.
 horizon and applies the package's two-window diagnostic and local-attraction
 check. Its result is finite-window equilibrium compatibility, not proof of
 asymptotic convergence. `BasinMeasurementOptions` selects grid and ray
-resolution and reuses the existing pulse diagnostic and solver policy.
+resolution and reuses the existing pulse diagnostic and solver policy. Grid
+centers, ray directions, and distance brackets retain the source state
+element type, including `Float32` and `BigFloat`.
 
 ## Nonnegative total drive with tonic E withdrawal
 
@@ -100,9 +102,11 @@ local, on-demand experiments.
 [`adaptive_rescue.toml`](../experiments/adaptive_rescue.toml) and the four
 provisional exemplars. It tracks named zero-drive attracting branches by
 coordinate through one-at-a-time parameter changes and tonic E baselines.
-Lost or ambiguous matches stay unavailable. Every discovered attracting sink
-is still sampled as a source, with unmatched sinks recorded by local root
-index. These indices are local to one search and are not branch identities.
+Lost or ambiguous matches stay unavailable. A collision invalidates only the
+roles sharing that equilibrium; independent matches remain tracked. Every
+discovered attracting sink is still sampled as a source, with unmatched sinks
+recorded by local root index. These indices are local to one search and are
+not branch identities.
 
 The runner visits I-increment ranges `0–2`, `2–4`, and `4–8`, including later
 ranges if an earlier range has no transition. At each baseline and duration,
@@ -137,9 +141,13 @@ The nominal model and every distinct in-bounds neighbor at `e_to_i ±0.5`,
 Existing rescue drives are useful first probes but cannot establish the
 absence of a different successful drive at a neighboring parameter value.
 Output units checkpoint by case, parameter cell, baseline, and source;
-rerunning the same command verifies and skips completed units. The runner
-reconstructs context TOML and branch CSV files on every resume, replacing
-files left incomplete by an interruption before it aggregates results. It
+rerunning the same command verifies every recorded source and dependency
+manifest against its archived hash before skipping completed units. Changed
+or missing inputs require a new output directory; old results can still be
+replayed with their archived source. Unit completion markers are published
+atomically, so an interrupted marker write leaves a unit to be recomputed.
+The runner reconstructs context TOML and branch CSV files on every resume,
+replacing files left incomplete by an interruption before it aggregates results. It
 requires at least 2 GB available RAM and 5 GB free disk before and during
 execution, and should run with one Julia worker. For example:
 

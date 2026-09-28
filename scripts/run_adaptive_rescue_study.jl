@@ -144,8 +144,9 @@ function match_roles(search, references, tolerance)
         end
     end
     used = [index for index in values(matches) if index !== nothing]
-    if length(unique(used)) != length(used)
-        for role in keys(matches)
+    for role in keys(matches)
+        index = matches[role]
+        if index !== nothing && count(==(index), used) > 1
             matches[role], reasons[role] = nothing, "ambiguous"
         end
     end
@@ -310,6 +311,30 @@ function unit_dir(output, case_name, cell_name, baseline, role)
     return joinpath(output, "units", case_name, cell_name, "B_$code", role)
 end
 
+# Rename within the destination directory so an interrupted write never publishes
+# a partial completion marker. Unmarked units are recomputed on resume.
+function write_completion_marker(path, data; writer=write_toml)
+    temporary, io = mktemp(dirname(path))
+    close(io)
+    try
+        writer(temporary, data)
+        mv(temporary, path; force=true)
+    finally
+        isfile(temporary) && rm(temporary)
+    end
+    return nothing
+end
+
+function verify_resume_sources(metadata, exemplar_path; root=ROOT)
+    for (relative, expected) in metadata["source_sha256"]
+        source = relative == "experiments/exemplar_models.toml" ?
+            exemplar_path : joinpath(root, relative)
+        isfile(source) && file_hash(source) == expected ||
+            throw(ArgumentError("source changed or missing since checkpoint: $relative"))
+    end
+    return nothing
+end
+
 function run_unit!(output, config, case_name, cell_name, baseline, context, source;
     smoke=false)
     directory = unit_dir(output, case_name, cell_name, baseline, source.role)
@@ -380,7 +405,7 @@ function run_unit!(output, config, case_name, cell_name, baseline, context, sour
         "positive_I_trials" => count(row -> row.protocol == "positive_I", rows),
         "tonic_E_withdrawal_trials" => count(row -> row.protocol == "tonic_E_withdrawal", rows),
         "boundary_count" => length(boundaries))
-    write_toml(marker, Dict("presence" => presence,
+    write_completion_marker(marker, Dict("presence" => presence,
         "sha256" => Dict("trials.csv" => file_hash(trial_path),
             "boundaries.csv" => file_hash(boundary_path))))
     return presence
@@ -490,14 +515,7 @@ function run_experiment(config_path, output_dir; case_filter=nothing,
         metadata["case_filter"] == (case_filter === nothing ? "all" : case_filter) &&
             metadata["cell_filter"] == (cell_filter === nothing ? "all" : cell_filter) ||
             throw(ArgumentError("resume case or cell filter differs"))
-        for relative in ("scripts/run_basin_rescue_study.jl",
-            "scripts/run_adaptive_rescue_study.jl", "src/basin_rescue.jl")
-            file_hash(joinpath(ROOT, relative)) == metadata["source_sha256"][relative] ||
-                throw(ArgumentError("source changed since checkpoint: $relative"))
-        end
-        file_hash(config.exemplar_path) ==
-            metadata["source_sha256"]["experiments/exemplar_models.toml"] ||
-            throw(ArgumentError("exemplars changed since checkpoint"))
+        verify_resume_sources(metadata, config.exemplar_path)
     else
         isempty(readdir(output)) || throw(ArgumentError("output is not an adaptive checkpoint"))
         metadata = archive_provenance(config_path, output)

@@ -83,3 +83,71 @@ include(joinpath(@__DIR__, "..", "scripts", "run_adaptive_rescue_study.jl"))
         0.0, 0.125, 0.0, 0.125, 0.0625)
     @test calls[] > 5
 end
+
+@testset "Resume verifies every recorded source" begin
+    mktempdir() do root
+        paths = ["src/diagnostics.jl", "src/simulation.jl",
+            "scripts/run_minimal_experiment.jl", "Project.toml", "Manifest.toml",
+            "scripts/run_adaptive_rescue_study.jl"]
+        exemplar = joinpath(root, "custom_exemplars.toml")
+        write(exemplar, "original exemplars")
+        hashes = Dict("experiments/exemplar_models.toml" =>
+            AdaptiveRescueStudy.file_hash(exemplar))
+        for relative in paths
+            path = joinpath(root, relative)
+            mkpath(dirname(path))
+            write(path, "original $relative")
+            hashes[relative] = AdaptiveRescueStudy.file_hash(path)
+        end
+        metadata = Dict("source_sha256" => hashes)
+        verify() = AdaptiveRescueStudy.verify_resume_sources(metadata, exemplar; root)
+        @test verify() === nothing
+        for path in [joinpath.(root, paths); exemplar]
+            original = read(path)
+            write(path, "changed")
+            @test_throws ArgumentError verify()
+            rm(path)
+            @test_throws ArgumentError verify()
+            write(path, original)
+        end
+        @test verify() === nothing
+    end
+end
+
+@testset "Completion markers survive interrupted writes" begin
+    mktempdir() do directory
+        path = joinpath(directory, "done.toml")
+        data = Dict("presence" => "observed_rescue")
+        function interrupted(path, data)
+            write(path, "partial TOML =")
+            throw(InterruptException())
+        end
+        @test_throws InterruptException AdaptiveRescueStudy.write_completion_marker(
+            path, data; writer=interrupted)
+        @test isempty(readdir(directory))
+        AdaptiveRescueStudy.write_completion_marker(path, data)
+        @test AdaptiveRescueStudy.TOML.parsefile(path) == data
+        @test_throws InterruptException AdaptiveRescueStudy.write_completion_marker(
+            path, Dict("presence" => "changed"); writer=interrupted)
+        @test AdaptiveRescueStudy.TOML.parsefile(path) == data
+        @test readdir(directory) == ["done.toml"]
+    end
+end
+
+@testset "Role collisions preserve independent matches and lost roles" begin
+    search = (equilibria=[(state=[0.1, 0.1], stability=(classification=Attracting,)),
+        (state=[0.5, 0.4], stability=(classification=Attracting,))],)
+    refs = Dict("quiescent" => [0.1, 0.1], "seizure" => [0.5, 0.4],
+        "active_mid" => [0.51, 0.4], "herald" => nothing)
+    matches, reasons = AdaptiveRescueStudy.match_roles(search, refs, 0.15)
+    @test matches["quiescent"] == 1
+    @test reasons["quiescent"] == "matched"
+    @test all(role -> matches[role] === nothing && reasons[role] == "ambiguous",
+        ("seizure", "active_mid"))
+    @test reasons["herald"] == "tracking_lost"
+    next_refs = Dict(role => index === nothing ? nothing :
+        search.equilibria[index].state for (role, index) in matches)
+    next_matches, next_reasons = AdaptiveRescueStudy.match_roles(search, next_refs, 0.15)
+    @test next_matches["quiescent"] == 1
+    @test next_reasons["seizure"] == "tracking_lost"
+end

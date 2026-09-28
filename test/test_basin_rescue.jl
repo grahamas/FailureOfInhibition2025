@@ -56,3 +56,23 @@ end
     @test_throws ArgumentError run_tonic_rescue_trial(model, search, state;
         e_reduction=0, i_increment=0, duration=0, options)
 end
+
+@testset "Basin samples preserve source precision" begin
+    options = BasinMeasurementOptions(grid_points=3, ray_samples=4,
+        ray_refinements=2, angles=8)
+    for T in (Float32, BigFloat)
+        state = T[0.5, 0.5]
+        samples = Vector{T}[]
+        function classify(point)
+            @test eltype(point) === T
+            push!(samples, copy(point))
+            return sum(abs2, point .- state) < (one(T) / 5)^2 ? :source : :other
+        end
+        result = FailureOfInhibition2025._measure_basin_geometry(classify, state, options)
+        @test samples[2] == fill(one(T) / 6, 2)
+        @test result.euclidean.status == :observed_exit
+        @test result.euclidean.lower isa T
+        @test result.euclidean.upper isa T
+        @test all(item -> item.domain_limit isa T, values(result.directional))
+    end
+end
