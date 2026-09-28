@@ -5,6 +5,9 @@ These methods concern the approved two-population point model. The words
 candidates, not biological states. The first two configured zero-drive cases
 are the Figure 3 anchor and a Figure 4 exploration cell with an attracting
 high-E/high-I candidate on the ascending inhibitory response branch.
+The proposed [mathematical exemplar catalogue](exemplar_models.md) gives
+stable parameter identifiers, including a four-sink case; the study runner
+has not yet been extended to measure that fourth basin.
 
 ## Five state-space distances and basin area
 

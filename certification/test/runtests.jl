@@ -66,6 +66,41 @@ const physical_domain = [interval(0.0, 1.0), interval(0.0, 1.0)]
         physical_domain)
 end
 
+@testset "Provisional exemplar equilibrium structure" begin
+    config = TOML.parsefile(joinpath(@__DIR__, "..", "..", "experiments",
+        "exemplar_models.toml"))
+    expected = Dict(
+        "two_sinks_ascending" => (3, 2, :ascending),
+        "three_sinks_descending" => (7, 3, :descending),
+        "four_sinks_central" => (7, 4, :descending),
+        "three_sinks_ascending" => (5, 3, :ascending))
+    @test Set(case["name"] for case in config["cases"]) == Set(keys(expected))
+    for case in config["cases"]
+        count, attracting, branch = expected[case["name"]]
+        model = AC._case_model(case)
+        field(box) = first(AC.interval_field(model, box))
+        jacobian(box) = last(AC.interval_field(model, box))
+        result = AC.certify_attractor_count(field, jacobian, physical_domain)
+        @test result.root_coverage.equilibrium_count == count
+        @test result.certified_attracting_equilibria == attracting
+        @test isempty(result.root_coverage.unresolved)
+        @test result.status == :not_certified
+        high_i_roots = filter(root -> root.classification == :attracting &&
+            inf(root.enclosure[1]) > 0.4 && inf(root.enclosure[2]) > 0.1,
+            result.root_coverage.roots)
+        @test length(high_i_roots) == 1
+        if length(high_i_roots) == 1
+            E, Istate = high_i_roots[1].enclosure
+            input = interval(case["e_to_i"]) * E -
+                interval(case["i_to_i"]) * Istate
+            midpoint = (interval(case["theta_on"]) +
+                interval(case["theta_off"])) / interval(2)
+            @test branch == :ascending ? sup(input) < inf(midpoint) :
+                inf(input) > sup(midpoint)
+        end
+    end
+end
+
 @testset "Model enclosure and selected cases" begin
     config = TOML.parsefile(joinpath(@__DIR__, "..", "..", "experiments",
         "basin_rescue.toml"))
