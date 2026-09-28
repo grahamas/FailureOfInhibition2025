@@ -138,6 +138,8 @@ Existing rescue drives are useful first probes but cannot establish the
 absence of a different successful drive at a neighboring parameter value.
 Output units checkpoint by case, parameter cell, baseline, and source;
 rerunning the same command verifies and skips completed units. The runner
+reconstructs context TOML and branch CSV files on every resume, replacing
+files left incomplete by an interruption before it aggregates results. It
 requires at least 2 GB available RAM and 5 GB free disk before and during
 execution, and should run with one Julia worker. For example:
 

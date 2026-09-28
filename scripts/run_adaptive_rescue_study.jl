@@ -398,28 +398,31 @@ function baseline_signature(output, case_name, cell_name, baseline, context)
     return join(sort!(signatures), "|")
 end
 
-function run_context!(output, config, case, cell, baseline, context; smoke=false)
-    require_resources(output)
+function write_context_artifacts!(output, config, case, cell, baseline, context)
     context_dir = joinpath(output, "contexts", case["name"], cell.name)
     mkpath(context_dir)
     context_path = joinpath(context_dir, "B_$(replace(string(baseline), "." => "p")).toml")
-    isfile(context_path) || write_toml(context_path, context_record(context.search))
+    # Contexts are reconstructed on every run; replace any interrupted write.
+    write_toml(context_path, context_record(context.search))
     branch_path = joinpath(context_dir,
         "B_$(replace(string(baseline), "." => "p"))_branches.csv")
-    if !isfile(branch_path)
-        branches = NamedTuple[]
-        for role in sort!(collect(keys(config.references[case["name"]])))
-            index = context.matches[role]
-            root = index === nothing ? nothing : context.search.equilibria[index]
-            push!(branches, (case=case["name"], cell=cell.name,
-                baseline_E=baseline, role, status=context.reasons[role],
-                equilibrium=index === nothing ? missing : index,
-                E=root === nothing ? missing : root.state[1],
-                I=root === nothing ? missing : root.state[2],
-                completeness=string(context.search.completeness)))
-        end
-        write_rows(branch_path, branches, BRANCH_COLUMNS)
+    branches = NamedTuple[]
+    for role in sort!(collect(keys(config.references[case["name"]])))
+        index = context.matches[role]
+        root = index === nothing ? nothing : context.search.equilibria[index]
+        push!(branches, (case=case["name"], cell=cell.name,
+            baseline_E=baseline, role, status=context.reasons[role],
+            equilibrium=index === nothing ? missing : index,
+            E=root === nothing ? missing : root.state[1],
+            I=root === nothing ? missing : root.state[2],
+            completeness=string(context.search.completeness)))
     end
+    write_rows(branch_path, branches, BRANCH_COLUMNS)
+end
+
+function run_context!(output, config, case, cell, baseline, context; smoke=false)
+    require_resources(output)
+    write_context_artifacts!(output, config, case, cell, baseline, context)
     for source in source_roles(context)
         run_unit!(output, config, case["name"], cell.name, baseline, context,
             source; smoke)

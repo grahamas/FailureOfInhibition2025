@@ -18,6 +18,22 @@ include(joinpath(@__DIR__, "..", "scripts", "run_adaptive_rescue_study.jl"))
     matches, reasons = AdaptiveRescueStudy.match_roles(search, refs, config.tolerance)
     @test all(role -> reasons[role] == "matched", keys(refs))
     @test length(unique(collect(values(matches)))) == 4
+    mktempdir() do output
+        cell = first(AdaptiveRescueStudy.parameter_cells(case, config.sensitivity))
+        tracked = (; search, matches, reasons)
+        AdaptiveRescueStudy.write_context_artifacts!(output, config, case,
+            cell, 0.0, tracked)
+        directory = joinpath(output, "contexts", case["name"], cell.name)
+        context_path = joinpath(directory, "B_0p0.toml")
+        branch_path = joinpath(directory, "B_0p0_branches.csv")
+        expected_context, expected_branches = read(context_path), read(branch_path)
+        write(context_path, "truncated TOML")
+        write(branch_path, "truncated CSV")
+        AdaptiveRescueStudy.write_context_artifacts!(output, config, case,
+            cell, 0.0, tracked)
+        @test read(context_path) == expected_context
+        @test read(branch_path) == expected_branches
+    end
     refs["seizure"] = nothing
     _, lost = AdaptiveRescueStudy.match_roles(search, refs, config.tolerance)
     @test lost["seizure"] == "tracking_lost"
