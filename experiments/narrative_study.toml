@@ -1,0 +1,55 @@
+schema_version = 1
+description = "Bounded activity, selective intervention, and paired herald/seizure measurements; provisional coordinate roles"
+
+[search]
+initial_points = 1024
+maximum_points = 4096
+halton_bases = [2, 3, 5, 7, 11]
+screen_grid = 11
+confirmation_grids = [21, 41]
+e_to_e = [0.0, 24.0]
+e_to_i = [12.0, 28.0]
+theta_off = [6.0, 12.0]
+tau_ratio = [0.2, 4.4]
+baseline_E = [0.0, 8.0]
+anchor_baselines = [0.0, 0.015625, 0.03125, 0.0625, 0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0]
+
+[protocol]
+amplitude_max = 8.0
+amplitude_step = 0.25
+transition_width = 0.0625
+displacement_samples = 32
+displacement_width = 0.0001
+durations = [1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0]
+followup_times = [5000.0, 10000.0, 20000.0]
+
+[diagnostics]
+window_duration = 100.0
+coordinate_atol = 1e-6
+balance_atol = 1e-8
+min_samples = 21
+abstol = 1e-10
+reltol = 1e-10
+domain_atol = 1e-8
+maxiters = 1000000
+
+[interventions]
+fractions = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60]
+output_factors = [1.0, 1.0625, 1.125, 1.1875, 1.25, 1.3125, 1.375, 1.4375, 1.50]
+threshold_step = 0.25
+
+[map]
+baseline_step = 0.25
+coupling_step = 0.25
+coupling_halfwidth = 1.0
+baseline_halfwidth = 0.5
+
+[[families]]
+name = "figure3"
+i_to_e = 9.0
+i_to_i = 4.0
+
+[[families]]
+name = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
