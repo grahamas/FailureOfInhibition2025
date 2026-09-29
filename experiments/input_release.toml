@@ -1,0 +1,23 @@
+schema_version = 1
+exemplars = "exemplar_models.toml"
+roles = "adaptive_rescue.toml"
+on_input = 8.0
+e_to_e_min = 0.0
+e_to_e_max = 24.0
+e_to_e_step = 0.25
+grid_points = 21
+confirmation_grids = [21, 41]
+branch_match_atol = 0.15
+horizons = [5000.0, 10000.0, 20000.0]
+
+[diagnostics]
+window_duration = 100.0
+coordinate_atol = 1e-6
+balance_atol = 1e-8
+min_samples = 21
+
+[solver]
+abstol = 1e-10
+reltol = 1e-10
+domain_atol = 1e-8
+maxiters = 1000000
