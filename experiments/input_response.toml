@@ -1,0 +1,38 @@
+schema_version = 1
+description = "Two-input response atlas; numerical discovery and finite-window transitions"
+initial_input_bound = 16.0
+tail_tolerance = 1e-6
+maximum_expansions = 12
+input_width = 0.01
+chart_step = 0.025
+geometry_budget = 4000
+screen_budget = 180
+transition_budget = 1200
+line_budget = 4096
+root_grid = 5
+confirmation_grid = 41
+state_probe_grid = 3
+halton_per_family = 64
+maximum_additional_per_family = 512
+durations = [1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0]
+followup_times = [5000.0, 10000.0, 20000.0]
+input_knots = [0.0, 0.0625, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0]
+displacement_width = 0.0001
+phase_count = 8
+phase_confirmation_count = 16
+
+[diagnostics]
+window_duration = 100.0
+coordinate_atol = 1e-6
+balance_atol = 1e-8
+min_samples = 21
+abstol = 1e-10
+reltol = 1e-10
+domain_atol = 0.0
+maxiters = 1000000
+
+[expansion]
+axes = ["e_to_e", "e_to_i", "theta_off", "tau_ratio"]
+lower = [0.0, 12.0, 6.0, 0.2]
+upper = [24.0, 28.0, 12.0, 4.4]
+offsets = [0.25, 0.5, 0.25, 0.2]
