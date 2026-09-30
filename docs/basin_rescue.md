@@ -173,3 +173,13 @@ certify exact counts of all attractors. Its global cycle-exclusion gate fails
 in both cases. Numerical root matching, a filled basin grid, and finite
 pulse follow-up cannot close that gap. No manuscript claim is promoted by
 these measurements.
+
+## Permanent input removal: a different protocol
+
+The [input-release study](input_release.md) independently searches the driven
+and zero-input systems and leaves input off after release. It finds a
+high-E/low-I driven state that returns to low activity at weaker recurrent
+excitation. The temporary-withdrawal scan above evaluates recovery after
+tonic input resumes; its named seizure source also follows a zero-input
+reference. Its finite negative result therefore does not exclude this new
+example. Both protocols and their original artifacts are retained.
