@@ -9,11 +9,11 @@
 
 ## Next Steps
 
-- [ ] Review completion, unresolved outcomes, and any confirmation disagreements from the 74 detailed input-response follow-ups using `docs/input_response_results.md` and the batch status recorded there.
-- [ ] Manually revise the manuscript using the figure sequence and paragraph purposes in `docs/narrative_results.md`; keep rest–active switching distinct from demonstrated cortical computation.
-- [ ] Review the exploratory time-scale ratio and positive-I seizure-induction witness before giving the selected example physiological meaning.
-- [ ] Select the input-response comparisons that best support the manuscript argument, keeping sustained withdrawal, finite pulses, and direct E displacement distinct.
-- [ ] Specify a later coupled E–I feedback model and its available control signals before attempting self-terminating herald spikes or failed seizure control.
+- [ ] Finish and review the resumed 74-case input-response batch; use the dated partial audit in `docs/paper_evidence.md` and retain confirmation differences.
+- [ ] Review the contribution brief, four figure questions, and 24 calendar-sized deliverables in `docs/paper_delivery.md` and `docs/paper_evidence.md`.
+- [ ] Choose the proposed coupling and response-parameter domains in `docs/paper_experiment_card.md` before launching the staged expansion.
+- [ ] Connect ordinary switching, paired high-state control, and intervention tradeoffs across selected parameter regions, remeasuring effective stimuli where needed.
+- [ ] Assemble the confirmed figures and manually revise the manuscript using the new candidate paragraphs; retain the derivation and defer fitting competition and autonomous feedback.
 
 ## Context
 
@@ -30,10 +30,13 @@ See `docs/narrative_study.md` for the protocol and `docs/narrative_results.md`
 for the original results, limitations, and manual manuscript revision
 instructions. `docs/input_response_study.md` documents the systematic two-input
 characterization and its sampling limits.
-Its eight anchors and 224-case parameter screen are complete; 74 selected
-detailed follow-ups continue as a resumable batch with automatic verification
-and report generation. Completed results and batch status are documented in
-`docs/input_response_results.md`.
+Its eight anchors and 224-case parameter screen are complete. A 30 September
+UTC audit found nine of 74 detailed follow-ups complete and a tenth partial;
+the stopped batch was resumed with its verified frozen source. Independent
+replay also confirms 13 selective-withdrawal contexts, including herald-to-rest
+contrasts at time-scale ratios about 1.143 and 4.4. The paper now targets staged
+parameter-region evidence within the point model. See `docs/paper_evidence.md`
+for the dated snapshot and `docs/input_response_results.md` for study details.
 
 ## Constraints
 
@@ -49,14 +52,14 @@ and report generation. Completed results and batch status are documented in
 
 ## Open Questions
 
-- What biological evidence would justify interpreting the demonstrated rest–active switch as cortical function?
-- Which parameter neighborhoods preserve selective herald recovery, and which observed differences are robust enough to motivate a coupled feedback model?
-- What feedback dynamics could make a stable point-model herald candidate a transient spike in a coupled system?
+- Which parameter regions support ordinary switching, high-state access, and selective control together?
+- Which proposed expansion domains should be selected for the next bounded batch?
+- What biological evidence supports the final interpretation of the measured activity and switching properties?
 
 ## Completed
 
+- [x] Prepared the 24-task paper handoff, contribution brief, figure candidates, and proposed experiment card; audited completed response artifacts and independently confirmed 13 selective-withdrawal contexts with 52 trajectories.
 - [x] Implemented two-input equilibrium and response characterization, completed the anchor maps and parameter screen, and independently checked selective withdrawal, neighboring parameterizations, pulse boundaries, and archived-source replay.
 - [x] Completed the narrative study, paired reduction measurements, intervention comparisons, local map, neighborhood checks, independent numerical checks, and archived-source trajectory replay; delivered figures and an author-facing outline.
 - [x] Implemented and independently reviewed pseudo-arclength continuation, numerical periodic shooting, and explicit pulse experiments with retained unresolved outcomes and replayable evidence.
 - [x] Executed both full primary parameter planes, representative continuation and pulse protocols, intervention/robustness searches, and periodic-candidate screening; documented analytical constraints and initial results.
-- [x] Added and independently reviewed the sampled diagnostic contract and reproducible matched control/FoI runner, with explicit numerical criteria, full search records, source snapshots, checksums, and retained unresolved outcomes.

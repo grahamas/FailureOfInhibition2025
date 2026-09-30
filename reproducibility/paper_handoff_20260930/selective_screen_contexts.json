@@ -1,0 +1,426 @@
+[
+  {
+    "case": "figure4_joint_29",
+    "baseline": [
+      1.0,
+      1.0
+    ],
+    "herald": "rest",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.35,
+          0.0
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "e_to_e": 17.25,
+      "e_to_i": 22.864197530864196,
+      "family": "figure4",
+      "historical_reference": "Figure 4 rising-branch exploration cell",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "figure4_joint_29",
+      "name": "three_sinks_ascending",
+      "slope_e": 5.0,
+      "slope_i": 5.0,
+      "tau_e": 7.8,
+      "tau_ratio": 1.1428571428571428,
+      "theta_e": 1.5,
+      "theta_off": 10.848,
+      "theta_on": 4.0
+    }
+  },
+  {
+    "case": "input_dependent_e_to_e_4.25",
+    "baseline": [
+      8.0,
+      0.0
+    ],
+    "herald": "rest",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          8.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "changed_axis": "e_to_e",
+      "e_to_e": 4.25,
+      "e_to_i": 19.0,
+      "family": "figure3",
+      "historical_reference": "Figure 3 anchor",
+      "i_to_e": 9.0,
+      "i_to_i": 4.0,
+      "id": "input_dependent_e_to_e_4.25",
+      "name": "three_sinks_descending",
+      "parent": "input_dependent",
+      "slope_e": 5.0,
+      "slope_i": 5.0,
+      "tau_e": 7.8,
+      "tau_ratio": 4.4,
+      "theta_e": 1.5,
+      "theta_off": 8.0,
+      "theta_on": 4.0
+    }
+  },
+  {
+    "case": "selective_withdrawal_e_to_e_17.25",
+    "baseline": [
+      0.35,
+      0.0
+    ],
+    "herald": "active",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.35,
+          0.0
+        ],
+        [
+          0.1,
+          0.0
+        ]
+      ],
+      "changed_axis": "e_to_e",
+      "e_to_e": 17.25,
+      "e_to_i": 19.0,
+      "family": "figure4",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "selective_withdrawal_e_to_e_17.25",
+      "parent": "selective_withdrawal",
+      "tau_ratio": 0.2,
+      "theta_off": 8.0
+    }
+  },
+  {
+    "case": "selective_withdrawal_e_to_i_18.5",
+    "baseline": [
+      0.35,
+      0.0
+    ],
+    "herald": "active",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.35,
+          0.0
+        ],
+        [
+          0.1,
+          0.0
+        ]
+      ],
+      "changed_axis": "e_to_i",
+      "e_to_e": 17.0,
+      "e_to_i": 18.5,
+      "family": "figure4",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "selective_withdrawal_e_to_i_18.5",
+      "parent": "selective_withdrawal",
+      "tau_ratio": 0.2,
+      "theta_off": 8.0
+    }
+  },
+  {
+    "case": "selective_withdrawal_e_to_i_18.5_midpoint",
+    "baseline": [
+      0.35,
+      0.0
+    ],
+    "herald": "active",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.35,
+          0.0
+        ],
+        [
+          0.1,
+          0.0
+        ]
+      ],
+      "changed_axis": "e_to_i",
+      "e_to_e": 17.0,
+      "e_to_i": 18.75,
+      "family": "figure4",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "selective_withdrawal_e_to_i_18.5_midpoint",
+      "parent": "selective_withdrawal",
+      "refined": true,
+      "tau_ratio": 0.2,
+      "theta_off": 8.0
+    }
+  },
+  {
+    "case": "selective_withdrawal_e_to_i_19.5",
+    "baseline": [
+      0.35,
+      0.0
+    ],
+    "herald": "active",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.35,
+          0.0
+        ],
+        [
+          0.1,
+          0.0
+        ]
+      ],
+      "changed_axis": "e_to_i",
+      "e_to_e": 17.0,
+      "e_to_i": 19.5,
+      "family": "figure4",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "selective_withdrawal_e_to_i_19.5",
+      "parent": "selective_withdrawal",
+      "tau_ratio": 0.2,
+      "theta_off": 8.0
+    }
+  },
+  {
+    "case": "selective_withdrawal_e_to_i_19.5_midpoint",
+    "baseline": [
+      0.35,
+      0.0
+    ],
+    "herald": "active",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.35,
+          0.0
+        ],
+        [
+          0.1,
+          0.0
+        ]
+      ],
+      "changed_axis": "e_to_i",
+      "e_to_e": 17.0,
+      "e_to_i": 19.25,
+      "family": "figure4",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "selective_withdrawal_e_to_i_19.5_midpoint",
+      "parent": "selective_withdrawal",
+      "refined": true,
+      "tau_ratio": 0.2,
+      "theta_off": 8.0
+    }
+  },
+  {
+    "case": "selective_withdrawal_tau_ratio_0.4",
+    "baseline": [
+      0.35,
+      0.0
+    ],
+    "herald": "active",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.35,
+          0.0
+        ],
+        [
+          0.1,
+          0.0
+        ]
+      ],
+      "changed_axis": "tau_ratio",
+      "e_to_e": 17.0,
+      "e_to_i": 19.0,
+      "family": "figure4",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "selective_withdrawal_tau_ratio_0.4",
+      "parent": "selective_withdrawal",
+      "tau_ratio": 0.4,
+      "theta_off": 8.0
+    }
+  },
+  {
+    "case": "selective_withdrawal_tau_ratio_0.4_midpoint",
+    "baseline": [
+      0.35,
+      0.0
+    ],
+    "herald": "active",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.35,
+          0.0
+        ],
+        [
+          0.1,
+          0.0
+        ]
+      ],
+      "changed_axis": "tau_ratio",
+      "e_to_e": 17.0,
+      "e_to_i": 19.0,
+      "family": "figure4",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "selective_withdrawal_tau_ratio_0.4_midpoint",
+      "parent": "selective_withdrawal",
+      "refined": true,
+      "tau_ratio": 0.30000000000000004,
+      "theta_off": 8.0
+    }
+  },
+  {
+    "case": "selective_withdrawal_theta_off_7.75",
+    "baseline": [
+      0.35,
+      0.0
+    ],
+    "herald": "active",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.35,
+          0.0
+        ],
+        [
+          0.1,
+          0.0
+        ]
+      ],
+      "changed_axis": "theta_off",
+      "e_to_e": 17.0,
+      "e_to_i": 19.0,
+      "family": "figure4",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "selective_withdrawal_theta_off_7.75",
+      "parent": "selective_withdrawal",
+      "tau_ratio": 0.2,
+      "theta_off": 7.75
+    }
+  },
+  {
+    "case": "selective_withdrawal_theta_off_7.75_midpoint",
+    "baseline": [
+      0.35,
+      0.0
+    ],
+    "herald": "active",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.35,
+          0.0
+        ],
+        [
+          0.1,
+          0.0
+        ]
+      ],
+      "changed_axis": "theta_off",
+      "e_to_e": 17.0,
+      "e_to_i": 19.0,
+      "family": "figure4",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "selective_withdrawal_theta_off_7.75_midpoint",
+      "parent": "selective_withdrawal",
+      "refined": true,
+      "tau_ratio": 0.2,
+      "theta_off": 7.875
+    }
+  },
+  {
+    "case": "selective_withdrawal_theta_off_8.25",
+    "baseline": [
+      0.35,
+      0.0
+    ],
+    "herald": "active",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.35,
+          0.0
+        ],
+        [
+          0.1,
+          0.0
+        ]
+      ],
+      "changed_axis": "theta_off",
+      "e_to_e": 17.0,
+      "e_to_i": 19.0,
+      "family": "figure4",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "selective_withdrawal_theta_off_8.25",
+      "parent": "selective_withdrawal",
+      "tau_ratio": 0.2,
+      "theta_off": 8.25
+    }
+  },
+  {
+    "case": "selective_withdrawal_theta_off_8.25_midpoint",
+    "baseline": [
+      0.35,
+      0.0
+    ],
+    "herald": "active",
+    "seizure": "seizure",
+    "parameters": {
+      "baselines": [
+        [
+          0.35,
+          0.0
+        ],
+        [
+          0.1,
+          0.0
+        ]
+      ],
+      "changed_axis": "theta_off",
+      "e_to_e": 17.0,
+      "e_to_i": 19.0,
+      "family": "figure4",
+      "i_to_e": 13.0,
+      "i_to_i": 6.0,
+      "id": "selective_withdrawal_theta_off_8.25_midpoint",
+      "parent": "selective_withdrawal",
+      "refined": true,
+      "tau_ratio": 0.2,
+      "theta_off": 8.125
+    }
+  }
+]

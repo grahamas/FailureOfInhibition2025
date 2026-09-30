@@ -17,6 +17,10 @@ output/
 *.pdf
 *.svg
 
+# Python test and script bytecode
+__pycache__/
+*.py[cod]
+
 # Editor and operating-system files
 .DS_Store
 *~
