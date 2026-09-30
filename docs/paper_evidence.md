@@ -72,11 +72,15 @@ fast-inhibition setting. `selective_confirmation.json` records coordinates,
 spectra, errors, and source hashes. Induction and neighborhood extent remain
 separate measurements.
 
-The [three-context figure and replay report](../output/paper_handoff_20260930/confirmed_withdrawal.html)
-show independently integrated trajectories at ratios 0.2, about 1.143, and 4.4.
-PNG and SVG versions and all twelve plotted withdrawal/control trajectories
-are retained with the report. The PNG was visually inspected for panel, legend,
-and label clarity. It is a supporting figure draft, not the final regional map.
+The [three-context figure replay package](../reproducibility/paper_handoff_20260930/README.md)
+reproduces independently integrated trajectories at ratios 0.2, about 1.143,
+and 4.4 from a fresh checkout. After installing the package's listed Python
+dependencies, run `python3 scripts/replay_paper_handoff.py` from the repository
+root and open `output/paper_handoff_replay/confirmed_withdrawal.html` locally.
+The command generates the report, PNG and SVG figures, all twelve plotted
+withdrawal/control trajectories, and the full 13-context independent checks.
+The original PNG was visually inspected for panel, legend, and label clarity.
+It is a supporting figure draft, not the final regional map.
 
 Fifteen completed paired direct-displacement measurements have recorded
 seizure/herald ratios from about 1.32 to 5.37. This variation motivates plotting
