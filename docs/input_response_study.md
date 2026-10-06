@@ -144,19 +144,22 @@ Detailed maps are then run for the first deterministic representative of each
 observed coexistence/response signature. Sharing a sampled signature does not
 prove two parameterizations behaviorally equivalent. The case order, source
 snapshots, budgets, and configurations make selection replayable.
+Only cells with a homogeneous observed signature connect sampled inputs into
+a region. The [dated selection audit](input_response_selection_audit_20261005.md)
+records how correcting an earlier mixed-cell connection affects retained
+historical output.
 
 The new scripts do not change the model or public drive API. Run from the
 working-copy root with the existing Julia project:
 
 ```sh
 JULIA_NUM_THREADS=2 julia --project=. scripts/run_input_response_study.jl --output output/input_response_new
-MPLCONFIGDIR=/tmp/foi-matplotlib python3 scripts/render_input_response_study.py output/input_response_new output/input_response_figures_new
 ```
 
-The renderer uses the installed Python/Matplotlib environment and records its
-versions. It exports PNG/PDF figures and a standalone interactive HTML report.
-No package dependency is added to the Julia model. Its default mode verifies
-the input checksum manifest; `--allow-partial` explicitly labels previews.
+The study writes checked CSV and TOML observations. The earlier exploratory
+Python renderer and its HTML atlas have been retired from the active source;
+the dated local reports remain historical outputs, not a fresh-checkout
+rendering step. Paper figures have their own Julia renderer and evidence bundle.
 
 Runner stages are `geometry`, `responses`, `expand`, and `all`; `--case` filters
 anchor IDs. `--smoke` reduces numerical budgets and durations and is not a
@@ -169,7 +172,7 @@ Scientific scans are local/on-demand; CI tests the machinery and fixtures.
 
 Detailed geometry records can exceed available disk space during a large run.
 Before the final study checksum manifest is written, the optional command
-`python3 scripts/archive_input_response_contexts.py OUTPUT` packs completed
+`julia --project=. scripts/archive_input_response_contexts.jl OUTPUT` packs completed
 `geometry/contexts/` directories into `geometry/contexts.tar.gz`. Detailed cases
 must first finish their independent geometry confirmations; screen cases can
 be packed once their geometry checkpoint is complete.
@@ -183,5 +186,5 @@ Extract `contexts/` members into the geometry directory when inspecting raw
 search attempts. Summary tables, confirmations and response trajectories remain
 unpacked. Packing is a storage operation and changes no numerical observations.
 
-The standalone storage checks run with
-`python3 -m unittest discover -s test -p test_input_response_archives.py -v`.
+The storage checks are included in the Julia package suite. The Julia tool
+verifies archives written by the earlier Python tool without rewriting them.

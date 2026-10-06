@@ -83,7 +83,7 @@ function initialize(config_path,cfg,output)
     isdir(output) && !isempty(readdir(output)) && throw(ArgumentError("nonempty unrecognized output"))
     mkpath(output);data=N.Evidence.archive_provenance(config_path,output)
     data["purpose"]="bounded two-input response characterization; no biological certification"
-    data["replay_from_artifact_directory"]="julia --project=source source/scripts/run_input_response_study.jl --config config.toml --output replay"
+    data["replay_from_artifact_directory"]="julia --project=source source/scripts/run_input_response_study.jl --config config.toml --output replay"*(cfg.smoke ? " --smoke" : "")
     for file in vcat(source_files,["experiments/exemplar_models.toml"])
         target=joinpath(output,"source",file);mkpath(dirname(target));cp(joinpath(ROOT,file),target;force=true)
         data["source_sha256"][file]=N.Evidence.file_hash(target)
@@ -236,10 +236,21 @@ function geometry(p,cfg,dir;screen=false)
         end
     end
     isempty(lineage) || CSV.write(joinpath(dir,"lineage.csv"),lineage)
-    # Connected components on the observed adaptive-cell adjacency graph.
+    representatives=observed_representatives(atlas,contexts,curves,bounds)
+    representatives=unique(vcat([Float64.(b) for b in baselines],representatives))
+    summary=Dict("id"=>p["id"],"inputs"=>length(rows),"critical_points"=>length(curves),
+        "budget_unresolved_cells"=>count(x->x.status=="budget_unresolved",atlas.leaves),
+        "signatures"=>sort(unique(r.signature for r in rows)),"representatives"=>representatives,
+        "screen"=>screen,"completeness"=>"CompletenessNotCertified")
+    write_record(joinpath(dir,"summary.toml"),summary);N.complete_unit(dir)
+    summary
+end
+
+"""Select one representative per component supported by sampled homogeneous cells."""
+function observed_representatives(atlas,contexts,curves,bounds)
     keys_sorted=sort(collect(keys(contexts)));adj=Dict(k=>Tuple{Float64,Float64}[] for k in keys_sorted)
     for cell in atlas.leaves
-        cell.status=="budget_unresolved" && continue
+        cell.status=="sampled_homogeneous" || continue
         points=filter(k->haskey(contexts,k),[(cell.x0,cell.y0),(cell.x1,cell.y0),(cell.x0,cell.y1),(cell.x1,cell.y1),((cell.x0+cell.x1)/2,(cell.y0+cell.y1)/2)])
         append!(points,filter(k->cell.x0<=k[1]<=cell.x1 && cell.y0<=k[2]<=cell.y1,keys_sorted))
         unique!(points)
@@ -266,13 +277,7 @@ function geometry(p,cfg,dir;screen=false)
         sort!(component;by=x->(-distance(x),x))
         push!(representatives,collect(first(component)))
     end
-    representatives=unique(vcat([Float64.(b) for b in baselines],representatives))
-    summary=Dict("id"=>p["id"],"inputs"=>length(rows),"critical_points"=>length(curves),
-        "budget_unresolved_cells"=>count(x->x.status=="budget_unresolved",atlas.leaves),
-        "signatures"=>sort(unique(r.signature for r in rows)),"representatives"=>representatives,
-        "screen"=>screen,"completeness"=>"CompletenessNotCertified")
-    write_record(joinpath(dir,"summary.toml"),summary);N.complete_unit(dir)
-    summary
+    representatives
 end
 
 function confirm_geometry(p,cfg,geometry_dir)

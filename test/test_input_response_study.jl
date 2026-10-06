@@ -47,6 +47,23 @@ include(joinpath(@__DIR__,"..","scripts","run_input_response_study.jl"))
     @test "island" in values(sample.cache)
     limited=M.sample_rectangle(f,[0.,.5,1.],[0.,.5,1.];width=.01,max_evaluations=5)
     @test any(x->x.status=="budget_unresolved",limited.leaves)
+    # Equal corner signatures on opposite sides of a mixed cell do not
+    # establish a connected observed region.
+    fake(role)=(;search=(equilibria=[(;stability=(classification=:Attracting,))],),
+        roles=Dict(role=>1),discovery_status="index_consistent_not_complete")
+    contexts=Dict{Tuple{Float64,Float64},Any}()
+    for x in (0.,.5,1.,2.,2.5,3.), y in (0.,.5,1.)
+        contexts[(x,y)]=fake("A")
+    end
+    contexts[(1.5,.5)]=fake("B")
+    leaves=[(;x0=0.,x1=1.,y0=0.,y1=1.,status="sampled_homogeneous"),
+        (;x0=1.,x1=2.,y0=0.,y1=1.,status="boundary_bracket"),
+        (;x0=2.,x1=3.,y0=0.,y1=1.,status="sampled_homogeneous")]
+    representatives=A.observed_representatives((;leaves),contexts,NamedTuple[],
+        (;B_E=3.,B_I=1.))
+    @test length(representatives)==2
+    @test any(x->x[1]<=1.,representatives)
+    @test any(x->x[1]>=2.,representatives)
     costs=[(E_withdrawal=1.,I_stimulation=0.),(E_withdrawal=0.,I_stimulation=1.),
         (E_withdrawal=1.,I_stimulation=1.)]
     @test length(M.nondominated(costs))==2
@@ -97,7 +114,13 @@ include(joinpath(@__DIR__,"..","scripts","run_input_response_study.jl"))
         metadata=A.initialize(path,cfg,dir)
         @test occursin("two-input response",metadata["purpose"])
         @test occursin("run_input_response_study.jl",metadata["replay_from_artifact_directory"])
+        @test endswith(metadata["replay_from_artifact_directory"]," --smoke")
         @test A.initialize(path,cfg,dir)["smoke"]
         @test_throws ArgumentError A.initialize(path,A.load_config(path),dir)
+    end
+    mktempdir() do dir
+        path=joinpath(@__DIR__,"..","experiments","input_response.toml")
+        metadata=A.initialize(path,A.load_config(path),dir)
+        @test !occursin("--smoke",metadata["replay_from_artifact_directory"])
     end
 end

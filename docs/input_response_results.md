@@ -1,5 +1,10 @@
 # Two-input response results
 
+**Selection audit (5 October 2026):** The
+[selection audit](input_response_selection_audit_20261005.md) identifies
+historical follow-up inputs affected by a region-graph correction; the frozen
+output has not been regenerated under the corrected source.
+
 ## Paper-handoff update, 30 September 2026 UTC
 
 The partial audit in [the paper evidence handoff](paper_evidence.md) covers 243
@@ -23,6 +28,11 @@ neighborhoods remain targets for the paper's staged exploration.
 The dated audit and checks are in `output/paper_handoff_20260930/`; the broader
 study and its final interpretation remain incomplete. Earlier handoff details
 below retain their original temporal scope.
+
+**Historical status note (29 September 2026):** The execution and report paths
+below describe the frozen batch controller and its retained local output. The
+exploratory Python renderer is no longer part of the active repository; the
+current method and Julia archive command are in [the study protocol](input_response_study.md).
 
 ## Execution status
 
