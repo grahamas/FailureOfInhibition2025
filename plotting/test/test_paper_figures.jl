@@ -38,6 +38,27 @@ if VERSION == v"1.10.12"
     @test Set(row["role"] for row in data["threshold_8p75_roots"] if
         row["stability"] == "Attracting") == Set(("rest", "active", "herald"))
 
+    for (phase, source, destination) in
+            (("rest_to_active", "rest", "active"),
+             ("active_to_rest", "active", "rest"))
+        stem = joinpath(PAPER_BUNDLE, "traces", "baseline_switching",
+            "cycle1_$(phase)")
+        pulse = collect(CSV.File(stem * "_pulse.csv"))
+        followup = collect(CSV.File(stem * ".csv"))
+        source_root = only(filter(row -> row["role"] == source, data["baseline_roots"]))
+        destination_root = only(filter(row -> row["role"] == destination,
+            data["baseline_roots"]))
+        @test first(pulse).time == 0.0
+        @test last(pulse).time == 100.0
+        @test last(followup).time == 5000.0
+        @test maximum(abs.([first(pulse).E - source_root["E"],
+            first(pulse).I - source_root["I"]])) < 1e-7
+        @test maximum(abs.([last(pulse).E - first(followup).E,
+            last(pulse).I - first(followup).I])) < 1e-7
+        @test maximum(abs.([last(followup).E - destination_root["E"],
+            last(followup).I - destination_root["I"]])) < 1e-7
+    end
+
     for source in ("rest", "active")
         row = only(filter(row -> row.theta_off == 8.0 &&
             row.B_E_on == 1.2328125 && row.source == source, samples))
@@ -58,6 +79,14 @@ if VERSION == v"1.10.12"
         name = "induce_$(trial["source"])_to_$(trial["destination"]).csv"
         endpoint = last(CSV.File(joinpath(PAPER_BUNDLE, "traces", name)))
         @test maximum(abs.([endpoint.E, endpoint.I] .- trial["final"])) < 1e-7
+        pulse = collect(CSV.File(joinpath(PAPER_BUNDLE, "traces",
+            replace(name, ".csv" => "_pulse.csv"))))
+        source_root = only(filter(row -> row["role"] == trial["source"],
+            data["baseline_roots"]))
+        @test first(pulse).time == 0.0
+        @test last(pulse).time == trial["duration"] == 100.0
+        @test maximum(abs.([first(pulse).E - source_root["E"],
+            first(pulse).I - source_root["I"]])) < 1e-7
     end
     changed = only(filter(row -> row["theta_off"] == 8.75,
         joint["threshold_interventions"]))

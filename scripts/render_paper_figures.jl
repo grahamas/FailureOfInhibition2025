@@ -157,19 +157,6 @@ function endpoint_series(bundle, setting)
         for phase in ("rest_to_active", "active_to_rest")]
     [last(trace(bundle, joinpath(suffix, file))) for file in files]
 end
-function endpoint_plot!(axis, bundle, setting, rest)
-    ends = endpoint_series(bundle, setting)
-    states = vcat([(E=rest["E"], I=rest["I"])], ends)
-    x = collect(0:4)
-    scatter!(axis, x, [row.E for row in states]; color=E_COLOR, markersize=12, label="E")
-    scatter!(axis, x, [row.I for row in states]; color=I_COLOR, markersize=12, label="I")
-    axis.xticks = (x, ["start\nrest", "1: E +0.5\nactive", "2: I +3\nrest",
-        "3: E +0.5\nactive", "4: I +3\nrest"])
-    xlims!(axis, -0.2, 4.2)
-    ylims!(axis, -0.02, 0.52)
-    axislegend(axis; position=:rt, orientation=:horizontal)
-end
-
 function step_input!(axis, before, during, after; onset=0.0, offset=100.0,
         left=-50.0, right=300.0, color=E_COLOR, label=nothing)
     lines!(axis, [left, onset, onset, offset, offset, right],
@@ -222,54 +209,52 @@ function figure1(bundle, output, data)
     save_figure(fig, output, "01_mechanism")
 end
 
-function figure2(bundle, output, data)
-    fig = Figure(size=(1450, 1090), fontsize=18)
-    Label(fig[1, 1:2], "Ordinary switching and separate access to high-activity states";
+function pulse_response_pair!(position, bundle, name, source, title, target, amplitude;
+        show_legend=false)
+    panel = GridLayout()
+    position[] = panel
+    ax = Axis(panel[1, 1]; title, ylabel="E / I occupancy")
+    for (field, color) in ((:E, E_COLOR), (:I, I_COLOR))
+        preon_lines!(ax, bundle, "baseline_$(source)"; field, color,
+            linestyle=:dash)
+    end
+    trace_lines!(ax, trace(bundle, name * "_pulse.csv"); limit=100.0)
+    trace_lines!(ax, trace(bundle, name * ".csv"); offset=100.0, limit=200.0,
+        label=false)
+    vlines!(ax, [0.0, 100.0]; color=(NEUTRAL, 0.5), linestyle=:dot)
+    xlims!(ax, -50, 300)
+    ylims!(ax, -0.02, 0.52)
+    hidexdecorations!(ax; grid=false)
+    show_legend && axislegend(ax; position=:rb, orientation=:horizontal)
+
+    strip = Axis(panel[2, 1], xlabel="Time from pulse onset (ms)",
+        ylabel=rich("Δ", target, " input"))
+    step_input!(strip, 0.0, amplitude, 0.0; color=target == "E" ? E_COLOR : I_COLOR)
+    strip.yticks = ([0.0, amplitude], ["0", string(amplitude)])
+    ylims!(strip, -0.12 * amplitude, 1.18 * amplitude)
+    linkxaxes!(ax, strip)
+    rowsize!(panel, 2, 105)
+end
+
+function figure2(bundle, output)
+    fig = Figure(size=(1450, 1220), fontsize=18)
+    Label(fig[1, 1:2], "Pulse-evoked switching and access to high-activity states";
         fontsize=24, font=:bold, tellwidth=false)
-    rest = only(filter(row -> row["role"] == "rest", data["baseline_roots"]))
-    ax = Axis(fig[2, 1], title="A. Two reviewed switching cycles",
-        xlabel="Pulse event and 5,000 ms destination", ylabel="Occupancy")
-    endpoint_plot!(ax, bundle, "baseline", rest)
-    ax = Axis(fig[2, 2], title="B. Reviewed pulse regimes (schematic height)",
-        xlabel="Time relative to pulse onset (ms)", ylabel="Protocol")
-    protocols = ((4, "rest → active; E +0.5", ROLES["active"]),
-        (3, "active → rest; I +3", ROLES["rest"]),
-        (2, "rest → herald; E +1", ROLES["herald"]),
-        (1, "active → seizure; I +4.5", ROLES["seizure"]))
-    for (row, label, color) in protocols
-        lines!(ax, [-50, 0, 0, 100, 100, 300],
-            [row, row, row + 0.35, row + 0.35, row, row]; color, linewidth=2.8)
-        text!(ax, 120, row + 0.2; text=label, color, fontsize=15)
-    end
-    ax.yticks = (1:4, ["4", "3", "2", "1"])
-    xlims!(ax, -50, 300); ylims!(ax, 0.7, 4.65)
-    for (column, name, source, title, target, amplitude) in
-            ((1, "induce_rest_to_herald", "rest", "C. Rest → herald", "E", 1.0),
-             (2, "induce_active_to_seizure", "active", "D. Active → seizure", "I", 4.5))
-        ax = Axis(fig[3, column]; title, ylabel="Occupancy")
-        for (field, color) in ((:E, E_COLOR), (:I, I_COLOR))
-            preon_lines!(ax, bundle, "baseline_$(source)"; field, color,
-                linestyle=:dash)
-        end
-        pulse = trace(bundle, name * "_pulse.csv")
-        trace_lines!(ax, pulse; limit=100.0)
-        trace_lines!(ax, trace(bundle, name * ".csv"); offset=100.0, limit=200.0,
-            label=false)
-        vlines!(ax, [100.0]; color=NEUTRAL, linestyle=:dash)
-        xlims!(ax, -50, 300)
-        ylims!(ax, -0.02, 0.52)
-        column == 1 && axislegend(ax; position=:rb, orientation=:horizontal)
-        strip = Axis(fig[4, column], xlabel="Time relative to pulse onset (ms)",
-            ylabel=rich("Δ", target, " input"))
-        step_input!(strip, 0.0, amplitude, 0.0; color=target == "E" ? E_COLOR : I_COLOR)
-        strip.yticks = ([0.0, amplitude], ["0", string(amplitude)])
-        ylims!(strip, -0.12 * amplitude, 1.18 * amplitude)
-    end
-    rowsize!(fig.layout, 4, 115)
-    Label(fig[5, 1:2], rich("Dashed pre-onset segments are simulated at baseline B", subscript("E"),
-        " = 0.35; input returns to baseline after 100 ms. Traces show early dynamics.\n",
-        "Regime colors mark destinations; classifications use the full 5,000 ms follow-up. High-state examples have different sources and input directions.");
-        fontsize=17, tellwidth=false)
+    pulse_response_pair!(fig[2, 1], bundle,
+        joinpath("baseline_switching", "cycle1_rest_to_active"), "rest",
+        "A. Rest + E 0.5 → active", "E", 0.5; show_legend=true)
+    pulse_response_pair!(fig[2, 2], bundle,
+        joinpath("baseline_switching", "cycle1_active_to_rest"), "active",
+        "B. Active + I 3 → rest", "I", 3.0)
+    pulse_response_pair!(fig[3, 1], bundle, "induce_rest_to_herald", "rest",
+        "C. Rest + E 1 → herald", "E", 1.0)
+    pulse_response_pair!(fig[3, 2], bundle, "induce_active_to_seizure", "active",
+        "D. Active + I 4.5 → seizure", "I", 4.5)
+    Label(fig[4, 1:2], rich("Each occupancy trace is aligned with its applied input below; pulses last 100 ms and return to baseline.\n",
+        "Dashed pre-onset segments are simulated at B", subscript("E"),
+        " = 0.35. Traces show the first 200 ms after each pulse; named destinations use 5,000 ms follow-up.\n",
+        "A/B show the first of two repeated rest–active–rest cycles. Compare within columns: the source and input direction are shared; pulse amplitude differs.");
+        fontsize=16, tellwidth=false)
     save_figure(fig, output, "02_switching_and_access")
 end
 
@@ -534,7 +519,7 @@ function render(bundle, output)
     ispath(output) && error("output path already exists: $output")
     mkpath(output)
     figure1(bundle, output, data)
-    figure2(bundle, output, data)
+    figure2(bundle, output)
     figure3(bundle, output, data)
     figure4(bundle, output, data)
     supplement1(output, samples)

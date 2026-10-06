@@ -15,7 +15,7 @@ argument: `(e_to_e,i_to_e,e_to_i,i_to_i)=(17,13,19,6)`,
 and the [reviewed switching/intervention](../reproducibility/selective_anchor_joint_20261005/reference_summary.toml)
 and [tonic-release](../reproducibility/selective_tonic_e_release_20261005/reference_summary.toml)
 records. The revised figures reviewed here are in local
-`output/paper_figures_feedback_20261006_final/`; that ignored directory is not part of the
+`output/paper_figures_switching_traces_20261006_final/`; that ignored directory is not part of the
 reproducible source packet. Manuscript captions and interpretation remain for
 author review.
 
@@ -35,19 +35,19 @@ parameters and fixed input*: higher E with lower I is excluded there. The
 figure does not present the numerical search as a complete root census or the
 coordinate roles as biological classifications.
 
-**Figure 2 — Ordinary switching and access.** A 100 ms E-input pulse of
-amplitude `0.5` sends rest to active, and a 100 ms I-input pulse of amplitude
-`3` sends active to rest. The full sequence repeats twice from each actual
-previous endpoint. Separate 100 ms pulses send rest to herald with E amplitude
-`1` and active to seizure with I amplitude `4.5`. Each pulse returns to the
-baseline tonic input. The endpoint panel displays discrete pulse events from
-each actual previous endpoint; the protocol panel displays pulse timing and
-amplitude. Short traces include a simulated 50 ms pre-onset steady-state
-segment, the recorded pulse, and early post-pulse dynamics. Classifications
-use the recorded 5,000 ms follow-up. The two high-state examples have different
-source states and input directions; they are not a matched comparison.
-Rest–active switching is an operational model
-behavior, not a demonstrated cortical computation.
+**Figure 2 — Pulse-evoked switching and high-state access.** Each panel aligns
+the E/I occupancy trajectories with the actual E or I input pulse on the same
+time axis. From rest, 100 ms E-input pulses of amplitude `0.5` and `1` reach
+active and herald, respectively. From active, 100 ms I-input pulses of
+amplitude `3` and `4.5` reach rest and seizure. The ordinary traces show the
+first rest–active–rest cycle, using each actual previous endpoint; the reviewed
+sequence repeats twice. All pulses return to the baseline tonic input. Traces
+include a simulated 50 ms pre-onset steady-state segment, the recorded pulse,
+and the first 200 ms of post-pulse dynamics. Named destinations use the
+recorded 5,000 ms follow-up. Within each column, source state and input
+direction are shared while pulse amplitude differs; the two high-state
+examples are not a matched comparison to each other. Rest–active switching is
+an operational model behavior, not a demonstrated cortical computation.
 
 **Figure 3 — Tonic input control distinguishes source states.** At
 `theta_off=8`, held absolute `B_E,on=1.2328125` takes baseline rest and active
