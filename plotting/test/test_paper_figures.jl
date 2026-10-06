@@ -23,6 +23,16 @@ if VERSION == v"1.10.12"
     @test length(samples) == 2058
     @test length(data["baseline_roots"]) == 7
     @test length(data["threshold_8p75_roots"]) == 5
+    for (name, reference) in (("baseline_rest", "tonic_rest_induction"),
+            ("baseline_active", "tonic_active_induction"),
+            ("herald_on", "tonic_herald_release_B_0p17"))
+        preon = collect(CSV.File(joinpath(PAPER_BUNDLE, "traces", "preon_$(name).csv")))
+        source = first(CSV.File(joinpath(PAPER_BUNDLE, "traces", reference * ".csv")))
+        @test first(preon).time == -50.0
+        @test last(preon).time == 0.0
+        @test maximum(abs.([last(preon).E - source.E,
+            last(preon).I - source.I])) < 1e-7
+    end
     @test Set(row["role"] for row in data["baseline_roots"] if
         row["stability"] == "Attracting") == Set(("rest", "active", "herald", "seizure"))
     @test Set(row["role"] for row in data["threshold_8p75_roots"] if

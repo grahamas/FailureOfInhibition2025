@@ -28,7 +28,8 @@ function expected_bundle_files()
     end
     for name in ("induce_rest_to_herald_pulse", "induce_rest_to_herald",
             "induce_active_to_seizure_pulse", "induce_active_to_seizure",
-            "theta_off_8.75_from_seizure")
+            "theta_off_8.75_from_seizure", "preon_baseline_rest",
+            "preon_baseline_active", "preon_herald_on")
         push!(files, portable_path(joinpath("traces", name * ".csv")))
     end
     for name in ("tonic_active_induction", "tonic_rest_induction",
@@ -118,7 +119,7 @@ function trace_lines!(axis, rows; offset=0.0, limit=300.0, alpha=1.0, label=true
             color=(color, alpha), linewidth=2.8, label=label ? string(field) : nothing)
     end
 end
-function role_points!(axis, rows; labels=true)
+function role_points!(axis, rows; labels=true, limits=true)
     for row in rows
         role = row["role"]
         stable = row["stability"] == "Attracting"
@@ -131,8 +132,10 @@ function role_points!(axis, rows; labels=true)
                 color=ROLES[role])
         end
     end
-    xlims!(axis, -0.015, 0.53)
-    ylims!(axis, -0.015, 0.53)
+    if limits
+        xlims!(axis, -0.015, 0.53)
+        ylims!(axis, -0.015, 0.53)
+    end
 end
 function nullclines!(axis, parameters)
     model = NarrativeModels.models(parameters).failure_of_inhibition
@@ -158,73 +161,123 @@ function endpoint_plot!(axis, bundle, setting, rest)
     ends = endpoint_series(bundle, setting)
     states = vcat([(E=rest["E"], I=rest["I"])], ends)
     x = collect(0:4)
-    lines!(axis, x, [row.E for row in states]; color=E_COLOR, linewidth=2.5)
     scatter!(axis, x, [row.E for row in states]; color=E_COLOR, markersize=12, label="E")
-    lines!(axis, x, [row.I for row in states]; color=I_COLOR, linewidth=2.5)
     scatter!(axis, x, [row.I for row in states]; color=I_COLOR, markersize=12, label="I")
-    axis.xticks = (x, ["rest", "active", "rest", "active", "rest"])
+    axis.xticks = (x, ["start\nrest", "1: E +0.5\nactive", "2: I +3\nrest",
+        "3: E +0.5\nactive", "4: I +3\nrest"])
     xlims!(axis, -0.2, 4.2)
     ylims!(axis, -0.02, 0.52)
     axislegend(axis; position=:rt, orientation=:horizontal)
 end
 
+function step_input!(axis, before, during, after; onset=0.0, offset=100.0,
+        left=-50.0, right=300.0, color=E_COLOR, label=nothing)
+    lines!(axis, [left, onset, onset, offset, offset, right],
+        [before, before, during, during, after, after];
+        color, linewidth=2.7, label)
+    vlines!(axis, [onset, offset]; color=(NEUTRAL, 0.5), linestyle=:dot)
+    xlims!(axis, left, right)
+end
+
+function preon_lines!(axis, bundle, name; field=:E, color=E_COLOR,
+        linestyle=:solid, label=nothing)
+    rows = trace(bundle, "preon_$(name).csv")
+    lines!(axis, [row.time for row in rows],
+        [getproperty(row, field) for row in rows];
+        color, linestyle, linewidth=2.4, label)
+end
+
 function figure1(bundle, output, data)
-    fig = Figure(size=(1300, 720), fontsize=17)
-    Label(fig[1, 1:2], "Failure response permits a second high-activity ordering";
+    fig = Figure(size=(1600, 760), fontsize=18)
+    Label(fig[1, 1:3], "Failure response permits a second high-activity ordering";
         fontsize=25, font=:bold, tellwidth=false)
     ax = Axis(fig[2, 1], title="A. Ordered inhibitory recruitment and failure",
         xlabel="Effective input to I", ylabel="Population response")
     pair = NarrativeModels.models(data["anchor"])
     input = collect(range(0.0, 12.0; length=600))
-    lines!(ax, input, response.(Ref(pair.control.inhibitory.response), input);
-        color=NEUTRAL, linewidth=2.5, label="Monotone control response")
     lines!(ax, input, response.(Ref(pair.failure_of_inhibition.inhibitory.response), input);
         color=I_COLOR, linewidth=3, label="Fire-then-fail response")
+    lines!(ax, input, response.(Ref(pair.control.inhibitory.response), input);
+        color=NEUTRAL, linewidth=2.5, linestyle=:dash,
+        label="Monotone control response")
     vlines!(ax, [4.0, 8.0]; color=(NEUTRAL, 0.5), linestyle=:dot)
     text!(ax, 4.0, 0.12; text="onset", rotation=pi/2, fontsize=12)
     text!(ax, 8.0, 0.12; text="failure", rotation=pi/2, fontsize=12)
-    axislegend(ax; position=:lt)
-    ax = Axis(fig[2, 2], title="B. Discovered equilibria at B_E = 0.35",
-        xlabel="E occupancy", ylabel="I occupancy")
-    nullclines!(ax, data["anchor"])
-    role_points!(ax, data["baseline_roots"])
-    Label(fig[3, 1:2], "At common parameters and input, monotone inhibition forbids higher E with lower I.\nBlue/orange: E/I nullclines. Circles: attracting roots; crosses: other roots. Names are provisional coordinate roles.";
-        fontsize=16, tellwidth=false)
+    Legend(fig[3, 1], ax; orientation=:horizontal, framevisible=false,
+        tellwidth=false)
+    ax_full = Axis(fig[2, 2], title="B. Physical occupancy domain",
+        xlabel="E occupancy", ylabel="I occupancy", aspect=DataAspect())
+    nullclines!(ax_full, data["anchor"])
+    role_points!(ax_full, data["baseline_roots"]; labels=false, limits=false)
+    lines!(ax_full, [0.0, 0.53, 0.53, 0.0, 0.0],
+        [0.0, 0.0, 0.53, 0.53, 0.0]; color=NEUTRAL, linestyle=:dot)
+    xlims!(ax_full, 0, 1); ylims!(ax_full, 0, 1)
+    ax_zoom = Axis(fig[2, 3],
+        title=rich("C. Equilibrium zoom at B", subscript("E"), " = 0.35"),
+        xlabel="E occupancy", ylabel="I occupancy", aspect=DataAspect())
+    nullclines!(ax_zoom, data["anchor"])
+    role_points!(ax_zoom, data["baseline_roots"])
+    Label(fig[4, 1:3], "Dashed gray and orange responses overlap before failure. Nullclines and equilibria lie below 0.5; admissible transients can start above it.\nBlue/orange: E/I nullclines. Circles: attracting roots; crosses: other roots. Role names are provisional.";
+        fontsize=17, tellwidth=false)
     save_figure(fig, output, "01_mechanism")
 end
 
 function figure2(bundle, output, data)
-    fig = Figure(size=(1320, 900), fontsize=16)
+    fig = Figure(size=(1450, 1090), fontsize=18)
     Label(fig[1, 1:2], "Ordinary switching and separate access to high-activity states";
         fontsize=24, font=:bold, tellwidth=false)
     rest = only(filter(row -> row["role"] == "rest", data["baseline_roots"]))
-    ax = Axis(fig[2, 1], title="A. Two cycles from actual previous endpoints",
-        xlabel="Validated destination after each 100 ms pulse", ylabel="Occupancy")
+    ax = Axis(fig[2, 1], title="A. Two reviewed switching cycles",
+        xlabel="Pulse event and 5,000 ms destination", ylabel="Occupancy")
     endpoint_plot!(ax, bundle, "baseline", rest)
-    ax = Axis(fig[2, 2], title="B. Baseline state geometry",
-        xlabel="E occupancy", ylabel="I occupancy")
-    role_points!(ax, data["baseline_roots"])
-    for (column, name, title) in ((1, "induce_rest_to_herald", "C. Rest → herald; E +1"),
-            (2, "induce_active_to_seizure", "D. Active → seizure; I +4.5"))
-        ax = Axis(fig[3, column], title=title, xlabel="Time within pulse and release (ms)",
-            ylabel="Occupancy")
+    ax = Axis(fig[2, 2], title="B. Reviewed pulse regimes (schematic height)",
+        xlabel="Time relative to pulse onset (ms)", ylabel="Protocol")
+    protocols = ((4, "rest → active; E +0.5", ROLES["active"]),
+        (3, "active → rest; I +3", ROLES["rest"]),
+        (2, "rest → herald; E +1", ROLES["herald"]),
+        (1, "active → seizure; I +4.5", ROLES["seizure"]))
+    for (row, label, color) in protocols
+        lines!(ax, [-50, 0, 0, 100, 100, 300],
+            [row, row, row + 0.35, row + 0.35, row, row]; color, linewidth=2.8)
+        text!(ax, 120, row + 0.2; text=label, color, fontsize=15)
+    end
+    ax.yticks = (1:4, ["4", "3", "2", "1"])
+    xlims!(ax, -50, 300); ylims!(ax, 0.7, 4.65)
+    for (column, name, source, title, target, amplitude) in
+            ((1, "induce_rest_to_herald", "rest", "C. Rest → herald", "E", 1.0),
+             (2, "induce_active_to_seizure", "active", "D. Active → seizure", "I", 4.5))
+        ax = Axis(fig[3, column]; title, ylabel="Occupancy")
+        for (field, color) in ((:E, E_COLOR), (:I, I_COLOR))
+            preon_lines!(ax, bundle, "baseline_$(source)"; field, color,
+                linestyle=:dash)
+        end
         pulse = trace(bundle, name * "_pulse.csv")
         trace_lines!(ax, pulse; limit=100.0)
         trace_lines!(ax, trace(bundle, name * ".csv"); offset=100.0, limit=200.0,
             label=false)
         vlines!(ax, [100.0]; color=NEUTRAL, linestyle=:dash)
-        xlims!(ax, 0, 300)
+        xlims!(ax, -50, 300)
         ylims!(ax, -0.02, 0.52)
         column == 1 && axislegend(ax; position=:rb, orientation=:horizontal)
+        strip = Axis(fig[4, column], xlabel="Time relative to pulse onset (ms)",
+            ylabel=rich("Δ", target, " input"))
+        step_input!(strip, 0.0, amplitude, 0.0; color=target == "E" ? E_COLOR : I_COLOR)
+        strip.yticks = ([0.0, amplitude], ["0", string(amplitude)])
+        ylims!(strip, -0.12 * amplitude, 1.18 * amplitude)
     end
-    Label(fig[4, 1:2], "Tonic input returns to B_E = 0.35 after each pulse. Traces show early dynamics;\ndestinations use the full 5,000 ms follow-up.";
-        fontsize=16, tellwidth=false)
+    rowsize!(fig.layout, 4, 115)
+    Label(fig[5, 1:2], rich("Dashed pre-onset segments are simulated at baseline B", subscript("E"),
+        " = 0.35; input returns to baseline after 100 ms. Traces show early dynamics.\n",
+        "Regime colors mark destinations; classifications use the full 5,000 ms follow-up. High-state examples have different sources and input directions.");
+        fontsize=17, tellwidth=false)
     save_figure(fig, output, "02_switching_and_access")
 end
 
 function outcome_grid!(axis, selected)
-    axis.xticks = (1:4, ["held on", "0.35", "0.17", "0"])
-    axis.yticks = ([1, 2], ["on-input seizure source", "induced herald"])
+    axis.xticks = (1:4, ["held at 1.2328", "return 0.35", "return 0.17", "return 0"])
+    axis.yticks = ([1, 2], ["separate seizure source", "induced from rest / active"])
+    axis.xgridvisible = false
+    axis.ygridvisible = false
     outcomes(source) = [selected[source]["control"]["destination"],
         (selected[source]["release"][key]["destination"] for key in
             ("B_0p35", "B_0p17", "B_0p0"))...]
@@ -232,31 +285,40 @@ function outcome_grid!(axis, selected)
         error("rest and active tonic outcomes differ; outcome grid needs separate rows")
     for (y, roles) in ((2, outcomes("rest")), (1, outcomes("seizure")))
         for (x, role) in enumerate(roles)
-            scatter!(axis, [x], [y]; marker=:rect, color=ROLES[role], markersize=65)
-            text!(axis, x, y; text=role, align=(:center, :center), color=:white,
-                fontsize=13)
+            text!(axis, x, y; text=role, align=(:center, :center),
+                color=ROLES[role], fontsize=19, font=:bold)
         end
     end
+    for x in 1.5:1.0:3.5
+        vlines!(axis, [x]; color=(NEUTRAL, 0.3))
+    end
+    hlines!(axis, [1.5]; color=(NEUTRAL, 0.3))
     xlims!(axis, 0.45, 4.55)
     ylims!(axis, 0.45, 2.55)
 end
 
 function figure3(bundle, output, data)
-    fig = Figure(size=(1380, 900), fontsize=16)
+    fig = Figure(size=(1450, 990), fontsize=18)
     Label(fig[1, 1:2], "Lower tonic E returns induced herald to active, while seizure persists";
         fontsize=23, font=:bold, tellwidth=false)
-    ax = Axis(fig[2, 1], title="A. Hold B_E = 1.2328125: baseline states → herald",
-        xlabel="Time after input increase (ms)", ylabel="E occupancy")
+    ax = Axis(fig[2, 1],
+        title=rich("A. Increase B", subscript("E"), " to 1.2328125"),
+        ylabel="E occupancy")
     for (source, style) in (("rest", :solid), ("active", :dash))
+        preon_lines!(ax, bundle, "baseline_$(source)"; linestyle=style,
+            color=(E_COLOR, 0.65))
         rows = filter(row -> row.time <= 300,
             trace(bundle, "tonic_$(source)_induction.csv"))
         lines!(ax, [row.time for row in rows], [row.E for row in rows];
             color=E_COLOR, linestyle=style, linewidth=2.8, label="from $source")
     end
-    xlims!(ax, 0, 300); ylims!(ax, -0.02, 0.52)
+    vlines!(ax, [0.0]; color=(NEUTRAL, 0.5), linestyle=:dot)
+    xlims!(ax, -50, 300); ylims!(ax, -0.02, 0.52)
     axislegend(ax; position=:rb)
     ax = Axis(fig[2, 2], title="B. Release from the actual herald endpoint",
-        xlabel="Time after release (ms)", ylabel="E occupancy")
+        ylabel="E occupancy")
+    preon_lines!(ax, bundle, "herald_on"; color=NEUTRAL,
+        linestyle=:dash)
     for (suffix, label, color, style) in (("held", "held on", ROLES["herald"], :dash),
             ("release_B_0p35", "return 0.35", ROLES["herald"], :solid),
             ("release_B_0p17", "return 0.17", ROLES["active"], :solid),
@@ -266,113 +328,166 @@ function figure3(bundle, output, data)
         lines!(ax, [row.time for row in rows], [row.E for row in rows];
             color, linestyle=style, linewidth=2.8, label)
     end
-    xlims!(ax, 0, 400); ylims!(ax, 0.25, 0.52)
-    axislegend(ax; position=:rb)
-    ax = Axis(fig[3, 1], title="C. Separate seizure source after 5,000 ms",
-        xlabel="Held or release B_E", ylabel="Endpoint occupancy")
-    conditions = (("held", "held on"), ("release_B_0p35", "0.35"),
-        ("release_B_0p17", "0.17"), ("release_B_0p0", "0"))
-    for (x, (suffix, _)) in enumerate(conditions)
-        endpoint = last(trace(bundle, "tonic_seizure_$(suffix).csv"))
-        endpoint.time == 5000.0 || error("incomplete seizure-source follow-up: $suffix")
-        scatter!(ax, [x], [endpoint.E]; color=E_COLOR, marker=:circle,
-            markersize=14, label=x == 1 ? "E" : nothing)
-        scatter!(ax, [x], [endpoint.I]; color=I_COLOR, marker=:diamond,
-            markersize=14, label=x == 1 ? "I" : nothing)
+    vlines!(ax, [0.0]; color=(NEUTRAL, 0.5), linestyle=:dot)
+    xlims!(ax, -50, 400); ylims!(ax, 0.25, 0.52)
+    ax_input = Axis(fig[3, 1], xlabel="Time relative to increase (ms)",
+        ylabel=rich("B", subscript("E")))
+    lines!(ax_input, [-50.0, 0.0, 0.0, 300.0],
+        [0.35, 0.35, 1.2328125, 1.2328125];
+        color=E_COLOR, linewidth=2.7)
+    vlines!(ax_input, [0.0]; color=(NEUTRAL, 0.5), linestyle=:dot)
+    xlims!(ax_input, -50, 300)
+    ax_input.yticks = ([0.35, 1.2328125], ["0.35", "1.2328"])
+    ylims!(ax_input, 0.22, 1.36)
+    ax_input = Axis(fig[3, 2], xlabel="Time relative to release (ms)",
+        ylabel=rich("B", subscript("E")))
+    for (value, color, style) in ((1.2328125, ROLES["herald"], :dash),
+            (0.35, ROLES["herald"], :solid), (0.17, ROLES["active"], :solid),
+            (0.0, E_COLOR, :dot))
+        lines!(ax_input, [-50, 0, 0, 400],
+            [1.2328125, 1.2328125, value, value];
+            color, linestyle=style, linewidth=2.3)
     end
-    ax.xticks = (1:4, [label for (_, label) in conditions])
-    xlims!(ax, 0.6, 4.4); ylims!(ax, -0.02, 0.52)
-    axislegend(ax; position=:rc, orientation=:horizontal)
-    ax = Axis(fig[3, 2], title="D. Finite-window destination by applied input",
-        xlabel="Held or release B_E", ylabel="Source at B_E,on")
+    vlines!(ax_input, [0.0]; color=(NEUTRAL, 0.5), linestyle=:dot)
+    xlims!(ax_input, -50, 400); ylims!(ax_input, -0.12, 1.36)
+    ax_input.yticks = ([0.0, 0.35, 1.2328125], ["0", "0.35", "1.2328"])
+    rowsize!(fig.layout, 3, 135)
+    Legend(fig[4, 1:2], ax; orientation=:horizontal, framevisible=false,
+        tellwidth=false)
+    ax = Axis(fig[5, 1:2], title="C. Destination after 5,000 ms under held or released input",
+        xlabel=rich("Applied B", subscript("E")))
     outcome_grid!(ax, data["selected_tonic"])
-    Label(fig[4, 1:2], "At θ_off = 8, the seizure source was found at B_E,on; it was not induced from baseline.\nNo source was identified at θ_off ≥ 8.75 for this cessation trial.";
-        fontsize=16, tellwidth=false)
+    rowsize!(fig.layout, 5, 170)
+    Label(fig[6, 1:2], rich("At θ", subscript("off"),
+        " = 8, the seizure source was found at the held-on input; it was not induced from baseline.\n",
+        "Pre-onset traces are simulated at fixed input and meet the reviewed t = 0 states; post-onset traces are the reviewed runs.");
+        fontsize=17, tellwidth=false)
     save_figure(fig, output, "03_tonic_control")
 end
 
 function figure4(bundle, output, data)
-    fig = Figure(size=(1370, 930), fontsize=16)
-    Label(fig[1, 1:2], "At θ_off = 8.75, the seizure source reaches herald and switching persists";
+    fig = Figure(size=(1450, 900), fontsize=18)
+    Label(fig[1, 1:2], rich("At θ", subscript("off"),
+        " = 8.75, the original seizure source reaches herald and switching persists");
         fontsize=23, font=:bold, tellwidth=false)
-    ax = Axis(fig[2, 1], title="A. θ_off = 8; four discovered sinks",
-        xlabel="E occupancy", ylabel="I occupancy")
-    role_points!(ax, data["baseline_roots"])
-    ax = Axis(fig[2, 2], title="B. θ_off = 8.75; three sinks; seizure source → herald",
+    ax = Axis(fig[2, 1], title="A. Changed-threshold phase portrait",
         xlabel="E occupancy", ylabel="I occupancy")
     role_points!(ax, data["threshold_8p75_roots"])
     path = filter(row -> row.time <= 500,
         trace(bundle, "theta_off_8.75_from_seizure.csv"))
     lines!(ax, [row.E for row in path], [row.I for row in path];
-        color=ROLES["seizure"], linewidth=3)
+        color=ROLES["seizure"], linewidth=3, label="trajectory from original seizure source")
     scatter!(ax, [first(path).E], [first(path).I]; marker=:diamond,
-        color=ROLES["seizure"], markersize=15)
-    ax = Axis(fig[3, 1], title="C. Sampled source destinations",
-        xlabel="Failure threshold θ_off", ylabel="Observed destination")
+        color=ROLES["seizure"], markersize=15, label="original source at θ = 8")
+    text!(ax, 0.37, 0.055; text="original seizure source", color=ROLES["seizure"],
+        fontsize=13)
+    text!(ax, 0.35, 0.405; text="trajectory → herald", color=ROLES["seizure"],
+        fontsize=13)
+    ax = Axis(fig[2, 2], title="B. Outcomes at sampled failure thresholds",
+        xlabel=rich("Sampled θ", subscript("off")))
     joint = TOML.parsefile(joinpath(ROOT, "reproducibility",
         "selective_anchor_joint_20261005", "reference_summary.toml"))
     trials = joint["threshold_interventions"]
-    for row in trials
+    for (x, row) in enumerate(trials)
         role = row["seizure_source_destination"]
-        y = role == "seizure" ? 2.0 : 1.0
-        scatter!(ax, [row["theta_off"]], [y]; color=ROLES[role], markersize=17)
+        text!(ax, x, 2; text=role, align=(:center, :center),
+            color=ROLES[role], fontsize=17, font=:bold)
+        text!(ax, x, 1; text="$(row["root_count"]) / $(row["sink_count"])",
+            align=(:center, :center), fontsize=16)
     end
-    text!(ax, 8.0, 2.28; text="7 roots / 4 sinks discovered", fontsize=16)
-    text!(ax, 8.75, 1.28; text="5 roots / 3 sinks discovered", fontsize=16)
-    ax.yticks = ([1, 2], ["herald", "seizure"])
-    xlims!(ax, 7.8, 12.2); ylims!(ax, 0.65, 2.4)
-    rest = only(filter(row -> row["role"] == "rest", data["threshold_8p75_roots"]))
-    ax = Axis(fig[3, 2], title="D. Two switching cycles at θ_off = 8.75",
-        xlabel="Validated destination after each 100 ms pulse", ylabel="Occupancy")
-    endpoint_plot!(ax, bundle, "changed", rest)
-    Label(fig[4, 1:2], "Thresholds are sampled points; no bifurcation is located. Counts are discovered roots/sinks.\nAt θ_off = 8.75, the high-state destination is herald, not active or rest.";
-        fontsize=16, tellwidth=false)
+    ax.xticks = (1:7, [string(row["theta_off"]) for row in trials])
+    ax.yticks = ([1, 2], ["roots / sinks", "source destination"])
+    ax.xgridvisible = false; ax.ygridvisible = false
+    xlims!(ax, 0.5, 7.5); ylims!(ax, 0.5, 2.5)
+    ax = Axis(fig[3, 1:2], title="C. Same four switching pulses at both thresholds",
+        xlabel="Pulse event and validated destination")
+    ax.xticks = (0:4, ["start", "1: E +0.5", "2: I +3", "3: E +0.5", "4: I +3"])
+    ax.yticks = ([1, 2], ["θ = 8.75", "θ = 8"])
+    ax.xgridvisible = false; ax.ygridvisible = false
+    for (y, setting) in ((2, "baseline"), (1, "changed"))
+        ends = endpoint_series(bundle, setting)
+        roles = ("rest", "active", "rest", "active", "rest")
+        for (x, role) in enumerate(roles)
+            endpoint = x == 1 ? nothing : ends[x-1]
+            if endpoint !== nothing
+                roots = setting == "baseline" ? data["baseline_roots"] :
+                    data["threshold_8p75_roots"]
+                root = only(filter(row -> row["role"] == role, roots))
+                maximum(abs.([endpoint.E - root["E"], endpoint.I - root["I"]])) < 1e-6 ||
+                    error("switching endpoint differs from displayed destination")
+            end
+            text!(ax, x-1, y; text=role, align=(:center, :center),
+                color=ROLES[role], fontsize=18, font=:bold)
+        end
+    end
+    xlims!(ax, -0.45, 4.45); ylims!(ax, 0.5, 2.5)
+    rowsize!(fig.layout, 3, 200)
+    Label(fig[4, 1:2], rich("Thresholds are sampled points; no bifurcation is located. Counts are discovered roots/sinks.\n",
+        "At θ", subscript("off"), " = 8.75, the high-state destination is herald, not active or rest.");
+        fontsize=17, tellwidth=false)
     save_figure(fig, output, "04_threshold_intervention")
 end
 
 function supplement1(output, samples)
-    fig = Figure(size=(1200, 1050), fontsize=18)
-    Label(fig[1, 1], "Sampled tonic-on input versus failure threshold";
-        fontsize=24, font=:bold, tellwidth=false)
-    for (panel, low, high, title) in ((2, 1.15, 1.30, "A. Sampled onset bracket"),
-            (3, 0.35, 16.0, "B. Full sampled range"))
-        ax = Axis(fig[panel, 1], title=title, xlabel="Absolute held B_E,on",
-            ylabel="Failure threshold θ_off")
-        for row in samples
-            low <= row.B_E_on <= high || continue
-            qualifies = row.induction_status == "compatible" &&
-                row.induction_destination == "herald" &&
-                row.control_status == "compatible" &&
-                row.control_destination == "herald" &&
-                row.release_0p17_status == "compatible" &&
-                row.release_0p17_destination == "active"
-            unresolved = row.induction_status != "compatible" ||
-                (row.induction_destination == "herald" &&
-                 (row.control_status != "compatible" || row.release_0p17_status != "compatible"))
-            color = qualifies ? ROLES["active"] : unresolved ? ROLES["seizure"] : NEUTRAL
-            offset = row.source == "rest" ? -0.045 : 0.045
-            marker = row.source == "rest" ? :circle : :diamond
-            scatter!(ax, [row.B_E_on], [row.theta_off + offset]; color, marker,
-                markersize=panel == 2 ? 8 : 6)
-        end
-        xlims!(ax, low, high); ylims!(ax, 7.8, 12.2)
-        panel == 2 && vlines!(ax, [1.22890625, 1.2328125];
-            color=(NEUTRAL, 0.6), linestyle=:dash)
-        ax.yticks = ([8.0, 8.25, 8.5, 8.75, 9.0, 10.0, 12.0],
-            ["8", "8.25", "8.5", "8.75", "9", "10", "12"])
+    qualifies(row) = row.induction_status == "compatible" &&
+        row.induction_destination == "herald" &&
+        row.control_status == "compatible" &&
+        row.control_destination == "herald" &&
+        row.release_0p17_status == "compatible" &&
+        row.release_0p17_destination == "active"
+    groups = [(theta, source) for theta in (8.0, 8.25, 8.5, 8.75, 9.0, 10.0, 12.0)
+        for source in ("rest", "active")]
+    brackets = Tuple{Float64,Float64}[]
+    counts = Tuple{Int,Int}[]
+    for (theta, source) in groups
+        rows = sort(filter(row -> row.theta_off == theta && row.source == source,
+            samples); by=row -> row.B_E_on)
+        passed = qualifies.(rows)
+        first_pass = findfirst(identity, passed)
+        first_pass !== nothing && first_pass > 1 &&
+            all(!, passed[1:first_pass-1]) && all(passed[first_pass:end]) ||
+            error("sampled onset is not a single shared transition")
+        push!(brackets, (rows[first_pass-1].B_E_on, rows[first_pass].B_E_on))
+        push!(counts, (first_pass-1, length(rows)-first_pass+1))
     end
-    Label(fig[4, 1], "Green: held-on herald, then active at B_E = 0.17; gray: another resolved outcome; red: unresolved.\nCircle/diamond: rest/active source. Each mark is a sampled input; no interpolation.";
+    length(unique(brackets)) == 1 && length(unique(counts)) == 1 ||
+        error("sampled thresholds or source states differ")
+    lower, upper = only(unique(brackets))
+    failures, successes = only(unique(counts))
+    fig = Figure(size=(1150, 510), fontsize=19)
+    Label(fig[1, 1], "The same sampled tonic-input bracket across 14 source–threshold groups";
+        fontsize=24, font=:bold, tellwidth=false)
+    ax = Axis(fig[2, 1], title="Last nonqualifying and first qualifying samples",
+        xlabel=rich("Absolute held B", subscript("E"), " at onset"))
+    lines!(ax, [lower, upper], [1.0, 1.0]; color=NEUTRAL,
+        linestyle=:dash, linewidth=2)
+    scatter!(ax, [lower], [1.0]; color=NEUTRAL, markersize=21)
+    scatter!(ax, [upper], [1.0]; color=ROLES["active"], markersize=21)
+    text!(ax, lower, 1.17; text="last nonqualifying\n$(lower)",
+        align=(:center, :bottom), color=NEUTRAL, fontsize=17)
+    text!(ax, upper, 0.83; text="first qualifying\n$(upper)",
+        align=(:center, :top), color=ROLES["active"], fontsize=17)
+    ax.yticks = (Float64[], String[])
+    ax.ygridvisible = false
+    xlims!(ax, 1.219, 1.243); ylims!(ax, 0.48, 1.52)
+    Label(fig[3, 1], rich("Seven sampled θ", subscript("off"),
+        " values (8, 8.25, 8.5, 8.75, 9, 10, 12) × rest/active sources.\n",
+        "Each group: $(failures) other outcomes and $(successes) qualifying samples among 147 inputs over 0.35–16.\n",
+        "Qualification: held-on herald followed by active after return to B", subscript("E"),
+        " = 0.17. This bracket is sampled, not an exact threshold.");
         fontsize=16, tellwidth=false)
     save_figure(fig, output, "S1_sampled_input_threshold")
 end
 
 function supplement2(bundle, output)
-    fig = Figure(size=(1330, 750), fontsize=18)
+    fig = Figure(size=(1370, 910), fontsize=19)
     Label(fig[1, 1:2], "Historical protocol: finite E withdrawal from established high states";
         fontsize=24, font=:bold, tellwidth=false)
     for (column, source) in enumerate(("herald", "seizure"))
-        ax = Axis(fig[2, column], title="Starting from established $source at B_E = 0.35",
-            xlabel="E input withdrawn during pulse", ylabel="Pulse duration (ms)",
+        ax = Axis(fig[2, column],
+            title=rich("Starting from established $source at B", subscript("E"), " = 0.35"),
+            xlabel=rich("Pulse decrement ΔB", subscript("E")),
+            ylabel="Pulse duration (ms)",
             yscale=log10)
         rows = collect(CSV.File(joinpath(bundle, "$(source)_withdrawal_pulses.csv")))
         for role in ("active", "herald", "seizure", "rest")
@@ -388,10 +503,29 @@ function supplement2(bundle, output)
             [row.duration for row in unresolved]; color=NEUTRAL, marker=:xcross,
             markersize=8, label="unresolved")
         xlims!(ax, -0.01, 0.36); ylims!(ax, 0.9, 250)
+        ax.yticks = ([1.0, 3.0, 10.0, 30.0, 100.0, 200.0],
+            ["1", "3", "10", "30", "100", "200"])
         axislegend(ax; position=:rt, labelsize=16)
     end
-    Label(fig[3, 1:2], "Frozen two-input batch, before region-selection and phase-handoff corrections.\nPulses restore B_E = 0.35 afterward; current-source response replay remains pending.";
-        fontsize=16, tellwidth=false)
+    ax = Axis(fig[3, 1:2], title="Input protocol for each sampled point (time schematic)",
+        xlabel="Before pulse              During pulse: duration d              After pulse",
+        ylabel=rich("B", subscript("E")))
+    lines!(ax, [0, 1, 1, 2, 2, 3], [0.35, 0.35, 0.12, 0.12, 0.35, 0.35];
+        color=E_COLOR, linewidth=3)
+    text!(ax, 0.5, 0.39; text="0.35", align=(:center, :bottom), fontsize=16)
+    text!(ax, 1.5, 0.075; text=rich("0.35 − ΔB", subscript("E")),
+        align=(:center, :top), fontsize=16)
+    text!(ax, 2.5, 0.39; text="restored to 0.35",
+        align=(:center, :bottom), fontsize=16)
+    ax.xticks = (Float64[], String[])
+    ax.yticks = (Float64[], String[])
+    ax.xgridvisible = false; ax.ygridvisible = false
+    xlims!(ax, 0, 3); ylims!(ax, 0, 0.48)
+    rowsize!(fig.layout, 3, 175)
+    Label(fig[4, 1:2], rich("The diagram shows timing, not a fixed decrement or duration; pulse end restores B",
+        subscript("E"), " = 0.35. Destinations follow that restoration.\n",
+        "Frozen two-input batch before region-selection and phase-handoff corrections; current-source replay remains pending.");
+        fontsize=17, tellwidth=false)
     save_figure(fig, output, "S2_established_state_withdrawal")
 end
 

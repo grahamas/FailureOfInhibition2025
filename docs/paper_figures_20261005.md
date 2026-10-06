@@ -15,7 +15,7 @@ argument: `(e_to_e,i_to_e,e_to_i,i_to_i)=(17,13,19,6)`,
 and the [reviewed switching/intervention](../reproducibility/selective_anchor_joint_20261005/reference_summary.toml)
 and [tonic-release](../reproducibility/selective_tonic_e_release_20261005/reference_summary.toml)
 records. The revised figures reviewed here are in local
-`output/paper_figures_postmerge_20261006_revised/`; that ignored directory is not part of the
+`output/paper_figures_feedback_20261006_final/`; that ignored directory is not part of the
 reproducible source packet. Manuscript captions and interpretation remain for
 author review.
 
@@ -25,8 +25,11 @@ author review.
 produces a nonmonotone inhibitory response. At the selected baseline input, the
 numerical search discovered rest, active, herald, and seizure coordinate roles
 among four attracting equilibria, together with three other roots. The
-plot uses circles for attracting roots and crosses for the other discovered
-roots. The role names are provisional model-coordinate labels. The
+full-domain view distinguishes admissible occupancy from the equilibrium
+region; the adjacent zoom resolves the roots and nullclines. Circles mark
+attracting roots and crosses the other discovered roots. The dashed monotone
+response coincides with the failure response before the failure threshold.
+The role names are provisional model-coordinate labels. The
 monotone-inhibition ordering result concerns *two equilibria under the same
 parameters and fixed input*: higher E with lower I is excluded there. The
 figure does not present the numerical search as a complete root census or the
@@ -37,9 +40,13 @@ amplitude `0.5` sends rest to active, and a 100 ms I-input pulse of amplitude
 `3` sends active to rest. The full sequence repeats twice from each actual
 previous endpoint. Separate 100 ms pulses send rest to herald with E amplitude
 `1` and active to seizure with I amplitude `4.5`. Each pulse returns to the
-baseline tonic input. The endpoint panel displays the complete two-cycle
-sequence; short traces display early dynamics, while classifications use the
-recorded 5,000 ms follow-up. Rest–active switching is an operational model
+baseline tonic input. The endpoint panel displays discrete pulse events from
+each actual previous endpoint; the protocol panel displays pulse timing and
+amplitude. Short traces include a simulated 50 ms pre-onset steady-state
+segment, the recorded pulse, and early post-pulse dynamics. Classifications
+use the recorded 5,000 ms follow-up. The two high-state examples have different
+source states and input directions; they are not a matched comparison.
+Rest–active switching is an operational model
 behavior, not a demonstrated cortical computation.
 
 **Figure 3 — Tonic input control distinguishes source states.** At
@@ -52,32 +59,39 @@ was identified for `theta_off=8`, `8.25`, and `8.5`; none was identified at the
 same on input for `8.75`, `9`, `10`, or `12`, so those four values have no seizure
 cessation trial. These are finite-window outcomes. The sampled herald onset is
 bracketed by `1.22890625 < B_E,on <= 1.2328125`, not an exact threshold.
-Panel C plots the recorded E and I endpoints after the full 5,000 ms follow-up
-for each seizure-source release; panel D gives their classified roles.
+The traces include separately simulated 50 ms pre-onset segments, checked to
+meet their reviewed time-zero states. The input strips identify the held input
+before each change. The compact outcome table gives the finite-window roles
+for induced herald and the independently identified seizure source.
 
 **Figure 4 — A threshold intervention with ordinary switching retained.**
 Raising `theta_off` from `8` to `8.75` sends the *original* seizure source to
 herald, while the unchanged switching pulses complete two rest–active–rest
-cycles at the new setting. At `8`, `8.25`, and `8.5`, the original source
-remains seizure; at `8.75`, `9`, `10`, and `12`, it reaches herald. Searches
-discovered seven roots/four sinks at the lower samples and five roots/three
-sinks at the higher samples. This sampled change does not locate or certify a
+cycles at the new setting. The changed-threshold portrait labels that source,
+trajectory, and herald destination. At `8`, `8.25`, and `8.5`, the original
+source remains seizure; at `8.75`, `9`, `10`, and `12`, it reaches herald. The
+sampled-outcome table reports seven roots/four sinks discovered at the lower
+samples and five roots/three sinks at the higher samples. A paired destination
+table shows the same four switching pulses at both thresholds. This sampled
+change does not locate or certify a
 bifurcation, and redirection to herald is not recovery to active or rest.
 
 ## Supplement and paper boundary
 
-**S1** shows every measured tonic-on input for rest and active across the seven
-thresholds, with a zoom around the sampled onset and the full `0.35–16` range.
-Each dot is a sampled source/input outcome; no cells are filled or
-interpolated. Circles and diamonds distinguish rest and active sources;
-vertical offsets separate each pair at a sampled threshold. The plot describes
-this tonic protocol at fixed coupling and time-scale ratio. It is not a
+**S1** summarizes the shared bounded tonic-on bracket across seven sampled
+thresholds and two source states. Each of the 14 groups contains 147 sampled
+inputs over `0.35–16`: 20 did not meet the full qualification criterion and
+127 did. The last nonqualifying sample is `1.22890625`; the first qualifying
+sample is `1.2328125`. The display does not interpolate between those values.
+It describes this tonic protocol at fixed coupling and time-scale ratio. It is not a
 continuous parameter-region map and does not measure ordinary switching at
 every plotted input.
 
 **S2** presents the earlier finite E-withdrawal pulse observations from
-already established herald and seizure states at `B_E=0.35`. Pulse input is
-restored to `0.35` afterward. This protocol is distinct from Figure 3's
+already established herald and seizure states at `B_E=0.35`. Each pulse reduces
+E input to `0.35 - ΔB_E` for the indicated duration, then restores `0.35`.
+The schematic time course describes that sequence but has no fixed amplitude
+or duration. This protocol is distinct from Figure 3's
 sustained induction at `B_E,on=1.2328125` followed by release to a possibly
 lower tonic input. Its source roles, amplitude, duration, and destinations
 must remain separate in the manuscript and Methods. These frozen-batch rows

@@ -96,6 +96,15 @@ function save_checked(out, name, model, search, initial, roles, expected, config
     compact_trace(joinpath(out, name * ".csv"))
     return phase
 end
+function save_preon(traces, name, model, initial, config)
+    solution = NS.solve_point_model(initial, (-50.0, 0.0), model;
+        saveat=collect(-50.0:1.0:0.0), save_everystep=false, dense=false,
+        abstol=config.abstol/10, reltol=config.reltol/10,
+        domain_atol=config.domain_atol, maxiters=config.maxiters)
+    maximum(abs.(last(solution.u) .- initial)) < 1e-7 ||
+        error("pre-onset state differs from reviewed source: $name")
+    NS.write_trajectory_csv(joinpath(traces, "preon_$(name).csv"), solution)
+end
 function root_rows(context)
     [Dict{String, Any}(
         "E" => root.state[1], "I" => root.state[2],
@@ -201,6 +210,10 @@ function build(joint_dir, tonic_dir, response_dir, destination)
     point["B_E_on"] == 1.2328125 || error("wrong tonic input point")
     selected = Dict{String, Any}()
     for source in ("rest", "active")
+        initial = baseline.search.equilibria[baseline.roles[source]].state
+        save_preon(traces, "baseline_$(source)", baseline.model, initial, config)
+    end
+    for source in ("rest", "active")
         source_row = point["sources"][source]
         initial = baseline.search.equilibria[baseline.roles[source]].state
         induction = save_checked(traces, "tonic_$(source)_induction",
@@ -219,6 +232,8 @@ function build(joint_dir, tonic_dir, response_dir, destination)
             end
         end
     end
+    save_preon(traces, "herald_on", on.model,
+        selected["rest"]["switch_state"], config)
     seizure_record = TOML.parsefile(joinpath(tonic_dir, "theta", "theta_8p0.toml"))["seizure"]["1p2328125"]
     seizure_initial = on.search.equilibria[on.roles["seizure"]].state
     maximum(abs.(seizure_initial .- seizure_record["initial"])) < 1e-7 ||

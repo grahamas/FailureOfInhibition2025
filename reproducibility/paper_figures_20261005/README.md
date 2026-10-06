@@ -5,8 +5,12 @@
 four main-figure traces, the 2,058 sampled tonic-input/source rows, the
 established-state E-withdrawal rows, discovered equilibrium coordinates, and
 SHA-256 checksums. The local full study archives are not required to render it.
-Trace tables retain the first 500 ms and the full-follow-up endpoint; the
-builder checks the untrimmed source traces before compacting them.
+Reviewed trace tables retain the first 500 ms and the full-follow-up endpoint;
+the builder checks the untrimmed source traces before compacting them. Three
+additional `preon_*.csv` traces simulate 50 ms at the unchanged input before
+the depicted pulse or tonic-input change. Their time-zero states must match
+the reviewed trajectory sources within `1e-7`; they do not replace the
+reviewed post-onset trajectories or endpoint classifications.
 The main-figure traces and tonic rows were rebuilt on 6 October from replays
 after the merged phase-handoff correction. The established-state withdrawal
 rows in S2 come from the frozen historical two-input batch and have not been
