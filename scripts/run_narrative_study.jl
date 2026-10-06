@@ -40,6 +40,45 @@ function load_config(path; smoke=false)
     end
     all(grid -> Evidence.positive_integer(grid,"confirmation grid")>=2,
         s["confirmation_grids"]) || throw(ArgumentError("confirmation grids must be at least 2"))
+    baselines=s["anchor_baselines"]
+    baselines isa AbstractVector && !isempty(baselines) && length(unique(baselines))==length(baselines) ||
+        throw(ArgumentError("invalid anchor baselines"))
+    foreach(value -> NarrativeModels.finite_number(value,"anchor baseline"),baselines)
+    families=get(raw,"families",nothing)
+    families isa AbstractVector && !isempty(families) &&
+        all(family -> family isa AbstractDict && all(haskey(family,key)
+            for key in ("name","i_to_e","i_to_i")),families) ||
+        throw(ArgumentError("invalid families"))
+    names=[family["name"] for family in families]
+    all(name -> name in ("figure3","figure4"),names) && length(unique(names))==length(names) ||
+        throw(ArgumentError("unsupported or repeated family"))
+    for family in families, key in ("i_to_e","i_to_i")
+        NarrativeModels.finite_number(family[key],key)
+    end
+    interventions=get(raw,"interventions",nothing)
+    interventions isa AbstractDict && all(haskey(interventions,key)
+        for key in ("fractions","output_factors","threshold_step")) ||
+        throw(ArgumentError("invalid interventions"))
+    NarrativeModels.finite_number(interventions["threshold_step"],"threshold step";positive=true)
+    for key in ("fractions","output_factors")
+        values=interventions[key]
+        values isa AbstractVector && !isempty(values) && length(unique(values))==length(values) ||
+            throw(ArgumentError("invalid intervention $key"))
+        for value in values
+            NarrativeModels.finite_number(value,key)
+            key=="fractions" && value>1 && throw(ArgumentError("fraction exceeds one"))
+        end
+    end
+    map_settings=get(raw,"map",nothing)
+    map_settings isa AbstractDict && all(haskey(map_settings,key)
+        for key in ("baseline_step","coupling_step","baseline_halfwidth","coupling_halfwidth")) ||
+        throw(ArgumentError("invalid map settings"))
+    for key in ("baseline_step","coupling_step")
+        NarrativeModels.finite_number(map_settings[key],key;positive=true)
+    end
+    for key in ("baseline_halfwidth","coupling_halfwidth")
+        NarrativeModels.finite_number(map_settings[key],key)
+    end
     diag = DiagnosticOptions(window_duration=d["window_duration"],
         coordinate_atol=d["coordinate_atol"],balance_atol=d["balance_atol"],min_samples=d["min_samples"])
     horizons=smoke ? [1000.0,2000.0] : Float64.(p["followup_times"])

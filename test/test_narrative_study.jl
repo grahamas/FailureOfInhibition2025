@@ -10,6 +10,18 @@ include(joinpath(@__DIR__, "..", "scripts", "run_narrative_study.jl"))
         @test_throws ArgumentError N.load_config(invalid)
         write(invalid,replace(source,"confirmation_grids = [21, 41]"=>"confirmation_grids = [21]"))
         @test N.confirmation_grid(N.load_config(invalid))==21
+        for (section,key,value) in (("map","baseline_step",0.),
+            ("map","coupling_halfwidth",-1.),("interventions","fractions",Float64[]),
+            ("interventions","output_factors",[-1.]),("interventions","threshold_step",0.))
+            raw=N.TOML.parse(source)
+            raw[section][key]=value
+            open(invalid,"w") do stream;N.TOML.print(stream,raw);end
+            @test_throws ArgumentError N.load_config(invalid)
+        end
+        raw=N.TOML.parse(source)
+        delete!(raw["map"],"coupling_step")
+        open(invalid,"w") do stream;N.TOML.print(stream,raw);end
+        @test_throws ArgumentError N.load_config(invalid)
     end
     command=N.replay_command("run_narrative_study.jl";stage="screen",case_filter="figure3",smoke=true)
     @test occursin("--stage screen --case 'figure3' --smoke",command)

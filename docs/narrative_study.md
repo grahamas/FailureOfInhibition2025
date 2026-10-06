@@ -77,7 +77,9 @@ the parameter changes. Activity coordinates remain separate from switching
 and induction outcomes. No weighted functional score is calculated.
 
 The local input/recurrent-excitation map includes equilibria, the original
-switching and induction witnesses, and full-withdrawal outcomes. Continuation
+switching and induction witnesses, and full-withdrawal outcomes. Map steps
+must be positive and widths nonnegative; intervention axes must be nonempty
+and model-safe. These settings are checked before screening. Continuation
 retains attracting and unstable branch segments. Neighbor tests use
 `e_to_e ±0.25`, `e_to_i ±0.5`, `theta_off ±0.25`, and time-constant ratio
 `±0.2` within the declared bounds. Neighbor switching tests reuse the selected

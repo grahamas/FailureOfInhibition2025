@@ -42,9 +42,13 @@ function load_config(path;smoke=false)
         throw(ArgumentError("invalid expansion axes"))
     Set(expansion["axes"])==Set(("e_to_e","e_to_i","theta_off","tau_ratio")) ||
         throw(ArgumentError("expansion axes must be the four supported, distinct parameter keys"))
-    for (lo,hi,step) in zip(expansion["lower"],expansion["upper"],expansion["offsets"])
+    onset=maximum(get(p,"theta_on",4.) for p in anchors())
+    for (axis,lo,hi,step) in zip(expansion["axes"],expansion["lower"],expansion["upper"],expansion["offsets"])
         M.number(lo,"lower");M.number(hi,"upper");M.number(step,"offset";positive=true)
         lo<hi || throw(ArgumentError("unordered expansion bounds"))
+        axis=="tau_ratio" && lo<=0 && throw(ArgumentError("time-scale ratio bounds must be positive"))
+        axis=="theta_off" && lo<=onset &&
+            throw(ArgumentError("failure threshold bounds must exceed inhibitory onset"))
     end
     if smoke
         raw["geometry_budget"]=70;raw["screen_budget"]=40;raw["transition_budget"]=40
