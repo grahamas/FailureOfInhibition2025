@@ -109,6 +109,48 @@ function write_atomic(path, value)
     end
 end
 
+function study_hashes(study)
+    hashes = Dict{String,String}()
+    for (directory, subdirectories, files) in walkdir(study)
+        any(islink(joinpath(directory, name)) for name in vcat(subdirectories, files)) &&
+            throw(ArgumentError("study symlinks are not supported"))
+        for name in files
+            path = joinpath(directory, name)
+            relative = relpath(path, study)
+            relative == "checksums.toml" && continue
+            relative_parts(relative)
+            isfile(path) || throw(ArgumentError("nonregular study file: $path"))
+            hashes[relative] = digest(path)
+        end
+    end
+    hashes
+end
+
+function verify_study_manifest(study)
+    path = joinpath(study, "checksums.toml")
+    isfile(path) && !islink(path) || throw(ArgumentError("missing regular study manifest"))
+    data = TOML.parsefile(path)
+    get(data, "schema_version", nothing) == 1 && get(data, "algorithm", nothing) == "SHA-256" ||
+        throw(ArgumentError("unsupported study manifest"))
+    files = get(data, "files", nothing)
+    files isa AbstractDict || throw(ArgumentError("study manifest has no file map"))
+    for (name, hash) in files
+        relative_parts(name)
+        hash isa AbstractString && occursin(r"^[0-9a-f]{64}$", hash) ||
+            throw(ArgumentError("invalid study manifest hash: $name"))
+    end
+    study_hashes(study) == files || throw(ArgumentError("study manifest does not match output"))
+    nothing
+end
+
+function refresh_study_manifest(study)
+    files = study_hashes(study)
+    data = Dict("schema_version" => 1, "algorithm" => "SHA-256", "files" => files)
+    write_atomic(joinpath(study, "checksums.toml"),
+        sprint(stream -> TOML.print(stream, data; sorted=true)))
+    verify_study_manifest(study)
+end
+
 function create_archive(folder, original, expected, archive_path)
     marker_dir = joinpath(folder, "_checkpoint")
     marker = joinpath(marker_dir, "done.toml")
@@ -209,8 +251,8 @@ function archive_geometry(folder)
 end
 
 function archive_study(study)
-    isfile(joinpath(study, "checksums.toml")) &&
-        throw(ArgumentError("study already has a final manifest; archive before finalization"))
+    had_manifest = isfile(joinpath(study, "checksums.toml"))
+    had_manifest && verify_study_manifest(study)
     count = 0
     for category in ("anchors", "expansion", "representatives")
         parent = joinpath(study, category)
@@ -223,6 +265,7 @@ function archive_study(study)
             count += archive_geometry(folder)
         end
     end
+    had_manifest && refresh_study_manifest(study)
     count
 end
 
