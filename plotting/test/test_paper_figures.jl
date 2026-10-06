@@ -8,9 +8,14 @@ const PAPER_BUNDLE = joinpath(@__DIR__, "..", "..", "reproducibility",
 
 @testset "Selective paper figure evidence" begin
     data, samples = PaperFigures.checked_data(PAPER_BUNDLE)
+    @test data["julia_version"] == string(VERSION) == "1.10.12"
     @test all(haskey(data["source_sha256"], path) for path in
-        ("src/responses.jl", "src/drives.jl", "src/stability.jl",
+        ("Project.toml", "Manifest.toml", "plotting/Project.toml",
+         "plotting/Manifest.toml", "src/responses.jl", "src/drives.jl",
+         "src/stability.jl",
          "scripts/render_paper_figures.jl"))
+    @test PaperFigures.portable_path(raw"traces\tonic_held.csv") ==
+        "traces/tonic_held.csv"
     @test haskey(data["reference_sha256"], "response")
     @test haskey(data["reference_sha256"], "source_artifacts")
     @test length(samples) == 2058
@@ -89,6 +94,14 @@ const PAPER_BUNDLE = joinpath(@__DIR__, "..", "..", "reproducibility",
             println(io, "tampered")
         end
         @test_throws ErrorException PaperFigures.checked_data(destination)
+    end
+    if !Sys.iswindows()
+        mktempdir() do temporary
+            destination = joinpath(temporary, "duplicate path")
+            cp(PAPER_BUNDLE, destination)
+            write(joinpath(destination, raw"traces\induce_rest_to_herald.csv"), "extra")
+            @test_throws ErrorException PaperFigures.checked_data(destination)
+        end
     end
     mktempdir() do temporary
         destination = joinpath(temporary, "missing source")

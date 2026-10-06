@@ -11,20 +11,46 @@ const RESPONSE_REFERENCE = joinpath(BUNDLE, "response_reference.toml")
 const SOURCE_ARTIFACTS = joinpath(BUNDLE, "source_artifacts.toml")
 
 hashfile(path) = bytes2hex(SHA.sha256(read(path)))
+portable_path(path) = replace(path, '\\' => '/')
 function require_equal(actual, expected, label)
     actual == expected || error("figure-data source differs: $label")
 end
 function artifact_digest(directory, relative_files)
-    length(relative_files) == length(unique(relative_files)) || error("duplicate source artifact")
+    length(relative_files) == length(unique(portable_path.(relative_files))) ||
+        error("duplicate source artifact")
     record = IOBuffer()
-    for relative in sort(relative_files)
+    for relative in sort(relative_files; by=portable_path)
         (isabspath(relative) || ".." in splitpath(relative)) &&
             error("unsafe source artifact path: $relative")
         path = joinpath(directory, relative)
         isfile(path) || error("missing source artifact: $relative")
-        print(record, relative, '\0', hashfile(path), '\n')
+        print(record, portable_path(relative), '\0', hashfile(path), '\n')
     end
     return bytes2hex(SHA.sha256(take!(record)))
+end
+function check_numerical_environment(joint, tonic, environment)
+    version = environment["julia_version"]
+    for (label, actual) in (("current Julia", string(VERSION)),
+            ("joint Julia", joint["julia_version"]),
+            ("tonic Julia", tonic["metadata"]["julia_version"]))
+        require_equal(actual, version, label)
+    end
+    hashes = environment["source_sha256"]
+    required = Set(("Project.toml", "Manifest.toml",
+        "plotting/Project.toml", "plotting/Manifest.toml"))
+    require_equal(Set(keys(hashes)), required, "numerical environment file list")
+    for relative in required
+        digest = hashes[relative]
+        require_equal(hashfile(joinpath(ROOT, relative)), digest,
+            "numerical environment: $relative")
+        if relative in ("Project.toml", "Manifest.toml")
+            require_equal(joint["source_sha256"][relative], digest,
+                "joint environment: $relative")
+            require_equal(tonic["metadata"]["source_sha256"][relative], digest,
+                "tonic environment: $relative")
+        end
+    end
+    return true
 end
 function check_artifacts(directory, relative_files, reference, label)
     require_equal(length(relative_files), reference["files"], "$label file count")
@@ -139,6 +165,7 @@ function build(joint_dir, tonic_dir, response_dir, destination)
         for file in point_files[theta]]
     push!(tonic_files, joinpath("theta", "theta_8p0.toml"))
     source_artifacts = TOML.parsefile(SOURCE_ARTIFACTS)
+    check_numerical_environment(joint, tonic, source_artifacts["environment"])
     check_artifacts(joint_dir, joint_files, source_artifacts["joint"], "joint")
     check_artifacts(tonic_dir, tonic_files, source_artifacts["tonic"], "tonic")
 
@@ -240,8 +267,11 @@ function build(joint_dir, tonic_dir, response_dir, destination)
         "baseline_roots" => root_rows(baseline), "threshold_8p75_roots" => root_rows(changed),
         "tonic_on_roots" => root_rows(on), "selected_tonic" => selected,
         "samples_per_threshold" => 147, "sample_rows" => length(rows),
+        "julia_version" => string(VERSION),
         "source_sha256" => Dict(path => hashfile(joinpath(ROOT, path)) for path in
-            ("scripts/build_paper_figure_data.jl", "scripts/run_narrative_study.jl",
+            ("Project.toml", "Manifest.toml", "plotting/Project.toml",
+             "plotting/Manifest.toml", "scripts/build_paper_figure_data.jl",
+             "scripts/run_narrative_study.jl",
              "scripts/narrative_models.jl", "scripts/render_paper_figures.jl",
              "experiments/narrative_study.toml",
              "reproducibility/selective_tonic_e_release_20261005/replay.jl",
@@ -252,7 +282,8 @@ function build(joint_dir, tonic_dir, response_dir, destination)
             "response" => response_ref_hash, "source_artifacts" => hashfile(SOURCE_ARTIFACTS)),
         "limits" => "Finite-window trajectories and sampled input/threshold points; no bifurcation or completeness claim")
     NS.write_record(joinpath(destination, "data.toml"), record)
-    files = [relpath(joinpath(dir, file), destination) for (dir, _, filenames) in walkdir(destination)
+    files = [portable_path(relpath(joinpath(dir, file), destination))
+        for (dir, _, filenames) in walkdir(destination)
         for file in filenames if file != "checksums.toml"]
     NS.write_record(joinpath(destination, "checksums.toml"),
         Dict("files" => Dict(file => hashfile(joinpath(destination, file)) for file in files)))

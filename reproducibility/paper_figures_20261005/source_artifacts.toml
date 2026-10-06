@@ -7,3 +7,12 @@ sha256 = "b560b8d4d7c4f905821f1e53984593121669dd926d49f49566c2735aed75f1cf"
 [tonic]
 files = 1030
 sha256 = "d075abad9bd5676fe14027d4c9954e12b6c78da8506d83bb1b695109b1bfa26d"
+
+[environment]
+julia_version = "1.10.12"
+
+    [environment.source_sha256]
+    "Project.toml" = "5e34f43864bb19cfd3878c8743f49abeefc4b363e5cb635983fd5f02b4535a81"
+    "Manifest.toml" = "54c3971df78e42b150c41ecf100f913712244a118bb693e3cfb90ecea4fca7b6"
+    "plotting/Project.toml" = "23b625bcc8b1e2aba54ad3e15c747380ebf2e47872d636846a960efc1719e91f"
+    "plotting/Manifest.toml" = "3b531bf23566bf36c6c9b7aa57383f33482fe639d9da879beb8985999dbd1474"

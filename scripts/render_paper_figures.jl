@@ -11,6 +11,8 @@ const NEUTRAL = "#657383"
 const ROLES = Dict("rest"=>"#64748b", "active"=>"#17805e",
     "herald"=>"#8059b0", "seizure"=>"#c74655", "unassigned"=>"#8c98a5")
 const REQUIRED_SOURCE_FILES = Set((
+    "Project.toml", "Manifest.toml", "plotting/Project.toml",
+    "plotting/Manifest.toml",
     "experiments/narrative_study.toml",
     "reproducibility/selective_tonic_e_release_20261005/replay.jl",
     "scripts/build_paper_figure_data.jl", "scripts/narrative_models.jl",
@@ -19,6 +21,7 @@ const REQUIRED_SOURCE_FILES = Set((
     "src/equilibria.jl", "src/point_model.jl", "src/responses.jl",
     "src/simulation.jl", "src/stability.jl"))
 hashfile(path) = bytes2hex(SHA.sha256(read(path)))
+portable_path(path) = replace(path, '\\' => '/')
 
 function expected_bundle_files()
     files = Set(("data.toml", "tonic_samples.csv", "herald_sustained.csv",
@@ -27,22 +30,22 @@ function expected_bundle_files()
     for setting in ("baseline_switching", "theta_off_8.75_switching"),
             cycle in 1:2, phase in ("rest_to_active", "active_to_rest"),
             suffix in ("_pulse", "")
-        push!(files, joinpath("traces", setting, "cycle$(cycle)_$(phase)$(suffix).csv"))
+        push!(files, portable_path(joinpath("traces", setting, "cycle$(cycle)_$(phase)$(suffix).csv")))
     end
     for name in ("induce_rest_to_herald_pulse", "induce_rest_to_herald",
             "induce_active_to_seizure_pulse", "induce_active_to_seizure",
             "theta_off_8.75_from_seizure")
-        push!(files, joinpath("traces", name * ".csv"))
+        push!(files, portable_path(joinpath("traces", name * ".csv")))
     end
     for name in ("tonic_active_induction", "tonic_rest_induction",
             "tonic_herald_held", "tonic_seizure_held")
         for extension in ("csv", "toml")
-            push!(files, joinpath("traces", "$name.$extension"))
+            push!(files, portable_path(joinpath("traces", "$name.$extension")))
         end
     end
     for state in ("herald", "seizure"), level in ("0p0", "0p17", "0p35"),
             extension in ("csv", "toml")
-        push!(files, joinpath("traces", "tonic_$(state)_release_B_$(level).$(extension)"))
+        push!(files, portable_path(joinpath("traces", "tonic_$(state)_release_B_$(level).$(extension)")))
     end
     return files
 end
@@ -51,8 +54,10 @@ function checked_data(directory)
     manifest = TOML.parsefile(joinpath(directory, "checksums.toml"))["files"]
     expected = expected_bundle_files()
     Set(keys(manifest)) == expected || error("incomplete figure-data checksum manifest")
-    actual = Set(relpath(joinpath(dir, file), directory)
-        for (dir, _, filenames) in walkdir(directory) for file in filenames)
+    actual_files = [portable_path(relpath(joinpath(dir, file), directory))
+        for (dir, _, filenames) in walkdir(directory) for file in filenames]
+    actual = Set(actual_files)
+    length(actual) == length(actual_files) || error("duplicate figure-data path")
     actual == union(expected, Set(["checksums.toml"])) ||
         error("figure-data bundle file set differs")
     for (relative, digest) in manifest
@@ -62,8 +67,16 @@ function checked_data(directory)
         isfile(path) && hashfile(path) == digest || error("figure-data hash mismatch: $relative")
     end
     data = TOML.parsefile(joinpath(directory, "data.toml"))
+    environment = TOML.parsefile(joinpath(ROOT, "reproducibility",
+        "paper_figures_20261005", "source_artifacts.toml"))["environment"]
+    data["julia_version"] == environment["julia_version"] == string(VERSION) ||
+        error("figure-data Julia version differs")
     Set(keys(data["source_sha256"])) == REQUIRED_SOURCE_FILES ||
         error("incomplete figure-data source list")
+    for (relative, digest) in environment["source_sha256"]
+        data["source_sha256"][relative] == digest ||
+            error("figure-data numerical environment differs: $relative")
+    end
     Set(keys(data["reference_sha256"])) ==
         Set(("joint", "tonic", "response", "source_artifacts")) ||
         error("incomplete figure-data reference list")

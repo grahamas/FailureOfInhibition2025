@@ -1,3 +1,4 @@
+julia_version = "1.10.12"
 limits = "Finite-window trajectories and sampled input/threshold points; no bifurcation or completeness claim"
 sample_rows = 2058
 samples_per_threshold = 147
@@ -51,7 +52,7 @@ stability = "Attracting"
 [reference_sha256]
 joint = "564a3c40fa99bf4d4337928f062920158d6b1f2f999f0e95c1b75cee094c92c1"
 response = "bda3ae25dcb75234d28d9d5fd0449c67404c17a386c4e9fc7237286b6d956d08"
-source_artifacts = "a25cbb46176220782da2177ff207c89407be8383f6c990f075b1204f85675b15"
+source_artifacts = "a346b01bf4db4e8843af46012b8bfa4a4a098e857bd08c7b0fae2cea5a43e9c8"
 tonic = "0c8a71682845bd87bb020bebad7e9dc49cf31eeab3ff37c6ea990397394610de"
 
 [selected_tonic.active]
@@ -181,11 +182,15 @@ status = "tested"
     status = "compatible"
 
 [source_sha256]
+"Manifest.toml" = "54c3971df78e42b150c41ecf100f913712244a118bb693e3cfb90ecea4fca7b6"
+"Project.toml" = "5e34f43864bb19cfd3878c8743f49abeefc4b363e5cb635983fd5f02b4535a81"
 "experiments/narrative_study.toml" = "8a7985b93d86049982611bbda9ec25edb958172f11c5d8c42b04aed59476c4d9"
+"plotting/Manifest.toml" = "3b531bf23566bf36c6c9b7aa57383f33482fe639d9da879beb8985999dbd1474"
+"plotting/Project.toml" = "23b625bcc8b1e2aba54ad3e15c747380ebf2e47872d636846a960efc1719e91f"
 "reproducibility/selective_tonic_e_release_20261005/replay.jl" = "1b8a571f5e16a1654e95c73563912bbf630ddce174fcefb98ea35580807f9fef"
-"scripts/build_paper_figure_data.jl" = "94b0a69ed76e6ebdd0d3deb235fb3d1dc1345e7e356eeb4744a281b3f8e21c67"
+"scripts/build_paper_figure_data.jl" = "fe971a1da0ab7d310139d0bb52fb3f5fc45b0007537bc60e201f3db8a762d69b"
 "scripts/narrative_models.jl" = "9f5d973d065467d73049f82ca8cd79367144cd39b9b677508b64f4d30d805539"
-"scripts/render_paper_figures.jl" = "752a6266ec619b16dcb18147737808db8a5dafce7af1107adc9a4b9d80a27576"
+"scripts/render_paper_figures.jl" = "f81452fde0fdd561e5c00e25098db44a6d9695ebf05a1aaa75ebbc933e02b88d"
 "scripts/run_narrative_study.jl" = "5ba06d0246b424ac62b5c53253957c30a96f8a63b53ac5c126883d56e3354398"
 "src/FailureOfInhibition2025.jl" = "59415146e734934bf48cae9b7c45ccdb7e156fd56b1fff54d9a6d2b48c3d806a"
 "src/configurations.jl" = "728fa9ad893023ea633bc8b693bf2c2b372cfb0b2f671f54533523fde66c1516"

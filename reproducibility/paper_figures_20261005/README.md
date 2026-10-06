@@ -12,7 +12,7 @@ after the merged phase-handoff correction. The established-state withdrawal
 rows in S2 come from the frozen historical two-input batch and have not been
 rerun under the corrected region-selection rule.
 
-From a Julia 1.10 checkout with the recorded plotting environment, run:
+From a Julia 1.10.12 checkout with the recorded plotting environment, run:
 
 ```sh
 julia --project=plotting scripts/render_paper_figures.jl \
@@ -20,9 +20,11 @@ julia --project=plotting scripts/render_paper_figures.jl \
 ```
 
 The renderer rejects an existing output directory and checks every bundled
-file against a complete expected file set, selected model/protocol sources, and
-all four reviewed reference files before writing PDF, SVG, and PNG files. To
-rebuild the bundle from the retained local archives, use the Julia builder:
+file against a complete expected file set, selected model/protocol sources, the
+recorded Julia version and root/plotting project and manifest hashes, and all
+four reviewed reference files before writing PDF, SVG, and PNG files. Bundle
+checksum paths use `/` on every platform. To rebuild the bundle from the
+retained local archives, use the Julia builder:
 
 ```sh
 julia --project=. scripts/build_paper_figure_data.jl \
@@ -36,9 +38,10 @@ The builder checks the first two local summaries byte for byte against their
 tracked reviewed references and verifies every consumed joint trajectory and
 tonic point/theta file against the
 [reviewed source artifact digest](source_artifacts.toml) before and after
-building the packet. It verifies the historical response archive's
-manifest and the exact frozen metadata, parameters, input, roles, summary, and
-four S2 source tables against
+building the packet. It requires the same Julia 1.10.12 version and root and
+plotting project/manifest files as the reviewed runs. It verifies the
+historical response archive's manifest and the exact frozen metadata,
+parameters, input, roles, summary, and four S2 source tables against
 [the response reference](response_reference.toml) before copying any S2 rows.
 It also checks selected trajectory outcomes and endpoints against the tonic
 records, and refuses an existing destination.
