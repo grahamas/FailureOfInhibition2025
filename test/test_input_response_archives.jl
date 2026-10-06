@@ -25,6 +25,20 @@ function write_archive_marker(geometry)
     write(joinpath(geometry, "done.toml"), marker)
 end
 
+function write_study_manifest(root)
+    files = Dict{String,String}()
+    for (directory, _, names) in walkdir(root), name in names
+        path = joinpath(directory, name)
+        relative = relpath(path, root)
+        relative == "checksums.toml" && continue
+        files[relative] = Archive.digest(path)
+    end
+    open(joinpath(root, "checksums.toml"), "w") do stream
+        Archive.TOML.print(stream, Dict("schema_version" => 1, "algorithm" => "SHA-256",
+            "files" => files); sorted=true)
+    end
+end
+
 @testset "Lossless Julia geometry archive" begin
     mktempdir() do root
         geometry = archive_fixture(root)
@@ -101,11 +115,29 @@ end
         Archive.verify_checkpoint(geometry)
     end
     mktempdir() do root
-        geometry = archive_fixture(root)
-        original = read(joinpath(geometry, "done.toml"))
-        write(joinpath(root, "checksums.toml"), "[files]\n")
+        geometry = archive_fixture(joinpath(root, "expansion", "case"))
+        write_study_manifest(root)
+        previous = read(joinpath(root, "checksums.toml"))
+        @test Archive.archive_study(root) == 1
+        @test !isdir(joinpath(geometry, "contexts"))
+        @test read(joinpath(root, "checksums.toml")) != previous
+        @test isnothing(Archive.verify_study_manifest(root))
+        files = Archive.TOML.parsefile(joinpath(root, "checksums.toml"))["files"]
+        @test haskey(files, "expansion/case/geometry/contexts.tar.gz")
+        @test haskey(files, "expansion/case/geometry/context_archive.json")
+        @test !haskey(files, "expansion/case/geometry/contexts/0.0_0.0/context.toml")
+        @test Archive.archive_study(root) == 0
+        @test isnothing(Archive.verify_study_manifest(root))
+    end
+    mktempdir() do root
+        geometry = archive_fixture(joinpath(root, "expansion", "case"))
+        write_study_manifest(root)
+        manifest = read(joinpath(root, "checksums.toml"))
+        path = joinpath(geometry, "contexts", "0.0_0.0", "context.toml")
+        write(path, "changed = true\n")
         @test_throws ArgumentError Archive.archive_study(root)
-        @test read(joinpath(geometry, "done.toml")) == original
+        @test read(joinpath(root, "checksums.toml")) == manifest
         @test isdir(joinpath(geometry, "contexts"))
+        @test !isfile(joinpath(geometry, "contexts.tar.gz"))
     end
 end

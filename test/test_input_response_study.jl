@@ -3,6 +3,16 @@ include(joinpath(@__DIR__,"..","scripts","run_input_response_study.jl"))
 @testset "Two-input chart and response contracts" begin
     A=InputResponseStudy;M=A.M
     cfg=A.load_config(joinpath(@__DIR__,"..","experiments","input_response.toml");smoke=true)
+    mktempdir() do root
+        for axes in (["e_to_e","e_to_i","theta_off","typo"],
+                     ["e_to_e","e_to_e","theta_off","tau_ratio"])
+            raw=A.TOML.parsefile(joinpath(@__DIR__,"..","experiments","input_response.toml"))
+            raw["expansion"]["axes"]=axes
+            path=joinpath(root,"invalid_axes.toml")
+            open(path,"w") do stream;A.TOML.print(stream,raw);end
+            @test_throws ArgumentError A.load_config(path)
+        end
+    end
     p=A.anchors()[6]
     m=M.model(p)
     @test M.model(p,.3,.7).drive.baseline==(.3,.7)

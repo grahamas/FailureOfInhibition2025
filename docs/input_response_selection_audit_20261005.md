@@ -80,8 +80,8 @@ read-only scripts and per-case JSON are retained outside JJ at
 downstream summaries have not been rerun under this correction; the frozen
 study remains historical and revised scientific interpretation is pending.
 
-A fresh geometry-only replay under the current source checked one case from
-each affected category:
+A fresh geometry-only replay after the cell-consistency correction checked
+one case from each affected category:
 
 | Case | Removed selected inputs | Added selected inputs |
 | --- | --- | --- |
