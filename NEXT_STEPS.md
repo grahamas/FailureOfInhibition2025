@@ -4,28 +4,36 @@
 
 - Maintain a tested two-population point-model implementation for the failure-of-inhibition study.
 - Produce deterministic CPU experiments and traceable figure data from documented model assumptions.
-- Test whether raising the inhibitory failure threshold preserves distinct active dynamics while suppressing a candidate pathological attractor more selectively than alternative interventions.
+- Explain coexistence, controllable rest–active switching, and the measured tradeoffs between ordinary activity and control of high-E/low-I activity.
+- Preserve the distinction between herald and seizure candidates, and between tonic-input withdrawal and direct activity displacement.
 
 ## Next Steps
 
-- [ ] Refine coexistence boundaries in the two `e_to_i=12:0.5:28` by `theta_off=6:0.25:12` planes with matched monotone controls; track stable and unstable branches, retaining search failures and incomplete coverage.
-- [ ] Establish what retained activity represents at representative coexistence points using E, I, inhibitory input and response slope. Validate any proposed periodic orbit with phase, closure, refinement, and Floquet checks; keep biological roles unresolved until justified.
-- [ ] Compare individual changes to failure threshold, E-to-I recruitment, E-to-E excitation, and I-to-E output using continued activity branches and pulse-transition intervals. Distinguish selective suppression from loss of all nonquiescent activity.
-- [ ] Refine positive E/I/equal-input and separate negative-E amplitude-duration maps from each attracting equilibrium and validated cycle phases. Extend unresolved post-withdrawal traces beyond 5 seconds as needed; report the tested intervention class and finite horizons.
-- [ ] Test promising regions with the targeted slices and deterministic joint samples in `docs/intervention_study.md`, including time-constant ratio and numerical sensitivity; check candidate bifurcation nondegeneracy before stronger claims.
-- [ ] Reconcile manuscript claims with the arbitrary-coupling monotone ordering result, equal-slope response symmetry, and experimental evidence. Return revision instructions while keeping manuscript changes manual.
+- [ ] Review completion, unresolved outcomes, and any confirmation disagreements from the 74 detailed input-response follow-ups using `docs/input_response_results.md` and the batch status recorded there.
+- [ ] Manually revise the manuscript using the figure sequence and paragraph purposes in `docs/narrative_results.md`; keep rest–active switching distinct from demonstrated cortical computation.
+- [ ] Review the exploratory time-scale ratio and positive-I seizure-induction witness before giving the selected example physiological meaning.
+- [ ] Select the input-response comparisons that best support the manuscript argument, keeping sustained withdrawal, finite pulses, and direct E displacement distinct.
+- [ ] Specify a later coupled E–I feedback model and its available control signals before attempting self-terminating herald spikes or failed seizure control.
 
 ## Context
 
-The current equations and numerical policies are documented in `docs/model.md`.
-The scientific sequence, supplied exploration bounds, evidence gates, and pulse
-protocols are in `docs/intervention_study.md`. These bounds are exploratory,
-not empirically calibrated. The minimal matched-model experiment remains a
-separate synthetic workflow check. `docs/intervention_results.md` records the
-executed primary map, representative continuation and pulse experiments,
-targeted robustness, and finite periodic-candidate screen. The high-E/high-I
-branch persists when the low-I branch turns under increased failure threshold;
-functional activity and exhaustive attractor discovery remain unresolved.
+The equations remain documented in `docs/model.md`. The completed narrative
+study screened 2,103 contexts and qualified seven examples for ordinary
+switching plus seizure access. The selected positive-input four-state example
+supports a paired herald/seizure displacement comparison and 44 intervention
+settings. Raising the failure threshold preserves the measured switching but
+sends the former seizure source to herald in that selected example. Subsequent
+matched counterexamples show that this destination is parameter-dependent:
+positive-input withdrawal can recover herald while seizure persists, and a
+higher failure threshold can send seizure to intermediate activity.
+See `docs/narrative_study.md` for the protocol and `docs/narrative_results.md`
+for the original results, limitations, and manual manuscript revision
+instructions. `docs/input_response_study.md` documents the systematic two-input
+characterization and its sampling limits.
+Its eight anchors and 224-case parameter screen are complete; 74 selected
+detailed follow-ups continue as a resumable batch with automatic verification
+and report generation. Completed results and batch status are documented in
+`docs/input_response_results.md`.
 
 ## Constraints
 
@@ -41,14 +49,14 @@ functional activity and exhaustive attractor discovery remain unresolved.
 
 ## Open Questions
 
-- Which discovered nonquiescent object has evidence for the manuscript's intended functional active regime? Three attracting equilibria alone do not answer this.
-- Which biological observations can distinguish pathological activity from high excitation with substantial inhibition, including when both lie on the descending response branch?
-- Do the numerical candidate bifurcations and periodic orbits survive refinement, and what remains undiscovered?
+- What biological evidence would justify interpreting the demonstrated rest–active switch as cortical function?
+- Which parameter neighborhoods preserve selective herald recovery, and which observed differences are robust enough to motivate a coupled feedback model?
+- What feedback dynamics could make a stable point-model herald candidate a transient spike in a coupled system?
 
 ## Completed
 
+- [x] Implemented two-input equilibrium and response characterization, completed the anchor maps and parameter screen, and independently checked selective withdrawal, neighboring parameterizations, pulse boundaries, and archived-source replay.
+- [x] Completed the narrative study, paired reduction measurements, intervention comparisons, local map, neighborhood checks, independent numerical checks, and archived-source trajectory replay; delivered figures and an author-facing outline.
 - [x] Implemented and independently reviewed pseudo-arclength continuation, numerical periodic shooting, and explicit pulse experiments with retained unresolved outcomes and replayable evidence.
 - [x] Executed both full primary parameter planes, representative continuation and pulse protocols, intervention/robustness searches, and periodic-candidate screening; documented analytical constraints and initial results.
 - [x] Added and independently reviewed the sampled diagnostic contract and reproducible matched control/FoI runner, with explicit numerical criteria, full search records, source snapshots, checksums, and retained unresolved outcomes.
-- [x] Repaired mixed-precision RHS/Jacobian scaling with independent review and underflow, overflow, and mixed-type regressions.
-- [x] Added and independently reviewed local equilibrium solving, deterministic multistart discovery, candidate validation and deduplication, and local linear stability diagnostics.

@@ -916,3 +916,17 @@ above. The minimal matched-model experiment remains a synthetic workflow
 check. Search completeness, rigorous existence and bifurcation certificates,
 biological regime definitions, and publication claims are not supplied by
 these numerical labels.
+
+## Permanent input release
+
+The [input-release study](input_release.md) pairs autonomous models at
+`B_E=8` and `B_E=0`, with identical population and coupling parameters and
+`B_I=0`. Its high-E/low-I source is identified in the driven system, without
+requiring a zero-input counterpart. Each phase uses its own independently
+discovered equilibrium context. Induction, permanent release, and continued
+input are classified separately; both follow-ups begin at the actual final
+induction state. Finite recovery requires return to the original zero-input
+starting equilibrium, with the kept-on control retaining the driven state.
+This protocol is distinct from temporary tonic withdrawal followed by
+restoration of baseline. The model equations and public package API are
+unchanged; configuration and runners live in the experiment/script layer.

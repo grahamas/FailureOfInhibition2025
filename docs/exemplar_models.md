@@ -59,10 +59,20 @@ excluded-box CSVs byte-for-byte.
 
 **None of these is an exact count of all attractors.** The global
 cycle-exclusion gate did not pass in any case, so each certificate records
-`not_certified` for that count. Basin areas, directional stability
-thresholds, and finite-drive rescue outcomes have not been measured at full
-resolution for these exemplars. In particular, an ascending inhibitory
-response at the `three_sinks_ascending` high-E/high-I sink does not establish
+`not_certified` for that count. Basin areas and directional stability
+thresholds have not been measured at full resolution for these exemplars.
+
+**Execution update (2026-09-28).** The adaptive finite-drive scan completed
+for all four exemplars and their in-bounds one-at-a-time parameter neighbors.
+Its retained local archive is `output/adaptive_rescue_exemplars_20260928/`;
+the E-withdrawal analysis is
+`output/tonic_e_withdrawal_findings_2026-09-28.html`. No sampled trial from
+the tracked high-E/low-I source reached a configured rescue target. This is
+a finite-window observation, not an absence claim. The separate uniform
+two-case tonic scan has no retained full-run artifact.
+
+In particular, an ascending inhibitory response at the
+`three_sinks_ascending` high-E/high-I sink does not establish
 that it is rescuable. The positive-increment obstruction from
 [`theory_notes.md`](theory_notes.md) applies to the two high-E sinks of the
 `three_sinks_descending` and `four_sinks_central` cases under its stated
