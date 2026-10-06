@@ -18,6 +18,16 @@ phase handoff correction. Repeat any induction or switching witness proposed
 for a figure under that policy; their prior counts and trajectories remain
 historical evidence.
 
+**Frozen-batch completion, 1 October 2026:** All 74 selected detailed cases
+and 1,171 response baselines finished, with no recorded independent root-search
+or held-input control disagreement. The
+[anchor decision packet](anchor_regime_decision_20261005.md) recounts that
+historical evidence. Its regional selections and aggregates have not been
+regenerated under the current rule. The separate
+[selective-anchor replay](selective_anchor_joint_exploration_20261005.md)
+rechecked switching, induction, and threshold redirection after the merged
+phase-handoff correction; it does not rerun the two-input regional study.
+
 ## Argument
 
 Failure of inhibition changes the state repertoire of an activity-supporting
@@ -126,6 +136,12 @@ tonic excitation and intervention duration changes the contrast between the two
 high-state responses, even before adding an autonomous feedback mechanism.
 
 ## Four figure handoffs and candidate Results paragraphs
+
+The [selective-anchor figure packet](paper_figures_20261005.md) is a candidate
+single-setting sequence for author review. Its main switching and tonic-input
+traces were regenerated from merged-source replays. Its supplementary
+established-state withdrawal panel retains the frozen-batch status described
+above. Figure selection and manuscript captions remain with the author.
 
 The paragraphs below are new candidate text for author revision. They do not
 replace any existing manuscript text. Final panels and numerical claims must

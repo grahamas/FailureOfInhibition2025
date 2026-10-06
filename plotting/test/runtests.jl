@@ -203,3 +203,5 @@ end
     end
 
 end
+
+include("test_paper_figures.jl")

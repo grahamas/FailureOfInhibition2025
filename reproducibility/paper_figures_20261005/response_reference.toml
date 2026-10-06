@@ -1,0 +1,13 @@
+# Frozen 29 September two-input archive used only for historical supplement S2.
+# Paths are relative to the archive root, four levels above responses/baseline_1.
+[files]
+"metadata.toml" = "a06c048413417dc098eb6668628bd88dadff8c274c6147b6da1c24503a528b89"
+"config.toml" = "def8e0bb6dc88ab8443c5a6965bbbac0517b5cee67870338f814ed7c931f9ba7"
+"anchors/selective_withdrawal/geometry/parameters.toml" = "40cf357b2d956d4b6e8ebc5b1aac56d754993eefe8752d7042f434dd6d935287"
+"anchors/selective_withdrawal/responses/baseline_1/input.toml" = "97adbbb5d6a9c33f1b61a1b15ecfd791ad9247fdbe442667f13e1a6465017d1f"
+"anchors/selective_withdrawal/responses/baseline_1/roles.toml" = "9a85bfb9b08265c1f907042b0d1c90c4a9dd80b34c505e451714c7f2b8cbb6c8"
+"anchors/selective_withdrawal/responses/baseline_1/summary.toml" = "3b4147574aa1dc893c9ada66d33cbcedee04b5f7504d023b9762f9f539b3fbe9"
+"anchors/selective_withdrawal/responses/baseline_1/root_5/pulses/pulses.csv" = "308dd89339abed3520f0c2d53eeb618b76d02e15ef39ebb42b703c74308e5716"
+"anchors/selective_withdrawal/responses/baseline_1/root_5/sustained/confirmations.csv" = "7d636f7228a260c7c747dd38b3c750af1c05911392f6b8236d9cee1fe86df9e9"
+"anchors/selective_withdrawal/responses/baseline_1/root_7/pulses/pulses.csv" = "3ebf0cab145559dd3d4fe2cb68f543af0dc7f8427b0af5c76afe637458890924"
+"anchors/selective_withdrawal/responses/baseline_1/root_7/sustained/confirmations.csv" = "e49c05114d859dfb135f68a17d34ceb7c24c8c0b915dac7c65569d787c4112e4"
