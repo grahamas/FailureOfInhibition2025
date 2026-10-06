@@ -1,0 +1,220 @@
+schema_version = 1
+title = "Point-model paper"
+scheduling_note = "Durations are author review blocks; agent work and numerical runtime are separate. No dates assigned. Not a native TickTick import."
+author_minutes = 1170
+
+[[tasks]]
+id = 1
+title = "Reconcile the historical study evidence"
+duration_minutes = 45
+depends_on = []
+status = "in_progress"
+done_when = "All 74 frozen follow-ups are accounted for; corrected selections, affected screens and responses, newly selected detailed cases, and phase-handoff witnesses are checked before figure use."
+agent_preparation = "Historical follow-up audit plus corrected-selection, screening, response, and phase-handoff rerun records"
+
+[[tasks]]
+id = 2
+title = "Define the contribution relative to prior work"
+duration_minutes = 45
+depends_on = []
+status = "ready_for_author_review"
+done_when = "Review the sourced comparison and select the paper's contribution and biological framing."
+agent_preparation = "Evidence comparison for author selection of contribution and biological framing"
+
+[[tasks]]
+id = 3
+title = "Approve the argument and four figure questions"
+duration_minutes = 45
+depends_on = [1, 2]
+status = "ready_for_author_review"
+done_when = "One sentence per main result identifies its evidence and the observation still needed."
+agent_preparation = "Four figure question cards with evidence mapping and open observations"
+
+[[tasks]]
+id = 4
+title = "Approve the next experiment card"
+duration_minutes = 30
+depends_on = [3]
+status = "waiting_author"
+done_when = "Choose concrete parameter domains, measurements, batch budget, and stopping rule."
+agent_preparation = "Experiment card with domains, measurements, budget, and stopping criteria"
+
+[[tasks]]
+id = 5
+title = "Map ordinary switching alongside seizure access"
+duration_minutes = 45
+depends_on = [4]
+status = "waiting_dependency"
+done_when = "A sampled region supports actual switching and recorded induction routes, with matched monotone controls."
+agent_preparation = "Switching map with induction routes and matched monotone control overlay"
+
+[[tasks]]
+id = 6
+title = "Map the herald–seizure control contrast"
+duration_minutes = 45
+depends_on = [4]
+status = "waiting_dependency"
+done_when = "Paired same-context sustained/pulsed input maps show amplitude-duration dependence; direct displacement remains separate."
+agent_preparation = "Paired sustained/pulsed input maps with amplitude-duration annotations"
+
+[[tasks]]
+id = 7
+title = "Measure intervention benefits and activity costs"
+duration_minutes = 60
+depends_on = [5, 6]
+status = "waiting_dependency"
+done_when = "Parameter dose-response curves report high-state behavior and ordinary switching together."
+agent_preparation = "Dose-response curves for intervention benefit and switching cost across parameters"
+
+[[tasks]]
+id = 8
+title = "Screen beyond the two fixed coupling families"
+duration_minutes = 30
+depends_on = [4]
+status = "waiting_dependency"
+done_when = "Review a bounded coupling screen, its candidate list, and contrasting cases."
+agent_preparation = "Bounded coupling screen results with candidate list and contrast cases"
+
+[[tasks]]
+id = 9
+title = "Screen response and time-scale sensitivity"
+duration_minutes = 30
+depends_on = [4]
+status = "waiting_dependency"
+done_when = "Review supported response/time-scale variations, including the manuscript ratio."
+agent_preparation = "Response and time-scale sensitivity panel with manuscript ratio highlighted"
+
+[[tasks]]
+id = 10
+title = "Retest the strongest regions and counterexamples"
+duration_minutes = 45
+depends_on = [5, 6, 7, 8, 9]
+status = "waiting_dependency"
+done_when = "Review detailed tests at selected and fresh parameter points, with fixed and remeasured stimuli separated."
+agent_preparation = "Retest report with fixed-stimulus and remeasured-stimulus results at selected points"
+
+[[tasks]]
+id = 11
+title = "Explain the important transitions"
+duration_minutes = 60
+depends_on = [10]
+status = "waiting_dependency"
+done_when = "Continuation and phase-plane diagrams explain the selected boundaries and state/control changes."
+agent_preparation = "Continuation diagrams and phase-plane overlays for key transition boundaries"
+
+[[tasks]]
+id = 12
+title = "Independently confirm the headline results"
+duration_minutes = 45
+depends_on = [11]
+status = "waiting_dependency"
+done_when = "Headline trajectories and boundaries survive numerical refinement, independent equations, and matched controls."
+agent_preparation = "Independent confirmation package with refined numerics, independently implemented model equations, and matched controls"
+
+[[tasks]]
+id = 13
+title = "Finish Figure 1: mechanism and ordering"
+duration_minutes = 45
+depends_on = [3]
+status = "waiting_dependency"
+done_when = "Review the response illustration, matched models, ordering argument, caption, and Results paragraph."
+agent_preparation = "Figure 1 draft with response illustration, matched models, ordering argument, and caption text"
+
+[[tasks]]
+id = 14
+title = "Finish Figure 2: ordinary switching and additional states"
+duration_minutes = 60
+depends_on = [12]
+status = "waiting_dependency"
+done_when = "Review actual switching/induction trajectories, shared parameter labels, caption, and Results paragraph."
+agent_preparation = "Figure 2 draft with switching trajectories, parameter labels, caption, and Results text"
+
+[[tasks]]
+id = 15
+title = "Finish Figure 3: different states, different control"
+duration_minutes = 60
+depends_on = [12]
+status = "waiting_dependency"
+done_when = "Review paired input-control curves, duration dependence, regional support, caption, and Results paragraph."
+agent_preparation = "Figure 3 draft with paired input-control curves, duration dependence, regional support, and caption"
+
+[[tasks]]
+id = 16
+title = "Finish Figure 4: intervention tradeoffs"
+duration_minutes = 60
+depends_on = [12]
+status = "waiting_dependency"
+done_when = "Review intervention curves alongside switching preservation, caption, and Results paragraph."
+agent_preparation = "Figure 4 draft with intervention curves, switching preservation overlay, caption, and Results text"
+
+[[tasks]]
+id = 17
+title = "Assemble the robustness supplement"
+duration_minutes = 45
+depends_on = [12]
+status = "waiting_dependency"
+done_when = "Parameter coverage, selection reasons, contrasting regimes, confirmation, and additional maps support the figures."
+agent_preparation = "Robustness supplement draft with parameter coverage table, selection rationale, and additional maps"
+
+[[tasks]]
+id = 18
+title = "Revise the Introduction"
+duration_minutes = 60
+depends_on = [2, 3]
+status = "waiting_dependency"
+done_when = "Manually revise the biological motivation, unresolved question, and contribution."
+agent_preparation = "Revised Introduction draft with updated motivation, question, and contribution statement"
+
+[[tasks]]
+id = 19
+title = "Revise the model and theory Methods"
+duration_minutes = 60
+depends_on = [13]
+status = "waiting_dependency"
+done_when = "Manually align equations, derivation, conventions, and theorem assumptions with implementation."
+agent_preparation = "Aligned model equations and theory methods with implementation annotations"
+
+[[tasks]]
+id = 20
+title = "Revise the experimental Methods"
+duration_minutes = 60
+depends_on = [17]
+status = "waiting_dependency"
+done_when = "Manually describe domains, selection, interventions, outcomes, numerical checks, and replay."
+agent_preparation = "Experimental methods draft with domains, selection criteria, interventions, and reproducibility details"
+
+[[tasks]]
+id = 21
+title = "Revise the Discussion"
+duration_minutes = 60
+depends_on = [13, 14, 15, 16, 18]
+status = "waiting_dependency"
+done_when = "Manually develop the mechanism, parameter dependence, implications, and testable predictions."
+agent_preparation = "Discussion draft linking mechanism, parameter dependence, implications, and testable predictions"
+
+[[tasks]]
+id = 22
+title = "Finalize the title and abstract"
+duration_minutes = 45
+depends_on = [19, 20, 21]
+status = "waiting_dependency"
+done_when = "Every result sentence maps to a final figure or analytical result."
+agent_preparation = "Title and abstract with result-to-figure mapping table"
+
+[[tasks]]
+id = 23
+title = "Run an independent reviewer critique"
+duration_minutes = 60
+depends_on = [17, 22]
+status = "waiting_dependency"
+done_when = "Resolve a short issue list covering novelty, alternatives, selection, and claim-to-figure support."
+agent_preparation = "Reviewer critique with a ranked issue list for author resolution on novelty, alternatives, selection, and claim support"
+
+[[tasks]]
+id = 24
+title = "Freeze the submission package"
+duration_minutes = 30
+depends_on = [23]
+status = "waiting_dependency"
+done_when = "Author-approved manuscript, figures, supplement, and reproducibility manifest agree."
+agent_preparation = "Submission package manifest with manuscript, figures, supplement, and reproducibility artifacts"

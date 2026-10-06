@@ -1,0 +1,18 @@
+{
+  "source_archive": "output/paper_handoff_20260930",
+  "original_sha256": {
+    "independent_equations.py": "34b0604132f5e7dd7986aae092ad706806148921db818a5c3187404cfa5ee25f",
+    "confirm_selective_contexts.py": "39114ee758ce706bcf3de359b84ef5f74f52b37343198cbd388fdd5d2b8ebd54",
+    "render_confirmed_withdrawal.py": "dc822f70451970727e1d477583840c5b75f92761a27986cd46e42d209646acc5",
+    "source_contexts.json": "ee9796ef38bd1f4ae152c56c7e8121ecfaf1f5328bec46d1a347defb03aa410c",
+    "selective_screen_contexts.json": "0fbd32ef71bd58984ca6809a87044845e40f46f11c0bfdff7ed0987dd93a8855"
+  },
+  "files": {
+    "independent_equations.py": "34b0604132f5e7dd7986aae092ad706806148921db818a5c3187404cfa5ee25f",
+    "confirm_selective_contexts.py": "39114ee758ce706bcf3de359b84ef5f74f52b37343198cbd388fdd5d2b8ebd54",
+    "render_confirmed_withdrawal.py": "3fb0fecf126970938c51a1e932e76cad4e7ac5312cd698a7a3900533458bf171",
+    "source_contexts.json": "ee9796ef38bd1f4ae152c56c7e8121ecfaf1f5328bec46d1a347defb03aa410c",
+    "selective_screen_contexts.json": "0fbd32ef71bd58984ca6809a87044845e40f46f11c0bfdff7ed0987dd93a8855"
+  },
+  "changes": "Only the report link to the local full-study audit is replaced with a link to the bundled source equilibrium records. Scientific scripts and inputs otherwise preserve the dated handoff."
+}

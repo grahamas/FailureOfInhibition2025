@@ -1,16 +1,40 @@
 # Two-input response results
 
+**Selection audit (5–6 October 2026):** The
+[selection audit](input_response_selection_audit_20261005.md) identifies
+historical follow-up inputs affected by region-graph and cell-label corrections.
+Six geometries were replayed after the first correction; a later read-only
+audit found a broader cell-consistency issue. The frozen full study output and
+its response measurements remain historical and unchanged.
+
+## Paper-handoff update, 30 September 2026 UTC
+
+The partial audit in [the paper evidence handoff](paper_evidence.md) covers 243
+completed response baselines: all 91 anchor baselines and 152 from ten selected
+follow-ups, nine of which are complete. The interrupted batch was resumed after
+verifying its frozen source. Its earlier `running` marker alone was not evidence
+of a live process.
+
+All 248 completed independent root comparisons agree and held-input controls
+have no recorded mismatch. Thirty-seven tighter confirmations resolve previously
+unresolved observations: 36 to active and one to an oscillatory destination.
+These are retained refinement differences, not contradictory resolved labels.
+
+Independent SciPy checks confirm 13 selective-withdrawal screen contexts with 52
+withdrawal/control trajectories. Eleven recover herald to active while seizure
+persists; two recover herald to rest while seizure persists, at time-scale
+ratios approximately 1.143 and 4.4. These extend the set of confirmed witnesses
+beyond the original fast-inhibition example. Their induction routes and full
+neighborhoods remain targets for the paper's staged exploration.
+
+The dated audit and checks are in `output/paper_handoff_20260930/`; the broader
+study and its final interpretation remain incomplete. Earlier handoff details
+below retain their original temporal scope.
+
 **Historical status note (29 September 2026):** The execution and report paths
 below describe the frozen batch controller and its retained local output. The
 exploratory Python renderer is no longer part of the active repository; the
 current method and Julia archive command are in [the study protocol](input_response_study.md).
-
-**Selection audit (5–6 October 2026):**
-The [selection audit](input_response_selection_audit_20261005.md)
-identifies historical follow-up inputs affected by region-graph and cell-label
-corrections. Six geometries were replayed after the first correction; a later
-read-only audit found a broader cell-consistency issue. The frozen full study
-output and its response measurements remain historical and unchanged.
 
 ## Execution status
 
