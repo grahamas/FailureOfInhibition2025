@@ -10,16 +10,10 @@ const I_COLOR = "#bd6a25"
 const NEUTRAL = "#657383"
 const ROLES = Dict("rest"=>"#64748b", "active"=>"#17805e",
     "herald"=>"#8059b0", "seizure"=>"#c74655", "unassigned"=>"#8c98a5")
-const REQUIRED_SOURCE_FILES = Set((
-    "Project.toml", "Manifest.toml", "plotting/Project.toml",
-    "plotting/Manifest.toml",
-    "experiments/narrative_study.toml",
+const EXTRA_SOURCE_FILES = Set((
+    "plotting/Project.toml", "plotting/Manifest.toml",
     "reproducibility/selective_tonic_e_release_20261005/replay.jl",
-    "scripts/build_paper_figure_data.jl", "scripts/narrative_models.jl",
-    "scripts/render_paper_figures.jl", "scripts/run_narrative_study.jl",
-    "src/FailureOfInhibition2025.jl", "src/configurations.jl", "src/drives.jl",
-    "src/equilibria.jl", "src/point_model.jl", "src/responses.jl",
-    "src/simulation.jl", "src/stability.jl"))
+    "scripts/build_paper_figure_data.jl", "scripts/render_paper_figures.jl"))
 hashfile(path) = bytes2hex(SHA.sha256(read(path)))
 portable_path(path) = replace(path, '\\' => '/')
 
@@ -71,8 +65,17 @@ function checked_data(directory)
         "paper_figures_20261005", "source_artifacts.toml"))["environment"]
     data["julia_version"] == environment["julia_version"] == string(VERSION) ||
         error("figure-data Julia version differs")
-    Set(keys(data["source_sha256"])) == REQUIRED_SOURCE_FILES ||
+    joint_sources = TOML.parsefile(joinpath(ROOT, "reproducibility",
+        "selective_anchor_joint_20261005", "reference_summary.toml"))["source_sha256"]
+    tonic_sources = TOML.parsefile(joinpath(ROOT, "reproducibility",
+        "selective_tonic_e_release_20261005", "reference_summary.toml"))["metadata"]["source_sha256"]
+    joint_sources == tonic_sources || error("joint/tonic source hashes differ")
+    Set(keys(data["source_sha256"])) == union(Set(keys(joint_sources)), EXTRA_SOURCE_FILES) ||
         error("incomplete figure-data source list")
+    for (relative, digest) in joint_sources
+        data["source_sha256"][relative] == digest ||
+            error("figure-data reviewed source differs: $relative")
+    end
     for (relative, digest) in environment["source_sha256"]
         data["source_sha256"][relative] == digest ||
             error("figure-data numerical environment differs: $relative")

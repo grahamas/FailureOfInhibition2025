@@ -30,6 +30,18 @@ end
         "selective_tonic_e_release_20261005", "reference_summary.toml"))
     environment = TOML.parsefile(PaperFigureData.SOURCE_ARTIFACTS)["environment"]
     @test PaperFigureData.check_numerical_environment(joint, tonic, environment)
+    @test PaperFigureData.check_reviewed_sources(joint, tonic) == joint["source_sha256"]
+    changed_tonic = deepcopy(tonic)
+    delete!(changed_tonic["metadata"]["source_sha256"], "src/diagnostics.jl")
+    @test_throws ErrorException PaperFigureData.check_reviewed_sources(joint, changed_tonic)
+    changed_joint = deepcopy(joint)
+    changed_tonic = deepcopy(tonic)
+    for reference in (changed_joint["source_sha256"],
+            changed_tonic["metadata"]["source_sha256"])
+        reference["src/diagnostics.jl"] = repeat("0", 64)
+    end
+    @test_throws ErrorException PaperFigureData.check_reviewed_sources(
+        changed_joint, changed_tonic)
     changed = deepcopy(environment)
     changed["julia_version"] = "1.10.0"
     @test_throws ErrorException PaperFigureData.check_numerical_environment(

@@ -12,7 +12,8 @@ const PAPER_BUNDLE = joinpath(@__DIR__, "..", "..", "reproducibility",
     @test all(haskey(data["source_sha256"], path) for path in
         ("Project.toml", "Manifest.toml", "plotting/Project.toml",
          "plotting/Manifest.toml", "src/responses.jl", "src/drives.jl",
-         "src/stability.jl",
+         "src/stability.jl", "src/diagnostics.jl",
+         "scripts/run_input_release_study.jl",
          "scripts/render_paper_figures.jl"))
     @test PaperFigures.portable_path(raw"traces\tonic_held.csv") ==
         "traces/tonic_held.csv"
@@ -108,7 +109,7 @@ const PAPER_BUNDLE = joinpath(@__DIR__, "..", "..", "reproducibility",
         cp(PAPER_BUNDLE, destination)
         data_path = joinpath(destination, "data.toml")
         record = TOML.parsefile(data_path)
-        delete!(record["source_sha256"], "src/responses.jl")
+        delete!(record["source_sha256"], "src/diagnostics.jl")
         open(data_path, "w") do io
             TOML.print(io, record)
         end

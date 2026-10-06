@@ -21,8 +21,9 @@ julia --project=plotting scripts/render_paper_figures.jl \
 
 The renderer rejects an existing output directory and checks every bundled
 file against a complete expected file set, selected model/protocol sources, the
-recorded Julia version and root/plotting project and manifest hashes, and all
-four reviewed reference files before writing PDF, SVG, and PNG files. Bundle
+recorded Julia version and root/plotting project and manifest hashes, every
+numerical source recorded in the joint and tonic references, and all four
+reviewed reference files before writing PDF, SVG, and PNG files. Bundle
 checksum paths use `/` on every platform. To rebuild the bundle from the
 retained local archives, use the Julia builder:
 
@@ -40,6 +41,8 @@ tonic point/theta file against the
 [reviewed source artifact digest](source_artifacts.toml) before and after
 building the packet. It requires the same Julia 1.10.12 version and root and
 plotting project/manifest files as the reviewed runs. It verifies the
+complete shared source-hash table from both reviewed run summaries before
+regenerating traces and records those hashes in `data.toml`. It verifies the
 historical response archive's manifest and the exact frozen metadata,
 parameters, input, roles, summary, and four S2 source tables against
 [the response reference](response_reference.toml) before copying any S2 rows.

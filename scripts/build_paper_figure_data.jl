@@ -52,6 +52,19 @@ function check_numerical_environment(joint, tonic, environment)
     end
     return true
 end
+function check_reviewed_sources(joint, tonic)
+    hashes = joint["source_sha256"]
+    require_equal(hashes, tonic["metadata"]["source_sha256"],
+        "joint/tonic source hashes")
+    required = Set(vcat(NS.SOURCE_FILES, ["scripts/run_minimal_experiment.jl"],
+        ["src/" * file for file in readdir(joinpath(ROOT, "src")) if endswith(file, ".jl")]))
+    issubset(required, Set(keys(hashes))) || error("incomplete reviewed numerical source list")
+    for (relative, digest) in hashes
+        require_equal(hashfile(joinpath(ROOT, relative)), digest,
+            "reviewed numerical source: $relative")
+    end
+    return hashes
+end
 function check_artifacts(directory, relative_files, reference, label)
     require_equal(length(relative_files), reference["files"], "$label file count")
     require_equal(artifact_digest(directory, relative_files), reference["sha256"],
@@ -166,6 +179,7 @@ function build(joint_dir, tonic_dir, response_dir, destination)
     push!(tonic_files, joinpath("theta", "theta_8p0.toml"))
     source_artifacts = TOML.parsefile(SOURCE_ARTIFACTS)
     check_numerical_environment(joint, tonic, source_artifacts["environment"])
+    reviewed_sources = check_reviewed_sources(joint, tonic)
     check_artifacts(joint_dir, joint_files, source_artifacts["joint"], "joint")
     check_artifacts(tonic_dir, tonic_files, source_artifacts["tonic"], "tonic")
 
@@ -268,16 +282,11 @@ function build(joint_dir, tonic_dir, response_dir, destination)
         "tonic_on_roots" => root_rows(on), "selected_tonic" => selected,
         "samples_per_threshold" => 147, "sample_rows" => length(rows),
         "julia_version" => string(VERSION),
-        "source_sha256" => Dict(path => hashfile(joinpath(ROOT, path)) for path in
-            ("Project.toml", "Manifest.toml", "plotting/Project.toml",
-             "plotting/Manifest.toml", "scripts/build_paper_figure_data.jl",
-             "scripts/run_narrative_study.jl",
-             "scripts/narrative_models.jl", "scripts/render_paper_figures.jl",
-             "experiments/narrative_study.toml",
-             "reproducibility/selective_tonic_e_release_20261005/replay.jl",
-             "src/FailureOfInhibition2025.jl", "src/responses.jl", "src/drives.jl",
-             "src/point_model.jl", "src/stability.jl", "src/equilibria.jl",
-             "src/configurations.jl", "src/simulation.jl")),
+        "source_sha256" => merge(copy(reviewed_sources),
+            Dict(path => hashfile(joinpath(ROOT, path)) for path in
+                ("plotting/Project.toml", "plotting/Manifest.toml",
+                 "scripts/build_paper_figure_data.jl", "scripts/render_paper_figures.jl",
+                 "reproducibility/selective_tonic_e_release_20261005/replay.jl"))),
         "reference_sha256" => Dict("joint" => hashfile(joint_ref), "tonic" => hashfile(tonic_ref),
             "response" => response_ref_hash, "source_artifacts" => hashfile(SOURCE_ARTIFACTS)),
         "limits" => "Finite-window trajectories and sampled input/threshold points; no bifurcation or completeness claim")

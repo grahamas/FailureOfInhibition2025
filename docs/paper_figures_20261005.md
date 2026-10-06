@@ -92,7 +92,8 @@ The data builder checks the retained joint and tonic summary hashes, every
 consumed trajectory and tonic point against a reviewed artifact digest, the
 frozen response archive manifest and selected file hashes, source endpoints
 and destinations, the recorded Julia 1.10.12 environment and project/manifest
-hashes, and all 147 input points at each of seven thresholds. The
+hashes, every numerical source recorded in both reviewed run summaries, and
+all 147 input points at each of seven thresholds. The
 renderer requires a complete bundle checksum manifest and checks its files,
 model and plotting sources, and all four reference files. It refuses an
 existing output directory. Final review should confirm the six figures in PDF,
