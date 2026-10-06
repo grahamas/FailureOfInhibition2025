@@ -5,6 +5,15 @@ a dated audit. This is supporting material for manual manuscript revision.
 It adds candidate text and figure instructions without replacing prior drafts.
 The [task list](paper_delivery.md) separates preparation from author acceptance.
 
+**Selection status, 6 October 2026:** The frozen two-input response batch and
+this dated handoff use the earlier region-selection rule. The
+[selection audit](input_response_selection_audit_20261005.md) found changed
+representative sets in a bounded comparison; response protocols and downstream
+summaries have not been rerun under the corrected rule. These records remain
+historical evidence. Candidate figures using two-input regional selections
+require corrected geometry, affected screening and response reruns, and renewed
+confirmation before author selection.
+
 ## Argument
 
 Failure of inhibition changes the state repertoire of an activity-supporting

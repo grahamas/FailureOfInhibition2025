@@ -25,13 +25,20 @@ weighted functional score or a biological cost conversion. A failed fixed pulse
 is followed by the existing stimulus search before declaring switching
 undemonstrated. Compare the unchanged pulse and the remeasured pulse explicitly.
 
-## Stage A: already specified evidence
+## Stage A: reconcile retained evidence
 
-Finish the 74 selected detailed cases in `input_response_20260929_v3` using its
-frozen source, then resolve confirmation differences before selecting figures.
-Reuse the 224 parameter screens, 91 anchor baselines, original narrative study,
-and independently checked selective-withdrawal examples. This stage needs no
-new parameter-domain choice and should precede another large atlas.
+Review the 74 selected detailed cases in `input_response_20260929_v3` as
+historical output under its frozen source, including confirmation differences.
+The [selection audit](input_response_selection_audit_20261005.md) shows that
+the corrected cell and region rules can change representative inputs. Recompute
+geometry selection for the 306 archived cases under the corrected source, then
+rerun affected screening and response protocols, including newly selected
+detailed cases, and independently confirm candidate contexts before selecting
+figures. Preserve the frozen records and identify which source produced each
+result. The 224 parameter screens, 91 anchor baselines, original
+narrative study, and independently checked selective-withdrawal examples remain
+leads rather than current regional certification. This stage needs no new
+parameter-domain choice and should precede another large atlas.
 
 The existing expanded axes are recurrent excitation 0–24, recruitment 12–28,
 failure threshold 6–12, and time-scale ratio 0.2–4.4, with inhibitory output and
