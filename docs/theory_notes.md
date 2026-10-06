@@ -5,35 +5,120 @@ They do not assign biological meaning to an equilibrium or certify numerical
 discovery. Coupling magnitudes remain arbitrary finite nonnegative numbers;
 both time constants remain finite and strictly positive.
 
+For reference, the equations are
+
+```math
+\begin{aligned}
+\tau_E\dot E&=-E+(1-E)F_E(u_E),\\
+\tau_I\dot I&=-I+(1-I)F_I(u_I),\\
+u_E&=J_{E\leftarrow E}E-J_{E\leftarrow I}I+P_E(t),\\
+u_I&=J_{I\leftarrow E}E-J_{I\leftarrow I}I+P_I(t).
+\end{aligned}
+```
+
+Here `E` and `I` are active population fractions in `[0,1]`, and
+`E_dot = dE/dt` and `I_dot = dI/dt` are their rates of change. The effective
+inputs `u_E` and `u_I` include recurrent excitation, recurrent inhibition,
+and the external drives `P_E` and `P_I`. Each `J` is a nonnegative coupling
+magnitude; the minus signs above supply the inhibitory effect.
+The functions `F_E` and `F_I` give the population responses to effective
+input, and a prime denotes differentiation with respect to that input.
+
+A model is **autonomous** when its equations have no explicit dependence on
+time. Here this means fixed parameters and constant external drives
+`P_E(t)=B_E`, `P_I(t)=B_I`. The activities can still change with time, and the
+constant drives need not be zero. A scheduled pulse makes the full protocol
+time dependent; each interval with a fixed drive has its own autonomous
+equations.
+
 ## Monotone inhibition excludes oppositely ordered equilibria
 
 Consider two physical equilibria of the **same autonomous model**, with the
 same constant drives and parameters, and let the inhibitory response be
-nonnegative and nondecreasing. At either equilibrium,
+nonnegative and nondecreasing. An equilibrium is a state at which both rates
+of change vanish. The inhibitory balance gives
+
+```math
+\begin{aligned}
+0&=-I+(1-I)F_I(u_I),\\
+I[1+F_I(u_I)]&=F_I(u_I),\\
+I&=\frac{F_I(u_I)}{1+F_I(u_I)}.
+\end{aligned}
+```
+
+The same rearrangement applies to the excitatory balance. For the ordering
+argument, only the inhibitory relation is needed. Write it as
 
 ```math
 I = R(F_I(u_I)),\qquad R(z)=\frac{z}{1+z},\qquad
 u_I=J_{I\leftarrow E}E-J_{I\leftarrow I}I+B_I.
 ```
 
-The map `R` is strictly increasing for nonnegative arguments. Suppose that
-`E_2 >= E_1` and `I_2 < I_1`. Nonnegative coupling magnitudes give
+The map `R` is strictly increasing for nonnegative arguments because
+`R'(z)=1/(1+z)^2 > 0`. Suppose, for a contradiction, that two equilibria
+satisfy `E_2 >= E_1` and `I_2 < I_1`. Their parameters and constant drive are
+identical, so `B_I` cancels when we subtract their inhibitory inputs:
 
 ```math
 u_{I,2}-u_{I,1}
 =J_{I\leftarrow E}(E_2-E_1)
--J_{I\leftarrow I}(I_2-I_1)\geq0.
++J_{I\leftarrow I}(I_1-I_2)\geq0.
 ```
 
-Monotonicity then gives `I_2 = R(F_I(u_I,2)) >= R(F_I(u_I,1)) = I_1`, a
-contradiction. Thus higher excitatory activity cannot coexist with lower
+Both terms are nonnegative: the second state has at least as much excitation
+and no more inhibitory self input. No comparison between the two coupling
+magnitudes is required.
+
+Monotonicity then gives
+
+```math
+I_2=R(F_I(u_{I,2}))\geq R(F_I(u_{I,1}))=I_1,
+```
+
+contradicting `I_2<I_1`. Thus higher excitatory activity cannot coexist with lower
 inhibitory activity at another equilibrium of this model. Zero couplings are
 allowed. The proof uses neither the excitatory equilibrium equation nor the
 time constants, and constant drives need not be zero. Unit connectivity is
 unnecessary and is not a justified general change of variables.
 
+This is an equilibrium-ordering result. It does not exclude a lone high-E,
+low-I equilibrium, coexistence of equilibria ordered in the same direction,
+periodic attractors, or every state one might call a seizure. It does not
+compare different parameter settings or different frozen drives. The FoI
+response is not globally nondecreasing, so this proof does not apply to it.
+
+### Separate geometric proof for the logistic control
+
+The inhibitory **nullcline** is the set of states where `I_dot=0`, whether or
+not `E_dot` also vanishes. Every equilibrium lies on this set. For each fixed
+`E`, define
+
+```math
+H_E(I)=\frac{I}{1-I}
+-F_I(J_{I\leftarrow E}E-J_{I\leftarrow I}I+B_I),\qquad 0\leq I<1.
+```
+
+For the logistic control, `H_E(0)<0`, while `H_E(I)` tends to infinity as
+`I` tends to one. Moreover,
+
+```math
+\frac{dH_E}{dI}=\frac{1}{(1-I)^2}
++J_{I\leftarrow I}F_I'(u_I)>0.
+```
+
+Thus each `E` has exactly one inhibitory-nullcline value `I(E)`. The endpoint
+`I=1` cannot belong to the nullcline because there `tau_I*I_dot=-1`.
 For the logistic control and `J_{I<-E} > 0`, the inhibitory nullcline is in
-fact strictly increasing. Implicit differentiation gives
+fact strictly increasing. Differentiating its balance equation with respect
+to `E` gives
+
+```math
+0=-\frac{dI}{dE}-F_I(u_I)\frac{dI}{dE}
++(1-I)F_I'(u_I)
+\left(J_{I\leftarrow E}-J_{I\leftarrow I}\frac{dI}{dE}\right).
+```
+
+Collecting the terms containing `dI/dE` yields
 
 ```math
 \frac{dI}{dE}=
@@ -41,27 +126,60 @@ fact strictly increasing. Implicit differentiation gives
 {1+F_I(u_I)+(1-I)F_I'(u_I)J_{I\leftarrow I}}>0.
 ```
 
-When `J_{I<-E}=0`, the nullcline is constant in `E`. For each fixed `E`,
-`I/(1-I)-F_I(J_{I<-E}E-J_{I<-I}I+B_I)` is strictly increasing on `[0,1)`
-and crosses zero exactly once for the logistic response.
-
-This is an equilibrium-ordering result. It does not exclude a lone high-E,
-low-I equilibrium, coexistence of equilibria ordered in the same direction,
-periodic attractors, or every state one might call a seizure. It does not
-compare different parameter settings or different frozen drives.
+The denominator is positive, and the numerator is positive when
+`J_{I<-E}>0`, since a logistic has positive derivative at every finite input
+and `I<1`. When `J_{I<-E}=0`, the nullcline is constant in `E`. Consequently,
+two equilibria on this curve cannot have higher `E` but lower `I`. This is a
+separate proof for the differentiable logistic control; the preceding
+ordering proof requires only a nonnegative, nondecreasing response.
 
 ## Equal-slope failure response is symmetric
 
-Write `m=(theta_on+theta_off)/2`, `d=a_I*(theta_off-theta_on)/2 > 0`, and
-`x=u-m`. The approved response has the exact form
+This section supplies supporting algebra for the approved response. The
+rescue argument below uses its nonnegativity and the fact that it is
+nonincreasing for inputs at or above the threshold midpoint. It does not
+otherwise require symmetry.
+
+The sigmoid is the standard logistic,
 
 ```math
-F_I(m+x)
-=\sigma(a_Ix+d)-\sigma(a_Ix-d)
-=\frac{\sinh(d)}{\cosh(a_Ix)+\cosh(d)}.
+\sigma(z)=\frac{1}{1+e^{-z}}
+=\frac{1+\tanh(z/2)}{2}.
 ```
 
-Consequently `F_I(m+x)=F_I(m-x)`. Its derivative is
+The approved response is
+
+```math
+F_I(u)=\sigma(a_I(u-\theta_{\mathrm{on}}))
+-\sigma(a_I(u-\theta_{\mathrm{off}})),\qquad
+a_I>0,\quad\theta_{\mathrm{on}}<\theta_{\mathrm{off}}.
+```
+
+It is positive at every finite input because the first logistic argument
+exceeds the second. To expose its symmetry, write
+`m=(theta_on+theta_off)/2`, `d=a_I*(theta_off-theta_on)/2 > 0`, and
+`x=u-m`. The two logistic arguments become `a_I*x+d` and `a_I*x-d`.
+With `y=a_I*x`, the identities
+
+```math
+\tanh A-\tanh B=\frac{\sinh(A-B)}{\cosh A\cosh B},\qquad
+2\cosh A\cosh B=\cosh(A+B)+\cosh(A-B)
+```
+
+give the intermediate steps
+
+```math
+\begin{aligned}
+F_I(m+x)
+&=\frac12\left[\tanh\!\left(\frac{y+d}{2}\right)
+-\tanh\!\left(\frac{y-d}{2}\right)\right]
+\\
+&=\frac{\sinh(d)}{2\cosh((y+d)/2)\cosh((y-d)/2)}\\
+&=\frac{\sinh(d)}{\cosh(a_Ix)+\cosh(d)}.
+\end{aligned}
+```
+
+Since `cosh` is even, `F_I(m+x)=F_I(m-x)`. Its derivative is
 
 ```math
 F_I'(m+x)
@@ -74,15 +192,32 @@ The response increases below `m`, has its unique maximum
 `theta_off` is the center of the failing logistic; the response begins
 descending at the **midpoint**, not at `theta_off`. The hyperbolic expression
 is an analytical identity, not a replacement for the overflow-safe code.
+At `x=0`, the maximum follows from
+`sinh(d)/(1+cosh(d))=tanh(d/2)`.
 
 Independently adjustable rising and falling slopes are unavailable in the
 approved model. Such fitting claims require either a change in interpretation
 or a separately justified response extension. Simply giving the two raw
 logistics unequal positive slopes does not preserve nonnegativity on the
-whole real input line: their argument difference is affine with nonzero
-slope, changes sign at a finite input, and strict logistic monotonicity then
-forces the response difference to be negative on one tail. A proposed
-asymmetric extension must justify its response form and supported domain.
+whole real input line. To see why, let `a_on` and `a_off` be distinct positive
+slopes. The first logistic argument minus the second is
+
+```math
+a_{\mathrm{on}}(u-\theta_{\mathrm{on}})
+-a_{\mathrm{off}}(u-\theta_{\mathrm{off}})
+=(a_{\mathrm{on}}-a_{\mathrm{off}})u
+-a_{\mathrm{on}}\theta_{\mathrm{on}}
++a_{\mathrm{off}}\theta_{\mathrm{off}}.
+```
+
+This is affine in `u` with nonzero slope, so it changes sign at a finite
+input. Strict logistic monotonicity then forces the response difference to
+be negative on one tail. Thus equal slopes are necessary for global
+nonnegativity within this raw two-logistic form with positive slopes. This
+constraint does not establish that the response form itself is biologically
+appropriate. A proposed asymmetric extension must justify its response form
+and supported domain.
+
 Raising `theta_off` at fixed `u` increases `F_I(u)` by
 
 ```math
@@ -90,45 +225,125 @@ Raising `theta_off` at fixed `u` increases `F_I(u)` by
 =a_I\sigma_{\mathrm{off}}(u)[1-\sigma_{\mathrm{off}}(u)]>0.
 ```
 
-It also changes the midpoint and maximum. A smaller disturbance to active
-dynamics is therefore a hypothesis to measure, not an exact independence
-property of this intervention.
+Here `sigma_off(u)=sigma(a_I*(u-theta_off))`.
+Raising `theta_off` also changes the midpoint and maximum. A smaller
+disturbance to active dynamics is therefore a hypothesis to measure, not an
+exact independence property of this intervention.
 
 ## A specified positive-drive class has a global rescue obstruction
 
 Let `(E_*,I_*)` be an equilibrium of the FoI model with baseline drives
-`(B_E,B_I)`, and suppose its inhibitory input satisfies `u_I,* >= m`.
-Allow finite piecewise-constant additive drives `Delta P_E(t) >= 0` and
-`Delta P_I(t) >= 0`, followed by return to baseline. Then
+`(B_E,B_I)`. A star denotes the value at this baseline equilibrium; for
+example, `u_E,*=J_{E<-E}*E_*-J_{E<-I}*I_*+B_E`. Suppose its inhibitory input
+satisfies `u_I,* >= m`, so it is at the maximum or on the descending branch
+of the FoI response.
+
+During the intervention, write
+
+```math
+P_E(t)=B_E+\Delta P_E(t),\qquad
+P_I(t)=B_I+\Delta P_I(t),\qquad
+\Delta P_E(t)\geq0,\quad\Delta P_I(t)\geq0.
+```
+
+Allow a finite sequence of constant-drive intervals with finite amplitudes,
+followed by return to baseline. The restriction is that neither drive ever
+falls **below its baseline**, not merely that the total drive is nonnegative.
+
+Define the following region of the `(E,I)` state plane:
 
 ```math
 \mathcal R_*=[E_*,1]\times[0,I_*]
+=\{(E,I):E_*\leq E\leq1,\ 0\leq I\leq I_*\}.
 ```
 
-is forward invariant. To see this, inspect its four faces:
+The symbol `R_*` names a rectangle; it is unrelated to the scalar map `R(z)`
+used in the ordering proof. With `E` on the horizontal axis and `I` on the
+vertical axis, this rectangle extends rightward and downward from the
+starting equilibrium, which is its upper-left corner. It contains states
+with at least the starting E activity and at most the starting I activity.
 
-- At `E=E_*`, `I <= I_*` and nonnegative E drive imply
-  `u_E >= u_E,*`. Monotone `F_E` and the equilibrium balance imply `E_dot >= 0`.
-- At `I=I_*`, `E >= E_*` and nonnegative I drive imply
-  `u_I >= u_I,* >= m`. The decreasing FoI response and equilibrium balance
-  imply `I_dot <= 0`.
-- At `E=1`, `tau_E*E_dot=-1`; at `I=0`, `tau_I*I_dot=F_I(u_I) >= 0`.
+This region is **forward invariant**: any trajectory starting inside it,
+including on its boundary, stays inside it at all later times under the
+allowed protocol. To prove this, consider the velocity vector
+`(E_dot,I_dot)`, the arrow specifying how the state moves at each point.
+At every boundary, its component perpendicular to that boundary must point
+inward or be zero. A zero component allows motion along the boundary.
 
-Each constant-drive segment points into this closed rectangle at its faces.
-The state is continuous at drive switches, so invariance persists through
-the whole protocol and after removal. An initial state at the equilibrium
-cannot reach, or converge to, an attractor outside this rectangle. In
-particular, a lower-E rest equilibrium cannot be reached by these positive
-pulses. This establishes a global restriction for a defined intervention
-class; a local response arrow alone would not establish it.
+At the **left boundary**, `E=E_*` and `I<=I_*`. Subtracting the baseline
+equilibrium input gives
+
+```math
+u_E-u_{E,*}
+=J_{E\leftarrow I}(I_*-I)+\Delta P_E(t)\geq0.
+```
+
+There is no increase in recurrent inhibition and no reduction in external
+drive, so the effective E input is at least its equilibrium value. Using the
+baseline balance `-E_*+(1-E_*)F_E(u_E,*)=0` gives
+
+```math
+\tau_E\dot E
+=(1-E_*)[F_E(u_E)-F_E(u_{E,*})]\geq0.
+```
+
+Monotonicity of `F_E` supplies the final inequality. The velocity therefore
+points rightward or along the left boundary; it cannot point leftward out
+of the rectangle.
+
+At the **top boundary**, `I=I_*` and `E>=E_*`. Similarly,
+
+```math
+u_I-u_{I,*}
+=J_{I\leftarrow E}(E-E_*)+\Delta P_I(t)\geq0.
+```
+
+Both inhibitory inputs are at or above `m`, where the FoI response is
+nonincreasing. Subtracting the baseline inhibitory balance gives
+
+```math
+\tau_I\dot I
+=(1-I_*)[F_I(u_I)-F_I(u_{I,*})]\leq0.
+```
+
+The velocity points downward or along the top boundary, so it cannot point
+upward out of the rectangle.
+
+At the **right boundary**, `E=1`, the occupancy equation gives
+`tau_E*E_dot=-1<0`, so the velocity points leftward. At the **bottom
+boundary**, `I=0`, it gives `tau_I*I_dot=F_I(u_I)>=0`, so the velocity points
+upward or along the boundary. Positive time constants preserve all these
+signs. The four conditions are
+
+| Boundary | Velocity component | Direction allowed by the equations |
+| --- | --- | --- |
+| Left: `E=E_*` | `E_dot>=0` | Rightward or tangent |
+| Right: `E=1` | `E_dot<0` | Leftward |
+| Top: `I=I_*` | `I_dot<=0` | Downward or tangent |
+| Bottom: `I=0` | `I_dot>=0` | Upward or tangent |
+
+On each constant-drive interval, the smooth response functions give unique
+solutions, and these boundary conditions prevent trajectories from crossing
+outward. At a drive switch, the velocity may change abruptly but the state
+is continuous: a finite pulse does not instantaneously move `(E,I)`. The
+same inequalities hold on the next interval and after removal, when both
+drive increments are zero. Thus invariance persists through the whole
+protocol and after return to baseline.
+
+All future states and their limiting states lie in this closed rectangle.
+Therefore a trajectory cannot reach or converge to an equilibrium outside
+it, or approach a compact attractor disjoint from it. In particular, a
+lower-E rest equilibrium cannot be reached by these positive pulses. This
+establishes a global restriction for a defined intervention class; a local
+response arrow alone would not establish it.
 
 The result is specific to the approved response, nonnegative coupling
-magnitudes, a starting equilibrium on its descending branch, and additive
-drives that never fall below baseline. It does not establish unrestricted
-unrescuability or identify a biological seizure. A negative E-drive pulse or
-a parameter intervention can break its assumptions. Numerical pulse maps
-should retain their finite-horizon uncertainty even when this separate
-analytical obstruction applies.
+magnitudes, a starting equilibrium at the response maximum or on its
+descending branch, and additive drives that never fall below baseline. It
+does not establish unrestricted unrescuability or identify a biological
+seizure. A negative E-drive pulse or a parameter intervention can break its
+assumptions. Numerical pulse maps should retain their finite-horizon
+uncertainty even when this separate analytical obstruction applies.
 
 ## Figure 3 anchor check
 
