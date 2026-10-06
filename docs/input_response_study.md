@@ -64,6 +64,11 @@ width 0.01 within explicit evaluation budgets. Homogeneous samples do not
 exclude narrower unsampled islands.
 
 Critical-set offsets and known baseline inputs are visited before the lattice.
+Their observed signatures also enter adaptive cell refinement, so a cell
+containing a different pre-sampled signature cannot be labeled homogeneous
+solely from its five lattice probes. A final pass checks each homogeneous cell
+against points discovered while neighboring cells were refined. Budget-exhausted
+and mixed cells remain unresolved observations rather than established regions.
 Connected components of the resolved sampled-cell adjacency graph define
 observed regimes. Select one representative by largest distance from sampled
 critical curves and rectangle edges, breaking ties by input coordinates. This
@@ -146,8 +151,8 @@ prove two parameterizations behaviorally equivalent. The case order, source
 snapshots, budgets, and configurations make selection replayable.
 Only cells with a homogeneous observed signature connect sampled inputs into
 a region. The [dated selection audit](input_response_selection_audit_20261005.md)
-records how correcting an earlier mixed-cell connection affects retained
-historical output.
+records how the mixed-cell graph and cell-label corrections affect retained
+historical observations and what remains unrerun.
 
 The new scripts do not change the model or public drive API. Run from the
 working-copy root with the existing Julia project:

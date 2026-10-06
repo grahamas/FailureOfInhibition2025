@@ -208,7 +208,8 @@ function geometry(p,cfg,dir;screen=false)
     end
     xs=input_axis(cfg,bounds.B_E;extra=first.(baselines));ys=input_axis(cfg,bounds.B_I;extra=last.(baselines))
     atlas=M.sample_rectangle(at,xs,ys;width=cfg.raw["input_width"],key=signature,
-        max_evaluations=cfg.raw[screen ? "screen_budget" : "geometry_budget"])
+        max_evaluations=cfg.raw[screen ? "screen_budget" : "geometry_budget"],
+        known_samples=contexts)
     CSV.write(joinpath(dir,"cells.csv"),atlas.leaves)
     rows=NamedTuple[];rootrows=NamedTuple[]
     for ((be,bi),ctx) in sort(collect(contexts);by=first)

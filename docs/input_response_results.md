@@ -5,11 +5,12 @@ below describe the frozen batch controller and its retained local output. The
 exploratory Python renderer is no longer part of the active repository; the
 current method and Julia archive command are in [the study protocol](input_response_study.md).
 
-**Selection audit (5 October 2026):**
+**Selection audit (5–6 October 2026):**
 The [selection audit](input_response_selection_audit_20261005.md)
-identifies historical follow-up inputs affected by a region-graph correction;
-six affected geometries were replayed separately, while the frozen full study
-output and its response measurements remain unchanged.
+identifies historical follow-up inputs affected by region-graph and cell-label
+corrections. Six geometries were replayed after the first correction; a later
+read-only audit found a broader cell-consistency issue. The frozen full study
+output and its response measurements remain historical and unchanged.
 
 ## Execution status
 
