@@ -20,9 +20,9 @@ julia --project=plotting scripts/render_paper_figures.jl \
 ```
 
 The renderer rejects an existing output directory and checks every bundled
-file, selected model/protocol sources, and all four reviewed reference files
-before writing PDF, SVG, and PNG files. To rebuild the bundle from the retained
-local archives instead, use the Julia builder:
+file against a complete expected file set, selected model/protocol sources, and
+all four reviewed reference files before writing PDF, SVG, and PNG files. To
+rebuild the bundle from the retained local archives, use the Julia builder:
 
 ```sh
 julia --project=. scripts/build_paper_figure_data.jl \

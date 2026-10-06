@@ -76,5 +76,36 @@ const PAPER_BUNDLE = joinpath(@__DIR__, "..", "..", "reproducibility",
         end
         @test_throws ErrorException PaperFigures.checked_data(destination)
     end
+    mktempdir() do temporary
+        destination = joinpath(temporary, "missing checksum")
+        cp(PAPER_BUNDLE, destination)
+        checksum_path = joinpath(destination, "checksums.toml")
+        manifest = TOML.parsefile(checksum_path)
+        delete!(manifest["files"], "traces/induce_rest_to_herald.csv")
+        open(checksum_path, "w") do io
+            TOML.print(io, manifest)
+        end
+        open(joinpath(destination, "traces", "induce_rest_to_herald.csv"), "a") do io
+            println(io, "tampered")
+        end
+        @test_throws ErrorException PaperFigures.checked_data(destination)
+    end
+    mktempdir() do temporary
+        destination = joinpath(temporary, "missing source")
+        cp(PAPER_BUNDLE, destination)
+        data_path = joinpath(destination, "data.toml")
+        record = TOML.parsefile(data_path)
+        delete!(record["source_sha256"], "src/responses.jl")
+        open(data_path, "w") do io
+            TOML.print(io, record)
+        end
+        checksum_path = joinpath(destination, "checksums.toml")
+        manifest = TOML.parsefile(checksum_path)
+        manifest["files"]["data.toml"] = PaperFigures.hashfile(data_path)
+        open(checksum_path, "w") do io
+            TOML.print(io, manifest)
+        end
+        @test_throws ErrorException PaperFigures.checked_data(destination)
+    end
     @test_throws ErrorException PaperFigures.render(PAPER_BUNDLE, PAPER_BUNDLE)
 end
