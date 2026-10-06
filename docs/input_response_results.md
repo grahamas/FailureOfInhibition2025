@@ -1,5 +1,15 @@
 # Two-input response results
 
+**Historical status note (29 September 2026):** The execution and report paths
+below describe the frozen batch controller and its retained local output. The
+exploratory Python renderer is no longer part of the active repository; the
+current method and Julia archive command are in [the study protocol](input_response_study.md).
+
+**Selection audit (5 October 2026):**
+The [selection audit](input_response_selection_audit_20261005.md)
+identifies historical follow-up inputs affected by a region-graph correction;
+the frozen output has not been regenerated under the corrected source.
+
 ## Execution status
 
 At implementation handoff on 29 September 2026, all eight anchors (91 input
