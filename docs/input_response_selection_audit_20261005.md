@@ -35,13 +35,18 @@ separate geometry-only Julia replay then reran all six affected cases with the
 corrected source and their archived `parameters.toml` records. It reproduced
 the seven removed inputs and selected no additions. In every case,
 `inputs.csv`, `cells.csv`, `critical.csv`, `equilibria.csv`, `lineage.csv`, and
-`bounds.toml` matched the frozen output byte for byte. The replay's SHA-256
-manifest verified all 73,458 local files. Its `selection_comparison.toml` has
-SHA-256 `3d5440a00c7615c4ea4161cad47cad28a2e33f78a7a5381129b36b1960acd2e8`.
-The replay lives outside the working copies at
-`local_audits/region_selection_replay_20261005/`; response protocols were not
-rerun. The frozen full output and its checksums remain unchanged. Scientific
-interpretation of the revised selection remains pending. The local, untracked
+`bounds.toml` matched the frozen output byte for byte. The final replay's
+SHA-256 manifest verified all 73,459 local files. The
+`selection_comparison.toml` SHA-256 is
+`3d5440a00c7615c4ea4161cad47cad28a2e33f78a7a5381129b36b1960acd2e8`.
+The final manifest has SHA-256
+`cd8c8214a5ad27ff75fd3867e278886f194a1aa89606366fa4ef078097fe6bbb`.
+The final replay lives outside the working copies at
+`local_audits/region_selection_replay_final_20261005/`; its metadata identifies
+the custom geometry-only script and does not advertise a full-study replay.
+Response protocols were not rerun. The frozen full output and its checksums
+remain unchanged. Scientific interpretation of the revised selection remains
+pending. The local, untracked
 read-only audit script and per-case JSON are in
 `retired_tools/region_selection_audit_20261005/` outside the Jujutsu working
 copies. The source archive's `checksums.toml` had SHA-256
