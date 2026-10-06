@@ -72,15 +72,15 @@ fast-inhibition setting. `selective_confirmation.json` records coordinates,
 spectra, errors, and source hashes. Induction and neighborhood extent remain
 separate measurements.
 
-The [three-context figure replay package](../reproducibility/paper_handoff_20260930/README.md)
-reproduces independently integrated trajectories at ratios 0.2, about 1.143,
-and 4.4 from a fresh checkout. After installing the package's listed Python
-dependencies, run `python3 scripts/replay_paper_handoff.py` from the repository
-root and open `output/paper_handoff_replay/confirmed_withdrawal.html` locally.
-The command generates the report, PNG and SVG figures, all twelve plotted
-withdrawal/control trajectories, and the full 13-context independent checks.
-The original PNG was visually inspected for panel, legend, and label clarity.
-It is a supporting figure draft, not the final regional map.
+The [three-context handoff records](../reproducibility/paper_handoff_20260930/README.md)
+retain the dated inputs and source records for independently integrated
+trajectories at ratios 0.2, about 1.143, and 4.4. The original Python replay
+and figure renderer have been retired from the active repository. The local
+handoff archive retains the report, PNG and SVG figures, twelve plotted
+withdrawal/control trajectories, and 13-context independent checks. The PNG
+was visually inspected for panel, legend, and label clarity at handoff. It is
+a supporting figure draft, not the final regional map or a current
+fresh-checkout replay.
 
 Fifteen completed paired direct-displacement measurements have recorded
 seizure/herald ratios from about 1.32 to 5.37. This variation motivates plotting
@@ -207,9 +207,11 @@ an incompletely explored parameter space as a settled model limitation.
 - All 24 task titles, durations, dependencies, and completion criteria match
   between the human table and TOML; the graph is acyclic and totals 1,170 author
   minutes. Local document/report links and planning-document structure passed.
-- The model and public APIs were not changed. This handoff does not rerun the
-  separate certification or plotting-package suites; the new Python figure was
-  rendered, numerically checked, and visually inspected directly.
+- The model and public APIs were not changed. This dated handoff did not rerun
+  the separate certification or plotting-package suites; its Python figure was
+  rendered, numerically checked, and visually inspected directly. That Python
+  replay has since been retired from active source; these checks describe the
+  original run, not a current fresh-checkout verification.
 
 Logs, source identities, the delegation review, and artifact hashes are retained
 in `output/paper_handoff_20260930/`. The ongoing study and author-owned paper
