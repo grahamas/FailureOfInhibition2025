@@ -111,9 +111,10 @@ include(joinpath(@__DIR__,"..","scripts","run_input_response_study.jl"))
     # Resume identity protects both source and configuration, including smoke mode.
     mktempdir() do dir
         path=joinpath(@__DIR__,"..","experiments","input_response.toml")
-        metadata=A.initialize(path,cfg,dir)
+        metadata=A.initialize(path,cfg,dir;stage="geometry",case_filter="figure3")
         @test occursin("two-input response",metadata["purpose"])
         @test occursin("run_input_response_study.jl",metadata["replay_from_artifact_directory"])
+        @test occursin("--stage geometry --case 'figure3'",metadata["replay_from_artifact_directory"])
         @test endswith(metadata["replay_from_artifact_directory"]," --smoke")
         @test A.initialize(path,cfg,dir)["smoke"]
         @test_throws ArgumentError A.initialize(path,A.load_config(path),dir)
@@ -122,5 +123,13 @@ include(joinpath(@__DIR__,"..","scripts","run_input_response_study.jl"))
         path=joinpath(@__DIR__,"..","experiments","input_response.toml")
         metadata=A.initialize(path,A.load_config(path),dir)
         @test !occursin("--smoke",metadata["replay_from_artifact_directory"])
+    end
+    mktempdir() do dir
+        path=joinpath(@__DIR__,"..","experiments","input_response.toml")
+        output=A.run_study(path,joinpath(dir,"study");stage="geometry",smoke=true,
+            case_filter="no_matching_case")
+        metadata=A.TOML.parsefile(joinpath(output,"metadata.toml"))
+        @test metadata["replay_invocations"]==[A.N.replay_command("run_input_response_study.jl";
+            stage="geometry",case_filter="no_matching_case",smoke=true)]
     end
 end

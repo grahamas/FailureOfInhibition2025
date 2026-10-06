@@ -167,6 +167,8 @@ scientific run. Checkpoints verify source/configuration identity and completed
 unit checksums. A changed source requires a new output directory; archived
 source supports exact replay. Independent cases run at most two at a time.
 Scientific scans are local/on-demand; CI tests the machinery and fixtures.
+Metadata retains the completed stage invocations in replay order, including
+case filters and smoke mode.
 
 ## Lossless storage of completed searches
 

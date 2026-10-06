@@ -38,6 +38,8 @@ function load_config(path; smoke=false)
             throw(ArgumentError("axes must be nonempty and strictly increasing"))
         all(x -> NarrativeModels.finite_number(x,"axis"; positive=true)>0,values)
     end
+    all(grid -> Evidence.positive_integer(grid,"confirmation grid")>=2,
+        s["confirmation_grids"]) || throw(ArgumentError("confirmation grids must be at least 2"))
     diag = DiagnosticOptions(window_duration=d["window_duration"],
         coordinate_atol=d["coordinate_atol"],balance_atol=d["balance_atol"],min_samples=d["min_samples"])
     horizons=smoke ? [1000.0,2000.0] : Float64.(p["followup_times"])
@@ -47,6 +49,8 @@ function load_config(path; smoke=false)
     return (; raw,smoke,diagnostics=diag,horizons,abstol=options.abstol,reltol=options.reltol,
         domain_atol=options.domain_atol,maxiters=options.maxiters,options)
 end
+
+confirmation_grid(config)=last(config.raw["search"]["confirmation_grids"])
 
 function write_record(path,data)
     mkpath(dirname(path))
@@ -75,7 +79,23 @@ function complete_unit(dir)
     write_record(joinpath(dir,"done.toml"),Dict("files"=>files))
 end
 
-function initialize(config_path, output, config)
+shell_quote(value::AbstractString) = "'" * replace(value, "'" => "'\\''") * "'"
+
+function replay_command(script; stage="all", case_filter=nothing, smoke=false)
+    command="julia --project=source source/scripts/$script --config config.toml --output replay --stage $stage"
+    case_filter===nothing || (command *= " --case " * shell_quote(case_filter))
+    smoke && (command *= " --smoke")
+    command
+end
+
+function complete_replay!(metadata, script; stage, case_filter, smoke)
+    commands=get!(metadata,"replay_invocations",String[])
+    push!(commands,replay_command(script;stage,case_filter,smoke))
+    metadata["replay_from_artifact_directory"]=join(commands," && ")
+    metadata
+end
+
+function initialize(config_path, output, config; stage="all", case_filter=nothing)
     metadata_path=joinpath(output,"metadata.toml")
     if isfile(metadata_path)
         metadata=TOML.parsefile(metadata_path)
@@ -97,7 +117,9 @@ function initialize(config_path, output, config)
     end
     metadata["purpose"]="bounded rest-active switching, selective intervention, paired withdrawal/displacement"
     metadata["smoke"]=config.smoke
-    metadata["replay_from_artifact_directory"]="julia --project=source source/scripts/run_narrative_study.jl --config config.toml --output replay"*(config.smoke ? " --smoke" : "")
+    metadata["replay_invocations"]=String[]
+    metadata["replay_from_artifact_directory"]=replay_command("run_narrative_study.jl";
+        stage,case_filter,smoke=config.smoke)
     metadata["claim_limits"]="provisional coordinate roles; finite-window destinations; sampled boundaries; no biological, global-attractor or exact-minimum certification"
     write_record(metadata_path,metadata)
     return metadata
@@ -318,7 +340,7 @@ function recovery_trial(ctx,source,amount,protocol,config;initial=nothing,retain
     if protocol=="permanent_withdrawal"
         amount<=ctx.p["B_E"] || throw(ArgumentError("withdrawal exceeds baseline"))
         p=merge(ctx.p,Dict("B_E"=>ctx.p["B_E"]-amount))
-        destination=context(p,tight ? 41 : 21;tight)
+        destination=context(p,tight ? confirmation_grid(config) : 21;tight)
         matched=NarrativeModels.match_roles(ctx.search,ctx.roles,destination.search)
         # Independent contextual assignments do not overwrite ambiguous or lost branch identities.
         destination=merge(destination,(;roles=matched))
@@ -542,17 +564,24 @@ end
 function run_study(config_path,output_dir;stage="all",smoke=false,case_filter=nothing)
     stage in ("all","screen","confirm","recovery","interventions","map","robustness") || throw(ArgumentError("unknown stage"))
     config=load_config(config_path;smoke);output=abspath(output_dir)
-    metadata=initialize(config_path,output,config)
+    metadata=initialize(config_path,output,config;stage,case_filter)
     stage in ("all","screen") && screen_stage(config,output;case_filter)
-    stage=="screen" && (Evidence.artifact_checksums(output);return output)
+    if stage=="screen"
+        complete_replay!(metadata,"run_narrative_study.jl";stage,case_filter,smoke)
+        metadata["last_completed_stage"]=stage;metadata["completed"]=false
+        write_record(joinpath(output,"metadata.toml"),metadata)
+        Evidence.artifact_checksums(output)
+        return output
+    end
     isdir(joinpath(output,"screen")) || throw(ArgumentError("run screen stage first"))
     selected=selected_stage(config,output)
     if selected!==nothing
+        final_grid=confirmation_grid(config)
         write_record(joinpath(output,"selected.toml"),Dict("id"=>selected.id,"parameters"=>selected.p,
-            "confirmation_directory"=>relpath(selected.directory,output)))
-        ctx=context(selected.p,41;tight=true)
+            "confirmation_directory"=>relpath(selected.directory,output),"final_grid"=>final_grid))
+        ctx=context(selected.p,final_grid;tight=true)
         witnesses=TOML.parsefile(joinpath(output,"screen",selected.id,"qualification","witnesses.toml"))
-        control=context(selected.p,41;tight=true,control=true)
+        control=context(selected.p,final_grid;tight=true,control=true)
         save_context(joinpath(output,"matched_control"),control)
         stage in ("all","recovery") && recovery_stage(ctx,config,joinpath(output,"recovery"))
         stage in ("all","recovery") && induced_recovery_stage(ctx,config,witnesses,joinpath(output,"induced_recovery"))
@@ -562,7 +591,8 @@ function run_study(config_path,output_dir;stage="all",smoke=false,case_filter=no
     end
     metadata["selected_example"]=selected===nothing ? "unavailable" : selected.id
     metadata["last_completed_stage"]=stage
-    metadata["completed"]=stage=="all"
+    metadata["completed"]=stage=="all" && case_filter===nothing
+    complete_replay!(metadata,"run_narrative_study.jl";stage,case_filter,smoke)
     write_record(joinpath(output,"metadata.toml"),metadata)
     Evidence.artifact_checksums(output)
     return output

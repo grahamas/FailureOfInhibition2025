@@ -68,7 +68,7 @@ function anchors()
     result
 end
 
-function initialize(config_path,cfg,output)
+function initialize(config_path,cfg,output;stage="all",case_filter=nothing)
     path=joinpath(output,"metadata.toml")
     if isfile(path)
         data=TOML.parsefile(path)
@@ -83,7 +83,9 @@ function initialize(config_path,cfg,output)
     isdir(output) && !isempty(readdir(output)) && throw(ArgumentError("nonempty unrecognized output"))
     mkpath(output);data=N.Evidence.archive_provenance(config_path,output)
     data["purpose"]="bounded two-input response characterization; no biological certification"
-    data["replay_from_artifact_directory"]="julia --project=source source/scripts/run_input_response_study.jl --config config.toml --output replay"*(cfg.smoke ? " --smoke" : "")
+    data["replay_invocations"]=String[]
+    data["replay_from_artifact_directory"]=N.replay_command("run_input_response_study.jl";
+        stage,case_filter,smoke=cfg.smoke)
     for file in vcat(source_files,["experiments/exemplar_models.toml"])
         target=joinpath(output,"source",file);mkpath(dirname(target));cp(joinpath(ROOT,file),target;force=true)
         data["source_sha256"][file]=N.Evidence.file_hash(target)
@@ -689,7 +691,7 @@ end
 function run_study(config_path,output;stage="all",case_filter=nothing,smoke=false)
     stage in ("all","geometry","responses","expand") || throw(ArgumentError("unknown stage"))
     cfg=load_config(config_path;smoke);output=abspath(output)
-    metadata=initialize(config_path,cfg,output)
+    metadata=initialize(config_path,cfg,output;stage,case_filter)
     known=anchors();summaries=Dict{String,Any}[]
     selected_anchors=filter(p->case_filter===nothing || occursin(case_filter,p["id"]),known)
     append!(summaries,parallel_cases(selected_anchors) do p
@@ -738,6 +740,7 @@ function run_study(config_path,output;stage="all",case_filter=nothing,smoke=fals
     write_record(joinpath(output,"summary.toml"),Dict("cases"=>summaries))
     metadata["last_stage"]=stage;metadata["case_filter"]=something(case_filter,"all")
     metadata["completed"]=stage=="all" && case_filter===nothing
+    N.complete_replay!(metadata,"run_input_response_study.jl";stage,case_filter,smoke)
     write_record(joinpath(output,"metadata.toml"),metadata);N.Evidence.artifact_checksums(output)
     output
 end
