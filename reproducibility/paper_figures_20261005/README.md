@@ -16,7 +16,7 @@ From a Julia 1.10.12 checkout with the recorded plotting environment, run:
 
 ```sh
 julia --project=plotting scripts/render_paper_figures.jl \
-  reproducibility/paper_figures_20261005/data output/paper_figures_20261005
+  reproducibility/paper_figures_20261005/data output/paper_figures_new
 ```
 
 The renderer rejects an existing output directory and checks every bundled

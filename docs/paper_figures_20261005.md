@@ -14,8 +14,8 @@ argument: `(e_to_e,i_to_e,e_to_i,i_to_i)=(17,13,19,6)`,
 [portable Julia data bundle](../reproducibility/paper_figures_20261005/README.md)
 and the [reviewed switching/intervention](../reproducibility/selective_anchor_joint_20261005/reference_summary.toml)
 and [tonic-release](../reproducibility/selective_tonic_e_release_20261005/reference_summary.toml)
-records. The reviewed renders are in local
-`output/paper_figures_postmerge_20261006/`; that ignored directory is not part of the
+records. The revised figures reviewed here are in local
+`output/paper_figures_postmerge_20261006_revised/`; that ignored directory is not part of the
 reproducible source packet. Manuscript captions and interpretation remain for
 author review.
 
@@ -25,6 +25,8 @@ author review.
 produces a nonmonotone inhibitory response. At the selected baseline input, the
 numerical search discovered rest, active, herald, and seizure coordinate roles
 among four attracting equilibria, together with three other roots. The
+plot uses circles for attracting roots and crosses for the other discovered
+roots. The role names are provisional model-coordinate labels. The
 monotone-inhibition ordering result concerns *two equilibria under the same
 parameters and fixed input*: higher E with lower I is excluded there. The
 figure does not present the numerical search as a complete root census or the
@@ -50,6 +52,8 @@ was identified for `theta_off=8`, `8.25`, and `8.5`; none was identified at the
 same on input for `8.75`, `9`, `10`, or `12`, so those four values have no seizure
 cessation trial. These are finite-window outcomes. The sampled herald onset is
 bracketed by `1.22890625 < B_E,on <= 1.2328125`, not an exact threshold.
+Panel C plots the recorded E and I endpoints after the full 5,000 ms follow-up
+for each seizure-source release; panel D gives their classified roles.
 
 **Figure 4 — A threshold intervention with ordinary switching retained.**
 Raising `theta_off` from `8` to `8.75` sends the *original* seizure source to
@@ -65,9 +69,11 @@ bifurcation, and redirection to herald is not recovery to active or rest.
 **S1** shows every measured tonic-on input for rest and active across the seven
 thresholds, with a zoom around the sampled onset and the full `0.35–16` range.
 Each dot is a sampled source/input outcome; no cells are filled or
-interpolated. The plot describes this tonic protocol at fixed coupling and
-time-scale ratio. It is not a continuous parameter-region map and does not
-measure ordinary switching at every plotted input.
+interpolated. Circles and diamonds distinguish rest and active sources;
+vertical offsets separate each pair at a sampled threshold. The plot describes
+this tonic protocol at fixed coupling and time-scale ratio. It is not a
+continuous parameter-region map and does not measure ordinary switching at
+every plotted input.
 
 **S2** presents the earlier finite E-withdrawal pulse observations from
 already established herald and seizure states at `B_E=0.35`. Pulse input is
@@ -75,7 +81,8 @@ restored to `0.35` afterward. This protocol is distinct from Figure 3's
 sustained induction at `B_E,on=1.2328125` followed by release to a possibly
 lower tonic input. Its source roles, amplitude, duration, and destinations
 must remain separate in the manuscript and Methods. These frozen-batch rows
-remain historical until current-source response protocols are rerun.
+remain historical until current-source response protocols are rerun. Marker
+shapes distinguish the plotted destination roles as well as color.
 
 The four-figure sequence is sufficient for a bounded existence-and-control
 example in this deterministic point model. It does not support a general

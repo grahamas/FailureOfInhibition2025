@@ -169,7 +169,7 @@ function endpoint_plot!(axis, bundle, setting, rest)
 end
 
 function figure1(bundle, output, data)
-    fig = Figure(size=(1300, 680), fontsize=17)
+    fig = Figure(size=(1300, 720), fontsize=17)
     Label(fig[1, 1:2], "Failure response permits a second high-activity ordering";
         fontsize=25, font=:bold, tellwidth=false)
     ax = Axis(fig[2, 1], title="A. Ordered inhibitory recruitment and failure",
@@ -188,8 +188,8 @@ function figure1(bundle, output, data)
         xlabel="E occupancy", ylabel="I occupancy")
     nullclines!(ax, data["anchor"])
     role_points!(ax, data["baseline_roots"])
-    Label(fig[3, 1:2], "For two equilibria at common parameters and input, a monotone inhibitory response forbids higher E with lower I.  Blue/orange: E/I nullclines.";
-        fontsize=14, tellwidth=false)
+    Label(fig[3, 1:2], "At common parameters and input, monotone inhibition forbids higher E with lower I.\nBlue/orange: E/I nullclines. Circles: attracting roots; crosses: other roots. Names are provisional coordinate roles.";
+        fontsize=16, tellwidth=false)
     save_figure(fig, output, "01_mechanism")
 end
 
@@ -217,8 +217,8 @@ function figure2(bundle, output, data)
         ylims!(ax, -0.02, 0.52)
         column == 1 && axislegend(ax; position=:rb, orientation=:horizontal)
     end
-    Label(fig[4, 1:2], "Tonic input returns to B_E = 0.35 after each pulse.  Traces show early dynamics; destinations use the full 5,000 ms follow-up.";
-        fontsize=14, tellwidth=false)
+    Label(fig[4, 1:2], "Tonic input returns to B_E = 0.35 after each pulse. Traces show early dynamics;\ndestinations use the full 5,000 ms follow-up.";
+        fontsize=16, tellwidth=false)
     save_figure(fig, output, "02_switching_and_access")
 end
 
@@ -268,30 +268,32 @@ function figure3(bundle, output, data)
     end
     xlims!(ax, 0, 400); ylims!(ax, 0.25, 0.52)
     axislegend(ax; position=:rb)
-    ax = Axis(fig[3, 1], title="C. Same release inputs from a separate seizure source",
-        xlabel="Time after release (ms)", ylabel="I occupancy")
-    for (suffix, label, style) in (("held", "held on", :dash),
-            ("release_B_0p35", "return 0.35", :solid),
-            ("release_B_0p17", "return 0.17", :dot),
-            ("release_B_0p0", "return 0", :dashdot))
-        rows = filter(row -> row.time <= 400,
-            trace(bundle, "tonic_seizure_$(suffix).csv"))
-        lines!(ax, [row.time for row in rows], [row.I for row in rows];
-            color=ROLES["seizure"], linestyle=style, linewidth=2.8, label)
+    ax = Axis(fig[3, 1], title="C. Separate seizure source after 5,000 ms",
+        xlabel="Held or release B_E", ylabel="Endpoint occupancy")
+    conditions = (("held", "held on"), ("release_B_0p35", "0.35"),
+        ("release_B_0p17", "0.17"), ("release_B_0p0", "0"))
+    for (x, (suffix, _)) in enumerate(conditions)
+        endpoint = last(trace(bundle, "tonic_seizure_$(suffix).csv"))
+        endpoint.time == 5000.0 || error("incomplete seizure-source follow-up: $suffix")
+        scatter!(ax, [x], [endpoint.E]; color=E_COLOR, marker=:circle,
+            markersize=14, label=x == 1 ? "E" : nothing)
+        scatter!(ax, [x], [endpoint.I]; color=I_COLOR, marker=:diamond,
+            markersize=14, label=x == 1 ? "I" : nothing)
     end
-    xlims!(ax, 0, 400); ylims!(ax, -0.005, 0.04)
-    axislegend(ax; position=:rt, labelsize=12)
+    ax.xticks = (1:4, [label for (_, label) in conditions])
+    xlims!(ax, 0.6, 4.4); ylims!(ax, -0.02, 0.52)
+    axislegend(ax; position=:rc, orientation=:horizontal)
     ax = Axis(fig[3, 2], title="D. Finite-window destination by applied input",
         xlabel="Held or release B_E", ylabel="Source at B_E,on")
     outcome_grid!(ax, data["selected_tonic"])
-    Label(fig[4, 1:2], "At θ_off = 8.  The seizure source is discovered at B_E,on; it was not induced from baseline.  At θ_off ≥ 8.75 no seizure source was identified for this cessation trial.";
-        fontsize=14, tellwidth=false)
+    Label(fig[4, 1:2], "At θ_off = 8, the seizure source was found at B_E,on; it was not induced from baseline.\nNo source was identified at θ_off ≥ 8.75 for this cessation trial.";
+        fontsize=16, tellwidth=false)
     save_figure(fig, output, "03_tonic_control")
 end
 
 function figure4(bundle, output, data)
     fig = Figure(size=(1370, 930), fontsize=16)
-    Label(fig[1, 1:2], "Increasing the failure threshold redirects the seizure source and preserves switching";
+    Label(fig[1, 1:2], "At θ_off = 8.75, the seizure source reaches herald and switching persists";
         fontsize=23, font=:bold, tellwidth=false)
     ax = Axis(fig[2, 1], title="A. θ_off = 8; four discovered sinks",
         xlabel="E occupancy", ylabel="I occupancy")
@@ -315,26 +317,26 @@ function figure4(bundle, output, data)
         y = role == "seizure" ? 2.0 : 1.0
         scatter!(ax, [row["theta_off"]], [y]; color=ROLES[role], markersize=17)
     end
-    text!(ax, 8.0, 2.28; text="7 roots / 4 sinks at sampled lower values", fontsize=11)
-    text!(ax, 8.75, 1.28; text="5 roots / 3 sinks at sampled higher values", fontsize=11)
+    text!(ax, 8.0, 2.28; text="7 roots / 4 sinks discovered", fontsize=16)
+    text!(ax, 8.75, 1.28; text="5 roots / 3 sinks discovered", fontsize=16)
     ax.yticks = ([1, 2], ["herald", "seizure"])
     xlims!(ax, 7.8, 12.2); ylims!(ax, 0.65, 2.4)
     rest = only(filter(row -> row["role"] == "rest", data["threshold_8p75_roots"]))
     ax = Axis(fig[3, 2], title="D. Two switching cycles at θ_off = 8.75",
         xlabel="Validated destination after each 100 ms pulse", ylabel="Occupancy")
     endpoint_plot!(ax, bundle, "changed", rest)
-    Label(fig[4, 1:2], "The threshold strip shows sampled points, not a located bifurcation.  Root/sink counts are discovered counts; the altered high-state destination remains herald.";
-        fontsize=14, tellwidth=false)
+    Label(fig[4, 1:2], "Thresholds are sampled points; no bifurcation is located. Counts are discovered roots/sinks.\nAt θ_off = 8.75, the high-state destination is herald, not active or rest.";
+        fontsize=16, tellwidth=false)
     save_figure(fig, output, "04_threshold_intervention")
 end
 
 function supplement1(output, samples)
-    fig = Figure(size=(1400, 770), fontsize=16)
-    Label(fig[1, 1:2], "Sampled tonic-on input versus failure threshold";
+    fig = Figure(size=(1200, 1050), fontsize=18)
+    Label(fig[1, 1], "Sampled tonic-on input versus failure threshold";
         fontsize=24, font=:bold, tellwidth=false)
-    for (column, low, high, title) in ((1, 1.15, 1.30, "A. Sampled onset bracket"),
-            (2, 0.35, 16.0, "B. Full sampled range"))
-        ax = Axis(fig[2, column], title=title, xlabel="Absolute held B_E,on",
+    for (panel, low, high, title) in ((2, 1.15, 1.30, "A. Sampled onset bracket"),
+            (3, 0.35, 16.0, "B. Full sampled range"))
+        ax = Axis(fig[panel, 1], title=title, xlabel="Absolute held B_E,on",
             ylabel="Failure threshold θ_off")
         for row in samples
             low <= row.B_E_on <= high || continue
@@ -349,22 +351,23 @@ function supplement1(output, samples)
                  (row.control_status != "compatible" || row.release_0p17_status != "compatible"))
             color = qualifies ? ROLES["active"] : unresolved ? ROLES["seizure"] : NEUTRAL
             offset = row.source == "rest" ? -0.045 : 0.045
-            scatter!(ax, [row.B_E_on], [row.theta_off + offset]; color,
-                markersize=column == 1 ? 6 : 4)
+            marker = row.source == "rest" ? :circle : :diamond
+            scatter!(ax, [row.B_E_on], [row.theta_off + offset]; color, marker,
+                markersize=panel == 2 ? 8 : 6)
         end
         xlims!(ax, low, high); ylims!(ax, 7.8, 12.2)
-        column == 1 && vlines!(ax, [1.22890625, 1.2328125];
+        panel == 2 && vlines!(ax, [1.22890625, 1.2328125];
             color=(NEUTRAL, 0.6), linestyle=:dash)
         ax.yticks = ([8.0, 8.25, 8.5, 8.75, 9.0, 10.0, 12.0],
             ["8", "8.25", "8.5", "8.75", "9", "10", "12"])
     end
-    Label(fig[3, 1:2], "Green: held-on herald followed by active at B_E = 0.17; gray: another resolved outcome; red: unresolved.  Lower/upper dot: rest/active source; no interpolation.";
-        fontsize=14, tellwidth=false)
+    Label(fig[4, 1], "Green: held-on herald, then active at B_E = 0.17; gray: another resolved outcome; red: unresolved.\nCircle/diamond: rest/active source. Each mark is a sampled input; no interpolation.";
+        fontsize=16, tellwidth=false)
     save_figure(fig, output, "S1_sampled_input_threshold")
 end
 
 function supplement2(bundle, output)
-    fig = Figure(size=(1330, 690), fontsize=16)
+    fig = Figure(size=(1330, 750), fontsize=18)
     Label(fig[1, 1:2], "Historical protocol: finite E withdrawal from established high states";
         fontsize=24, font=:bold, tellwidth=false)
     for (column, source) in enumerate(("herald", "seizure"))
@@ -376,17 +379,19 @@ function supplement2(bundle, output)
             subset = filter(row -> row.status == "compatible" && row.destination == role, rows)
             isempty(subset) && continue
             scatter!(ax, [row.amplitude for row in subset], [row.duration for row in subset];
-                color=ROLES[role], markersize=7, label=role)
+                color=ROLES[role], marker=Dict("active"=>:circle,
+                    "herald"=>:diamond, "seizure"=>:rect, "rest"=>:utriangle)[role],
+                markersize=9, label=role)
         end
         unresolved = filter(row -> row.status != "compatible", rows)
         isempty(unresolved) || scatter!(ax, [row.amplitude for row in unresolved],
             [row.duration for row in unresolved]; color=NEUTRAL, marker=:xcross,
             markersize=8, label="unresolved")
         xlims!(ax, -0.01, 0.36); ylims!(ax, 0.9, 250)
-        axislegend(ax; position=:rt, labelsize=12)
+        axislegend(ax; position=:rt, labelsize=16)
     end
-    Label(fig[3, 1:2], "Frozen two-input batch, before region-selection and phase-handoff corrections.  Pulses restore B_E = 0.35 afterward; current-source response replay remains pending.";
-        fontsize=14, tellwidth=false)
+    Label(fig[3, 1:2], "Frozen two-input batch, before region-selection and phase-handoff corrections.\nPulses restore B_E = 0.35 afterward; current-source response replay remains pending.";
+        fontsize=16, tellwidth=false)
     save_figure(fig, output, "S2_established_state_withdrawal")
 end
 
