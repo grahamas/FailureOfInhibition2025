@@ -84,7 +84,8 @@ function match_source(search, reference, tolerance)
 end
 
 """Integrate one fixed-input phase, retaining every attempted horizon."""
-function observe_phase(model, search, initial, config; retain=false, tight=false, stop_at_saved_times=false)
+function observe_phase(model, search, initial, config; retain=false, tight=false,
+    stop_at_saved_times=false, handoff=false)
     attempts = NamedTuple[]
     for horizon in config.horizons
         window = config.diagnostics.window_duration
@@ -95,9 +96,9 @@ function observe_phase(model, search, initial, config; retain=false, tight=false
         try
             solution = solve_point_model(initial, (0.0, horizon), model;
                 saveat=times, save_everystep=false, dense=false,
-                tstops=stop_at_saved_times ? times : (),
+                tstops=(stop_at_saved_times || handoff) ? times : (),
                 abstol=config.abstol/(tight ? 10 : 1), reltol=config.reltol/(tight ? 10 : 1),
-                domain_atol=config.domain_atol, maxiters=config.maxiters)
+                domain_atol=handoff ? 0.0 : config.domain_atol, maxiters=config.maxiters)
             diagnostic = diagnose_trajectory(solution, model; equilibria=search,
                 options=config.diagnostics)
             destination = diagnostic.matched_equilibrium
@@ -132,7 +133,7 @@ end
 
 function full_trial(models, searches, source, start, config; retain=false, tight=false)
     initial = searches.off.equilibria[start].state
-    induction = observe_phase(models.on, searches.on, initial, config; retain, tight)
+    induction = observe_phase(models.on, searches.on, initial, config; retain, tight, handoff=true)
     # Both continuations start from the actual end of induction, never a snapped root.
     recovery = observe_phase(models.off, searches.off, induction.final, config; retain, tight)
     control = observe_phase(models.on, searches.on, induction.final, config; retain, tight)

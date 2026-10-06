@@ -121,6 +121,8 @@ exact membership in `[0,1]^2`. Allowing a tiny negative solver endpoint would
 make that restart invalid. Adaptive domain rejection enforces this contract,
 and saved times are solver stops to avoid negative interpolation roundoff near
 the inhibitory tail. No endpoint is clipped or projected onto an equilibrium.
+The exact bound also applies to pulse and cycle handoffs under a custom
+configuration with a larger general `domain_atol`.
 
 Direct E displacement holds I and both tonic inputs fixed. Herald and seizure
 are compared only at shared inputs with both source roles available. Smallest
@@ -188,7 +190,8 @@ Between runner invocations, the optional command
 must first finish their independent geometry confirmations; screen cases can
 be packed once their geometry checkpoint is complete. When the runner has
 written a top-level `checksums.toml`, the archiver verifies that manifest
-before changing files and regenerates it atomically after successful packing.
+before changing files and regenerates it atomically after packing, even when a
+later geometry fails and needs attention before a retry.
 
 Every original file is checksum-verified inside the archive before its unpacked
 copy is removed. The archive retains the original `done.toml` at

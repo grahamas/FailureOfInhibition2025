@@ -219,15 +219,17 @@ function pulse(ctx,initial,target,amplitude,duration,config; retain=false,tight=
     driven=PointModelParameters(excitatory=ctx.model.excitatory,inhibitory=ctx.model.inhibitory,
         coupling=ctx.model.coupling,drive=drive)
     times=retain ? collect(range(0.,duration;length=201)) : [0.,duration]
-    solution=solve_point_model(initial,(0.,duration),driven;saveat=times,save_everystep=false,
+    # The endpoint starts a second solve, whose initial state must lie exactly in [0, 1]^2.
+    solution=solve_point_model(initial,(0.,duration),driven;saveat=times,tstops=times,
+        save_everystep=false,
         dense=false,abstol=config.abstol/(tight ? 10 : 1),reltol=config.reltol/(tight ? 10 : 1),
-        domain_atol=config.domain_atol,maxiters=config.maxiters)
+        domain_atol=0.0,maxiters=config.maxiters)
     switch=copy(last(solution.u))
     if !SciMLBase.successful_retcode(solution)
         return (; status="integration_failed",destination="unresolved",destination_index=0,
             E=switch[1],I=switch[2],horizon=0.,final=switch,phase=nothing,solution)
     end
-    phase=IR.observe_phase(ctx.model,ctx.search,switch,config;retain,tight)
+    phase=IR.observe_phase(ctx.model,ctx.search,switch,config;retain,tight,handoff=true)
     return merge(phase_row(phase,ctx.roles),(;final=phase.final,phase,solution))
 end
 
