@@ -42,7 +42,11 @@ The last row deliberately retains two parameterizations. Recovery to active
 from one example and preserved switching from another cannot be combined into
 a single demonstrated selective-treatment result.
 
-## Current audit and useful new leads
+## Dated audit and useful leads
+
+The observations in this section describe the dated partial handoff snapshot.
+The frozen 74-case batch was subsequently completed; the selection and
+phase-handoff limits above govern current figure use.
 
 The batch's earlier `running` marker was stale: a host process inspection found
 no Julia process, and its log last advanced at 04:15 UTC. The existing frozen
@@ -67,10 +71,11 @@ The snapshot in `output/paper_handoff_20260930/` contains:
 
 `audit.json` verifies 38,458 files through 503 checkpoints: all completed response
 records, independent geometry confirmations, and the geometry summaries read by
-the handoff. Compressed raw root-search contents and unfinished responses are
-outside this partial audit; the existing batch's final verifier handles them.
+the handoff. Compressed raw root-search contents and then-unfinished responses
+are outside this partial audit; consult the completed frozen batch's own
+verification artifacts for them.
 The snapshot summary is hash-bound in `audit.json` and will not be overwritten
-by the resumed batch's own final report.
+by the completed batch's own final report.
 
 The 224-case screen has 13 distinct parameter/baseline contexts where complete
 E withdrawal recovers herald while seizure persists: 11 to active and two to

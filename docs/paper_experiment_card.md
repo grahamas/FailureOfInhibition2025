@@ -2,7 +2,8 @@
 
 This card implements the agreed staged expansion within the existing point
 model. **New numerical ranges below are proposals, not author-selected domains.**
-The existing 74-case follow-up may continue under its original configuration.
+The frozen 74-case follow-up is complete; Stage A reconciles its historical
+output with corrected selections and protocols.
 The broader experiments start only after the author chooses their domains.
 
 ## Question and measurements

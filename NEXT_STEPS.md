@@ -9,7 +9,7 @@
 
 ## Next Steps
 
-- [ ] Finish and review the resumed 74-case input-response batch; use the dated partial audit in `docs/paper_evidence.md` and retain confirmation differences.
+- [ ] Reconcile the completed 74-case batch with corrected geometry selection across the 306 archived cases; rerun affected screens, responses, and proposed figure witnesses under the exact-domain handoff policy while retaining provenance and confirmation differences.
 - [ ] Review the contribution brief, four figure questions, and 24 calendar-sized deliverables in `docs/paper_delivery.md` and `docs/paper_evidence.md`.
 - [ ] Choose the proposed coupling and response-parameter domains in `docs/paper_experiment_card.md` before launching the staged expansion.
 - [ ] Connect ordinary switching, paired high-state control, and intervention tradeoffs across selected parameter regions, remeasuring effective stimuli where needed.
@@ -17,7 +17,7 @@
 
 ## Context
 
-The equations remain documented in `docs/model.md`. The completed narrative
+The equations remain documented in `docs/model.md`. The frozen narrative
 study screened 2,103 contexts and qualified seven examples for ordinary
 switching plus seizure access. The selected positive-input four-state example
 supports a paired herald/seizure displacement comparison and 44 intervention
@@ -28,15 +28,19 @@ positive-input withdrawal can recover herald while seizure persists, and a
 higher failure threshold can send seizure to intermediate activity.
 See `docs/narrative_study.md` for the protocol and `docs/narrative_results.md`
 for the original results, limitations, and manual manuscript revision
-instructions. `docs/input_response_study.md` documents the systematic two-input
+instructions. Those witnesses predate the exact-domain handoff correction.
+`docs/input_response_study.md` documents the systematic two-input
 characterization and its sampling limits.
-Its eight anchors and 224-case parameter screen are complete. A 30 September
-UTC audit found nine of 74 detailed follow-ups complete and a tenth partial;
-the stopped batch was resumed with its verified frozen source. Independent
-replay also confirms 13 selective-withdrawal contexts, including herald-to-rest
-contrasts at time-scale ratios about 1.143 and 4.4. The paper now targets staged
-parameter-region evidence within the point model. See `docs/paper_evidence.md`
-for the dated snapshot and `docs/input_response_results.md` for study details.
+Its eight anchors, 224-case parameter screen, and 74 selected detailed cases
+completed under the frozen source. The corrected selection audit found changed
+representatives; only three cases have had geometry replay under the latest
+rule, and affected response protocols remain to be rerun. The dated local
+handoff also recorded 13 selective-withdrawal contexts, including
+herald-to-rest contrasts at time-scale ratios about 1.143 and 4.4. Those
+records are historical, and the retired Python handoff is not replayable from
+a fresh checkout. The paper targets staged parameter-region evidence within
+the point model. See `docs/paper_evidence.md` for the dated handoff and
+`docs/input_response_results.md` for study details.
 
 ## Constraints
 
@@ -58,8 +62,8 @@ for the dated snapshot and `docs/input_response_results.md` for study details.
 
 ## Completed
 
-- [x] Prepared the 24-task paper handoff, contribution brief, figure candidates, and proposed experiment card; audited completed response artifacts and independently confirmed 13 selective-withdrawal contexts with 52 trajectories.
+- [x] Completed and archived the frozen 74-case response batch, audited corrected regional selections, and retained confirmation differences and source provenance.
+- [x] Prepared the 24-task paper handoff, contribution brief, figure candidates, and proposed experiment card; independently checked 13 selective-withdrawal contexts with 52 trajectories in the dated local handoff.
 - [x] Implemented two-input equilibrium and response characterization, completed the anchor maps and parameter screen, and independently checked selective withdrawal, neighboring parameterizations, pulse boundaries, and archived-source replay.
 - [x] Completed the narrative study, paired reduction measurements, intervention comparisons, local map, neighborhood checks, independent numerical checks, and archived-source trajectory replay; delivered figures and an author-facing outline.
 - [x] Implemented and independently reviewed pseudo-arclength continuation, numerical periodic shooting, and explicit pulse experiments with retained unresolved outcomes and replayable evidence.
-- [x] Executed both full primary parameter planes, representative continuation and pulse protocols, intervention/robustness searches, and periodic-candidate screening; documented analytical constraints and initial results.
