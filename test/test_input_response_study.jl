@@ -12,6 +12,14 @@ include(joinpath(@__DIR__,"..","scripts","run_input_response_study.jl"))
             open(path,"w") do stream;A.TOML.print(stream,raw);end
             @test_throws ArgumentError A.load_config(path)
         end
+        for (axis,lower) in (("tau_ratio",0.),("theta_off",4.))
+            raw=A.TOML.parsefile(joinpath(@__DIR__,"..","experiments","input_response.toml"))
+            index=only(findall(==(axis),raw["expansion"]["axes"]))
+            raw["expansion"]["lower"][index]=lower
+            path=joinpath(root,"invalid_bounds.toml")
+            open(path,"w") do stream;A.TOML.print(stream,raw);end
+            @test_throws ArgumentError A.load_config(path)
+        end
     end
     p=A.anchors()[6]
     m=M.model(p)

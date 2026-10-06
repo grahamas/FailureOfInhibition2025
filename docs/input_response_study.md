@@ -141,7 +141,9 @@ subject to 512 additional parameterizations per family.
 The joint screens hold `(b,d)` at `(9,4)` or `(13,6)` and vary `a` over 0–24,
 `c` over 12–28, failure threshold over 6–12, and `tau_I/tau_E` over 0.2–4.4.
 The configuration must name these four distinct expansion axes; unsupported or
-repeated keys fail before any case runs.
+repeated keys fail before any case runs. Time-scale ratio bounds must be
+positive, and failure-threshold bounds must exceed the onset threshold in
+every anchor model.
 Both response slopes remain 5, the E threshold is 1.5, the inhibitory onset is 4,
 and `tau_E` is 7.8 ms. These are the declared study domains, not a survey of
 every model parameter or a biological calibration.
