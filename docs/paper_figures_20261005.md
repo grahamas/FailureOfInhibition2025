@@ -88,10 +88,11 @@ historical frozen-batch observations.
 
 ## Review checks
 
-The data builder checks the retained joint and tonic summary hashes, selected
-source endpoints and destinations, and all 147 input points at each of seven
-thresholds. The renderer checks the portable bundle hashes and selected source
-files, and refuses an existing output directory. Final review should confirm
-the six figures in PDF, SVG, and PNG at manuscript scale and retain the provenance
-record written beside them. The plotted roles remain provisional and all
-equilibrium searches retain `CompletenessNotCertified`.
+The data builder checks the retained joint and tonic summary hashes, the frozen
+response archive manifest and selected file hashes, selected source endpoints
+and destinations, and all 147 input points at each of seven thresholds. The
+renderer checks the portable bundle hashes, model and plotting sources, and
+all three reference files, and refuses an existing output directory. Final
+review should confirm the six figures in PDF, SVG, and PNG at manuscript scale
+and retain the provenance record written beside them. The plotted roles remain
+provisional and all equilibrium searches retain `CompletenessNotCertified`.

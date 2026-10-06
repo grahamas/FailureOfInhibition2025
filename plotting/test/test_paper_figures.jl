@@ -8,6 +8,10 @@ const PAPER_BUNDLE = joinpath(@__DIR__, "..", "..", "reproducibility",
 
 @testset "Selective paper figure evidence" begin
     data, samples = PaperFigures.checked_data(PAPER_BUNDLE)
+    @test all(haskey(data["source_sha256"], path) for path in
+        ("src/responses.jl", "src/drives.jl", "src/stability.jl",
+         "scripts/render_paper_figures.jl"))
+    @test haskey(data["reference_sha256"], "response")
     @test length(samples) == 2058
     @test length(data["baseline_roots"]) == 7
     @test length(data["threshold_8p75_roots"]) == 5

@@ -33,8 +33,12 @@ julia --project=. scripts/build_paper_figure_data.jl \
 ```
 
 The builder checks the first two local summaries byte for byte against their
-tracked reviewed references, checks the selected trajectory outcomes and
-endpoints against the tonic records, and refuses an existing destination.
+tracked reviewed references. It verifies the historical response archive's
+manifest and the exact frozen metadata, parameters, input, roles, summary, and
+four S2 source tables against
+[the response reference](response_reference.toml) before copying any S2 rows.
+It also checks selected trajectory outcomes and endpoints against the tonic
+records, and refuses an existing destination.
 The supplement shows sampled points without interpolation. The figures do not
 locate a bifurcation, certify all attractors, or establish biological state
 identities. The selected time-scale ratio is exploratory (`0.2`), distinct from

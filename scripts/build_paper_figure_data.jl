@@ -7,6 +7,7 @@ const TER = SelectiveTonicERelease
 const NS = TER.NS
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 const BUNDLE = joinpath(ROOT, "reproducibility", "paper_figures_20261005")
+const RESPONSE_REFERENCE = joinpath(BUNDLE, "response_reference.toml")
 
 hashfile(path) = bytes2hex(SHA.sha256(read(path)))
 function require_equal(actual, expected, label)
@@ -64,6 +65,34 @@ function check_joint_traces(joint_dir, setting, context)
     end
 end
 
+function check_response_archive(response_dir, anchor)
+    archive = normpath(joinpath(response_dir, "..", "..", "..", ".."))
+    relative_base = joinpath("anchors", "selective_withdrawal", "responses", "baseline_1")
+    require_equal(normpath(response_dir), joinpath(archive, relative_base), "response archive layout")
+    expected = TOML.parsefile(RESPONSE_REFERENCE)["files"]
+    manifest = TOML.parsefile(joinpath(archive, "checksums.toml"))
+    require_equal(manifest["algorithm"], "SHA-256", "response checksum algorithm")
+    for (relative, digest) in expected
+        path = joinpath(archive, relative)
+        isfile(path) || error("missing response archive file: $relative")
+        require_equal(get(manifest["files"], relative, nothing), digest,
+            "response manifest: $relative")
+        require_equal(hashfile(path), digest, "response archive: $relative")
+    end
+    parameters = TOML.parsefile(joinpath(archive, "anchors", "selective_withdrawal",
+        "geometry", "parameters.toml"))
+    for key in ("family", "e_to_e", "i_to_e", "e_to_i", "i_to_i", "tau_ratio", "theta_off")
+        require_equal(parameters[key], anchor[key], "response parameter: $key")
+    end
+    input = TOML.parsefile(joinpath(response_dir, "input.toml"))
+    require_equal(input["B_E"], anchor["B_E"], "response baseline E input")
+    require_equal(input["B_I"], 0.0, "response baseline I input")
+    roles = TOML.parsefile(joinpath(response_dir, "roles.toml"))
+    require_equal(roles["herald"], 5, "response herald root")
+    require_equal(roles["seizure"], 7, "response seizure root")
+    return hashfile(RESPONSE_REFERENCE)
+end
+
 function build(joint_dir, tonic_dir, response_dir, destination)
     ispath(destination) && error("output path already exists: $destination")
     joint_ref = joinpath(ROOT, "reproducibility", "selective_anchor_joint_20261005", "reference_summary.toml")
@@ -72,6 +101,7 @@ function build(joint_dir, tonic_dir, response_dir, destination)
     require_equal(hashfile(joinpath(tonic_dir, "reference_summary.toml")), hashfile(tonic_ref), "tonic summary")
     joint = TOML.parsefile(joint_ref)
     tonic = TOML.parsefile(tonic_ref)
+    response_ref_hash = check_response_archive(response_dir, joint["baseline_parameters"])
     require_equal(joint["baseline_repeat_switching"], true, "baseline switching")
     require_equal(only(filter(row -> row["theta_off"] == 8.75,
         joint["threshold_interventions"]))["repeat_switching"], true, "threshold switching")
@@ -184,9 +214,14 @@ function build(joint_dir, tonic_dir, response_dir, destination)
         "samples_per_threshold" => 147, "sample_rows" => length(rows),
         "source_sha256" => Dict(path => hashfile(joinpath(ROOT, path)) for path in
             ("scripts/build_paper_figure_data.jl", "scripts/run_narrative_study.jl",
-             "scripts/narrative_models.jl", "reproducibility/selective_tonic_e_release_20261005/replay.jl",
-             "src/point_model.jl", "src/equilibria.jl", "src/simulation.jl")),
-        "reference_sha256" => Dict("joint" => hashfile(joint_ref), "tonic" => hashfile(tonic_ref)),
+             "scripts/narrative_models.jl", "scripts/render_paper_figures.jl",
+             "experiments/narrative_study.toml",
+             "reproducibility/selective_tonic_e_release_20261005/replay.jl",
+             "src/FailureOfInhibition2025.jl", "src/responses.jl", "src/drives.jl",
+             "src/point_model.jl", "src/stability.jl", "src/equilibria.jl",
+             "src/configurations.jl", "src/simulation.jl")),
+        "reference_sha256" => Dict("joint" => hashfile(joint_ref), "tonic" => hashfile(tonic_ref),
+            "response" => response_ref_hash),
         "limits" => "Finite-window trajectories and sampled input/threshold points; no bifurcation or completeness claim")
     NS.write_record(joinpath(destination, "data.toml"), record)
     files = [relpath(joinpath(dir, file), destination) for (dir, _, filenames) in walkdir(destination)
