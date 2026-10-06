@@ -140,6 +140,8 @@ subject to 512 additional parameterizations per family.
 
 The joint screens hold `(b,d)` at `(9,4)` or `(13,6)` and vary `a` over 0–24,
 `c` over 12–28, failure threshold over 6–12, and `tau_I/tau_E` over 0.2–4.4.
+The configuration must name these four distinct expansion axes; unsupported or
+repeated keys fail before any case runs.
 Both response slopes remain 5, the E threshold is 1.5, the inhibitory onset is 4,
 and `tau_E` is 7.8 ms. These are the declared study domains, not a survey of
 every model parameter or a biological calibration.
@@ -178,11 +180,13 @@ case filters and smoke mode.
 ## Lossless storage of completed searches
 
 Detailed geometry records can exceed available disk space during a large run.
-Before the final study checksum manifest is written, the optional command
+Between runner invocations, the optional command
 `julia --project=. scripts/archive_input_response_contexts.jl OUTPUT` packs completed
 `geometry/contexts/` directories into `geometry/contexts.tar.gz`. Detailed cases
 must first finish their independent geometry confirmations; screen cases can
-be packed once their geometry checkpoint is complete.
+be packed once their geometry checkpoint is complete. When the runner has
+written a top-level `checksums.toml`, the archiver verifies that manifest
+before changing files and regenerates it atomically after successful packing.
 
 Every original file is checksum-verified inside the archive before its unpacked
 copy is removed. The archive retains the original `done.toml` at
