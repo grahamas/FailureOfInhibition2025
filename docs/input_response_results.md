@@ -1,10 +1,11 @@
 # Two-input response results
 
-**Selection audit (5 October 2026):** The
+**Selection audit (5–6 October 2026):** The
 [selection audit](input_response_selection_audit_20261005.md) identifies
-historical follow-up inputs affected by a region-graph correction; the frozen
-full study output and its response measurements remain unchanged. Six affected
-geometries were replayed separately under the corrected source.
+historical follow-up inputs affected by region-graph and cell-label corrections.
+Six geometries were replayed after the first correction; a later read-only
+audit found a broader cell-consistency issue. The frozen full study output and
+its response measurements remain historical and unchanged.
 
 ## Paper-handoff update, 30 September 2026 UTC
 

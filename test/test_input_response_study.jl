@@ -47,6 +47,25 @@ include(joinpath(@__DIR__,"..","scripts","run_input_response_study.jl"))
     @test "island" in values(sample.cache)
     limited=M.sample_rectangle(f,[0.,.5,1.],[0.,.5,1.];width=.01,max_evaluations=5)
     @test any(x->x.status=="budget_unresolved",limited.leaves)
+    # A critical-curve offset can be evaluated before the atlas even when
+    # all five adaptive probes in its first cell have another signature.
+    island(x,y)=.25<x<.4 && .25<y<.4 ? "island" : "outside"
+    initial=M.sample_rectangle(island,[0.,1.],[0.,1.];width=.05)
+    @test only(initial.leaves).status=="sampled_homogeneous"
+    seeded=M.sample_rectangle(island,[0.,1.],[0.,1.];width=.05,
+        known_samples=Dict((.3,.3)=>"island"))
+    @test any(v=="island" for v in values(seeded.cache))
+    @test all(cell->cell.status!="sampled_homogeneous" ||
+        island((cell.x0+cell.x1)/2,(cell.y0+cell.y1)/2)=="island",
+        filter(cell->cell.x0<=.3<=cell.x1 && cell.y0<=.3<=cell.y1,seeded.leaves))
+    @test any(cell->cell.status=="sampled_homogeneous" &&
+        island((cell.x0+cell.x1)/2,(cell.y0+cell.y1)/2)=="island",seeded.leaves)
+    # A probe found while refining a neighboring cell can contradict an
+    # already visited cell at their shared edge.
+    late(x,y)=(x>=1.5 && y==0.) || (x==1. && y==.5) ? "other" : "base"
+    reconciled=M.sample_rectangle(late,[0.,1.,2.],[0.,1.];width=.05)
+    @test (1.,.5) in keys(reconciled.cache)
+    @test only(filter(cell->cell.x0==0. && cell.x1==1.,reconciled.leaves)).status=="boundary_bracket"
     # Equal corner signatures on opposite sides of a mixed cell do not
     # establish a connected observed region.
     fake(role)=(;search=(equilibria=[(;stability=(classification=:Attracting,))],),

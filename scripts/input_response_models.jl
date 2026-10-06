@@ -199,9 +199,10 @@ function sample_line(f,lo,hi;step=1.,width=.01,key=identity,max_evaluations=1000
     (;cache,unresolved)
 end
 
-"""Sample a rectangle and retain all homogeneous cells as finite observations."""
-function sample_rectangle(f,xs,ys;width=.01,key=identity,max_evaluations=20000)
+"""Sample a rectangle, refining around known observations as well as new probes."""
+function sample_rectangle(f,xs,ys;width=.01,key=identity,max_evaluations=20000,known_samples=())
     cache=Dict{Tuple{Float64,Float64},Any}();leaves=NamedTuple[]
+    known_keys=[(Float64(x),Float64(y),key(value)) for ((x,y),value) in known_samples]
     at(x,y)=get!(() -> f(x,y),cache,(Float64(x),Float64(y)))
     queue=[(Float64(x0),Float64(x1),Float64(y0),Float64(y1))
         for (x0,x1) in zip(xs,xs[2:end]) for (y0,y1) in zip(ys,ys[2:end])]
@@ -213,6 +214,7 @@ function sample_rectangle(f,xs,ys;width=.01,key=identity,max_evaluations=20000)
         end
         xm,ym=(x0+x1)/2,(y0+y1)/2
         ks=[key(at(x,y)) for (x,y) in ((x0,y0),(x1,y0),(x0,y1),(x1,y1),(xm,ym))]
+        append!(ks,(known_key for (x,y,known_key) in known_keys if x0<=x<=x1 && y0<=y<=y1))
         changed=length(unique(ks))>1 || any(k->occursin("unresolved",string(k)),ks)
         if changed && max(x1-x0,y1-y0)>width
             if x1-x0>=y1-y0
@@ -222,6 +224,25 @@ function sample_rectangle(f,xs,ys;width=.01,key=identity,max_evaluations=20000)
             end
         else
             push!(leaves,(;x0,x1,y0,y1,status=changed ? "boundary_bracket" : "sampled_homogeneous"))
+        end
+    end
+    # A later neighboring cell may sample the interior of an earlier cell's
+    # edge. Reconcile labels against every observation before callers use
+    # homogeneous cells to establish connectivity.
+    observed=Dict((x,y)=>value for (x,y,value) in known_keys)
+    for (point,value) in cache
+        observed[point]=key(value)
+    end
+    observed_points=sort!(collect(keys(observed)))
+    observed_x=first.(observed_points)
+    for (i,cell) in enumerate(leaves)
+        cell.status=="sampled_homogeneous" || continue
+        reference=observed[(cell.x0,cell.y0)]
+        lo=searchsortedfirst(observed_x,cell.x0)
+        hi=searchsortedlast(observed_x,cell.x1)
+        if any(point->cell.y0<=point[2]<=cell.y1 && observed[point]!=reference,
+                @view observed_points[lo:hi])
+            leaves[i]=merge(cell,(status="boundary_bracket",))
         end
     end
     (;cache,leaves)
