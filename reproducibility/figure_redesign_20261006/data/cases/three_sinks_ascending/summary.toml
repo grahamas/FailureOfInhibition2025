@@ -1,0 +1,22 @@
+baselines = [[0.0, 0.0]]
+
+[parameters]
+baselines = [[0.0, 0.0]]
+category = "anchors"
+e_to_e = 19.0
+e_to_i = 14.0
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending"
+name = "three_sinks_ascending"
+parameter_record_sha256 = "ca176f26c27a884b04b9fc291f0ba34f8be3cd586ffe5454c60432cad738a089"
+selection_reason = "first remaining registry case with a new measured screen signature"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0

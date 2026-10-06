@@ -1,0 +1,24 @@
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+
+[parameters]
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+category = "expansion"
+changed_axis = "e_to_e"
+e_to_e = 4.25
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_e_to_e_4.25"
+name = "three_sinks_descending"
+parameter_record_sha256 = "c98d3a474ea58b648f464b71efa95bb5521454720b79f4b604c580da15eb228d"
+parent = "input_dependent"
+selection_reason = "nearby contrast in paired withdrawal"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0

@@ -9,38 +9,34 @@
 
 ## Next Steps
 
-- [ ] Reconcile the completed 74-case batch with corrected geometry selection across the 306 archived cases; rerun affected screens, responses, and proposed figure witnesses under the exact-domain handoff policy while retaining provenance and confirmation differences.
-- [ ] Review the contribution brief, four figure questions, and 24 calendar-sized deliverables in `docs/paper_delivery.md` and `docs/paper_evidence.md`.
-- [ ] Choose the proposed coupling and response-parameter domains in `docs/paper_experiment_card.md` before launching the staged expansion.
-- [ ] Connect ordinary switching, paired high-state control, and intervention tradeoffs across selected parameter regions, remeasuring effective stimuli where needed.
-- [ ] Assemble the confirmed figures and manually revise the manuscript using the new candidate paragraphs; retain the derivation and defer fitting competition and autonomous feedback.
+- [ ] Review the five figure claims and candidate captions in `docs/figure_redesign_20261006.md`, then choose the final manuscript presentation and biological wording.
+- [ ] If the manuscript needs a cycle-onset claim, extend and independently test the truncated periodic branch before identifying a bifurcation; retain unresolved input cells as sampling limits.
+- [ ] Revise the manuscript manually using the reviewed point-model results, keeping the derivation and deferring physiological fitting and autonomous feedback.
+- [ ] Before reusing the historical 74-case response batch, reconcile its affected geometry selections and responses under the current exact-domain handoff policy. Keep it separate from the refreshed 232-case screen and eight-case figure study.
 
 ## Context
 
-The equations remain documented in `docs/model.md`. The frozen narrative
-study screened 2,103 contexts and qualified seven examples for ordinary
-switching plus seizure access. The selected positive-input four-state example
-supports a paired herald/seizure displacement comparison and 44 intervention
-settings. Raising the failure threshold preserves the measured switching but
-sends the former seizure source to herald in that selected example. Subsequent
-matched counterexamples show that this destination is parameter-dependent:
-positive-input withdrawal can recover herald while seizure persists, and a
-higher failure threshold can send seizure to intermediate activity.
-See `docs/narrative_study.md` for the protocol and `docs/narrative_results.md`
-for the original results, limitations, and manual manuscript revision
-instructions. Those witnesses predate the exact-domain handoff correction.
-`docs/input_response_study.md` documents the systematic two-input
-characterization and its sampling limits.
-Its eight anchors, 224-case parameter screen, and 74 selected detailed cases
-completed under the frozen source. The corrected selection audit found changed
-representatives; only three cases have had geometry replay under the latest
-rule, and affected response protocols remain to be rerun. The dated local
-handoff also recorded 13 selective-withdrawal contexts, including
-herald-to-rest contrasts at time-scale ratios about 1.143 and 4.4. Those
-records are historical, and the retired Python handoff is not replayable from
-a fresh checkout. The paper targets staged parameter-region evidence within
-the point model. See `docs/paper_evidence.md` for the dated handoff and
-`docs/input_response_results.md` for study details.
+The approved figure redesign uses one reference circuit plus contrasts within
+the existing coupling, threshold, input, and time-scale envelope. The refreshed
+screen covers 232 parameterizations and 44,643 input contexts. Detailed work
+covers eight circuits at fourteen baselines, including one attracting periodic
+source tested at sixteen phases. All 99 independent geometry confirmation
+searches agree with their corresponding discovered root sets.
+
+The connected reference simulation visits rest, active, herald, and seizure
+without resets. Paired withdrawal measurements distinguish retention of both
+high states, joint recovery, and selective herald recovery across contexts.
+Eighty-four intervention settings measure the original high-state destination
+alongside ordinary switching with original or remeasured pulses. The independent
+equation check passed 176 trajectory comparisons. These results support a
+bounded point-model account; they do not certify complete attractor discovery
+or identify the birth of the truncated periodic branch.
+
+See `docs/figure_redesign_20261006.md` for the scientific questions, measurements,
+limits, and captions, and `reproducibility/figure_redesign_20261006/README.md`
+for the portable packet and replay commands. Earlier narrative and full-atlas
+results remain historical evidence with their original provenance; the new
+study does not certify every older response protocol.
 
 ## Constraints
 
@@ -56,14 +52,14 @@ the point model. See `docs/paper_evidence.md` for the dated handoff and
 
 ## Open Questions
 
-- Which parameter regions support ordinary switching, high-state access, and selective control together?
-- Which proposed expansion domains should be selected for the next bounded batch?
+- Which bounded model results should be emphasized in the manuscript, and which remain supporting evidence?
+- Does the manuscript require resolving the periodic branch's onset, or is the measured finite branch sufficient?
 - What biological evidence supports the final interpretation of the measured activity and switching properties?
 
 ## Completed
 
-- [x] Completed and archived the frozen 74-case response batch, audited corrected regional selections, and retained confirmation differences and source provenance.
-- [x] Prepared the 24-task paper handoff, contribution brief, figure candidates, and proposed experiment card; independently checked 13 selective-withdrawal contexts with 52 trajectories in the dated local handoff.
-- [x] Implemented two-input equilibrium and response characterization, completed the anchor maps and parameter screen, and independently checked selective withdrawal, neighboring parameterizations, pulse boundaries, and archived-source replay.
-- [x] Completed the narrative study, paired reduction measurements, intervention comparisons, local map, neighborhood checks, independent numerical checks, and archived-source trajectory replay; delivered figures and an author-facing outline.
+- [x] Delivered five rendered and visually reviewed figure drafts from the refreshed 232-case screen, eight targeted circuits, a connected switching sequence, sixteen cycle phases, paired controls, and 84 intervention settings; independently checked 176 trajectories.
+- [x] Completed and archived the historical 74-case response batch, audited corrected regional selections, and retained confirmation differences and source provenance.
+- [x] Prepared the original paper handoff, contribution brief, figure candidates, and experiment card with independent checks of the dated selective-withdrawal witnesses.
+- [x] Implemented two-input equilibrium and response characterization, ordinary switching and paired-control protocols, and archive validation.
 - [x] Implemented and independently reviewed pseudo-arclength continuation, numerical periodic shooting, and explicit pulse experiments with retained unresolved outcomes and replayable evidence.

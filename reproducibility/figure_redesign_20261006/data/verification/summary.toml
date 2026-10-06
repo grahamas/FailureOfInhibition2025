@@ -1,0 +1,7 @@
+details_metadata_sha256 = "e90b90062e9037acde86378f3d3eb60650a8065431a12bba407145a00a564fa6"
+independence = "Independently written population responses and ODE; same Tsit5 integrator, 1e-12 tolerances"
+maximum_coordinate_error = 1.667085691714476e-9
+passed = true
+selection_sha256 = "399849a9e45c485b2ef080b18dc4332c376cebfaa583c7c994c74558580d034b"
+trajectories = 176
+verifier_sha256 = "0828de577b05137cd274daeea7e75dd9ea18511003f2bbe646f3b03431048a5f"

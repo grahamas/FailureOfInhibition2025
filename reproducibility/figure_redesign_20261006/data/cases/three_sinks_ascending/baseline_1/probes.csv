@@ -1,0 +1,10 @@
+seed,E,I,status,destination
+1,0.0,0.0,compatible,rest
+2,0.0,0.24831551325022866,compatible,rest
+3,0.0,0.4966310265004573,compatible,rest
+4,0.25,0.0,compatible,herald
+5,0.25,0.24831551325022866,compatible,herald
+6,0.25,0.4966310265004573,compatible,rest
+7,0.5,0.0,compatible,seizure
+8,0.5,0.24831551325022866,compatible,herald
+9,0.5,0.4966310265004573,compatible,herald

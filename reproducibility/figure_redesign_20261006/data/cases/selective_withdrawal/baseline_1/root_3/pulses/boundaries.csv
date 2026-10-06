@@ -1,0 +1,16 @@
+axis,duration,lower,upper,lower_destination,upper_destination,status
+I_increase,5.0,4.12890625,4.1328125,active,herald,sampled_bracket
+E_increase,10.0,0.94140625,0.9453125,active,herald,sampled_bracket
+I_increase,10.0,4.04296875,4.046875,active,seizure,sampled_bracket
+E_increase,20.0,0.87890625,0.8828125,active,herald,sampled_bracket
+I_increase,20.0,2.7421875,2.74609375,active,rest,sampled_bracket
+I_increase,20.0,4.04296875,4.046875,rest,seizure,sampled_bracket
+E_increase,50.0,0.87890625,0.8828125,active,herald,sampled_bracket
+I_increase,50.0,2.4609375,2.46484375,active,rest,sampled_bracket
+I_increase,50.0,4.04296875,4.046875,rest,seizure,sampled_bracket
+E_increase,100.0,0.87890625,0.8828125,active,herald,sampled_bracket
+I_increase,100.0,2.4375,2.44140625,active,rest,sampled_bracket
+I_increase,100.0,4.04296875,4.046875,rest,seizure,sampled_bracket
+E_increase,200.0,0.87890625,0.8828125,active,herald,sampled_bracket
+I_increase,200.0,2.43359375,2.4375,active,rest,sampled_bracket
+I_increase,200.0,4.04296875,4.046875,rest,seizure,sampled_bracket

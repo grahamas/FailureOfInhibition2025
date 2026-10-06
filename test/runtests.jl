@@ -41,4 +41,7 @@ include("test_support.jl")
     include("test_low_ratio_coexistence.jl")
     include("test_figure5b_protocol.jl")
     include("test_paper_figure_data.jl")
+    include("test_figure_packet_io.jl")
+    include("test_figure_redesign.jl")
+    include("test_figure_repair.jl")
 end

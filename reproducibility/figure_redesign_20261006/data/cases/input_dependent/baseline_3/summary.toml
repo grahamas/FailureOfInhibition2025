@@ -1,0 +1,140 @@
+B_E = 2.0
+B_I = 1.0
+validated_cycles = 1
+
+[[sources]]
+budget_unresolved_cells = 408
+destinations = ["equilibrium_1", "equilibrium_3", "rest", "seizure"]
+observations = 1196
+phase_signature = "3532590c6ba4501e5451124ce820ac820d94e59532969ea0628ed81cd5232a1a"
+recoveries = 135
+role = "unassigned"
+source = "root_3"
+[[sources]]
+budget_unresolved_cells = 417
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1197
+phase_signature = "58100e2d8ab69800dafa7ec439895a09a1c33b484118b34444470b1e0ade2587"
+recoveries = 358
+role = "oscillatory"
+source = "cycle_1_phase_0.0"
+[[sources]]
+budget_unresolved_cells = 421
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1196
+phase_signature = "e9e0d6e850acc9473402263927a69e284557019d88f9bf1f8d8eaedfa825dc70"
+recoveries = 365
+role = "oscillatory"
+source = "cycle_1_phase_0.125"
+[[sources]]
+budget_unresolved_cells = 437
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1197
+phase_signature = "3c1988c3276c1087ee1331777b74f71a2cf6e19cec1b21a54248cd2e53aebe1b"
+recoveries = 352
+role = "oscillatory"
+source = "cycle_1_phase_0.25"
+[[sources]]
+budget_unresolved_cells = 429
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1196
+phase_signature = "36820a7afb1ec736ae00a4bd1a7192ab726ef491da14934895cf087aee789d71"
+recoveries = 360
+role = "oscillatory"
+source = "cycle_1_phase_0.375"
+[[sources]]
+budget_unresolved_cells = 429
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1196
+phase_signature = "cbb63ba2374149341e55b319e10cdea3cc55ffd0ede04e28ffe1f5a8e4f7d3b2"
+recoveries = 364
+role = "oscillatory"
+source = "cycle_1_phase_0.5"
+[[sources]]
+budget_unresolved_cells = 427
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1197
+phase_signature = "054a18ed244e3f71501acb5b7a4b28c9d2e9afbb259975ab4c2c50834069e452"
+recoveries = 388
+role = "oscillatory"
+source = "cycle_1_phase_0.625"
+[[sources]]
+budget_unresolved_cells = 428
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1196
+phase_signature = "6d38411dc51ac175abc68efb59a8e76522cafe24f184dff0a7839ee375126277"
+recoveries = 378
+role = "oscillatory"
+source = "cycle_1_phase_0.75"
+[[sources]]
+budget_unresolved_cells = 419
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1197
+phase_signature = "dbd2a374481bb514be38a1b5a2dd151178b3ec6b5cb9e28f0cbd37b65188eba7"
+recoveries = 379
+role = "oscillatory"
+source = "cycle_1_phase_0.875"
+[[sources]]
+budget_unresolved_cells = 417
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1196
+phase_signature = "294d1b741c99ce262a5e9da9ff48aea772d2ef7657d2a40bf7c69d57f1771719"
+recoveries = 336
+role = "oscillatory"
+source = "cycle_1_phase_0.0625"
+[[sources]]
+budget_unresolved_cells = 435
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1197
+phase_signature = "20f04a46ac07ebe37ffcc3d947cd2ba19fa9d57f044cca528ccdb982337ac681"
+recoveries = 348
+role = "oscillatory"
+source = "cycle_1_phase_0.1875"
+[[sources]]
+budget_unresolved_cells = 433
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1196
+phase_signature = "24f4298533464093ca7b3473927a5479fde2f3eb34758d79f8753e65b05d4839"
+recoveries = 355
+role = "oscillatory"
+source = "cycle_1_phase_0.3125"
+[[sources]]
+budget_unresolved_cells = 431
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1197
+phase_signature = "0fc4370fb5d0e15320eaf5d36cbcfc28d5575b8cf6f1daba4400b33e49a9b307"
+recoveries = 365
+role = "oscillatory"
+source = "cycle_1_phase_0.4375"
+[[sources]]
+budget_unresolved_cells = 425
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1196
+phase_signature = "1c22b702562374047b341501dac68c9089d4b7a8f2736da2cb5aeed40e695ac8"
+recoveries = 380
+role = "oscillatory"
+source = "cycle_1_phase_0.5625"
+[[sources]]
+budget_unresolved_cells = 423
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1196
+phase_signature = "b3404a223bbfa8706251f48dc4f9962265112c1f04175911a9424ed9d122e6f3"
+recoveries = 377
+role = "oscillatory"
+source = "cycle_1_phase_0.6875"
+[[sources]]
+budget_unresolved_cells = 423
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1196
+phase_signature = "104c0ecfa4d702251c22b18dac936b2254f82ed3a23f7f59b98e05e3c059654e"
+recoveries = 364
+role = "oscillatory"
+source = "cycle_1_phase_0.8125"
+[[sources]]
+budget_unresolved_cells = 418
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1196
+phase_signature = "e404014daab75580f5a147d609b4fee8ffc10bd2ce798e74f4e3e051a6e07b5c"
+recoveries = 361
+role = "oscillatory"
+source = "cycle_1_phase_0.9375"

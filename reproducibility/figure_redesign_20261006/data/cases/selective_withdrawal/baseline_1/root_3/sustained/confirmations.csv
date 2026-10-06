@@ -1,0 +1,7 @@
+B_E,B_I,status,destination,recovery
+0.35,0.0,compatible,active,true
+0.0,0.0,compatible,active,true
+0.0,1.9375,compatible,rest,true
+0.0,4.25,compatible,seizure,false
+1.25,0.0,compatible,herald,false
+0.425,2.3125,compatible,equilibrium_3,false

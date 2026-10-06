@@ -1,0 +1,15 @@
+baselines = [[0.015625, 0.0]]
+
+[parameters]
+baselines = [[0.015625, 0.0]]
+category = "anchors"
+e_to_e = 19.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative"
+parameter_record_sha256 = "b26a9346e1578fa46acff9c54145f1f67f53d802b1e560f4ba34e82607453ac3"
+selection_reason = "contrast with small available tonic E"
+tau_ratio = 0.2
+theta_off = 8.0

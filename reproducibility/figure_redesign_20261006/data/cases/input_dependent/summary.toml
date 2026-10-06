@@ -1,0 +1,22 @@
+baselines = [[8.0, 0.0], [0.0, 0.0], [2.0, 1.0]]
+
+[parameters]
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+category = "anchors"
+e_to_e = 4.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent"
+name = "three_sinks_descending"
+parameter_record_sha256 = "7c24c30dcf14972263d551a82286a90ab4ee5542e9b3af88d390f968fe3c2ccc"
+selection_reason = "weak recurrence, input dependence, and periodic-source lead"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0

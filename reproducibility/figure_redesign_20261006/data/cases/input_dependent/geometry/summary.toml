@@ -1,0 +1,8 @@
+budget_unresolved_cells = 1365
+completeness = "CompletenessNotCertified"
+critical_points = 10640
+id = "input_dependent"
+inputs = 4076
+representatives = [[8.0, 0.0], [0.0, 0.0], [0.03125, 0.03125], [0.359375, 1.28125], [2.5, 5.0], [0.375, 9.25], [0.375, 9.625], [0.375, 10.75], [0.671875, 0.0859375], [2.0, 1.0], [8.0, 12.0], [3.0, 3.75], [4.53125, 0.03125]]
+screen = false
+signatures = ["Attracting:active|Attracting:seizure|Saddle:unassigned", "Attracting:herald|Attracting:seizure|Repelling:unassigned|Saddle:unassigned|Saddle:unassigned", "Attracting:herald|Attracting:seizure|Saddle:unassigned", "Attracting:rest", "Attracting:rest|Attracting:seizure|Repelling:unassigned|Saddle:unassigned|Saddle:unassigned", "Attracting:rest|Attracting:seizure|Saddle:unassigned", "Attracting:rest|Attracting:unassigned|Repelling:unassigned|Saddle:unassigned|Saddle:unassigned", "Attracting:rest|Attracting:unassigned|Saddle:unassigned", "Attracting:seizure|Attracting:unassigned|Attracting:unassigned|Saddle:unassigned|Saddle:unassigned", "Attracting:unassigned", "Attracting:unassigned|Repelling:unassigned|Saddle:unassigned"]

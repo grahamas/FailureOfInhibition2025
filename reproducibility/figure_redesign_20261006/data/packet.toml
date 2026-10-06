@@ -1,0 +1,601 @@
+builder_sha256 = "c2b8ac9a750350171f4b8a43fa2b23e4868bab71c7b24537aebd9660978a9b59"
+filtering = "Reference axial pulse/sweep maps, axial pulses at every measured cycle phase, and exact connected-trace display windows retained. Joint pulses and omitted settled trace intervals remain in full study; derived_artifacts records the selections."
+full_data_location = "/home/graham/src/FailureOfInhibition2025/main/output/figure_details_20261006"
+limits = "Bounded numerical discovery and finite-window control; CompletenessNotCertified; roles provisional"
+purpose = "Five question-led figure drafts"
+schema_version = 1
+selection = "See selection.toml. Geometry panels: reference and weak-recurrence input maps; all selected baselines indexed."
+
+[copied_artifact_sha256]
+"cases/figure4_joint_29/baseline_1/probes.csv" = "f14bb39e4fde4a4ecec8bd18d4c916fbe18f1f0da02f5dd87e097e8743c01018"
+"cases/figure4_joint_29/baseline_1/summary.toml" = "0ac7897f19addb3caba0f9a0a8a536446eafe16ac16c891edf49d26f5435bb5e"
+"cases/figure4_joint_29/baseline_2/probes.csv" = "ba284eeef83b4cbcc5255c54c01d7b77fb005999931bf454e32e9fd1f3cf8582"
+"cases/figure4_joint_29/baseline_2/summary.toml" = "cf0dc66be6ec64f8e87474c336aacd5b145786215c7574cdb06d5c67881f6403"
+"cases/figure4_joint_29/baseline_3/probes.csv" = "35ebf5df474f6aa9f43daf5d234dad7427a771931c6407b72d9e37a5ecec0ab1"
+"cases/figure4_joint_29/baseline_3/summary.toml" = "fe1fb068509cd73abb1f06ca3d9c4338faa71743ad430a5e3ae2165582925cc1"
+"cases/figure4_joint_29/geometry_confirmation/independent_searches.csv" = "3a69c6f570d5a79fb70fbbe207658edd88e265f882d471a924e3acf477ccc95f"
+"cases/figure4_joint_29/summary.toml" = "079b8c2b17ed14479d140aa6a58edf4df1fa0aa7da159b793d2cb99836b8130e"
+"cases/four_sinks_central/baseline_1/probes.csv" = "9e4c9810403d37fe83848be817fcc7ace30770a5c612dc33e09f7214c5900b84"
+"cases/four_sinks_central/baseline_1/summary.toml" = "d8d3f2d46cabd24533915d15bcd4ab0f7e20ea1e4485fcd540533b85d9200234"
+"cases/four_sinks_central/geometry_confirmation/independent_searches.csv" = "7bd02e482a6ea4cd44903933345909fba85f6851ee30fa586a577d9ee290a1a4"
+"cases/four_sinks_central/summary.toml" = "b2310d967dccfa1c29afa8ff7d9396944b3796d540afcd1644db6259f7f2b909"
+"cases/input_dependent/baseline_1/probes.csv" = "20b05f671eba21f14e5bccd7147575198ad0ad5a2b60c546ff475e7b8098c31b"
+"cases/input_dependent/baseline_1/summary.toml" = "528f6034bea4813431cd17ecef658948862fbe0588ecb4f32d6a07c1476545b7"
+"cases/input_dependent/baseline_2/probes.csv" = "eddce5624df225a31618141f160ea65561e1540f975f8bbe7c53050bb6626ca7"
+"cases/input_dependent/baseline_2/summary.toml" = "2224159d4d810c2b68fb5ee918262597b589700d929e5c652b57fe02dd53ea88"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.0/pulses/boundaries.csv" = "493fb137c88c49ee48f075163cc2215a2c5eba1c38296fe1926d7b6a4177ea5f"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.0/sustained/confirmations.csv" = "71aba26fcb0a5388a0514ecb96f57df0054d6a8a1ae1e5dd80f0e0442b380574"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.0625/pulses/boundaries.csv" = "afec7f4f337ef3b16a26e38dba0360c5ff481e5d11961c8008f78f31219713f5"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.0625/sustained/confirmations.csv" = "91b7d437ff448a7e7f0c144dbea1eb7203b03c7cdb1b37a78ec7e04f8fbb508d"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.125/pulses/boundaries.csv" = "d45898487e9fedccb86647587ac408a3b244034d1c526c3b847bbf23bca273ad"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.125/sustained/confirmations.csv" = "69f49363fdb3b4418b94a22c8f41fe2ed630274d44bb3ec7533dcb0b1994f7fb"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.1875/pulses/boundaries.csv" = "9e0d81dee0db32279dbbddc0ef82213bc5d786c31c38d703826ca8b85ae0b383"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.1875/sustained/confirmations.csv" = "25108ce79f1d681063105376b140be248fa0fdcdd9195098bd3e1a26c2913a22"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.25/pulses/boundaries.csv" = "08c56e976bfb139ea2a1462776c21df702a3ca4bcbd0686c3988e6d5bef9b1c2"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.25/sustained/confirmations.csv" = "25108ce79f1d681063105376b140be248fa0fdcdd9195098bd3e1a26c2913a22"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.3125/pulses/boundaries.csv" = "380a0f13db96b11b233f67579bb1671c1ac5b98257d830f4db10e8b69decc869"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.3125/sustained/confirmations.csv" = "25108ce79f1d681063105376b140be248fa0fdcdd9195098bd3e1a26c2913a22"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.375/pulses/boundaries.csv" = "d479954f9198d82c44b81611985bae1c94e9898a7efb72c67cff1c3990ca8b56"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.375/sustained/confirmations.csv" = "70b61fd3e9411aee7eff29d460aa81c26247c8ce9609dc4db16b82d44e68652e"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.4375/pulses/boundaries.csv" = "4bc444dd9d93e564cff705ecf366ac38e44b8a88b0e3bff4f6fb2b3cb566267d"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.4375/sustained/confirmations.csv" = "e5892b176123189af6f809e64618a2d5e4f4aaed95db87cbabccc94c4cc49fef"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.5/pulses/boundaries.csv" = "1b42ff83367e1f35aa760e0b415eba107d78831a764aed9c474441888ad94d21"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.5/sustained/confirmations.csv" = "e5892b176123189af6f809e64618a2d5e4f4aaed95db87cbabccc94c4cc49fef"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.5625/pulses/boundaries.csv" = "624a5e6f3db580960c6e9eab943ff8e3cdcde63a95c75adfda1f4d64daef6049"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.5625/sustained/confirmations.csv" = "3debd9eac091ccfbd7ec12ab034f7ab5df5c6f9c6a21e1f90c7ec1788451a0d4"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.625/pulses/boundaries.csv" = "3151dce40362277442f31047db1d963f6c0e6a673989cb9988ba37a90b4b8f6b"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.625/sustained/confirmations.csv" = "3debd9eac091ccfbd7ec12ab034f7ab5df5c6f9c6a21e1f90c7ec1788451a0d4"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.6875/pulses/boundaries.csv" = "b1e743761fa7c9006320d3d47ecfcdc79f487e61b068972d8ea90fa3651b9d50"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.6875/sustained/confirmations.csv" = "3debd9eac091ccfbd7ec12ab034f7ab5df5c6f9c6a21e1f90c7ec1788451a0d4"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.75/pulses/boundaries.csv" = "95e5f6aeb4d4b4b14cbbab499f88545be8935a578c6e954c1968890edf445023"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.75/sustained/confirmations.csv" = "3debd9eac091ccfbd7ec12ab034f7ab5df5c6f9c6a21e1f90c7ec1788451a0d4"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.8125/pulses/boundaries.csv" = "d0ee72a65249c8fe37ddfeb19669353ef68b886132570ca95d46fdca42f590c3"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.8125/sustained/confirmations.csv" = "3debd9eac091ccfbd7ec12ab034f7ab5df5c6f9c6a21e1f90c7ec1788451a0d4"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.875/pulses/boundaries.csv" = "c68b21deab9008f4bbd9bf6b7123e7c89be0953163a65d3d3cbc9ba6e44a5103"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.875/sustained/confirmations.csv" = "d9e37cc7c0b310d2669b58c155172e371c92fca3fd14d2b6405696be46d37bf1"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.9375/pulses/boundaries.csv" = "bbd846442a65686d8f2420f768a30911752b371ffcaa3f041505ee4f372a5378"
+"cases/input_dependent/baseline_3/cycle_1_phase_0.9375/sustained/confirmations.csv" = "69f49363fdb3b4418b94a22c8f41fe2ed630274d44bb3ec7533dcb0b1994f7fb"
+"cases/input_dependent/baseline_3/orbit_1.csv" = "a5652a8f79ec617c60e8741552c2af911c24230a425bb51c913ba3bbcb4d285d"
+"cases/input_dependent/baseline_3/orbit_1.toml" = "b98722abccfc3a585eacb5dc87c2496c1bac74ac5108a2785d53f430875c0a31"
+"cases/input_dependent/baseline_3/probes.csv" = "a5fb0ed936f3cdefa55aa5ab46cea5cdc379c92bcf364c5c60e1bc822f43caaf"
+"cases/input_dependent/baseline_3/summary.toml" = "0dcae837178b27c71ddbadddd5ddb837b438e86dae0ebfbb6884ba9a9cab72ea"
+"cases/input_dependent/geometry/bounds.toml" = "cf5bd63c9c3b27cefc6e155208ea41d2ad8127ec03045d07ef07215a0ded8506"
+"cases/input_dependent/geometry/cells.csv" = "7943c53f369127e11c8b1ac2d07fd3624bbdba51c2e9c7ba74126699ffd87541"
+"cases/input_dependent/geometry/inputs.csv" = "e2a4beecafd05b84ab244559b5390a10d859e02b5bd9e4e3e678ead9fd18b2f1"
+"cases/input_dependent/geometry/summary.toml" = "b04fff61c73337e516709bb81c57a0663139de0fe1fa511b7ae8b07d20a9c221"
+"cases/input_dependent/geometry_confirmation/independent_searches.csv" = "e47ad2cd6d6f64572b4cacf280ef0b2af493621fcb8bcc559c17e5116fb7ea15"
+"cases/input_dependent/summary.toml" = "53f692088e8b9bbdcf23cef7099b790c0fcd92f5ce961a9e2eec3f6d09ac4fc7"
+"cases/input_dependent_e_to_e_4.25/baseline_1/probes.csv" = "20b05f671eba21f14e5bccd7147575198ad0ad5a2b60c546ff475e7b8098c31b"
+"cases/input_dependent_e_to_e_4.25/baseline_1/summary.toml" = "c4e759b6ea65594f4895b17f9870df72a86fa77aa50fdbdead23697980b32c37"
+"cases/input_dependent_e_to_e_4.25/baseline_2/probes.csv" = "efa70472f2f342388997691afd265d49de85edfd8faf623ec9361e1a1078db7c"
+"cases/input_dependent_e_to_e_4.25/baseline_2/summary.toml" = "a65d94f21a25e5f2b223f49faf9bcf1c805f88d7a845dc392f0fe4bb5f1328a1"
+"cases/input_dependent_e_to_e_4.25/geometry_confirmation/independent_searches.csv" = "faa598209b0dae54060cc9aebcec228f7b43f34edd9caa770c1b28d02315fc17"
+"cases/input_dependent_e_to_e_4.25/summary.toml" = "1b71e43cde27c63e009aa22580a4a23dfe536651f7457e8230d2b514ce5e55ee"
+"cases/narrative/baseline_1/probes.csv" = "538e6491514d3a34f7ebfb5fe1c951406a0394c5aeef2d04a2cc22d513ee1b5a"
+"cases/narrative/baseline_1/summary.toml" = "af59ae8cacf6ae4084806943573746e3f048245b71822fb3908a1942ae825db2"
+"cases/narrative/geometry_confirmation/independent_searches.csv" = "ad44f8057d0f3fab0f0d01e4c406d855fb5d5605749b8b0253d7c2bc5365d890"
+"cases/narrative/summary.toml" = "913d0f4f2e531d1474b647d1e5decac3ea9b3bbc9f49ba4949e0b7ed5cb57f7c"
+"cases/selective_withdrawal/baseline_1/probes.csv" = "538e6491514d3a34f7ebfb5fe1c951406a0394c5aeef2d04a2cc22d513ee1b5a"
+"cases/selective_withdrawal/baseline_1/root_1/hysteresis/sweeps.csv" = "411a194a62be645871733257f589eb2e9d9c2a34c7a297dab6db9065b67aca11"
+"cases/selective_withdrawal/baseline_1/root_1/pulses/boundaries.csv" = "124034f55e56e9932dadaeec6c24f98ebd2317a24d4ba2332f5433620f97c217"
+"cases/selective_withdrawal/baseline_1/root_1/sustained/confirmations.csv" = "539b742b68c125a8aef7609e812d05cf6ff73df88b2db66a02f6576a0775df17"
+"cases/selective_withdrawal/baseline_1/root_3/hysteresis/sweeps.csv" = "14fa12fdff19d84ea6bf4eeebeab4f741449f265616251212e72dcd405aa2880"
+"cases/selective_withdrawal/baseline_1/root_3/pulses/boundaries.csv" = "0e847bd11150b6bd4415062464f5aad3440bcde0d1d68377fa69f643aa0c1285"
+"cases/selective_withdrawal/baseline_1/root_3/sustained/confirmations.csv" = "346269b1b97d8a51f779025ba730e492e3ea5bb2cb29efcaaa4ad901adba412d"
+"cases/selective_withdrawal/baseline_1/root_5/hysteresis/sweeps.csv" = "887b744107e904b33e2c259ad5ee060bbdc18f47f05dc88bc83e3317e9458452"
+"cases/selective_withdrawal/baseline_1/root_5/pulses/boundaries.csv" = "1799870a653d3cfa22c0e67623c1e5745c64b01a4c77d5b647adcb7607749479"
+"cases/selective_withdrawal/baseline_1/root_5/sustained/confirmations.csv" = "7d636f7228a260c7c747dd38b3c750af1c05911392f6b8236d9cee1fe86df9e9"
+"cases/selective_withdrawal/baseline_1/root_7/hysteresis/sweeps.csv" = "78c0e6f964584104ea9212403b4d93da97623acf58100d9326840d56c511097b"
+"cases/selective_withdrawal/baseline_1/root_7/sustained/confirmations.csv" = "e49c05114d859dfb135f68a17d34ceb7c24c8c0b915dac7c65569d787c4112e4"
+"cases/selective_withdrawal/baseline_1/summary.toml" = "3b4147574aa1dc893c9ada66d33cbcedee04b5f7504d023b9762f9f539b3fbe9"
+"cases/selective_withdrawal/baseline_2/probes.csv" = "dbd7bcfbb0fa64b9dbf04f5a6fda28c0605be780e872a18b15e6ecfd1e768d02"
+"cases/selective_withdrawal/baseline_2/summary.toml" = "5fbd35d9b11e4a375dc94e0f2495f500c033e42f940a79cc44e81ce3fd539f66"
+"cases/selective_withdrawal/geometry/bounds.toml" = "5941c59c0065cc7044333de03f6098d6e97c2ae29e8840a27436dacc66045306"
+"cases/selective_withdrawal/geometry/cells.csv" = "f1fcd11dff2add753a800cefe58c634e7bcf343fa2dd1108b3c3ca29c5459f09"
+"cases/selective_withdrawal/geometry/inputs.csv" = "9318a880cd72a8fd3022bdb1b6861ffdce84f2ea8e157194d57d15e3e4606e0e"
+"cases/selective_withdrawal/geometry/summary.toml" = "76c3597a37620c93ae11ca9fa45d17f1984c45c7cb17f60179b0ec02ef951133"
+"cases/selective_withdrawal/geometry_confirmation/independent_searches.csv" = "67cbc36bdd30ac6c06c92703143b4c824a0d528cb5f6ea5b170651a4a0b3c7ee"
+"cases/selective_withdrawal/summary.toml" = "312c25e7e2ed1c18a0c7e6cb1453825ddd9dc6a3c86cae5f22684fec5d876b22"
+"cases/three_sinks_ascending/baseline_1/probes.csv" = "416e88245dfd5cb676ecb45020f4857c4e60cdfbbbad1bf671f84483274c80f3"
+"cases/three_sinks_ascending/baseline_1/summary.toml" = "9c19c831d495989361470b86b9d9557c1134a96f0a71e70d87bbf82ad27ebcae"
+"cases/three_sinks_ascending/geometry_confirmation/independent_searches.csv" = "98ab85d211126f6fd7a075fbd6dea50324d603a146fe43941e3c29b59276525f"
+"cases/three_sinks_ascending/summary.toml" = "fa8e3ad81926b2b344254d3d60e5d31aad912aff1feea955cf887ddc96763ad2"
+"cases/threshold_to_active/baseline_1/probes.csv" = "e91ed565d8fd08b019d561a029be645b3e3542681b63e1ca99b63c343a1d1236"
+"cases/threshold_to_active/baseline_1/summary.toml" = "1dacbee7a2b1853f82242e86b19167fc27e78cdff3c85c61eef3887016e0bc66"
+"cases/threshold_to_active/geometry_confirmation/independent_searches.csv" = "f252220b0a6cde79f33c9b7f6ea9a884f5c91902c770d1fb5c85f8b816fb780d"
+"cases/threshold_to_active/summary.toml" = "333debeef8ae648eea49052cd29b05cff50fbc6548701064ae2a3b2be257dc07"
+"config.toml" = "a429c67723ae1bd4706d0a06309f47a039d36cb388673ea70f41ec0ad98c8573"
+"interventions/selective_withdrawal/summary.csv" = "12ca15269015723d3a91ffa7c3e2271ecb625a5357702f42dd457e2568b16171"
+"interventions/threshold_to_active/summary.csv" = "ed3e913e3b8404d3a797adf3811b251156e123c8e917ae7dafebd76a91e9c73b"
+"metadata.toml" = "e90b90062e9037acde86378f3d3eb60650a8065431a12bba407145a00a564fa6"
+"paired_controls/pulses.csv" = "15f82c2aeeb8d2630359f520044902a4f9566bac5c9ac854591730825efdff06"
+"paired_controls/sustained.csv" = "2b31c124f1638e312eee9c9eefc9eb4542a612ea0ff9caafef8157688237c106"
+"replay_repair/previous_driver.jl" = "92f697f55f1502d5ff51129d6fdf482dc4434f00675e4fec90033cb522d82136"
+"replay_repair/previous_metadata.toml" = "d5ac7ec24fb4dc63a437365b1a30562e2a03428d55f6e84cb7a67d32b49c5aec"
+"replay_repair/record.toml" = "582bfb0b94c8fd86bee90c44cbc470e200f512f84a2454b2d289d514c62cf6b1"
+"replay_repair/repair.jl" = "bbdd4c6faf031f8c48d160724d8be705ec4049a862428b9ae50e4d228653a49c"
+"screen.csv" = "cab38be879dc4039341eb704851a3fb4079f2d037c1aed54b1eb8283c12d9cdb"
+"screen_metadata.toml" = "cfe698a0c4aa67bebab6b38114ed7d159d1f5d2996099605d65ffe4869ad337e"
+"selection.toml" = "399849a9e45c485b2ef080b18dc4332c376cebfaa583c7c994c74558580d034b"
+"sequence/events.csv" = "6c0011883f9fc1b87ab48152460f4d00019308151ac37df77652893b824f5b57"
+"sequence/inputs.csv" = "51fad3d35fa058575b524a102ca525266d81e4bbd299003d1a2221e45d70bb22"
+"sequence/summary.toml" = "a1febe5c2496cb4729ca59ee7110ebad53a4746e5727145065428b318f264fac"
+"serialization_repair/previous_driver.jl" = "9ed23df03fb280e56fbcfc716e3ac3d38b9bdca4e9e215379580ff90f8168d16"
+"serialization_repair/previous_metadata.toml" = "6d5d6f113cf46c46423a12b54ddedcd93cf96d2df98ce3a9151c6b771677670a"
+"serialization_repair/record.toml" = "512ac5ed226e731d1f269eb8a416855bd92b10142807e2ee70eb8406bff87199"
+"serialization_repair/repair.jl" = "1740c6ff4e6d4252a8ebdb44bf2fbed3bb67215fd8b87e215f36d424cdd8f601"
+"timescales/input_dependent_2.0_1.0/cycles.csv" = "1cbb49b7d75ef8d73580674055830907cb5bb103ba0e39252f67377557d3182b"
+"timescales/input_dependent_2.0_1.0/equilibria.csv" = "aeb3b5a6e2483f4affa77a2962b67ad71a167ee99286192a937d7e5919f50207"
+"timescales/input_dependent_2.0_1.0/parameters.toml" = "5d8cdce59b7949d3ac283d8343a6a91690086c299e385b3600c19b868fdf1fa6"
+"timescales/input_dependent_2.0_1.0/seed_4.4/orbit.csv" = "329f3159522843bb59dbffc67c3f97d61a354cdb2535d6e2f98964b29c20ed9c"
+"timescales/input_dependent_2.0_1.0/seed_4.4/orbit.toml" = "15e2b7738008c273493891c63ccfb2624dd6523d93b79ce7e28df7fd546a591b"
+"timescales/input_dependent_2.0_1.0/seeds.csv" = "347297b3a8f29d2fb404ef63d22e977091f534fa95a3108063dfbf29e261c26d"
+"timescales/input_dependent_2.0_1.0/stops.csv" = "366de9cc9c9faba915c08414738868e08c9f055c6886f42f09df59b621c0ac0f"
+"timescales/input_dependent_2.0_1.0/trace_candidates.csv" = "9a1de87532e69b8b8d62ee9b277e035dfd35638e109f0935042b0e2f4d977a0d"
+"timescales/selective_withdrawal_0.35_0.0/equilibria.csv" = "090a0f171ecb96ecc3955e274e1db86dce525b000de8c34b02ecd79589c259d6"
+"timescales/selective_withdrawal_0.35_0.0/parameters.toml" = "fe095a7ecfd73be530c94c48f7123d3c07b76b2a55bc122141f67696ed771467"
+"timescales/selective_withdrawal_0.35_0.0/seeds.csv" = "b89d958c764998c7535549894f8e1ecd7ebabba642ad2ac3bd88053fed62ba51"
+"timescales/selective_withdrawal_0.35_0.0/trace_candidates.csv" = "91152a96b45ff7154e8d7facaae55611883fce83118b650a3a7b8673b217d808"
+"verification/summary.toml" = "9acf6003f569c640fe1ad24e904beff37e295ac8aa7ce8db698c757867180165"
+"verification/trajectories.csv" = "b631f13d9820851a2a84c4a93f41c5a542cb768d83647b50b41fc34a60e2afa0"
+
+[derived_artifacts."cases/figure4_joint_29/baseline_1/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/figure4_joint_29/baseline_1/roots.csv".source_sha256]
+    "context.toml" = "38b0c4c370c3a29f04633479a5dc4d6d92c61dac2b610f4e46edff3ba0025cf7"
+    "roles.toml" = "dfd89dd1428960f999a557b0d94c081158840f0c634ad6486de7d99ecab9eb38"
+
+[derived_artifacts."cases/figure4_joint_29/baseline_2/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/figure4_joint_29/baseline_2/roots.csv".source_sha256]
+    "context.toml" = "40eb6961e8588d881dcd0bcaa3b042c4d42fe25a652e7fec47bb7ac4ce03a336"
+    "roles.toml" = "dfd89dd1428960f999a557b0d94c081158840f0c634ad6486de7d99ecab9eb38"
+
+[derived_artifacts."cases/figure4_joint_29/baseline_3/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/figure4_joint_29/baseline_3/roots.csv".source_sha256]
+    "context.toml" = "5549e8b6e374879f885986152daa821d6ca3882389cd03328aa34070ba0cecb4"
+    "roles.toml" = "a1d670efb68b78167dc51ed8736522151a0a03bce7206c021758d1aad128bc45"
+
+[derived_artifacts."cases/four_sinks_central/baseline_1/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/four_sinks_central/baseline_1/roots.csv".source_sha256]
+    "context.toml" = "900abfa0cfb2f7d40ce0ee2d0bebb0a862b32d7055cdef6fb031974f2a4f9796"
+    "roles.toml" = "9a85bfb9b08265c1f907042b0d1c90c4a9dd80b34c505e451714c7f2b8cbb6c8"
+
+[derived_artifacts."cases/input_dependent/baseline_1/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/input_dependent/baseline_1/roots.csv".source_sha256]
+    "context.toml" = "1f21da4441e5e5cc51db6156cd61c16e720374bd434bf265f1952ce72f41fa1b"
+    "roles.toml" = "007bbd0b8b38896fc663cb25cda76247073d9c7b2ae3e6bca34ab9c0c3f73660"
+
+[derived_artifacts."cases/input_dependent/baseline_2/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/input_dependent/baseline_2/roots.csv".source_sha256]
+    "context.toml" = "522aaafc9421ea4461bd87c68beee3b56a233b4a54adfa820cb2ee950be908d7"
+    "roles.toml" = "dfd89dd1428960f999a557b0d94c081158840f0c634ad6486de7d99ecab9eb38"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.0/pulses/pulses.csv"]
+retained_rows = 1080
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 10651
+source_sha256 = "a8021bb67544dd88f97229603645882df78457022af6bfd9d1680b9c6cd798d9"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.0625/pulses/pulses.csv"]
+retained_rows = 982
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 9370
+source_sha256 = "8b3e7c60b435a01f64f1775b8ef33c1c5468beaa3f5b003121223a0aae87e0c1"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.125/pulses/pulses.csv"]
+retained_rows = 954
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 6974
+source_sha256 = "3a89ab08f7ebbdcbe2d53ff07ab255b59454838f6c83b0ddbf53d401f96cb0f3"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.1875/pulses/pulses.csv"]
+retained_rows = 898
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 4552
+source_sha256 = "6af79fee8a40e2f5c704a91528eafca6a69b5c07433c2c6b8eb8d442940effe2"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.25/pulses/pulses.csv"]
+retained_rows = 898
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 4553
+source_sha256 = "19ba19a4d3ad74eafb7030f7fe50c94c24d3cf791802c14085c6b4ee94730a5b"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.3125/pulses/pulses.csv"]
+retained_rows = 898
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 4552
+source_sha256 = "f645fed90ebb972134542fc298e1d531a025364d1a7099326d3671f524921fdd"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.375/pulses/pulses.csv"]
+retained_rows = 880
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 4534
+source_sha256 = "b466b300a39b3261064eec971277aa81ba5d06deb24041e2ae5041ecfa26f8d9"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.4375/pulses/pulses.csv"]
+retained_rows = 880
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 4534
+source_sha256 = "7af541d5317386e9db58ed12d35c42c784d8344e49c439940eb6e9dd6e91089e"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.5/pulses/pulses.csv"]
+retained_rows = 880
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 4535
+source_sha256 = "c4b1ff5ff772fee68ffb42b451332da5f57fbe79af1088f5d1dd52ef9c50cc37"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.5625/pulses/pulses.csv"]
+retained_rows = 894
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 4548
+source_sha256 = "a00b86cd61c2a66e3c21739634932b6928fbf8cb6f73136c88ed2975ea05c97a"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.625/pulses/pulses.csv"]
+retained_rows = 916
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 5754
+source_sha256 = "365a3e1c8ea1bfa8a0015e94fb9b10e8f1f618a7acd9f8e2e9ec8f5d7d142a8a"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.6875/pulses/pulses.csv"]
+retained_rows = 918
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 5755
+source_sha256 = "c92b6ed422c46ee561644c59bc195e9b30dd1bb3db58a7de29bb8505dd6c197f"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.75/pulses/pulses.csv"]
+retained_rows = 946
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 5783
+source_sha256 = "a738da3d9bd4e719cad1e38362ffb8e8db572e6f6efb1dd54b54edf0ffedba92"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.8125/pulses/pulses.csv"]
+retained_rows = 966
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 6987
+source_sha256 = "65f8bcd8eac16ed09af7ee2e176e83c0571f964a279e04aa14d4679a12a07895"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.875/pulses/pulses.csv"]
+retained_rows = 998
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 7017
+source_sha256 = "938c1dcb04dcef28537fe01b924d091c2e7dd286b7282d33db0adbd961b625fc"
+
+[derived_artifacts."cases/input_dependent/baseline_3/cycle_1_phase_0.9375/pulses/pulses.csv"]
+retained_rows = 1032
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 8235
+source_sha256 = "1300f08a5df860bfb615409937e8b8ac717fbbcf1a2fb0b71cbad7fab54c4989"
+
+[derived_artifacts."cases/input_dependent/baseline_3/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/input_dependent/baseline_3/roots.csv".source_sha256]
+    "context.toml" = "e5432a7b1f12771860004e43d5eb5ac541b3ebe975ebe458c227eb7c5e7ccf75"
+    "roles.toml" = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+[derived_artifacts."cases/input_dependent_e_to_e_4.25/baseline_1/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/input_dependent_e_to_e_4.25/baseline_1/roots.csv".source_sha256]
+    "context.toml" = "b585d529047b602ad89412c2616b5a3362f8098b7c3551df53e13478b8c56dff"
+    "roles.toml" = "007bbd0b8b38896fc663cb25cda76247073d9c7b2ae3e6bca34ab9c0c3f73660"
+
+[derived_artifacts."cases/input_dependent_e_to_e_4.25/baseline_2/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/input_dependent_e_to_e_4.25/baseline_2/roots.csv".source_sha256]
+    "context.toml" = "4ee66bdefe13878429f6bcb4b5f662135de516a917c8ab54ffd825950de9e5ee"
+    "roles.toml" = "dfd89dd1428960f999a557b0d94c081158840f0c634ad6486de7d99ecab9eb38"
+
+[derived_artifacts."cases/narrative/baseline_1/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/narrative/baseline_1/roots.csv".source_sha256]
+    "context.toml" = "9d85ffa5f09f091a2c922e4bda7cde538a14738198bad4d65f2608e064532944"
+    "roles.toml" = "9a85bfb9b08265c1f907042b0d1c90c4a9dd80b34c505e451714c7f2b8cbb6c8"
+
+[derived_artifacts."cases/selective_withdrawal/baseline_1/root_1/pulses/pulses.csv"]
+retained_rows = 832
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 936
+source_sha256 = "f54bcffb5f0903db36d3084f4718546024faf85fad3791fbe0612d1a6a49e2a8"
+
+[derived_artifacts."cases/selective_withdrawal/baseline_1/root_3/pulses/pulses.csv"]
+retained_rows = 882
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 7427
+source_sha256 = "fc37ad9c73219715b35541d9bb5650db6063b010877ed01574b7592a00ecac45"
+
+[derived_artifacts."cases/selective_withdrawal/baseline_1/root_5/pulses/pulses.csv"]
+retained_rows = 812
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 9197
+source_sha256 = "308dd89339abed3520f0c2d53eeb618b76d02e15ef39ebb42b703c74308e5716"
+
+[derived_artifacts."cases/selective_withdrawal/baseline_1/root_7/pulses/pulses.csv"]
+retained_rows = 672
+selection = "All axial pulse observations; unplotted joint-input observations remain in the full study"
+source_rows = 776
+source_sha256 = "3ebf0cab145559dd3d4fe2cb68f543af0dc7f8427b0af5c76afe637458890924"
+
+[derived_artifacts."cases/selective_withdrawal/baseline_1/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/selective_withdrawal/baseline_1/roots.csv".source_sha256]
+    "context.toml" = "23f9672fb5a0bf966b532eeb817801a8e64b91de77b508a240709a138e6e2199"
+    "roles.toml" = "9a85bfb9b08265c1f907042b0d1c90c4a9dd80b34c505e451714c7f2b8cbb6c8"
+
+[derived_artifacts."cases/selective_withdrawal/baseline_2/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/selective_withdrawal/baseline_2/roots.csv".source_sha256]
+    "context.toml" = "88295a2e5d94786351b37431ddb0c687c6a9a11ec8281c64960cbba705005d67"
+    "roles.toml" = "fb67696765910cdf980054cbf4379290ccd1c8ebf107be5582dd1f3376d69e32"
+
+[derived_artifacts."cases/three_sinks_ascending/baseline_1/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/three_sinks_ascending/baseline_1/roots.csv".source_sha256]
+    "context.toml" = "2da14ba951d20666e9902ea1dc953a390adec7dbba2ba07a2008be8e436eb652"
+    "roles.toml" = "6dd115dfe5b191dced9d29857e2f971b2edc26b3ea92d5b1ba0d98d62f93f80a"
+
+[derived_artifacts."cases/threshold_to_active/baseline_1/roots.csv"]
+selection = "All discovered roots; retain coordinates, local stability, and assigned role"
+
+    [derived_artifacts."cases/threshold_to_active/baseline_1/roots.csv".source_sha256]
+    "context.toml" = "4642aa2ab8a572724660dcb1d2e32f679d905d0964b14875371ea682d4da6c23"
+    "roles.toml" = "475044734b537cc073892811600625df513a4d9fa65c433960bbdc89f6f7f5b2"
+
+[derived_artifacts."screen_responses.csv"]
+selection = "Every recorded screen response, with frozen case identifiers and parameters attached"
+
+    [derived_artifacts."screen_responses.csv".source_sha256]
+    "anchors/four_sinks_central/behavior.csv" = "69c9b9e7cd33ff6b054d0bf13f9a1e79039682e6f279b2a94a98de0bdaa409d3"
+    "anchors/input_dependent/behavior.csv" = "36bb3ea65c64eefeccf7b839472de6b8853f5743ee11b434e393298e41928a31"
+    "anchors/narrative/behavior.csv" = "ecfdea3544b7563b410079f59b5614dfe2fc2baec4f223a9db0141c4e5c315a3"
+    "anchors/selective_withdrawal/behavior.csv" = "9bcd9e13372a9213544515ced3855b8ec5c5d59b7ccbb6e2b8421e53d898ba0c"
+    "anchors/three_sinks_ascending/behavior.csv" = "10eae80b820f4378ae5691db5f923429e1b6eec91659f217e6119cd799234d1b"
+    "anchors/three_sinks_descending/behavior.csv" = "640231f2bccfed544e9c8e38b0fc33241d25665f7fd101828106ebe2c95ed6fe"
+    "anchors/threshold_to_active/behavior.csv" = "f8f5b063d3cbf4c532dac324e29107693554a3677b567cfdae2db505152bfa80"
+    "anchors/two_sinks_ascending/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+    "expansion/figure3_joint_1/behavior.csv" = "92b467ddd363caeb7a45e9e4ca130dbc98f4b680771eda336e3506552a5ef9d4"
+    "expansion/figure3_joint_10/behavior.csv" = "78e154184fa31dfb633761037850b4663d4b3b14dd85ccb82ea417adc1930ba3"
+    "expansion/figure3_joint_11/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure3_joint_12/behavior.csv" = "2622cc73e6ee3965fd9659537e3b8175a557465473b56c26c05432d802f73850"
+    "expansion/figure3_joint_13/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure3_joint_14/behavior.csv" = "0b8bd7f13b24ed51eff3a11ed8ae85dc0bc427cdcb1cf977e8af5f0612533a93"
+    "expansion/figure3_joint_15/behavior.csv" = "96051619ce72aca465bfde3f47257a2927dc78cf0a616e13195366fa6e39626f"
+    "expansion/figure3_joint_16/behavior.csv" = "b1c095ff026717efa41fb301b69d7d2985a4866c1c937d884063f4d81df3be60"
+    "expansion/figure3_joint_17/behavior.csv" = "8e404eb60d7be53e76506cacb3b765424d421194227f0708b5c1fcb762034ce2"
+    "expansion/figure3_joint_18/behavior.csv" = "2622cc73e6ee3965fd9659537e3b8175a557465473b56c26c05432d802f73850"
+    "expansion/figure3_joint_19/behavior.csv" = "680fdbb0a177bbebe8de7dbc733d0f9c3c79f5d4d9e21089915541efc2337aad"
+    "expansion/figure3_joint_2/behavior.csv" = "9321921c0641be9516687ceead282d4d8eab1224b11be7c67bce3d0bfb896259"
+    "expansion/figure3_joint_20/behavior.csv" = "74cecc5c964e4931d3865c3d46457dc54b4c0ae3719a207c25f4c4c1946427bc"
+    "expansion/figure3_joint_21/behavior.csv" = "099aa0938d374a9cf71afbb069457ebe9fce6710d917b3f75e19dd3847b56148"
+    "expansion/figure3_joint_22/behavior.csv" = "86d39f286eae01061b5da1ec584ff6887da9ebe0b5bb7de8ec87fcda705de706"
+    "expansion/figure3_joint_23/behavior.csv" = "04709bf431d635d3e0492820b0af8f36301f45fb035a38b663ef252eff223c2c"
+    "expansion/figure3_joint_24/behavior.csv" = "c8c1f89aa10917809aaeab4291c46c0959958ab6ab0a6390d631ae07e0a54ac9"
+    "expansion/figure3_joint_25/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure3_joint_26/behavior.csv" = "e26330e540a9b5e5a79d5cbdcb9999c82544684857e48ccb40f316ea2a2f7ca6"
+    "expansion/figure3_joint_27/behavior.csv" = "d852c764c9137824cd0ea327d4a8444822b53acfb076967fdfc69dcefe98394b"
+    "expansion/figure3_joint_28/behavior.csv" = "85f0587f07985bc2c5d33ed2b4bc8a38277c0d00bb940deeb7fbc208e5ae0481"
+    "expansion/figure3_joint_29/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure3_joint_3/behavior.csv" = "c46de62c1d1e4329f4d9fbe6eebf3d1710bcbb7617e856db3df91d921f111c14"
+    "expansion/figure3_joint_30/behavior.csv" = "408688d8567d91a852a5c94575c42cec70912051bfc1b87a17e16307103b66d2"
+    "expansion/figure3_joint_31/behavior.csv" = "d852c764c9137824cd0ea327d4a8444822b53acfb076967fdfc69dcefe98394b"
+    "expansion/figure3_joint_32/behavior.csv" = "b1c095ff026717efa41fb301b69d7d2985a4866c1c937d884063f4d81df3be60"
+    "expansion/figure3_joint_33/behavior.csv" = "a0a2f3162a622667eb588dc2eec55f8c577c2b4090dac613529d7e45df07ac2c"
+    "expansion/figure3_joint_34/behavior.csv" = "2622cc73e6ee3965fd9659537e3b8175a557465473b56c26c05432d802f73850"
+    "expansion/figure3_joint_35/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure3_joint_36/behavior.csv" = "85f0587f07985bc2c5d33ed2b4bc8a38277c0d00bb940deeb7fbc208e5ae0481"
+    "expansion/figure3_joint_37/behavior.csv" = "f595848339dce7feca2e5e1d62eef06fe20ca2172d7366075a13b230ea4000c2"
+    "expansion/figure3_joint_38/behavior.csv" = "2b5fdd124bef278caee210a7dd2d740bc781ab8728962ec60ca30b12e9e713a6"
+    "expansion/figure3_joint_39/behavior.csv" = "cce3dc6b2af27ecca667af9e40f94511c3613b593b1c3eefbc235ef670de09c8"
+    "expansion/figure3_joint_4/behavior.csv" = "c8c1f89aa10917809aaeab4291c46c0959958ab6ab0a6390d631ae07e0a54ac9"
+    "expansion/figure3_joint_40/behavior.csv" = "736a45e3dabd87d8325a104b473da95ba015694b26cd6a56a413ce09304805b6"
+    "expansion/figure3_joint_41/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure3_joint_42/behavior.csv" = "85f0587f07985bc2c5d33ed2b4bc8a38277c0d00bb940deeb7fbc208e5ae0481"
+    "expansion/figure3_joint_43/behavior.csv" = "d9d30c3fc1b5a570cf5baed14c1b6466cd1450cbb8d69ba53ec9500947358295"
+    "expansion/figure3_joint_44/behavior.csv" = "5a5833b6304e9845112788e1b3eb91f39d5c8a7035d426af812f0a369817a191"
+    "expansion/figure3_joint_45/behavior.csv" = "d852c764c9137824cd0ea327d4a8444822b53acfb076967fdfc69dcefe98394b"
+    "expansion/figure3_joint_46/behavior.csv" = "55526eeaa7f28401b6c2b36454e31fbdcb1770240417ab9994b97227909f1cb2"
+    "expansion/figure3_joint_47/behavior.csv" = "963d7d3398a9b5bb17e10b20b68a53a917e712d10b41fdc97a1ea857aca65c2d"
+    "expansion/figure3_joint_48/behavior.csv" = "b1c095ff026717efa41fb301b69d7d2985a4866c1c937d884063f4d81df3be60"
+    "expansion/figure3_joint_49/behavior.csv" = "db7409e401daa227245033956eb5573c8add1506695b88923a3fba2c353833d4"
+    "expansion/figure3_joint_5/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure3_joint_50/behavior.csv" = "54e48c02d511274e2da4c20442a7fdaa52ee3821d1dd4ee95dcb71e137fa2c44"
+    "expansion/figure3_joint_51/behavior.csv" = "96051619ce72aca465bfde3f47257a2927dc78cf0a616e13195366fa6e39626f"
+    "expansion/figure3_joint_52/behavior.csv" = "9321921c0641be9516687ceead282d4d8eab1224b11be7c67bce3d0bfb896259"
+    "expansion/figure3_joint_53/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure3_joint_54/behavior.csv" = "2622cc73e6ee3965fd9659537e3b8175a557465473b56c26c05432d802f73850"
+    "expansion/figure3_joint_55/behavior.csv" = "d852c764c9137824cd0ea327d4a8444822b53acfb076967fdfc69dcefe98394b"
+    "expansion/figure3_joint_56/behavior.csv" = "cc23f74a73d06f77ab648ab0f7b9d0e90e3fb127dc9bf6de8fad72aa4f38c862"
+    "expansion/figure3_joint_57/behavior.csv" = "680fdbb0a177bbebe8de7dbc733d0f9c3c79f5d4d9e21089915541efc2337aad"
+    "expansion/figure3_joint_58/behavior.csv" = "36e323655788dcaa7affe509547240ca25170082f954af29ca41efc3e6c318de"
+    "expansion/figure3_joint_59/behavior.csv" = "a0a6b146433cbbfa9da73e8cdd3d5b76e14f6b5fa8b8602c56363dedcdd68165"
+    "expansion/figure3_joint_6/behavior.csv" = "36e323655788dcaa7affe509547240ca25170082f954af29ca41efc3e6c318de"
+    "expansion/figure3_joint_60/behavior.csv" = "6aca53ab9c370ebd48a5a3d0d88f26acc4786033f13b401ecab0bdc96b4eefbd"
+    "expansion/figure3_joint_61/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure3_joint_62/behavior.csv" = "8e404eb60d7be53e76506cacb3b765424d421194227f0708b5c1fcb762034ce2"
+    "expansion/figure3_joint_63/behavior.csv" = "bd0aa629f024301ed4d6924819f918f1c7a03f90e274d5381ef3bcfba2b3bc4c"
+    "expansion/figure3_joint_64/behavior.csv" = "b1c095ff026717efa41fb301b69d7d2985a4866c1c937d884063f4d81df3be60"
+    "expansion/figure3_joint_7/behavior.csv" = "2e0319ba85b940bb1f400b49cf39d7197aa4eb8e1ae20be4e6e9a2c60207f259"
+    "expansion/figure3_joint_8/behavior.csv" = "b1c095ff026717efa41fb301b69d7d2985a4866c1c937d884063f4d81df3be60"
+    "expansion/figure3_joint_9/behavior.csv" = "d673c5bd1a411b35736ca2df5b9f8823cf265bf8b47adef88c0fed9bb25d7b79"
+    "expansion/figure4_joint_1/behavior.csv" = "92b467ddd363caeb7a45e9e4ca130dbc98f4b680771eda336e3506552a5ef9d4"
+    "expansion/figure4_joint_10/behavior.csv" = "35cc8716800ba6c2d43ae3d79c54223efad393a87fcaeced1ad4b8daf5ee2de2"
+    "expansion/figure4_joint_11/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure4_joint_12/behavior.csv" = "2622cc73e6ee3965fd9659537e3b8175a557465473b56c26c05432d802f73850"
+    "expansion/figure4_joint_13/behavior.csv" = "1cdd6870f0da33d1e42dc3ca5aa47ff83e33421a23f28c7d52c13c083b660267"
+    "expansion/figure4_joint_14/behavior.csv" = "0b8bd7f13b24ed51eff3a11ed8ae85dc0bc427cdcb1cf977e8af5f0612533a93"
+    "expansion/figure4_joint_15/behavior.csv" = "6ce1eee555ea95ecfd8a7f6b9b25e9dfea564fbfd7f4326c358f2dc8a787ae29"
+    "expansion/figure4_joint_16/behavior.csv" = "b1c095ff026717efa41fb301b69d7d2985a4866c1c937d884063f4d81df3be60"
+    "expansion/figure4_joint_17/behavior.csv" = "8e404eb60d7be53e76506cacb3b765424d421194227f0708b5c1fcb762034ce2"
+    "expansion/figure4_joint_18/behavior.csv" = "2622cc73e6ee3965fd9659537e3b8175a557465473b56c26c05432d802f73850"
+    "expansion/figure4_joint_19/behavior.csv" = "668bfeda3fa8f668d73506f73e5ec7dff07dc5181f7a37d336f3b24c112b2cac"
+    "expansion/figure4_joint_2/behavior.csv" = "9321921c0641be9516687ceead282d4d8eab1224b11be7c67bce3d0bfb896259"
+    "expansion/figure4_joint_20/behavior.csv" = "1bbd772ca5351d0155140ef5087108ea525590ad724dca4100cb79d18e53acf3"
+    "expansion/figure4_joint_21/behavior.csv" = "14eb1012b94b26e453b1a9c0b5d9607664814d8253c4e14219f15abdb0ac4ad5"
+    "expansion/figure4_joint_22/behavior.csv" = "36e323655788dcaa7affe509547240ca25170082f954af29ca41efc3e6c318de"
+    "expansion/figure4_joint_23/behavior.csv" = "a0a6b146433cbbfa9da73e8cdd3d5b76e14f6b5fa8b8602c56363dedcdd68165"
+    "expansion/figure4_joint_24/behavior.csv" = "c8c1f89aa10917809aaeab4291c46c0959958ab6ab0a6390d631ae07e0a54ac9"
+    "expansion/figure4_joint_25/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure4_joint_26/behavior.csv" = "e26330e540a9b5e5a79d5cbdcb9999c82544684857e48ccb40f316ea2a2f7ca6"
+    "expansion/figure4_joint_27/behavior.csv" = "c46de62c1d1e4329f4d9fbe6eebf3d1710bcbb7617e856db3df91d921f111c14"
+    "expansion/figure4_joint_28/behavior.csv" = "85f0587f07985bc2c5d33ed2b4bc8a38277c0d00bb940deeb7fbc208e5ae0481"
+    "expansion/figure4_joint_29/behavior.csv" = "08b82e511ab47c8498138d1c91befc864a2a81f8d7c820fe80d5ad05cb0581d9"
+    "expansion/figure4_joint_3/behavior.csv" = "6293c90016b4f9d236366514f1e1757b304be0907e0471905bf5b774c6004287"
+    "expansion/figure4_joint_30/behavior.csv" = "408688d8567d91a852a5c94575c42cec70912051bfc1b87a17e16307103b66d2"
+    "expansion/figure4_joint_31/behavior.csv" = "01140bf4198e3e122fa520d2679c00b4dcdb711fecb0f1f86962b92cab0829a0"
+    "expansion/figure4_joint_32/behavior.csv" = "b1c095ff026717efa41fb301b69d7d2985a4866c1c937d884063f4d81df3be60"
+    "expansion/figure4_joint_33/behavior.csv" = "2622cc73e6ee3965fd9659537e3b8175a557465473b56c26c05432d802f73850"
+    "expansion/figure4_joint_34/behavior.csv" = "2622cc73e6ee3965fd9659537e3b8175a557465473b56c26c05432d802f73850"
+    "expansion/figure4_joint_35/behavior.csv" = "1675ffe40cda965c448d46117dec6cd9ff41e227cccb1b96b97fe20da192be27"
+    "expansion/figure4_joint_36/behavior.csv" = "85f0587f07985bc2c5d33ed2b4bc8a38277c0d00bb940deeb7fbc208e5ae0481"
+    "expansion/figure4_joint_37/behavior.csv" = "0efc67dcf0dbbecdc9e968d9b4f4c249aed8d4e90f487e7a35dfeb1e4b463cf7"
+    "expansion/figure4_joint_38/behavior.csv" = "35cc8716800ba6c2d43ae3d79c54223efad393a87fcaeced1ad4b8daf5ee2de2"
+    "expansion/figure4_joint_39/behavior.csv" = "cce3dc6b2af27ecca667af9e40f94511c3613b593b1c3eefbc235ef670de09c8"
+    "expansion/figure4_joint_4/behavior.csv" = "c8c1f89aa10917809aaeab4291c46c0959958ab6ab0a6390d631ae07e0a54ac9"
+    "expansion/figure4_joint_40/behavior.csv" = "cbd9ea8b94ab506f8214a6805f301033b60ac91fdac58da18567b00e8eb0ede6"
+    "expansion/figure4_joint_41/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure4_joint_42/behavior.csv" = "85f0587f07985bc2c5d33ed2b4bc8a38277c0d00bb940deeb7fbc208e5ae0481"
+    "expansion/figure4_joint_43/behavior.csv" = "f595848339dce7feca2e5e1d62eef06fe20ca2172d7366075a13b230ea4000c2"
+    "expansion/figure4_joint_44/behavior.csv" = "38cbdbbfe0c34af49d1ffe3007032b86cf9d5ff9978be4a49f33853d48b8c5c4"
+    "expansion/figure4_joint_45/behavior.csv" = "a794d30666492f89a645348d61b02a889b9a4decf7b584a17233bce2c6af64cd"
+    "expansion/figure4_joint_46/behavior.csv" = "86d39f286eae01061b5da1ec584ff6887da9ebe0b5bb7de8ec87fcda705de706"
+    "expansion/figure4_joint_47/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure4_joint_48/behavior.csv" = "b1c095ff026717efa41fb301b69d7d2985a4866c1c937d884063f4d81df3be60"
+    "expansion/figure4_joint_49/behavior.csv" = "fe19977e217c500ccd8a0f6a3c8678e973f2d2524c8e0fca25404abe72831c21"
+    "expansion/figure4_joint_5/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure4_joint_50/behavior.csv" = "eeaaa11538352024293f23ec2135463e73125c697bf0c24df20b1e45d7b85bce"
+    "expansion/figure4_joint_51/behavior.csv" = "d3326d2eda28dc40e9ed7c9c08fe25f446f65d41ac1a40c19b0a221211329b22"
+    "expansion/figure4_joint_52/behavior.csv" = "5a5833b6304e9845112788e1b3eb91f39d5c8a7035d426af812f0a369817a191"
+    "expansion/figure4_joint_53/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure4_joint_54/behavior.csv" = "2622cc73e6ee3965fd9659537e3b8175a557465473b56c26c05432d802f73850"
+    "expansion/figure4_joint_55/behavior.csv" = "502eb4e65081c947dab7e2f1395b50f4baaebe8a928bdcaed1dc414b98ec5154"
+    "expansion/figure4_joint_56/behavior.csv" = "cc23f74a73d06f77ab648ab0f7b9d0e90e3fb127dc9bf6de8fad72aa4f38c862"
+    "expansion/figure4_joint_57/behavior.csv" = "f277e0d289636a0757bb3a94d6a267f3e2fc2b85541cdb0446287dc455ed850b"
+    "expansion/figure4_joint_58/behavior.csv" = "2622cc73e6ee3965fd9659537e3b8175a557465473b56c26c05432d802f73850"
+    "expansion/figure4_joint_59/behavior.csv" = "d80a75bbee3c19957c3e9e7c7545e4a730ecba34b02a49396c16269b4e645a4b"
+    "expansion/figure4_joint_6/behavior.csv" = "36e323655788dcaa7affe509547240ca25170082f954af29ca41efc3e6c318de"
+    "expansion/figure4_joint_60/behavior.csv" = "484106b41f26360d11d8f6add78d03f5c24551634942642186d4ab9b8eec79b5"
+    "expansion/figure4_joint_61/behavior.csv" = "299f8fa712b0abb67dea644aba0923e37cd5b83c39c49e5f10603c70c3b27179"
+    "expansion/figure4_joint_62/behavior.csv" = "8e404eb60d7be53e76506cacb3b765424d421194227f0708b5c1fcb762034ce2"
+    "expansion/figure4_joint_63/behavior.csv" = "bd0aa629f024301ed4d6924819f918f1c7a03f90e274d5381ef3bcfba2b3bc4c"
+    "expansion/figure4_joint_64/behavior.csv" = "b1c095ff026717efa41fb301b69d7d2985a4866c1c937d884063f4d81df3be60"
+    "expansion/figure4_joint_7/behavior.csv" = "702805252a677a86a300e90c2798df98b17d3ea0af9d7c4e78ab9f8fdff136f1"
+    "expansion/figure4_joint_8/behavior.csv" = "b1c095ff026717efa41fb301b69d7d2985a4866c1c937d884063f4d81df3be60"
+    "expansion/figure4_joint_9/behavior.csv" = "4447698a68bcb7da84ba3f14c6f02fd58b7ea09af0a3b97cda13f31dd0891976"
+    "expansion/four_sinks_central_e_to_e_16.75/behavior.csv" = "3a245ee0c91074b7f451d6515e21a93f0e32b285a13b0ebe6fa238b972abd5b1"
+    "expansion/four_sinks_central_e_to_e_16.75_midpoint/behavior.csv" = "3a245ee0c91074b7f451d6515e21a93f0e32b285a13b0ebe6fa238b972abd5b1"
+    "expansion/four_sinks_central_e_to_e_17.25/behavior.csv" = "14268ba784e5451b99756e75b58602379ab11e09364d0c22626cc35f912540ca"
+    "expansion/four_sinks_central_e_to_e_17.25_midpoint/behavior.csv" = "69c9b9e7cd33ff6b054d0bf13f9a1e79039682e6f279b2a94a98de0bdaa409d3"
+    "expansion/four_sinks_central_e_to_i_18.5/behavior.csv" = "9550f615a1c1c7f46a0daffe8220bb77889c9ea873e074d13db4f4a6b1cdb86e"
+    "expansion/four_sinks_central_e_to_i_18.5_midpoint/behavior.csv" = "69c9b9e7cd33ff6b054d0bf13f9a1e79039682e6f279b2a94a98de0bdaa409d3"
+    "expansion/four_sinks_central_e_to_i_19.5/behavior.csv" = "b11a10e46de8adeb620866b1b328b519690c869214076a8233cb11c8e3eff61a"
+    "expansion/four_sinks_central_e_to_i_19.5_midpoint/behavior.csv" = "b11a10e46de8adeb620866b1b328b519690c869214076a8233cb11c8e3eff61a"
+    "expansion/four_sinks_central_tau_ratio_0.4/behavior.csv" = "d065be3292a90752cdb25b1afa81f0a478fb3a5657c104c15ed9aaa8c8903c8b"
+    "expansion/four_sinks_central_tau_ratio_0.4_midpoint/behavior.csv" = "a962e35496575732272c05f1258bcbf5926cb3f6cd30666d186824a4d6c81215"
+    "expansion/four_sinks_central_theta_off_7.75/behavior.csv" = "a279f245769092100b8743d4519ded7b27f4a1de823b338af038073b2cb3018a"
+    "expansion/four_sinks_central_theta_off_7.75_midpoint/behavior.csv" = "a279f245769092100b8743d4519ded7b27f4a1de823b338af038073b2cb3018a"
+    "expansion/four_sinks_central_theta_off_8.25/behavior.csv" = "69c9b9e7cd33ff6b054d0bf13f9a1e79039682e6f279b2a94a98de0bdaa409d3"
+    "expansion/four_sinks_central_theta_off_8.25_midpoint/behavior.csv" = "69c9b9e7cd33ff6b054d0bf13f9a1e79039682e6f279b2a94a98de0bdaa409d3"
+    "expansion/input_dependent_e_to_e_3.75/behavior.csv" = "36bb3ea65c64eefeccf7b839472de6b8853f5743ee11b434e393298e41928a31"
+    "expansion/input_dependent_e_to_e_3.75_midpoint/behavior.csv" = "36bb3ea65c64eefeccf7b839472de6b8853f5743ee11b434e393298e41928a31"
+    "expansion/input_dependent_e_to_e_4.25/behavior.csv" = "f65610584d2c889f08f945009c1613dfe5f149797405755916b72f216d69fbf7"
+    "expansion/input_dependent_e_to_e_4.25_midpoint/behavior.csv" = "36bb3ea65c64eefeccf7b839472de6b8853f5743ee11b434e393298e41928a31"
+    "expansion/input_dependent_e_to_i_18.5/behavior.csv" = "36bb3ea65c64eefeccf7b839472de6b8853f5743ee11b434e393298e41928a31"
+    "expansion/input_dependent_e_to_i_18.5_midpoint/behavior.csv" = "36bb3ea65c64eefeccf7b839472de6b8853f5743ee11b434e393298e41928a31"
+    "expansion/input_dependent_e_to_i_19.5/behavior.csv" = "6e5c6011f7b871681270eea51338f61eec705f209979e52b673f4d0f55dda4b6"
+    "expansion/input_dependent_e_to_i_19.5_midpoint/behavior.csv" = "6e5c6011f7b871681270eea51338f61eec705f209979e52b673f4d0f55dda4b6"
+    "expansion/input_dependent_tau_ratio_4.2/behavior.csv" = "36bb3ea65c64eefeccf7b839472de6b8853f5743ee11b434e393298e41928a31"
+    "expansion/input_dependent_tau_ratio_4.2_midpoint/behavior.csv" = "36bb3ea65c64eefeccf7b839472de6b8853f5743ee11b434e393298e41928a31"
+    "expansion/input_dependent_theta_off_7.75/behavior.csv" = "6e5c6011f7b871681270eea51338f61eec705f209979e52b673f4d0f55dda4b6"
+    "expansion/input_dependent_theta_off_7.75_midpoint/behavior.csv" = "6e5c6011f7b871681270eea51338f61eec705f209979e52b673f4d0f55dda4b6"
+    "expansion/input_dependent_theta_off_8.25/behavior.csv" = "36bb3ea65c64eefeccf7b839472de6b8853f5743ee11b434e393298e41928a31"
+    "expansion/input_dependent_theta_off_8.25_midpoint/behavior.csv" = "36bb3ea65c64eefeccf7b839472de6b8853f5743ee11b434e393298e41928a31"
+    "expansion/narrative_e_to_e_18.75/behavior.csv" = "ecfdea3544b7563b410079f59b5614dfe2fc2baec4f223a9db0141c4e5c315a3"
+    "expansion/narrative_e_to_e_19.25/behavior.csv" = "ecfdea3544b7563b410079f59b5614dfe2fc2baec4f223a9db0141c4e5c315a3"
+    "expansion/narrative_e_to_i_18.5/behavior.csv" = "636f9270c7a057dca703f7eeda311d588bc7f3269bc7fff568a80b7e13b9874b"
+    "expansion/narrative_e_to_i_18.5_midpoint/behavior.csv" = "636f9270c7a057dca703f7eeda311d588bc7f3269bc7fff568a80b7e13b9874b"
+    "expansion/narrative_e_to_i_19.5/behavior.csv" = "ecfdea3544b7563b410079f59b5614dfe2fc2baec4f223a9db0141c4e5c315a3"
+    "expansion/narrative_tau_ratio_0.4/behavior.csv" = "ecfdea3544b7563b410079f59b5614dfe2fc2baec4f223a9db0141c4e5c315a3"
+    "expansion/narrative_tau_ratio_0.4_midpoint/behavior.csv" = "ecfdea3544b7563b410079f59b5614dfe2fc2baec4f223a9db0141c4e5c315a3"
+    "expansion/narrative_theta_off_7.75/behavior.csv" = "ecfdea3544b7563b410079f59b5614dfe2fc2baec4f223a9db0141c4e5c315a3"
+    "expansion/narrative_theta_off_8.25/behavior.csv" = "6fdc916429f709aa5e24d13b20c0699de1752b426fb420ae31139fe04fba8a68"
+    "expansion/narrative_theta_off_8.25_midpoint/behavior.csv" = "636f9270c7a057dca703f7eeda311d588bc7f3269bc7fff568a80b7e13b9874b"
+    "expansion/selective_withdrawal_e_to_e_16.75/behavior.csv" = "68586ad617880feb9101ddab5184bbcd83f91d428e35c9584e2154f39d4f01e9"
+    "expansion/selective_withdrawal_e_to_e_16.75_midpoint/behavior.csv" = "68586ad617880feb9101ddab5184bbcd83f91d428e35c9584e2154f39d4f01e9"
+    "expansion/selective_withdrawal_e_to_e_17.25/behavior.csv" = "9bcd9e13372a9213544515ced3855b8ec5c5d59b7ccbb6e2b8421e53d898ba0c"
+    "expansion/selective_withdrawal_e_to_i_18.5/behavior.csv" = "8346eb19326a9c17991a1f5cf0231e130f8a934efa2e11fef7a88f8d3745fc6f"
+    "expansion/selective_withdrawal_e_to_i_18.5_midpoint/behavior.csv" = "42cb3bcef8d8416fce1253fa306217cf525b569f3397216bb2ac4d1aab54191c"
+    "expansion/selective_withdrawal_e_to_i_19.5/behavior.csv" = "4d64abea9efbd27c8cec5f11cc6a8fa3aba6addd6f85469136e17c4894566d39"
+    "expansion/selective_withdrawal_e_to_i_19.5_midpoint/behavior.csv" = "9bcd9e13372a9213544515ced3855b8ec5c5d59b7ccbb6e2b8421e53d898ba0c"
+    "expansion/selective_withdrawal_tau_ratio_0.4/behavior.csv" = "9bcd9e13372a9213544515ced3855b8ec5c5d59b7ccbb6e2b8421e53d898ba0c"
+    "expansion/selective_withdrawal_tau_ratio_0.4_midpoint/behavior.csv" = "9bcd9e13372a9213544515ced3855b8ec5c5d59b7ccbb6e2b8421e53d898ba0c"
+    "expansion/selective_withdrawal_theta_off_7.75/behavior.csv" = "7eff5e3c7b99d8bf0039d64a715fb21e43bdba71f49f9004547ed708b6507ce0"
+    "expansion/selective_withdrawal_theta_off_7.75_midpoint/behavior.csv" = "f5eac0af00800df05da04f92c12b38fc9ee0202e24004e3f1b5c50ff34065434"
+    "expansion/selective_withdrawal_theta_off_8.25/behavior.csv" = "42cb3bcef8d8416fce1253fa306217cf525b569f3397216bb2ac4d1aab54191c"
+    "expansion/selective_withdrawal_theta_off_8.25_midpoint/behavior.csv" = "42cb3bcef8d8416fce1253fa306217cf525b569f3397216bb2ac4d1aab54191c"
+    "expansion/three_sinks_ascending_e_to_e_18.75/behavior.csv" = "10eae80b820f4378ae5691db5f923429e1b6eec91659f217e6119cd799234d1b"
+    "expansion/three_sinks_ascending_e_to_e_18.75_midpoint/behavior.csv" = "10eae80b820f4378ae5691db5f923429e1b6eec91659f217e6119cd799234d1b"
+    "expansion/three_sinks_ascending_e_to_e_19.25/behavior.csv" = "10eae80b820f4378ae5691db5f923429e1b6eec91659f217e6119cd799234d1b"
+    "expansion/three_sinks_ascending_e_to_e_19.25_midpoint/behavior.csv" = "10eae80b820f4378ae5691db5f923429e1b6eec91659f217e6119cd799234d1b"
+    "expansion/three_sinks_ascending_e_to_i_13.5/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+    "expansion/three_sinks_ascending_e_to_i_13.5_midpoint/behavior.csv" = "c15830337b280d1a6c589d68ae4e0e3edecb2080c5d571c33f53462c9606ea9f"
+    "expansion/three_sinks_ascending_e_to_i_14.5/behavior.csv" = "10eae80b820f4378ae5691db5f923429e1b6eec91659f217e6119cd799234d1b"
+    "expansion/three_sinks_ascending_e_to_i_14.5_midpoint/behavior.csv" = "10eae80b820f4378ae5691db5f923429e1b6eec91659f217e6119cd799234d1b"
+    "expansion/three_sinks_ascending_tau_ratio_4.2/behavior.csv" = "10eae80b820f4378ae5691db5f923429e1b6eec91659f217e6119cd799234d1b"
+    "expansion/three_sinks_ascending_tau_ratio_4.2_midpoint/behavior.csv" = "10eae80b820f4378ae5691db5f923429e1b6eec91659f217e6119cd799234d1b"
+    "expansion/three_sinks_ascending_theta_off_6.25/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+    "expansion/three_sinks_ascending_theta_off_6.25_midpoint/behavior.csv" = "c15830337b280d1a6c589d68ae4e0e3edecb2080c5d571c33f53462c9606ea9f"
+    "expansion/three_sinks_descending_e_to_e_16.75/behavior.csv" = "640231f2bccfed544e9c8e38b0fc33241d25665f7fd101828106ebe2c95ed6fe"
+    "expansion/three_sinks_descending_e_to_e_16.75_midpoint/behavior.csv" = "640231f2bccfed544e9c8e38b0fc33241d25665f7fd101828106ebe2c95ed6fe"
+    "expansion/three_sinks_descending_e_to_e_17.25/behavior.csv" = "640231f2bccfed544e9c8e38b0fc33241d25665f7fd101828106ebe2c95ed6fe"
+    "expansion/three_sinks_descending_e_to_e_17.25_midpoint/behavior.csv" = "640231f2bccfed544e9c8e38b0fc33241d25665f7fd101828106ebe2c95ed6fe"
+    "expansion/three_sinks_descending_e_to_i_18.5/behavior.csv" = "eb683093f5599941df6b8c28d85686e344c99df7addf66ac1905b662a86130e3"
+    "expansion/three_sinks_descending_e_to_i_18.5_midpoint/behavior.csv" = "640231f2bccfed544e9c8e38b0fc33241d25665f7fd101828106ebe2c95ed6fe"
+    "expansion/three_sinks_descending_e_to_i_19.5/behavior.csv" = "31ff283663d7abb82d5cbb4383a1df3e87ef7e67f09e02b1f0ec6459a1a33585"
+    "expansion/three_sinks_descending_e_to_i_19.5_midpoint/behavior.csv" = "31ff283663d7abb82d5cbb4383a1df3e87ef7e67f09e02b1f0ec6459a1a33585"
+    "expansion/three_sinks_descending_tau_ratio_4.2/behavior.csv" = "640231f2bccfed544e9c8e38b0fc33241d25665f7fd101828106ebe2c95ed6fe"
+    "expansion/three_sinks_descending_tau_ratio_4.2_midpoint/behavior.csv" = "640231f2bccfed544e9c8e38b0fc33241d25665f7fd101828106ebe2c95ed6fe"
+    "expansion/three_sinks_descending_theta_off_7.75/behavior.csv" = "31ff283663d7abb82d5cbb4383a1df3e87ef7e67f09e02b1f0ec6459a1a33585"
+    "expansion/three_sinks_descending_theta_off_7.75_midpoint/behavior.csv" = "31ff283663d7abb82d5cbb4383a1df3e87ef7e67f09e02b1f0ec6459a1a33585"
+    "expansion/three_sinks_descending_theta_off_8.25/behavior.csv" = "640231f2bccfed544e9c8e38b0fc33241d25665f7fd101828106ebe2c95ed6fe"
+    "expansion/three_sinks_descending_theta_off_8.25_midpoint/behavior.csv" = "640231f2bccfed544e9c8e38b0fc33241d25665f7fd101828106ebe2c95ed6fe"
+    "expansion/threshold_to_active_e_to_e_15.75/behavior.csv" = "f8f5b063d3cbf4c532dac324e29107693554a3677b567cfdae2db505152bfa80"
+    "expansion/threshold_to_active_e_to_e_16.25/behavior.csv" = "f8f5b063d3cbf4c532dac324e29107693554a3677b567cfdae2db505152bfa80"
+    "expansion/threshold_to_active_e_to_i_18.5/behavior.csv" = "f8f5b063d3cbf4c532dac324e29107693554a3677b567cfdae2db505152bfa80"
+    "expansion/threshold_to_active_e_to_i_19.5/behavior.csv" = "f8f5b063d3cbf4c532dac324e29107693554a3677b567cfdae2db505152bfa80"
+    "expansion/threshold_to_active_tau_ratio_0.4/behavior.csv" = "f8f5b063d3cbf4c532dac324e29107693554a3677b567cfdae2db505152bfa80"
+    "expansion/threshold_to_active_tau_ratio_0.4_midpoint/behavior.csv" = "f8f5b063d3cbf4c532dac324e29107693554a3677b567cfdae2db505152bfa80"
+    "expansion/threshold_to_active_theta_off_7.75/behavior.csv" = "396d8dfbdb1bcaac8d106e3ce8cb4aa139bb34d13efc4db782659f2caaf6b04e"
+    "expansion/threshold_to_active_theta_off_7.75_midpoint/behavior.csv" = "396d8dfbdb1bcaac8d106e3ce8cb4aa139bb34d13efc4db782659f2caaf6b04e"
+    "expansion/threshold_to_active_theta_off_8.25/behavior.csv" = "f8f5b063d3cbf4c532dac324e29107693554a3677b567cfdae2db505152bfa80"
+    "expansion/two_sinks_ascending_e_to_e_16.75/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+    "expansion/two_sinks_ascending_e_to_e_16.75_midpoint/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+    "expansion/two_sinks_ascending_e_to_e_17.25/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+    "expansion/two_sinks_ascending_e_to_e_17.25_midpoint/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+    "expansion/two_sinks_ascending_e_to_i_12.5/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+    "expansion/two_sinks_ascending_e_to_i_12.5_midpoint/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+    "expansion/two_sinks_ascending_tau_ratio_4.2/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+    "expansion/two_sinks_ascending_tau_ratio_4.2_midpoint/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+    "expansion/two_sinks_ascending_theta_off_6.25/behavior.csv" = "fba8bcabfe5db94f2846df125e6d9a3486bec5d4322c08b8ee996b9aadd35b19"
+    "expansion/two_sinks_ascending_theta_off_6.25_midpoint/behavior.csv" = "3ac815bc010d61b6807cae6d601aaefc10b64120af57646706fa4d624f762e4f"
+
+[derived_artifacts."sequence/trajectory.csv"]
+retained_rows = 2857
+selection = "Exact display windows: 50 ms before through 250 ms after each 100 ms pulse; omitted settled intervals remain in the full connected trajectory"
+source_rows = 35801
+source_sha256 = "87060e2f294426d94de351012df6c05129860d35a5030e322ede83583560be11"

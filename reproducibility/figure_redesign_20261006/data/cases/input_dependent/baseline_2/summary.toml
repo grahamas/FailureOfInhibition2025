@@ -1,0 +1,12 @@
+B_E = 0.0
+B_I = 0.0
+validated_cycles = 0
+
+[[sources]]
+budget_unresolved_cells = 419
+destinations = ["active", "equilibrium_1", "equilibrium_3", "oscillatory", "rest", "seizure", "unresolved"]
+observations = 1196
+phase_signature = "bf8366f59ab1e554fde4cd17000b315832b7ba0cc8af4153374e545c5d05b4f1"
+recoveries = 334
+role = "rest"
+source = "root_1"

@@ -1,0 +1,15 @@
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+
+[parameters]
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+category = "anchors"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal"
+parameter_record_sha256 = "40cf357b2d956d4b6e8ebc5b1aac56d754993eefe8752d7042f434dd6d935287"
+selection_reason = "reference switching and selective control"
+tau_ratio = 0.2
+theta_off = 8.0

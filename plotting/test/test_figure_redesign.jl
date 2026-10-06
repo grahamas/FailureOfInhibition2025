@@ -1,0 +1,20 @@
+include(joinpath(@__DIR__,"..","..","scripts","render_figure_redesign.jl"))
+@testset "Figure redesign semantic selections" begin
+    R=FigureRedesignRenderer
+    @test R.repertoire_label("Attracting:rest|Repelling:active|Attracting:seizure|Saddle:unassigned")=="R+S"
+    @test R.repertoire_label("Repelling:active")=="no sink found"
+    @test R.repertoire_label("Attracting:unassigned|Attracting:unassigned")=="U+U"
+    mktempdir() do packet
+        root=joinpath(packet,"cases","input_dependent","baseline_3")
+        for phase in (0.,.5)
+            d=joinpath(root,"cycle_1_phase_$phase","pulses");mkpath(d)
+            CSV.write(joinpath(d,"pulses.csv"),[
+                (;axis="I_increase",duration=100.,amplitude=1.,phase,destination=phase==0 ? "rest" : "seizure"),
+                (;axis="E_increase",duration=100.,amplitude=1.,phase,destination="rest")])
+        end
+        points,choice=R.phase_data(packet)
+        @test choice==("I_increase",100.)
+        @test Set(x.phase for x in points)==Set((0.,.5))
+        @test length(unique(x.destination for x in points))==2
+    end
+end

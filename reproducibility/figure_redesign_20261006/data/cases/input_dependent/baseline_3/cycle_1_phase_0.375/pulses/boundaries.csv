@@ -1,0 +1,11 @@
+axis,duration,lower,upper,lower_destination,upper_destination,status
+E_increase,20.0,0.9140625,0.91796875,oscillatory,equilibrium_3,sampled_bracket
+E_increase,50.0,0.875,0.87890625,oscillatory,equilibrium_3,sampled_bracket
+E_withdrawal,50.0,0.4765625,0.48046875,oscillatory,equilibrium_3,sampled_bracket
+I_increase,50.0,7.6875,7.69140625,oscillatory,equilibrium_3,sampled_bracket
+E_increase,100.0,0.5,0.50390625,oscillatory,equilibrium_3,sampled_bracket
+E_withdrawal,100.0,0.51953125,0.5234375,oscillatory,equilibrium_3,sampled_bracket
+I_increase,100.0,7.68359375,7.6875,oscillatory,equilibrium_3,sampled_bracket
+E_increase,200.0,0.48046875,0.484375,oscillatory,equilibrium_3,sampled_bracket
+E_withdrawal,200.0,0.58203125,0.5859375,oscillatory,equilibrium_3,sampled_bracket
+I_increase,200.0,7.68359375,7.6875,oscillatory,equilibrium_3,sampled_bracket

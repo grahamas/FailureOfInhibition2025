@@ -1,0 +1,22 @@
+baselines = [[0.0, 0.0]]
+
+[parameters]
+baselines = [[0.0, 0.0]]
+category = "anchors"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central"
+name = "four_sinks_central"
+parameter_record_sha256 = "4098c6468d2d509315ac135263d79c397db838076143cdcd3ad54c79d59f7273"
+selection_reason = "first remaining registry case with a new measured screen signature"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0

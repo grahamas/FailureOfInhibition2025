@@ -1,0 +1,9 @@
+B_E = 16.0
+B_I = 16.0
+E_expansions = 0
+E_tail_resolved = true
+E_tail_value = 1.0
+I_expansions = 0
+I_tail_resolved = true
+I_tail_value = 1.3878489380627925e-11
+epsilon = 1.0e-6

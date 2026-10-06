@@ -1,0 +1,28 @@
+B_E = 0.1
+B_I = 0.0
+validated_cycles = 0
+
+[[sources]]
+budget_unresolved_cells = 401
+destinations = ["active", "herald", "rest", "seizure"]
+observations = 1196
+phase_signature = "9ae273e75551b4fb7f77da9dd8b4a455c548747869028b3cc78df06c175f033a"
+recoveries = 667
+role = "rest"
+source = "root_1"
+[[sources]]
+budget_unresolved_cells = 350
+destinations = ["active", "herald", "rest", "seizure"]
+observations = 1196
+phase_signature = "36e9348d6ad2a7e8e94968c1b63823689ba8dad4c63679e52d14d07705184a9f"
+recoveries = 472
+role = "active"
+source = "root_3"
+[[sources]]
+budget_unresolved_cells = 0
+destinations = ["seizure"]
+observations = 162
+phase_signature = "3b1a66b7eabcd732845be6a01909737517294d1a93ad6731620b6a9479958560"
+recoveries = 0
+role = "seizure"
+source = "root_5"

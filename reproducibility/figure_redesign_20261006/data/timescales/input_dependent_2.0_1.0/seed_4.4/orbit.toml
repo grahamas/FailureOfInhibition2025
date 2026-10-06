@@ -1,0 +1,15 @@
+amplitudes = [0.3238078822847503, 0.17158807205045412]
+closure_residual = 3.5749736504442353e-12
+equation_residual = 3.9700489562477514e-9
+period = 44.630758992996164
+phase_residual = 2.0599841277224584e-18
+reasons = []
+stability = "PeriodicOrbitAttracting"
+transverse_imag = 0.0
+transverse_real = 0.07553733089726222
+validation = "NumericallyValidatedPeriodicOrbit"
+
+[refinement_difference]
+monodromy = 9.514522503195622e-10
+period = 0.0
+waveform = 1.0601408639843157e-11

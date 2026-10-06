@@ -1,0 +1,6 @@
+current_driver_sha256 = "24ede22afa16717b45f5afecbfd1a0d5a0f0c2e5f6756e3fbce05771e286bbf8"
+numerical_identity = "Exact source equality after reversing the sole named nonnumerical replacement"
+previous_driver_sha256 = "92f697f55f1502d5ff51129d6fdf482dc4434f00675e4fec90033cb522d82136"
+previous_metadata_sha256 = "d5ac7ec24fb4dc63a437365b1a30562e2a03428d55f6e84cb7a67d32b49c5aec"
+reason = "Replace the inherited screen command with the detail-stage replay command; SCREEN_OUTPUT and STAGE are placeholders"
+repair_sha256 = "bbdd4c6faf031f8c48d160724d8be705ec4049a862428b9ae50e4d228653a49c"

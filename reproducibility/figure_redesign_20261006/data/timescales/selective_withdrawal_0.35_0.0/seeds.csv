@@ -1,0 +1,7 @@
+ratio,initial_E,initial_I,status
+0.2,0.25,0.25,no_nonconstant_seed
+0.4,0.25,0.25,no_nonconstant_seed
+0.5,0.25,0.25,no_nonconstant_seed
+1.0,0.31169465671587543,0.3208729794935823,no_nonconstant_seed
+2.0,0.31169465671587543,0.3208729794935823,no_nonconstant_seed
+4.4,0.31169465671587543,0.3208729794935823,no_nonconstant_seed

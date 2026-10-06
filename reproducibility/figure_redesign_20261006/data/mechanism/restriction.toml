@@ -1,0 +1,6 @@
+E_star = 0.49999999999999994
+I_star = 0.0005618538894872697
+descending_branch_condition = true
+drive_condition = "Both drive increments are nonnegative relative to baseline throughout the protocol"
+inhibitory_input = 9.496628876663074
+response_peak_input = 6.0

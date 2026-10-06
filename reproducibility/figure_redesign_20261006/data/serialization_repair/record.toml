@@ -1,0 +1,6 @@
+current_driver_sha256 = "92f697f55f1502d5ff51129d6fdf482dc4434f00675e4fec90033cb522d82136"
+numerical_identity = "Exact source equality after reversing the sole attempt-record serialization replacement"
+previous_driver_sha256 = "9ed23df03fb280e56fbcfc716e3ac3d38b9bdca4e9e215379580ff90f8168d16"
+previous_metadata_sha256 = "6d5d6f113cf46c46423a12b54ddedcd93cf96d2df98ce3a9151c6b771677670a"
+reason = "Avoid recursive serialization of solver internals in continuation attempts"
+repair_sha256 = "1740c6ff4e6d4252a8ebdb44bf2fbed3bb67215fd8b87e215f36d424cdd8f601"

@@ -1,0 +1,62 @@
+architecture = "x86_64"
+blas_configuration = "LBTConfig([ILP64] libopenblas64_.so)"
+blas_threads = 1
+claim_limits = "numerical equilibrium/critical sets; finite-window transitions; no biological or global completeness certification"
+completed = true
+completed_cases = 232
+config_sha256 = "a429c67723ae1bd4706d0a06309f47a039d36cb388673ea70f41ec0ad98c8573"
+equilibrium_seed_policy = "default deterministic 5-by-5 sharper-rectangle grid"
+equilibrium_solver = "SimpleNonlinearSolve.SimpleTrustRegion"
+git_revision = "9d0e7f09f327dec1a06ebbfebb7de3e34f4fe993"
+git_status_porcelain = """?? experiments/figure_redesign.toml\n?? reproducibility/figure_redesign_20261006/cases.toml\n?? scripts/run_figure_screen.jl"""
+julia_threads = 2
+julia_version = "1.10.12"
+kernel = "Linux"
+ode_solver = "OrdinaryDiffEqTsit5.Tsit5"
+purpose = "Current-source geometry and fixed-protocol refresh of a frozen case list"
+replay_from_artifact_directory = "julia --project=source source/scripts/run_figure_screen.jl config.toml replay"
+replay_invocations = []
+schema_version = 1
+smoke = false
+
+[artifact_schema]
+cases = "one row per condition, protocol and numerical variant"
+comparisons = "each non-default case compared with its default counterpart"
+complex_values = "real and imaginary tables"
+contexts = "complete search attempts, deduplication, equilibria and stability"
+matrices = "array of rows"
+toml_unavailable_value = "not_available"
+trajectory_columns = ["time", "E", "I"]
+version = 1
+
+[source_sha256]
+"Manifest.toml" = "54c3971df78e42b150c41ecf100f913712244a118bb693e3cfb90ecea4fca7b6"
+"Project.toml" = "5e34f43864bb19cfd3878c8743f49abeefc4b363e5cb635983fd5f02b4535a81"
+"docs/model.md" = "3c55b19a5a46018579d83b7aec19c38f2c98ef3f969826e60893f5031a7da4d0"
+"experiments/exemplar_models.toml" = "651c52e1b424690e62247866888c9ff37e8d61b56575a4c29d7b6b406c6e4b03"
+"reproducibility/figure_redesign_20261006/cases.toml" = "fcc12f4600a8deb54c7d31eeae2527b945a2ce20dcedc7a1e5246bb40f219a7f"
+"scripts/archive_input_response_contexts.jl" = "513b403131a93f2e8bef795893dfd20846571ac3f118c0ed2b3fe915d451ddfe"
+"scripts/input_release_models.jl" = "c7efe162ade6cde9d872db9a92c13c8ec40180dbf8d6a71b3c704a75d134a7c2"
+"scripts/input_response_models.jl" = "6aef9d295aace4ca68f2dac1bdc7aac35a88bcc2989f303f2430ecf5b40df6be"
+"scripts/narrative_models.jl" = "9f5d973d065467d73049f82ca8cd79367144cd39b9b677508b64f4d30d805539"
+"scripts/run_basin_rescue_study.jl" = "29b0a12a2a533d50572f26ca1df09cd9687c7062e7bb70fb8abd160d8e8d3a88"
+"scripts/run_figure_screen.jl" = "e524f10e7aff61c1e3f21bc3037c97f828378865437fa8caa05d3d454165c5ce"
+"scripts/run_input_release_study.jl" = "0ad82a236f209d6f9ad6013fd13b38b4150317d4f530163a4d1f24812e65c52d"
+"scripts/run_input_response_study.jl" = "50991ca664875baa672e3bc29149af2f4793ba3ea1bdbdec0089dd3727fde9c9"
+"scripts/run_minimal_experiment.jl" = "71b0771e486210fd66894fa8e9a4f2d69fb2524fb833b128c4875ab431032539"
+"scripts/run_narrative_study.jl" = "5ba06d0246b424ac62b5c53253957c30a96f8a63b53ac5c126883d56e3354398"
+"src/FailureOfInhibition2025.jl" = "59415146e734934bf48cae9b7c45ccdb7e156fd56b1fff54d9a6d2b48c3d806a"
+"src/basin_rescue.jl" = "681f842c60eeda4ea30f5931881b3ef03a3b93b3904e7783c4533c931255c75b"
+"src/configurations.jl" = "728fa9ad893023ea633bc8b693bf2c2b372cfb0b2f671f54533523fde66c1516"
+"src/continuation.jl" = "151224968b5d7a52902bd0754668501d86466679fc27101d4ab531a94b2225cc"
+"src/diagnostics.jl" = "bbca29916dbb8297c5289b29171f1bce9f72faea347680bde03f830a2b1abe39"
+"src/drives.jl" = "325459ca1eec6ccc360cd76fb3eda3f93d595b619b1cb5524cdea5ba98ef465a"
+"src/equilibria.jl" = "37f5a045aab761e869847890059f9255c90548c2a57e9e0408dc602039c6b234"
+"src/hopf_diagnostics.jl" = "69ccd1982f83e916935631377cc45ce06f9765087246beab27ed89191703f8ec"
+"src/periodic_continuation.jl" = "95a093ab646a75a000ae4bf9ff8199c87aae6a0407014f3ba53dc2890b8e1033"
+"src/periodic_orbits.jl" = "0bee5e8c6546257475700786b71d852211888214c6aedfb800e20f303c60801c"
+"src/point_model.jl" = "6946cb1a0c31b90f210d4606efff477b80a433ded6702b53d9ec98f9e9b38d9b"
+"src/pulse_experiments.jl" = "0a1f801e3523d34199452924a8a853db77036b21ab019239a684068caa533098"
+"src/responses.jl" = "c0d63439f3d8db740e898322162eff4b2ca8b68fa32f7b2e79f071b0b836bd30"
+"src/simulation.jl" = "41b1d3265e9fb4413aabc0b0ed1fb1ac9bd644c9b977682be021a0eda3870484"
+"src/stability.jl" = "c56919d7add37b1d59977fea1bced54c31097d316597680b83e68c6421801d31"

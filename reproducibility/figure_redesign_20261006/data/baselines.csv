@@ -1,0 +1,15 @@
+id,baseline,B_E,B_I,tau_ratio,validated_cycles,sources
+selective_withdrawal,1,0.35,0.0,0.2,0,4
+selective_withdrawal,2,0.1,0.0,0.2,0,3
+narrative,1,0.015625,0.0,0.2,0,4
+input_dependent,1,8.0,0.0,4.4,0,2
+input_dependent,2,0.0,0.0,4.4,0,1
+input_dependent,3,2.0,1.0,4.4,1,17
+threshold_to_active,1,0.5,0.0,0.2,0,2
+input_dependent_e_to_e_4.25,1,8.0,0.0,4.4,0,2
+input_dependent_e_to_e_4.25,2,0.0,0.0,4.4,0,2
+figure4_joint_29,1,0.0,0.0,1.1428571428571428,0,1
+figure4_joint_29,2,0.35,0.0,1.1428571428571428,0,2
+figure4_joint_29,3,1.0,1.0,1.1428571428571428,0,2
+four_sinks_central,1,0.0,0.0,0.2,0,4
+three_sinks_ascending,1,0.0,0.0,4.4,0,3
