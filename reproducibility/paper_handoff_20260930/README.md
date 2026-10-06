@@ -11,10 +11,11 @@ manifest and names retired Python files; it does not describe the current
 checkout's contents.
 
 The original run's report, figures, checks, and logs remain under
-`output/paper_handoff_20260930/` in the local archive. The source files also
-remain in the repository's history; a local copy is kept outside the Jujutsu
-working copies at `retired_tools/python_sources_20260930/`. Neither location is
-part of a fresh checkout's executable replay contract.
+`output/paper_handoff_20260930/` in the local archive. A copy of the retired
+Python source is kept outside the Jujutsu working copies at
+`retired_tools/python_sources_20260930/`; its three handoff program hashes
+match `inputs.json`. These local materials are unavailable from a fresh
+checkout, which cannot replay the original run from this bundle.
 
 The recorded 13 context confirmations and 52 trajectories remain finite
 historical observations. Reproducing them with a maintained Julia program
