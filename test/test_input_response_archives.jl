@@ -140,4 +140,18 @@ end
         @test isdir(joinpath(geometry, "contexts"))
         @test !isfile(joinpath(geometry, "contexts.tar.gz"))
     end
+    mktempdir() do root
+        first_geometry = archive_fixture(joinpath(root, "expansion", "a"))
+        later_geometry = archive_fixture(joinpath(root, "expansion", "b"))
+        write(joinpath(later_geometry, "summary.toml"), "screen = \"invalid\"\n")
+        write_archive_marker(later_geometry)
+        write_study_manifest(root)
+        @test_throws MethodError Archive.archive_study(root)
+        @test !isdir(joinpath(first_geometry, "contexts"))
+        @test isdir(joinpath(later_geometry, "contexts"))
+        @test isnothing(Archive.verify_study_manifest(root))
+        # A retry reaches the same bad case, not a stale top-level manifest.
+        @test_throws MethodError Archive.archive_study(root)
+        @test isnothing(Archive.verify_study_manifest(root))
+    end
 end

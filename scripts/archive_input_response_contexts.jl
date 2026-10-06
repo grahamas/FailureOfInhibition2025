@@ -254,18 +254,21 @@ function archive_study(study)
     had_manifest = isfile(joinpath(study, "checksums.toml"))
     had_manifest && verify_study_manifest(study)
     count = 0
-    for category in ("anchors", "expansion", "representatives")
-        parent = joinpath(study, category)
-        isdir(parent) || continue
-        for case_name in sort(readdir(parent))
-            folder = joinpath(parent, case_name, "geometry")
-            isfile(joinpath(folder, "done.toml")) || continue
-            files = checkpoint_files(read(joinpath(folder, "done.toml")))
-            haskey(files, "contexts.tar.gz") && !isdir(joinpath(folder, "contexts")) && continue
-            count += archive_geometry(folder)
+    try
+        for category in ("anchors", "expansion", "representatives")
+            parent = joinpath(study, category)
+            isdir(parent) || continue
+            for case_name in sort(readdir(parent))
+                folder = joinpath(parent, case_name, "geometry")
+                isfile(joinpath(folder, "done.toml")) || continue
+                files = checkpoint_files(read(joinpath(folder, "done.toml")))
+                haskey(files, "contexts.tar.gz") && !isdir(joinpath(folder, "contexts")) && continue
+                count += archive_geometry(folder)
+            end
         end
+    finally
+        had_manifest && refresh_study_manifest(study)
     end
-    had_manifest && refresh_study_manifest(study)
     count
 end
 

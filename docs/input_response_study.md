@@ -190,7 +190,8 @@ Between runner invocations, the optional command
 must first finish their independent geometry confirmations; screen cases can
 be packed once their geometry checkpoint is complete. When the runner has
 written a top-level `checksums.toml`, the archiver verifies that manifest
-before changing files and regenerates it atomically after successful packing.
+before changing files and regenerates it atomically after packing, even when a
+later geometry fails and needs attention before a retry.
 
 Every original file is checksum-verified inside the archive before its unpacked
 copy is removed. The archive retains the original `done.toml` at
