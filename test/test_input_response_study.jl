@@ -132,6 +132,10 @@ include(joinpath(@__DIR__,"..","scripts","run_input_response_study.jl"))
     tailpulse=A.pulse(tail,tail.search.equilibria[tail.roles["seizure"]].state,.25,6.,10.,cfg;retain=true)
     @test minimum(last(tailpulse.pulse_solution.u))>=0
     @test tailpulse.status=="compatible"
+    loose_cfg=merge(cfg,(;domain_atol=1e-2))
+    loose_pulse=A.pulse(tail,tail.search.equilibria[tail.roles["seizure"]].state,
+        .25,6.,10.,loose_cfg;retain=true)
+    @test all(x->0<=x<=1,last(loose_pulse.pulse_solution.u))
     cyclep=merge(A.anchors()[5],Dict("tau_ratio"=>.5))
     cyclectx=A.context(cyclep,0.,0.,cfg;grid=21)
     candidate=A.periodic_candidate(cyclectx,[.25,.25],cfg)

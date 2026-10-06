@@ -358,7 +358,7 @@ function observe(ctx,initial,cfg;reference=nothing,retain=false,tight=false,cycl
     for horizon in (cycles ? cfg.horizons : [last(cfg.horizons)])
         local_cfg=cycles ? merge(cfg,(;horizons=[horizon])) : cfg
         phase=IR.observe_phase(ctx.model,ctx.search,initial,local_cfg;retain,tight,
-            stop_at_saved_times=cfg.domain_atol==0)
+            stop_at_saved_times=cfg.domain_atol==0,handoff=cycles)
         append!(attempts,phase.attempts)
         dest=destination(ctx,phase;reference);status=phase.status;orbit=nothing
         if cycles && status=="unresolved"
@@ -390,9 +390,9 @@ function pulse(ctx,initial,be,bi,duration,cfg;retain=false,tight=false)
     driven=M.model(ctx.p,be,bi)
     times=retain ? collect(range(0,duration;length=101)) : [0.,duration]
     sol=solve_point_model(initial,(0.,duration),driven;saveat=times,
-        tstops=cfg.domain_atol==0 ? times : (),
+        tstops=times,
         dense=false,save_everystep=false,abstol=cfg.abstol/(tight ? 10 : 1),reltol=cfg.reltol/(tight ? 10 : 1),
-        domain_atol=cfg.domain_atol,maxiters=cfg.maxiters)
+        domain_atol=0.0,maxiters=cfg.maxiters)
     if !SciMLBase.successful_retcode(sol)
         return (;status="integration_failed",destination="integration_failed",recovery=false,final=last(sol.u),phase=nothing,orbit=nothing,pulse_solution=sol)
     end

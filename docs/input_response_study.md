@@ -121,6 +121,8 @@ exact membership in `[0,1]^2`. Allowing a tiny negative solver endpoint would
 make that restart invalid. Adaptive domain rejection enforces this contract,
 and saved times are solver stops to avoid negative interpolation roundoff near
 the inhibitory tail. No endpoint is clipped or projected onto an equilibrium.
+The exact bound also applies to pulse and cycle handoffs under a custom
+configuration with a larger general `domain_atol`.
 
 Direct E displacement holds I and both tonic inputs fixed. Herald and seizure
 are compared only at shared inputs with both source roles available. Smallest

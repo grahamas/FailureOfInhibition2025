@@ -64,6 +64,12 @@ include(joinpath(@__DIR__, "..", "scripts", "run_narrative_study.jl"))
     @test haskey(rising.roles,"herald") && !haskey(rising.roles,"active")
     pulse=N.pulse(ctx,ctx.search.equilibria[ctx.roles["rest"]].state,"E",0.,20.,config)
     @test pulse.status=="compatible" && pulse.destination=="rest"
+    # The configured relaxed domain previously let this pulse end at a small
+    # negative I, which the follow-up rejected as an initial state.
+    loose=merge(config,(;abstol=1e-5,reltol=1e-5,domain_atol=1e-2))
+    bounded=N.pulse(ctx,ctx.search.equilibria[ctx.roles["rest"]].state,"I",1.,20.,loose)
+    @test N.SciMLBase.successful_retcode(bounded.solution)
+    @test all(x->0<=x<=1,last(bounded.solution.u))
     unchanged=N.recovery_trial(ctx,"herald",0.,"permanent_withdrawal",config)
     @test unchanged.destination=="herald"
     @test !unchanged.recovery

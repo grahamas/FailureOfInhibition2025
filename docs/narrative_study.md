@@ -31,6 +31,8 @@ coordinate matches with collision rejection, not persistent root indices.
 A candidate qualifies only if input pulses produce rest → active → rest
 twice, using actual endpoints between phases, and either rest or active can
 be driven to the seizure candidate. Each pulse restores the same tonic input.
+The pulse solve enforces the exact state domain so its endpoint can initialize
+the baseline follow-up without projection.
 Positive E, positive I, and temporary withdrawal of available E input are
 tested separately; total afferent input never becomes negative. The amplitude
 cap is 8 and the duration grid is 1, 2, 5, 10, 20, 50, 100, 200 ms.

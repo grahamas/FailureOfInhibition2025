@@ -24,6 +24,7 @@ include(joinpath(@__DIR__, "..", "scripts", "run_input_release_study.jl"))
     start = only(study.sink_indices(searches.off))
     trial = study.full_trial(models, searches, source, start, config; retain=true)
     @test trial.success
+    @test all(x -> 0 <= x <= 1, trial.induction.final)
     @test trial.recovery.solution.u[1] == trial.induction.final
     @test trial.control.solution.u[1] == trial.induction.final
     @test trial.recovery.destination == start

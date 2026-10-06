@@ -56,7 +56,11 @@ Each phase uses 5000, 10000, and 20000 ms horizons as needed. Two terminal
 100-ms windows with at least 21 samples each must satisfy coordinate
 tolerance `1e-6` and balance tolerance `1e-8`; local attraction is checked
 separately. Integration uses `abstol=reltol=1e-10`, `domain_atol=1e-8`,
-and `maxiters=1000000`.
+and `maxiters=1000000`. Induction uses an exact state-domain bound because its
+actual endpoint starts the release and kept-on solves.
+
+The counts below describe the frozen 28 September run. Its full scan has not
+been repeated with the exact-domain induction handoff.
 
 All **388** paired parameter cells completed. **17** descending-family cells
 at sampled couplings `0:0.25:4` passed the complete trial. The four-sink and
