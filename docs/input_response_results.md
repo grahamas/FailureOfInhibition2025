@@ -8,7 +8,8 @@ current method and Julia archive command are in [the study protocol](input_respo
 **Selection audit (5 October 2026):**
 The [selection audit](input_response_selection_audit_20261005.md)
 identifies historical follow-up inputs affected by a region-graph correction;
-the frozen output has not been regenerated under the corrected source.
+six affected geometries were replayed separately, while the frozen full study
+output and its response measurements remain unchanged.
 
 ## Execution status
 

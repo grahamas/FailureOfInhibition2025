@@ -30,11 +30,19 @@ historical measurements, but two ratio rows in the retained study summary
 aggregate that uses those rows still describes the old selection rule. The
 check does not certify every generated figure or downstream summary.
 
-The comparison reuses archived samples and distances; it is not a fresh
-numerical run under the corrected source. The frozen output and its checksums
-remain unchanged. New source hashes require a separate output directory for
-any future rerun, and scientific interpretation of the revised selection
-remains pending. The local, untracked audit script and per-case JSON are in
+The read-only comparison above reused archived samples and distances. A
+separate geometry-only Julia replay then reran all six affected cases with the
+corrected source and their archived `parameters.toml` records. It reproduced
+the seven removed inputs and selected no additions. In every case,
+`inputs.csv`, `cells.csv`, `critical.csv`, `equilibria.csv`, `lineage.csv`, and
+`bounds.toml` matched the frozen output byte for byte. The replay's SHA-256
+manifest verified all 73,458 local files. Its `selection_comparison.toml` has
+SHA-256 `3d5440a00c7615c4ea4161cad47cad28a2e33f78a7a5381129b36b1960acd2e8`.
+The replay lives outside the working copies at
+`local_audits/region_selection_replay_20261005/`; response protocols were not
+rerun. The frozen full output and its checksums remain unchanged. Scientific
+interpretation of the revised selection remains pending. The local, untracked
+read-only audit script and per-case JSON are in
 `retired_tools/region_selection_audit_20261005/` outside the Jujutsu working
 copies. The source archive's `checksums.toml` had SHA-256
 `b01a2a09ab651de6a729381e83a9f4e2549c9d2e184bbb33465a7abd4f3408be`
