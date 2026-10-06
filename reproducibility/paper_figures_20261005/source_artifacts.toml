@@ -1,0 +1,9 @@
+# SHA-256 of sorted "relative path\0file SHA-256\n" records for every consumed
+# joint trajectory and tonic point/theta file in the reviewed 6 October replays.
+[joint]
+files = 21
+sha256 = "b560b8d4d7c4f905821f1e53984593121669dd926d49f49566c2735aed75f1cf"
+
+[tonic]
+files = 1030
+sha256 = "d075abad9bd5676fe14027d4c9954e12b6c78da8506d83bb1b695109b1bfa26d"

@@ -8,10 +8,28 @@ const NS = TER.NS
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 const BUNDLE = joinpath(ROOT, "reproducibility", "paper_figures_20261005")
 const RESPONSE_REFERENCE = joinpath(BUNDLE, "response_reference.toml")
+const SOURCE_ARTIFACTS = joinpath(BUNDLE, "source_artifacts.toml")
 
 hashfile(path) = bytes2hex(SHA.sha256(read(path)))
 function require_equal(actual, expected, label)
     actual == expected || error("figure-data source differs: $label")
+end
+function artifact_digest(directory, relative_files)
+    length(relative_files) == length(unique(relative_files)) || error("duplicate source artifact")
+    record = IOBuffer()
+    for relative in sort(relative_files)
+        (isabspath(relative) || ".." in splitpath(relative)) &&
+            error("unsafe source artifact path: $relative")
+        path = joinpath(directory, relative)
+        isfile(path) || error("missing source artifact: $relative")
+        print(record, relative, '\0', hashfile(path), '\n')
+    end
+    return bytes2hex(SHA.sha256(take!(record)))
+end
+function check_artifacts(directory, relative_files, reference, label)
+    require_equal(length(relative_files), reference["files"], "$label file count")
+    require_equal(artifact_digest(directory, relative_files), reference["sha256"],
+        "$label artifacts")
 end
 function copy_checked(source, destination)
     mkpath(dirname(destination))
@@ -105,9 +123,6 @@ function build(joint_dir, tonic_dir, response_dir, destination)
     require_equal(joint["baseline_repeat_switching"], true, "baseline switching")
     require_equal(only(filter(row -> row["theta_off"] == 8.75,
         joint["threshold_interventions"]))["repeat_switching"], true, "threshold switching")
-    mkpath(destination)
-    traces = joinpath(destination, "traces")
-    mkpath(traces)
     joint_files = String[]
     for setting in ("baseline_switching", "theta_off_8.75_switching")
         for cycle in 1:2, phase in ("rest_to_active", "active_to_rest"), suffix in ("_pulse", "")
@@ -117,6 +132,19 @@ function build(joint_dir, tonic_dir, response_dir, destination)
     append!(joint_files, ["induce_rest_to_herald_pulse.csv", "induce_rest_to_herald.csv",
         "induce_active_to_seizure_pulse.csv", "induce_active_to_seizure.csv",
         "theta_off_8.75_from_seizure.csv"])
+    point_files = Dict(theta => filter(endswith(".toml"),
+        readdir(joinpath(tonic_dir, "points", TER.theta_key(theta)); join=true))
+        for theta in TER.THETAS)
+    tonic_files = [relpath(file, tonic_dir) for theta in TER.THETAS
+        for file in point_files[theta]]
+    push!(tonic_files, joinpath("theta", "theta_8p0.toml"))
+    source_artifacts = TOML.parsefile(SOURCE_ARTIFACTS)
+    check_artifacts(joint_dir, joint_files, source_artifacts["joint"], "joint")
+    check_artifacts(tonic_dir, tonic_files, source_artifacts["tonic"], "tonic")
+
+    mkpath(destination)
+    traces = joinpath(destination, "traces")
+    mkpath(traces)
     for relative in joint_files
         destination_trace = joinpath(traces, relative)
         copy_checked(joinpath(joint_dir, relative), destination_trace)
@@ -170,10 +198,8 @@ function build(joint_dir, tonic_dir, response_dir, destination)
     check_joint_traces(joint_dir, "theta_off_8.75_switching", changed)
     rows = NamedTuple[]
     for theta in TER.THETAS
-        directory = joinpath(tonic_dir, "points", TER.theta_key(theta))
-        files = filter(endswith(".toml"), readdir(directory; join=true))
-        length(files) == 147 || error("tonic point count differs at $theta")
-        for file in files
+        length(point_files[theta]) == 147 || error("tonic point count differs at $theta")
+        for file in point_files[theta]
             point_row = TOML.parsefile(file)
             point_row["theta_off"] == theta || error("tonic threshold mismatch")
             for source in TER.SOURCES
@@ -207,6 +233,8 @@ function build(joint_dir, tonic_dir, response_dir, destination)
         confirmations = joinpath(response_dir, "root_$index", "sustained", "confirmations.csv")
         copy_checked(confirmations, joinpath(destination, "$(role)_sustained.csv"))
     end
+    check_artifacts(joint_dir, joint_files, source_artifacts["joint"], "joint")
+    check_artifacts(tonic_dir, tonic_files, source_artifacts["tonic"], "tonic")
     record = Dict{String, Any}(
         "anchor" => joint["baseline_parameters"],
         "baseline_roots" => root_rows(baseline), "threshold_8p75_roots" => root_rows(changed),
@@ -221,7 +249,7 @@ function build(joint_dir, tonic_dir, response_dir, destination)
              "src/point_model.jl", "src/stability.jl", "src/equilibria.jl",
              "src/configurations.jl", "src/simulation.jl")),
         "reference_sha256" => Dict("joint" => hashfile(joint_ref), "tonic" => hashfile(tonic_ref),
-            "response" => response_ref_hash),
+            "response" => response_ref_hash, "source_artifacts" => hashfile(SOURCE_ARTIFACTS)),
         "limits" => "Finite-window trajectories and sampled input/threshold points; no bifurcation or completeness claim")
     NS.write_record(joinpath(destination, "data.toml"), record)
     files = [relpath(joinpath(dir, file), destination) for (dir, _, filenames) in walkdir(destination)

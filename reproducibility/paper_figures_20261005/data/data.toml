@@ -51,6 +51,7 @@ stability = "Attracting"
 [reference_sha256]
 joint = "564a3c40fa99bf4d4337928f062920158d6b1f2f999f0e95c1b75cee094c92c1"
 response = "bda3ae25dcb75234d28d9d5fd0449c67404c17a386c4e9fc7237286b6d956d08"
+source_artifacts = "a25cbb46176220782da2177ff207c89407be8383f6c990f075b1204f85675b15"
 tonic = "0c8a71682845bd87bb020bebad7e9dc49cf31eeab3ff37c6ea990397394610de"
 
 [selected_tonic.active]
@@ -182,9 +183,9 @@ status = "tested"
 [source_sha256]
 "experiments/narrative_study.toml" = "8a7985b93d86049982611bbda9ec25edb958172f11c5d8c42b04aed59476c4d9"
 "reproducibility/selective_tonic_e_release_20261005/replay.jl" = "1b8a571f5e16a1654e95c73563912bbf630ddce174fcefb98ea35580807f9fef"
-"scripts/build_paper_figure_data.jl" = "7a858a490ca9d6a8f865528000bd7de3b457d9284dee04ac8b06473d7f39047d"
+"scripts/build_paper_figure_data.jl" = "94b0a69ed76e6ebdd0d3deb235fb3d1dc1345e7e356eeb4744a281b3f8e21c67"
 "scripts/narrative_models.jl" = "9f5d973d065467d73049f82ca8cd79367144cd39b9b677508b64f4d30d805539"
-"scripts/render_paper_figures.jl" = "a04a173d9b2f564e541f4fc953164a071d401cdcd11a734af9e6221e8ec3133a"
+"scripts/render_paper_figures.jl" = "6cee1ed1cbbb8fe200550373d60be0a8cd5ed5fcda288b3b885027eabbf6a0c9"
 "scripts/run_narrative_study.jl" = "5ba06d0246b424ac62b5c53253957c30a96f8a63b53ac5c126883d56e3354398"
 "src/FailureOfInhibition2025.jl" = "59415146e734934bf48cae9b7c45ccdb7e156fd56b1fff54d9a6d2b48c3d806a"
 "src/configurations.jl" = "728fa9ad893023ea633bc8b693bf2c2b372cfb0b2f671f54533523fde66c1516"

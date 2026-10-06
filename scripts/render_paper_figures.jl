@@ -24,13 +24,14 @@ function checked_data(directory)
     for (relative, expected) in data["source_sha256"]
         hashfile(joinpath(ROOT, relative)) == expected || error("model/protocol source changed: $relative")
     end
-    for (name, relative) in (("joint", "selective_anchor_joint_20261005"),
-            ("tonic", "selective_tonic_e_release_20261005"),
-            ("response", "paper_figures_20261005"))
-        filename = name == "response" ? "response_reference.toml" : "reference_summary.toml"
+    for (name, relative, filename) in
+            (("joint", "selective_anchor_joint_20261005", "reference_summary.toml"),
+             ("tonic", "selective_tonic_e_release_20261005", "reference_summary.toml"),
+             ("response", "paper_figures_20261005", "response_reference.toml"),
+             ("source_artifacts", "paper_figures_20261005", "source_artifacts.toml"))
         path = joinpath(ROOT, "reproducibility", relative, filename)
         hashfile(path) == data["reference_sha256"][name] ||
-            error("reference summary changed: $name")
+            error("figure-data reference changed: $name")
     end
     samples = collect(CSV.File(joinpath(directory, "tonic_samples.csv")))
     length(samples) == data["sample_rows"] == 2058 || error("incomplete tonic sample table")

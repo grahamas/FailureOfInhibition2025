@@ -20,7 +20,7 @@ julia --project=plotting scripts/render_paper_figures.jl \
 ```
 
 The renderer rejects an existing output directory and checks every bundled
-file, selected model/protocol sources, and both reviewed reference summaries
+file, selected model/protocol sources, and all four reviewed reference files
 before writing PDF, SVG, and PNG files. To rebuild the bundle from the retained
 local archives instead, use the Julia builder:
 
@@ -33,7 +33,10 @@ julia --project=. scripts/build_paper_figure_data.jl \
 ```
 
 The builder checks the first two local summaries byte for byte against their
-tracked reviewed references. It verifies the historical response archive's
+tracked reviewed references and verifies every consumed joint trajectory and
+tonic point/theta file against the
+[reviewed source artifact digest](source_artifacts.toml) before and after
+building the packet. It verifies the historical response archive's
 manifest and the exact frozen metadata, parameters, input, roles, summary, and
 four S2 source tables against
 [the response reference](response_reference.toml) before copying any S2 rows.

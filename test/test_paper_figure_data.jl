@@ -21,3 +21,17 @@ include(joinpath(@__DIR__, "..", "scripts", "build_paper_figure_data.jl"))
         @test_throws ErrorException PaperFigureData.check_response_archive(baseline, anchor)
     end
 end
+
+@testset "Paper figure source artifacts" begin
+    mktempdir() do directory
+        write(joinpath(directory, "first.csv"), "initial,final\n0,1\n")
+        write(joinpath(directory, "second.toml"), "destination = \"active\"\n")
+        files = ["first.csv", "second.toml"]
+        reference = Dict("files" => 2,
+            "sha256" => PaperFigureData.artifact_digest(directory, files))
+        @test PaperFigureData.check_artifacts(directory, files, reference, "fixture")
+        write(joinpath(directory, "second.toml"), "destination = \"seizure\"\n")
+        @test_throws ErrorException PaperFigureData.check_artifacts(
+            directory, files, reference, "fixture")
+    end
+end

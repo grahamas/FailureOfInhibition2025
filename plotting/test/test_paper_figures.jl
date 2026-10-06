@@ -12,6 +12,7 @@ const PAPER_BUNDLE = joinpath(@__DIR__, "..", "..", "reproducibility",
         ("src/responses.jl", "src/drives.jl", "src/stability.jl",
          "scripts/render_paper_figures.jl"))
     @test haskey(data["reference_sha256"], "response")
+    @test haskey(data["reference_sha256"], "source_artifacts")
     @test length(samples) == 2058
     @test length(data["baseline_roots"]) == 7
     @test length(data["threshold_8p75_roots"]) == 5
