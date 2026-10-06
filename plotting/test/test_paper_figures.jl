@@ -6,6 +6,7 @@ const PaperFigures = PaperFigureRenderer
 const PAPER_BUNDLE = joinpath(@__DIR__, "..", "..", "reproducibility",
     "paper_figures_20261005", "data")
 
+if VERSION == v"1.10.12"
 @testset "Selective paper figure evidence" begin
     data, samples = PaperFigures.checked_data(PAPER_BUNDLE)
     @test data["julia_version"] == string(VERSION) == "1.10.12"
@@ -122,4 +123,9 @@ const PAPER_BUNDLE = joinpath(@__DIR__, "..", "..", "reproducibility",
         @test_throws ErrorException PaperFigures.checked_data(destination)
     end
     @test_throws ErrorException PaperFigures.render(PAPER_BUNDLE, PAPER_BUNDLE)
+end
+else
+@testset "Selective paper figure runtime gate" begin
+    @test_throws ErrorException PaperFigures.checked_data(PAPER_BUNDLE)
+end
 end

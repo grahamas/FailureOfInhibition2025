@@ -29,7 +29,12 @@ end
     tonic = TOML.parsefile(joinpath(root, "reproducibility",
         "selective_tonic_e_release_20261005", "reference_summary.toml"))
     environment = TOML.parsefile(PaperFigureData.SOURCE_ARTIFACTS)["environment"]
-    @test PaperFigureData.check_numerical_environment(joint, tonic, environment)
+    if string(VERSION) == environment["julia_version"]
+        @test PaperFigureData.check_numerical_environment(joint, tonic, environment)
+    else
+        @test_throws ErrorException PaperFigureData.check_numerical_environment(
+            joint, tonic, environment)
+    end
     @test PaperFigureData.check_reviewed_sources(joint, tonic) == joint["source_sha256"]
     changed_tonic = deepcopy(tonic)
     delete!(changed_tonic["metadata"]["source_sha256"], "src/diagnostics.jl")
