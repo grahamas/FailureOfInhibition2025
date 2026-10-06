@@ -1,0 +1,240 @@
+limits = "Finite-window trajectories and sampled input/threshold points; no bifurcation or completeness claim"
+sample_rows = 2058
+samples_per_threshold = 147
+
+[anchor]
+B_E = 0.35
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[baseline_roots]]
+E = 0.004701912277096535
+I = 3.221823160087132e-9
+role = "rest"
+stability = "Attracting"
+[[baseline_roots]]
+E = 0.024704981338340544
+I = 2.1547038284749825e-8
+role = "unassigned"
+stability = "Saddle"
+[[baseline_roots]]
+E = 0.31069465671587576
+I = 0.3208729794935832
+role = "active"
+stability = "Attracting"
+[[baseline_roots]]
+E = 0.4781021014831928
+I = 0.4999752641477178
+role = "unassigned"
+stability = "Saddle"
+[[baseline_roots]]
+E = 0.4943142780950648
+I = 0.4999176525624341
+role = "herald"
+stability = "Attracting"
+[[baseline_roots]]
+E = 0.49999999995984334
+I = 0.21843170697422906
+role = "unassigned"
+stability = "Saddle"
+[[baseline_roots]]
+E = 0.49999999999999994
+I = 0.0005618538894872697
+role = "seizure"
+stability = "Attracting"
+
+[reference_sha256]
+joint = "564a3c40fa99bf4d4337928f062920158d6b1f2f999f0e95c1b75cee094c92c1"
+tonic = "0c8a71682845bd87bb020bebad7e9dc49cf31eeab3ff37c6ea990397394610de"
+
+[selected_tonic.active]
+initial = [0.31069465671587576, 0.3208729794935832]
+switch_state = [0.499957065716794, 0.49986082169602636]
+
+    [selected_tonic.active.control]
+    destination = "herald"
+    destination_index = 3
+    final = [0.49995706571679455, 0.49986082169699836]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+    [selected_tonic.active.induction]
+    destination = "herald"
+    destination_index = 3
+    final = [0.499957065716794, 0.49986082169602636]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+    [selected_tonic.active.release.B_0p0]
+    destination = "active"
+    destination_index = 3
+    final = [0.28999705457701364, 0.26954073245841326]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+    [selected_tonic.active.release.B_0p17]
+    destination = "active"
+    destination_index = 3
+    final = [0.299976936725747, 0.29439867513653256]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+    [selected_tonic.active.release.B_0p35]
+    destination = "herald"
+    destination_index = 5
+    final = [0.4943142780947938, 0.49991765255907306]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+[selected_tonic.rest]
+initial = [0.004701912277096535, 3.221823160087132e-9]
+switch_state = [0.4999570657167964, 0.49986082170006085]
+
+    [selected_tonic.rest.control]
+    destination = "herald"
+    destination_index = 3
+    final = [0.49995706571679654, 0.4998608216999707]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+    [selected_tonic.rest.induction]
+    destination = "herald"
+    destination_index = 3
+    final = [0.4999570657167964, 0.49986082170006085]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+    [selected_tonic.rest.release.B_0p0]
+    destination = "active"
+    destination_index = 3
+    final = [0.2899970545770891, 0.2695407324587266]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+    [selected_tonic.rest.release.B_0p17]
+    destination = "active"
+    destination_index = 3
+    final = [0.29997693672413456, 0.29439867513462237]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+    [selected_tonic.rest.release.B_0p35]
+    destination = "herald"
+    destination_index = 5
+    final = [0.49431427809469186, 0.49991765255781206]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+[selected_tonic.seizure]
+B_E_on = 1.2328125
+initial = [0.5, 0.0005618538894872711]
+on_grid = 41
+status = "tested"
+
+    [selected_tonic.seizure.control]
+    destination = "seizure"
+    destination_index = 5
+    final = [0.5, 0.0005618538894872711]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+    [selected_tonic.seizure.release.B_0p0]
+    destination = "seizure"
+    destination_index = 5
+    final = [0.49999999999999983, 0.0005618538874924354]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+    [selected_tonic.seizure.release.B_0p17]
+    destination = "seizure"
+    destination_index = 5
+    final = [0.49999999999999994, 0.0005618538904408661]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+    [selected_tonic.seizure.release.B_0p35]
+    destination = "seizure"
+    destination_index = 7
+    final = [0.49999999999999994, 0.0005618538904408661]
+    horizon = 5000.0
+    solver_status = "Success"
+    status = "compatible"
+
+[source_sha256]
+"reproducibility/selective_tonic_e_release_20261005/replay.jl" = "1b8a571f5e16a1654e95c73563912bbf630ddce174fcefb98ea35580807f9fef"
+"scripts/build_paper_figure_data.jl" = "883549c246480264658c547a0f2ed312ed3a2fb13ddcb90c064a85c5aa6620e9"
+"scripts/narrative_models.jl" = "9f5d973d065467d73049f82ca8cd79367144cd39b9b677508b64f4d30d805539"
+"scripts/run_narrative_study.jl" = "5ba06d0246b424ac62b5c53253957c30a96f8a63b53ac5c126883d56e3354398"
+"src/equilibria.jl" = "37f5a045aab761e869847890059f9255c90548c2a57e9e0408dc602039c6b234"
+"src/point_model.jl" = "6946cb1a0c31b90f210d4606efff477b80a433ded6702b53d9ec98f9e9b38d9b"
+"src/simulation.jl" = "41b1d3265e9fb4413aabc0b0ed1fb1ac9bd644c9b977682be021a0eda3870484"
+
+[[threshold_8p75_roots]]
+E = 0.004701912277096531
+I = 3.2218231665716302e-9
+role = "rest"
+stability = "Attracting"
+[[threshold_8p75_roots]]
+E = 0.024704981338340613
+I = 2.1547038328117187e-8
+role = "unassigned"
+stability = "Saddle"
+[[threshold_8p75_roots]]
+E = 0.31069465656962875
+I = 0.32087297932146397
+role = "active"
+stability = "Attracting"
+[[threshold_8p75_roots]]
+E = 0.478131607341984
+I = 0.4999921556548317
+role = "unassigned"
+stability = "Saddle"
+[[threshold_8p75_roots]]
+E = 0.49425859336601746
+I = 0.4999965077936574
+role = "herald"
+stability = "Attracting"
+
+[[tonic_on_roots]]
+E = 0.3806156606000942
+I = 0.47000151941488366
+role = "rest"
+stability = "Attracting"
+[[tonic_on_roots]]
+E = 0.39708357821212525
+I = 0.48860129639198385
+role = "unassigned"
+stability = "Saddle"
+[[tonic_on_roots]]
+E = 0.49995706571679566
+I = 0.49986082169873436
+role = "herald"
+stability = "Attracting"
+[[tonic_on_roots]]
+E = 0.4999999999995139
+I = 0.21843170714654933
+role = "unassigned"
+stability = "Saddle"
+[[tonic_on_roots]]
+E = 0.5
+I = 0.0005618538894872711
+role = "seizure"
+stability = "Attracting"

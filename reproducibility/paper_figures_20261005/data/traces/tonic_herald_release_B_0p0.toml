@@ -1,0 +1,29 @@
+destination = 3
+final = [0.2899970545770891, 0.2695407324587266]
+horizon = 5000.0
+status = "compatible"
+
+[[attempts]]
+destination = 3
+error = ""
+horizon = 5000.0
+solver_status = "Success"
+status = "compatible"
+
+    [attempts.diagnostics]
+    classification = "EquilibriumCompatible"
+    equilibrium_distances = [0.2894166756702121, 0.2695403255322979, 2.1654400494952597e-11, 0.21000294520003943, 0.26897887858908387]
+    integration_success = true
+    matched_equilibrium = 3
+    max_balance_residuals = [1.7177947952973227e-10, 1.3168438561805829e-10]
+    means = [[0.2899970545762872, 0.2695407324567267], [0.2899970545763871, 0.26954073245698024]]
+    ranges = [[1.6448564732485238e-11, 4.228245531479047e-11], [1.3934686737826496e-11, 3.184036367898102e-11]]
+    reasons = []
+    sample_counts = [101, 101]
+    window_bounds = [[4800.0, 4900.0], [4900.0, 5000.0]]
+
+        [attempts.diagnostics.options]
+        balance_atol = 1.0e-8
+        coordinate_atol = 1.0e-6
+        min_samples = 21
+        window_duration = 100.0
