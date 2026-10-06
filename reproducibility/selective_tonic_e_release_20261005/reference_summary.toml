@@ -1,0 +1,569 @@
+limits = "Sampled input brackets and finite-window outcomes; no exact threshold, attractor completeness, asymptotic rescue, or biological certification"
+
+[metadata]
+baseline_B_E = 0.35
+extension_upper_B_E = 16.0
+initial_upper_B_E = 8.0
+julia_version = "1.10.12"
+point_budget_per_theta = 4096
+purpose = "selective anchor tonic E induction and cessation"
+replay_sha256 = "1b8a571f5e16a1654e95c73563912bbf630ddce174fcefb98ea35580807f9fef"
+return_B_E = [0.35, 0.17, 0.0]
+sources = ["rest", "active"]
+step = 0.25
+theta_off = [8.0, 8.25, 8.5, 8.75, 9.0, 10.0, 12.0]
+width = 0.01
+
+    [metadata.source_sha256]
+    "Manifest.toml" = "54c3971df78e42b150c41ecf100f913712244a118bb693e3cfb90ecea4fca7b6"
+    "Project.toml" = "5e34f43864bb19cfd3878c8743f49abeefc4b363e5cb635983fd5f02b4535a81"
+    "experiments/narrative_study.toml" = "8a7985b93d86049982611bbda9ec25edb958172f11c5d8c42b04aed59476c4d9"
+    "scripts/input_release_models.jl" = "c7efe162ade6cde9d872db9a92c13c8ec40180dbf8d6a71b3c704a75d134a7c2"
+    "scripts/narrative_models.jl" = "9f5d973d065467d73049f82ca8cd79367144cd39b9b677508b64f4d30d805539"
+    "scripts/run_basin_rescue_study.jl" = "29b0a12a2a533d50572f26ca1df09cd9687c7062e7bb70fb8abd160d8e8d3a88"
+    "scripts/run_input_release_study.jl" = "0ad82a236f209d6f9ad6013fd13b38b4150317d4f530163a4d1f24812e65c52d"
+    "scripts/run_minimal_experiment.jl" = "71b0771e486210fd66894fa8e9a4f2d69fb2524fb833b128c4875ab431032539"
+    "scripts/run_narrative_study.jl" = "5ba06d0246b424ac62b5c53253957c30a96f8a63b53ac5c126883d56e3354398"
+    "src/FailureOfInhibition2025.jl" = "59415146e734934bf48cae9b7c45ccdb7e156fd56b1fff54d9a6d2b48c3d806a"
+    "src/basin_rescue.jl" = "681f842c60eeda4ea30f5931881b3ef03a3b93b3904e7783c4533c931255c75b"
+    "src/configurations.jl" = "728fa9ad893023ea633bc8b693bf2c2b372cfb0b2f671f54533523fde66c1516"
+    "src/continuation.jl" = "151224968b5d7a52902bd0754668501d86466679fc27101d4ab531a94b2225cc"
+    "src/diagnostics.jl" = "bbca29916dbb8297c5289b29171f1bce9f72faea347680bde03f830a2b1abe39"
+    "src/drives.jl" = "325459ca1eec6ccc360cd76fb3eda3f93d595b619b1cb5524cdea5ba98ef465a"
+    "src/equilibria.jl" = "37f5a045aab761e869847890059f9255c90548c2a57e9e0408dc602039c6b234"
+    "src/hopf_diagnostics.jl" = "69ccd1982f83e916935631377cc45ce06f9765087246beab27ed89191703f8ec"
+    "src/periodic_continuation.jl" = "95a093ab646a75a000ae4bf9ff8199c87aae6a0407014f3ba53dc2890b8e1033"
+    "src/periodic_orbits.jl" = "0bee5e8c6546257475700786b71d852211888214c6aedfb800e20f303c60801c"
+    "src/point_model.jl" = "6946cb1a0c31b90f210d4606efff477b80a433ded6702b53d9ec98f9e9b38d9b"
+    "src/pulse_experiments.jl" = "0a1f801e3523d34199452924a8a853db77036b21ab019239a684068caa533098"
+    "src/responses.jl" = "c0d63439f3d8db740e898322162eff4b2ca8b68fa32f7b2e79f071b0b836bd30"
+    "src/simulation.jl" = "41b1d3265e9fb4413aabc0b0ed1fb1ac9bd644c9b977682be021a0eda3870484"
+    "src/stability.jl" = "c56919d7add37b1d59977fea1bced54c31097d316597680b83e68c6421801d31"
+
+[[thresholds]]
+point_budget_exhausted = false
+sample_count = 147
+sampled_max_B_E = 16.0
+theta_off = 8.0
+
+    [thresholds.seizure.1p2328125]
+    control = "seizure"
+    status = "tested"
+
+        [thresholds.seizure.1p2328125.release]
+        B_0p0 = "seizure"
+        B_0p17 = "seizure"
+        B_0p35 = "seizure"
+
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "rest"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "active"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+[[thresholds]]
+point_budget_exhausted = false
+sample_count = 147
+sampled_max_B_E = 16.0
+theta_off = 8.25
+
+    [thresholds.seizure.1p2328125]
+    control = "seizure"
+    status = "tested"
+
+        [thresholds.seizure.1p2328125.release]
+        B_0p0 = "seizure"
+        B_0p17 = "seizure"
+        B_0p35 = "seizure"
+
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "rest"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "active"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+[[thresholds]]
+point_budget_exhausted = false
+sample_count = 147
+sampled_max_B_E = 16.0
+theta_off = 8.5
+
+    [thresholds.seizure.1p2328125]
+    control = "seizure"
+    status = "tested"
+
+        [thresholds.seizure.1p2328125.release]
+        B_0p0 = "seizure"
+        B_0p17 = "seizure"
+        B_0p35 = "seizure"
+
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "rest"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "active"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+[[thresholds]]
+point_budget_exhausted = false
+sample_count = 147
+sampled_max_B_E = 16.0
+theta_off = 8.75
+
+    [thresholds.seizure.1p2328125]
+    control = "not_tested"
+    status = "source_unavailable"
+
+        [thresholds.seizure.1p2328125.release]
+
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "rest"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "active"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+[[thresholds]]
+point_budget_exhausted = false
+sample_count = 147
+sampled_max_B_E = 16.0
+theta_off = 9.0
+
+    [thresholds.seizure.1p2328125]
+    control = "not_tested"
+    status = "source_unavailable"
+
+        [thresholds.seizure.1p2328125.release]
+
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "rest"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "active"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+[[thresholds]]
+point_budget_exhausted = false
+sample_count = 147
+sampled_max_B_E = 16.0
+theta_off = 10.0
+
+    [thresholds.seizure.1p2328125]
+    control = "not_tested"
+    status = "source_unavailable"
+
+        [thresholds.seizure.1p2328125.release]
+
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "rest"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "active"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+[[thresholds]]
+point_budget_exhausted = false
+sample_count = 147
+sampled_max_B_E = 16.0
+theta_off = 12.0
+
+    [thresholds.seizure.1p2328125]
+    control = "not_tested"
+    status = "source_unavailable"
+
+        [thresholds.seizure.1p2328125.release]
+
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "rest"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "rest"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    brackets = []
+    qualified_samples = 0
+    return_B_E = 0.35
+    source = "active"
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.17
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001
+    [[thresholds.thresholds]]
+    qualified_samples = 127
+    return_B_E = 0.0
+    source = "active"
+
+        [[thresholds.thresholds.brackets]]
+        at_domain_end = true
+        at_domain_start = false
+        confirmed_41_grid = true
+        first_success = 1.2328125
+        last_success = 16.0
+        lower_sample = 1.22890625
+        minimum_delta_B_E = 0.8828125000000001

@@ -7,6 +7,20 @@ Six geometries were replayed after the first correction; a later read-only
 audit found a broader cell-consistency issue. The frozen full study output and
 its response measurements remain historical and unchanged.
 
+## Final frozen-batch status, 1 October 2026 UTC
+
+The version 3 batch and its report completed on 1 October. The final verifier
+recorded 8 anchors, 224 screen cases, 74 selected detailed follow-ups, 1,171
+response baselines, and 172,099 verified artifact files. There were no
+independent root-search disagreements or held-input control mismatches. All
+192 tighter-confirmation differences began as unresolved observations: 189
+resolved to active and three to oscillatory. These counts describe the
+**frozen historical selection**, not a rerun under the current region rule.
+The [anchor decision packet](anchor_regime_decision_20261005.md) reviews that
+dated evidence and identifies which proposed figure observations still need
+corrected-source confirmation. The partial-status sections below retain their
+September snapshot meaning.
+
 ## Paper-handoff update, 30 September 2026 UTC
 
 The partial audit in [the paper evidence handoff](paper_evidence.md) covers 243
