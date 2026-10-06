@@ -102,7 +102,10 @@ joint samples per family, shorter follow-up, and two pulse durations; it is
 not a scientific replication. Rerunning a stage verifies source/configuration
 identity and completed-unit checksums before resuming. Changed source or
 configuration requires a new output directory. Archived source supports replay
-when the working copy has moved on.
+when the working copy has moved on. Metadata records each completed stage
+invocation, including its stage, case filter, and smoke mode, in replay order.
+The selected confirmation grid is written to `selected.toml` and used by the
+renderer; older artifacts use their archived configuration to identify it.
 
 The full retained evidence is in `output/narrative_final_20260928`. Figures
 and the standalone report are in `output/narrative_figures_20260928`. The first

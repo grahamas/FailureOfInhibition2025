@@ -2,6 +2,24 @@ include(joinpath(@__DIR__, "..", "scripts", "run_narrative_study.jl"))
 @testset "Narrative study contracts" begin
     N=NarrativeStudy; M=N.NarrativeModels
     config=N.load_config(joinpath(@__DIR__,"..","experiments","narrative_study.toml");smoke=true)
+    @test N.confirmation_grid(config)==41
+    mktempdir() do root
+        source=read(joinpath(@__DIR__,"..","experiments","narrative_study.toml"),String)
+        invalid=joinpath(root,"invalid.toml")
+        write(invalid,replace(source,"confirmation_grids = [21, 41]"=>"confirmation_grids = [21.5]"))
+        @test_throws ArgumentError N.load_config(invalid)
+        write(invalid,replace(source,"confirmation_grids = [21, 41]"=>"confirmation_grids = [21]"))
+        @test N.confirmation_grid(N.load_config(invalid))==21
+    end
+    command=N.replay_command("run_narrative_study.jl";stage="screen",case_filter="figure3",smoke=true)
+    @test occursin("--stage screen --case 'figure3' --smoke",command)
+    @test N.shell_quote("a'b")=="'a'\\''b'"
+    metadata=Dict{String,Any}()
+    N.complete_replay!(metadata,"run_narrative_study.jl";stage="screen",case_filter="figure3",smoke=true)
+    N.complete_replay!(metadata,"run_narrative_study.jl";stage="confirm",case_filter=nothing,smoke=true)
+    @test metadata["replay_invocations"]==[command,
+        N.replay_command("run_narrative_study.jl";stage="confirm",smoke=true)]
+    @test metadata["replay_from_artifact_directory"]==join(metadata["replay_invocations"]," && ")
     p=Dict{String,Any}("family"=>"figure3","e_to_e"=>17.,"i_to_e"=>9.,"e_to_i"=>19.,
         "i_to_i"=>4.,"theta_off"=>8.,"tau_ratio"=>0.2,"B_E"=>0.125)
     for b in (0.,0.125)
@@ -66,12 +84,23 @@ include(joinpath(@__DIR__, "..", "scripts", "run_narrative_study.jl"))
     end
     mktempdir() do dir
         path=joinpath(@__DIR__,"..","experiments","narrative_study.toml")
-        metadata=N.initialize(path,dir,config)
+        metadata=N.initialize(path,dir,config;stage="screen",case_filter="figure3")
+        @test metadata["replay_from_artifact_directory"]==command
         @test N.initialize(path,dir,config)["source_sha256"]==metadata["source_sha256"]
         archived=joinpath(dir,"source","scripts","narrative_models.jl")
         open(archived,"a") do io
             write(io,"\n# corruption\n")
         end
         @test_throws ArgumentError N.initialize(path,dir,config)
+    end
+    mktempdir() do dir
+        path=joinpath(@__DIR__,"..","experiments","narrative_study.toml")
+        output=N.run_study(path,joinpath(dir,"study");stage="screen",smoke=true,
+            case_filter="no_matching_case")
+        metadata=N.TOML.parsefile(joinpath(output,"metadata.toml"))
+        @test metadata["last_completed_stage"]=="screen"
+        @test !metadata["completed"]
+        @test metadata["replay_invocations"]==[N.replay_command("run_narrative_study.jl";
+            stage="screen",case_filter="no_matching_case",smoke=true)]
     end
 end

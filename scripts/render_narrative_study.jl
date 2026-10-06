@@ -54,6 +54,14 @@ function draw_trace!(ax,path;offset=0.,label="")
     lines!(ax,data.time.+offset,data.I;color=I_COLOR,label=isempty(label) ? "I" : label*" I")
 end
 
+function confirmed_context_path(input,selected)
+    grids=TOML.parsefile(joinpath(input,"config.toml"))["search"]["confirmation_grids"]
+    grid=get(selected,"final_grid",last(grids))
+    grid isa Integer && !(grid isa Bool) && grid>=2 && grid in grids ||
+        throw(ArgumentError("selected confirmation grid does not match archived configuration"))
+    joinpath(input,selected["confirmation_directory"],"grid$grid")
+end
+
 function render(input_dir,output_dir)
     input,output=abspath(input_dir),abspath(output_dir)
     verify(input)
@@ -61,7 +69,7 @@ function render(input_dir,output_dir)
     mkpath(output)
     selected=TOML.parsefile(joinpath(input,"selected.toml"));p=selected["parameters"]
     pair=NarrativeModels.models(p)
-    confirmed=joinpath(input,selected["confirmation_directory"],"grid41")
+    confirmed=confirmed_context_path(input,selected)
     roots=TOML.parsefile(joinpath(confirmed,"context.toml"))
     roles=TOML.parsefile(joinpath(confirmed,"roles.toml"))
     control=TOML.parsefile(joinpath(input,"matched_control","context.toml"))

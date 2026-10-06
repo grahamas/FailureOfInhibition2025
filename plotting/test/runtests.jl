@@ -6,6 +6,7 @@ import TOML
 
 const ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 include(joinpath(ROOT, "scripts", "plot_manuscript_evidence.jl"))
+include(joinpath(ROOT, "scripts", "render_narrative_study.jl"))
 using .ManuscriptEvidenceFigures
 
 struct ShiftedVector{T} <: AbstractVector{T}
@@ -83,6 +84,19 @@ function write_report_fixture(path)
 end
 
 @testset "Manuscript evidence figures" begin
+    @testset "Narrative confirmation grid" begin
+        mktempdir() do root
+            write(joinpath(root,"config.toml"),"[search]\nconfirmation_grids = [21]\n")
+            selected=Dict("confirmation_directory"=>"confirmation/example","final_grid"=>21)
+            expected=joinpath(root,"confirmation","example","grid21")
+            @test NarrativeRenderer.confirmed_context_path(root,selected)==expected
+            delete!(selected,"final_grid")
+            @test NarrativeRenderer.confirmed_context_path(root,selected)==expected
+            selected["final_grid"]=41
+            @test_throws ArgumentError NarrativeRenderer.confirmed_context_path(root,selected)
+        end
+    end
+
     @testset "Julia-only active source" begin
         active_python = String[]
         for (directory, subdirectories, files) in walkdir(ROOT)
