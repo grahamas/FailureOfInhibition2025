@@ -40,9 +40,11 @@ self-coupling fixed at either (9,4) or (13,6). These are exploration bounds.
 ## Stage B: proposed coupling screen
 
 Use 64 deterministic joint samples over the six-dimensional box below, plus
-the existing anchors. Start the deterministic sequence after the prior 64 joint
-samples; archive the exact case list before evaluating outcomes. The purpose
-is to explore combinations between the two previously fixed coupling families.
+the existing anchors. Start the new six-dimensional sequence at its first
+index and archive the exact case list before evaluating outcomes. The earlier
+64 joint samples came from separate four-dimensional sequences at fixed
+couplings, so they are not a prefix of this design. The purpose is to explore
+combinations between the two previously fixed coupling families.
 
 | Parameter | Proposed range | Relation to existing exploration |
 | --- | --- | --- |
