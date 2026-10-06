@@ -5,12 +5,12 @@ author_minutes = 1170
 
 [[tasks]]
 id = 1
-title = "Reconcile the historical input-response batch"
+title = "Reconcile the historical study evidence"
 duration_minutes = 45
 depends_on = []
 status = "in_progress"
-done_when = "All 74 frozen follow-ups are accounted for; corrected selections, affected screens and responses, and newly selected detailed cases are checked before figure use."
-agent_preparation = "Historical follow-up audit plus corrected-selection, screening, and response rerun records"
+done_when = "All 74 frozen follow-ups are accounted for; corrected selections, affected screens and responses, newly selected detailed cases, and phase-handoff witnesses are checked before figure use."
+agent_preparation = "Historical follow-up audit plus corrected-selection, screening, response, and phase-handoff rerun records"
 
 [[tasks]]
 id = 2

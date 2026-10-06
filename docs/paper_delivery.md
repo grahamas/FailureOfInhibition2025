@@ -24,7 +24,7 @@ graph for later translation; it is not a claim of native TickTick import support
 
 | ID | Task | Minutes | Depends on | Deliverable / done when |
 | --- | --- | ---: | --- | --- |
-| 01 | Reconcile the historical input-response batch | 45 | — | All 74 frozen follow-ups are accounted for; corrected selections, affected screens and responses, and newly selected detailed cases are checked before figure use. |
+| 01 | Reconcile the historical study evidence | 45 | — | All 74 frozen follow-ups are accounted for; corrected selections, affected screens and responses, newly selected detailed cases, and phase-handoff witnesses are checked before figure use. |
 | 02 | Define the contribution relative to prior work | 45 | — | Review the sourced comparison and select the paper's contribution and biological framing. |
 | 03 | Approve the argument and four figure questions | 45 | 01, 02 | One sentence per main result identifies its evidence and the observation still needed. |
 | 04 | Approve the next experiment card | 30 | 03 | Choose concrete parameter domains, measurements, batch budget, and stopping rule. |
@@ -57,9 +57,11 @@ tasks into additional paragraph or figure-panel blocks as needed.
 
 Task 01 has a verified historical snapshot and a completed frozen batch. The
 6 October selection audit requires corrected selection, screening, and response
-reruns before figure selection; its final review remains pending. Task 02 has
-a sourced contribution brief. Task 03 has an argument and figure handoff for
-author review. Task 04 has a proposed experiment card awaiting domain choices.
+reruns; the exact-domain handoff correction also requires renewed induction and
+switching witnesses before figure selection. Task 01's final review remains
+pending. Task 02 has a sourced contribution brief. Task 03 has an argument and
+figure handoff for author review. Task 04 has a proposed experiment card
+awaiting domain choices.
 Tasks 05–07 and 13–17 already have reusable evidence/figure material; they are
 not marked complete before expanded results and final selection are reviewed.
 Manuscript revisions, author approvals, and submission remain pending.

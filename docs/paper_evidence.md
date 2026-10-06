@@ -13,6 +13,10 @@ summaries have not been rerun under the corrected rule. These records remain
 historical evidence. Candidate figures using two-input regional selections
 require corrected geometry, affected screening and response reruns, and renewed
 confirmation before author selection.
+The frozen permanent-release and narrative results also predate the exact-domain
+phase handoff correction. Repeat any induction or switching witness proposed
+for a figure under that policy; their prior counts and trajectories remain
+historical evidence.
 
 ## Argument
 

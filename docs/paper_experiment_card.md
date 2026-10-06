@@ -34,10 +34,12 @@ the corrected cell and region rules can change representative inputs. Recompute
 geometry selection for the 306 archived cases under the corrected source, then
 rerun affected screening and response protocols, including newly selected
 detailed cases, and independently confirm candidate contexts before selecting
-figures. Preserve the frozen records and identify which source produced each
-result. The 224 parameter screens, 91 anchor baselines, original
-narrative study, and independently checked selective-withdrawal examples remain
-leads rather than current regional certification. This stage needs no new
+figures. Repeat any permanent-release induction and switching-pulse witnesses
+proposed for figures under the corrected exact-domain handoff policy. Preserve
+the frozen records and identify which source produced each result. The 224
+parameter screens, 91 anchor baselines, original narrative and release studies,
+and independently checked selective-withdrawal examples remain historical leads
+pending those checks. This stage needs no new
 parameter-domain choice and should precede another large atlas.
 
 The existing expanded axes are recurrent excitation 0–24, recruitment 12–28,
