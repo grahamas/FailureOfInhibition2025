@@ -1,0 +1,5 @@
+variant,direction,kind,first_point,second_point
+default,1,fold,12,13
+default,1,fold,28,29
+half_step,1,fold,18,19
+half_step,1,fold,37,38

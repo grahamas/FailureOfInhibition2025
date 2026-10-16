@@ -1,0 +1,10 @@
+audit_manifest_sha256 = "c41dfc2fe00bb1f1fd69d073e6fa5c1ed99bd1ef4c29a5d6af1df3024719af8e"
+checks = 173
+completed = true
+completeness = "CompletenessNotCertified"
+missing_roots = 0
+refinement_disagreements = 2
+refinement_uncovered = 29
+search_disagreements = 0
+seeds = 11
+source_sha256 = "57d296102e9e5aadbd2034006930fa0c22efdf0e362c85c1cb7e94bb530ffb06"

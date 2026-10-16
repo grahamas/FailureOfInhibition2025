@@ -44,4 +44,6 @@ include("test_support.jl")
     include("test_figure_packet_io.jl")
     include("test_figure_redesign.jl")
     include("test_figure_repair.jl")
+    include("test_equilibrium_role_audit.jl")
+    include("test_equilibrium_fold_matches.jl")
 end

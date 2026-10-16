@@ -1,0 +1,271 @@
+[[seeds]]
+B_E = 2.0
+B_I = 1.0
+context = "baseline/input_dependent/baseline_3"
+root = 3
+seed = 1
+source = "output/figure_details_20261006/cases/input_dependent/baseline_3/context.toml"
+source_sha256 = "e5432a7b1f12771860004e43d5eb5ac541b3ebe975ebe458c227eb7c5e7ccf75"
+
+    [seeds.parameters]
+    baselines = [[8.0, 0.0], [0.0, 0.0]]
+    category = "anchors"
+    e_to_e = 4.0
+    e_to_i = 19.0
+    family = "figure3"
+    historical_reference = "Figure 3 anchor"
+    i_to_e = 9.0
+    i_to_i = 4.0
+    id = "input_dependent"
+    name = "three_sinks_descending"
+    parameter_record_sha256 = "7c24c30dcf14972263d551a82286a90ab4ee5542e9b3af88d390f968fe3c2ccc"
+    selection_reason = "weak recurrence, input dependence, and periodic-source lead"
+    slope_e = 5.0
+    slope_i = 5.0
+    tau_e = 7.8
+    tau_ratio = 4.4
+    theta_e = 1.5
+    theta_off = 8.0
+    theta_on = 4.0
+[[seeds]]
+B_E = 0.35
+B_I = 0.0
+context = "intervention/selective_withdrawal/e_to_i_14.25"
+root = 3
+seed = 2
+source = "output/figure_details_20261006/interventions/selective_withdrawal/e_to_i_14.25/context.toml"
+source_sha256 = "06724154926837daf4d20af51a09fba9a3dea8680aa919831a9eae61016ee110"
+
+    [seeds.parameters]
+    baselines = [[0.35, 0.0], [0.1, 0.0]]
+    category = "anchors"
+    e_to_e = 17.0
+    e_to_i = 14.25
+    family = "figure4"
+    i_to_e = 13.0
+    i_to_i = 6.0
+    id = "selective_withdrawal"
+    parameter_record_sha256 = "40cf357b2d956d4b6e8ebc5b1aac56d754993eefe8752d7042f434dd6d935287"
+    tau_ratio = 0.2
+    theta_off = 8.0
+[[seeds]]
+B_E = 0.35
+B_I = 0.0
+context = "intervention/selective_withdrawal/theta_off_8.75"
+root = 5
+seed = 3
+source = "output/figure_details_20261006/interventions/selective_withdrawal/theta_off_8.75/context.toml"
+source_sha256 = "962ce845ee9e131d63c5b87756829c68abe77daf96c7d9497634964680d963a7"
+
+    [seeds.parameters]
+    baselines = [[0.35, 0.0], [0.1, 0.0]]
+    category = "anchors"
+    e_to_e = 17.0
+    e_to_i = 19.0
+    family = "figure4"
+    i_to_e = 13.0
+    i_to_i = 6.0
+    id = "selective_withdrawal"
+    parameter_record_sha256 = "40cf357b2d956d4b6e8ebc5b1aac56d754993eefe8752d7042f434dd6d935287"
+    tau_ratio = 0.2
+    theta_off = 8.75
+[[seeds]]
+B_E = 0.35
+B_I = 0.0
+context = "intervention/selective_withdrawal/theta_off_10.5"
+root = 5
+seed = 4
+source = "output/figure_details_20261006/interventions/selective_withdrawal/theta_off_10.5/context.toml"
+source_sha256 = "07a409b7364c442857aefe769d3af4d46f58745c7ee7a392ad021c8dae3cbaf7"
+
+    [seeds.parameters]
+    baselines = [[0.35, 0.0], [0.1, 0.0]]
+    category = "anchors"
+    e_to_e = 17.0
+    e_to_i = 19.0
+    family = "figure4"
+    i_to_e = 13.0
+    i_to_i = 6.0
+    id = "selective_withdrawal"
+    parameter_record_sha256 = "40cf357b2d956d4b6e8ebc5b1aac56d754993eefe8752d7042f434dd6d935287"
+    tau_ratio = 0.2
+    theta_off = 10.5
+[[seeds]]
+B_E = 0.5
+B_I = 0.0
+context = "intervention/threshold_to_active/e_to_i_13.299999999999999"
+root = 1
+seed = 5
+source = "output/figure_details_20261006/interventions/threshold_to_active/e_to_i_13.299999999999999/context.toml"
+source_sha256 = "bf658870146df6bb41faf6a5a559280be4abaf8d66b91e5575d37438425af6bf"
+
+    [seeds.parameters]
+    baselines = [[0.5, 0.0]]
+    category = "anchors"
+    e_to_e = 16.0
+    e_to_i = 13.299999999999999
+    family = "figure4"
+    i_to_e = 13.0
+    i_to_i = 6.0
+    id = "threshold_to_active"
+    parameter_record_sha256 = "8e136075de4c78d5181a181db943333c11967c17b556d0dba6878ccddd5760f6"
+    tau_ratio = 0.2
+    theta_off = 8.0
+[[seeds]]
+B_E = 0.0
+B_I = 8.8125
+context = "detail_geometry/input_dependent/contexts/0.0_8.8125"
+root = 1
+seed = 6
+source = "output/figure_details_20261006/cases/input_dependent/geometry/contexts.tar.gz::contexts/0.0_8.8125/context.toml"
+source_sha256 = "6fb6bea81cfbd243b76b7f3324b5e160484b899daed269361c3145f640041bc2"
+
+    [seeds.parameters]
+    baselines = [[8.0, 0.0], [0.0, 0.0]]
+    category = "anchors"
+    e_to_e = 4.0
+    e_to_i = 19.0
+    family = "figure3"
+    historical_reference = "Figure 3 anchor"
+    i_to_e = 9.0
+    i_to_i = 4.0
+    id = "input_dependent"
+    name = "three_sinks_descending"
+    parameter_record_sha256 = "7c24c30dcf14972263d551a82286a90ab4ee5542e9b3af88d390f968fe3c2ccc"
+    selection_reason = "weak recurrence, input dependence, and periodic-source lead"
+    slope_e = 5.0
+    slope_i = 5.0
+    tau_e = 7.8
+    tau_ratio = 4.4
+    theta_e = 1.5
+    theta_off = 8.0
+    theta_on = 4.0
+[[seeds]]
+B_E = 0.0
+B_I = 8.875
+context = "detail_geometry/selective_withdrawal/contexts/0.0_8.875"
+root = 1
+seed = 7
+source = "output/figure_details_20261006/cases/selective_withdrawal/geometry/contexts.tar.gz::contexts/0.0_8.875/context.toml"
+source_sha256 = "a4558256e0bc1b8253895b0cd9af0bd1607d146858fbac10ab3c8478697b97ae"
+
+    [seeds.parameters]
+    baselines = [[0.35, 0.0], [0.1, 0.0]]
+    category = "anchors"
+    e_to_e = 17.0
+    e_to_i = 19.0
+    family = "figure4"
+    i_to_e = 13.0
+    i_to_i = 6.0
+    id = "selective_withdrawal"
+    parameter_record_sha256 = "40cf357b2d956d4b6e8ebc5b1aac56d754993eefe8752d7042f434dd6d935287"
+    selection_reason = "reference switching and selective control"
+    tau_ratio = 0.2
+    theta_off = 8.0
+[[seeds]]
+B_E = 0.425
+B_I = 2.3125
+context = "detail_geometry/selective_withdrawal/contexts/0.425_2.3125"
+root = 1
+seed = 8
+source = "output/figure_details_20261006/cases/selective_withdrawal/geometry/contexts.tar.gz::contexts/0.425_2.3125/context.toml"
+source_sha256 = "1a04517acb04a87b6a820852b9bb4a7af398567ff77eed62029f03edb391d0cc"
+
+    [seeds.parameters]
+    baselines = [[0.35, 0.0], [0.1, 0.0]]
+    category = "anchors"
+    e_to_e = 17.0
+    e_to_i = 19.0
+    family = "figure4"
+    i_to_e = 13.0
+    i_to_i = 6.0
+    id = "selective_withdrawal"
+    parameter_record_sha256 = "40cf357b2d956d4b6e8ebc5b1aac56d754993eefe8752d7042f434dd6d935287"
+    selection_reason = "reference switching and selective control"
+    tau_ratio = 0.2
+    theta_off = 8.0
+[[seeds]]
+B_E = 0.0
+B_I = 0.0
+context = "screen/figure3_joint_16/contexts/0.0_0.0"
+root = 1
+seed = 9
+source = "output/figure_screen_20261006/expansion/figure3_joint_16/geometry/contexts.tar.gz::contexts/0.0_0.0/context.toml"
+source_sha256 = "943dd1a945b21aa05b12e308616ab8d7891c6b34cf62c14013432d3feeb30f55"
+
+    [seeds.parameters]
+    baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+    category = "expansion"
+    e_to_e = 0.75
+    e_to_i = 21.48148148148148
+    family = "figure3"
+    historical_reference = "Figure 3 anchor"
+    i_to_e = 9.0
+    i_to_i = 4.0
+    id = "figure3_joint_16"
+    name = "three_sinks_descending"
+    parameter_record_sha256 = "edb6d757450d945b284f1f6e45a0d7b9e9454f2a1efe2c64cd39e73cd80449b2"
+    slope_e = 5.0
+    slope_i = 5.0
+    tau_e = 7.8
+    tau_ratio = 1.5714285714285714
+    theta_e = 1.5
+    theta_off = 7.92
+    theta_on = 4.0
+[[seeds]]
+B_E = 0.0
+B_I = 8.0
+context = "screen/figure3_joint_16/contexts/0.0_8.0"
+root = 1
+seed = 10
+source = "output/figure_screen_20261006/expansion/figure3_joint_16/geometry/contexts.tar.gz::contexts/0.0_8.0/context.toml"
+source_sha256 = "940042839ada4e24abf5178bf0d22c1a61b5d5d988058ac65bcf6bf0f751e198"
+
+    [seeds.parameters]
+    baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+    category = "expansion"
+    e_to_e = 0.75
+    e_to_i = 21.48148148148148
+    family = "figure3"
+    historical_reference = "Figure 3 anchor"
+    i_to_e = 9.0
+    i_to_i = 4.0
+    id = "figure3_joint_16"
+    name = "three_sinks_descending"
+    parameter_record_sha256 = "edb6d757450d945b284f1f6e45a0d7b9e9454f2a1efe2c64cd39e73cd80449b2"
+    slope_e = 5.0
+    slope_i = 5.0
+    tau_e = 7.8
+    tau_ratio = 1.5714285714285714
+    theta_e = 1.5
+    theta_off = 7.92
+    theta_on = 4.0
+[[seeds]]
+B_E = 0.07421875
+B_I = 0.0
+context = "detail_geometry/four_sinks_central/contexts/0.07421875_0.0"
+root = 5
+seed = 11
+source = "output/figure_details_20261006/cases/four_sinks_central/geometry/contexts.tar.gz::contexts/0.07421875_0.0/context.toml"
+source_sha256 = "4eafba75ef84954a8824b86e99e2284c1d465d8fb9bf60a561a2f12ce25236cb"
+
+    [seeds.parameters]
+    baselines = [[0.0, 0.0]]
+    category = "anchors"
+    e_to_e = 17.0
+    e_to_i = 19.0
+    family = "figure3"
+    historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+    i_to_e = 9.0
+    i_to_i = 4.0
+    id = "four_sinks_central"
+    name = "four_sinks_central"
+    parameter_record_sha256 = "4098c6468d2d509315ac135263d79c397db838076143cdcd3ad54c79d59f7273"
+    selection_reason = "first remaining registry case with a new measured screen signature"
+    slope_e = 5.0
+    slope_i = 5.0
+    tau_e = 7.8
+    tau_ratio = 0.2
+    theta_e = 1.5
+    theta_off = 8.0
+    theta_on = 4.0

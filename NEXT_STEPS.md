@@ -9,6 +9,7 @@
 
 ## Next Steps
 
+- [ ] Review `docs/equilibrium_audit_20261016.md` and choose whether figure labels should add intrinsic geometry, preserve branch names, or revise contextual role requirements.
 - [ ] Review the five figure claims and candidate captions in `docs/figure_redesign_20261006.md`, then choose the final manuscript presentation and biological wording.
 - [ ] If the manuscript needs a cycle-onset claim, extend and independently test the truncated periodic branch before identifying a bifurcation; retain unresolved input cells as sampling limits.
 - [ ] Revise the manuscript manually using the reviewed point-model results, keeping the derivation and deferring physiological fitting and autonomous feedback.
@@ -38,6 +39,13 @@ for the portable packet and replay commands. Earlier narrative and full-atlas
 results remain historical evidence with their original provenance; the new
 study does not certify every older response protocol.
 
+The unassigned-equilibrium audit explains the current study's unnamed roots
+without changing the classifier. It distinguishes intrinsic geometry from
+missing comparison states, multiple eligible roots, and absent E-nullcline
+turning points. Eleven representative continuations and the recorded time-scale
+scan show that names can change while a branch persists. The audit also records
+reference-inherited intervention labels and retains unresolved branch matches.
+
 ## Constraints
 
 - Keep `docs/model.md`, the implementation, and tests synchronized when model behavior changes.
@@ -58,8 +66,8 @@ study does not certify every older response protocol.
 
 ## Completed
 
+- [x] Characterized unassigned equilibria across the current screen and detailed study; completed eleven targeted continuation follow-ups and prepared diagnostic figures and author-controlled classification proposals.
 - [x] Delivered five rendered and visually reviewed figure drafts from the refreshed 232-case screen, eight targeted circuits, a connected switching sequence, sixteen cycle phases, paired controls, and 84 intervention settings; independently checked 176 trajectories.
 - [x] Completed and archived the historical 74-case response batch, audited corrected regional selections, and retained confirmation differences and source provenance.
 - [x] Prepared the original paper handoff, contribution brief, figure candidates, and experiment card with independent checks of the dated selective-withdrawal witnesses.
 - [x] Implemented two-input equilibrium and response characterization, ordinary switching and paired-control protocols, and archive validation.
-- [x] Implemented and independently reviewed pseudo-arclength continuation, numerical periodic shooting, and explicit pulse experiments with retained unresolved outcomes and replayable evidence.
