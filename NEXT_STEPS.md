@@ -9,7 +9,7 @@
 
 ## Next Steps
 
-- [ ] Review `docs/equilibrium_audit_20261016.md` and choose whether figure labels should add intrinsic geometry, preserve branch names, or revise contextual role requirements.
+- [ ] Review `docs/nomenclature_sensitivity_20261016.md`; choose activity boundaries for rest, seizure, and herald, resolve overlaps with active, and decide how to qualify middle-arm rest before changing classifications.
 - [ ] Review the five figure claims and candidate captions in `docs/figure_redesign_20261006.md`, then choose the final manuscript presentation and biological wording.
 - [ ] If the manuscript needs a cycle-onset claim, extend and independently test the truncated periodic branch before identifying a bifurcation; retain unresolved input cells as sampling limits.
 - [ ] Revise the manuscript manually using the reviewed point-model results, keeping the derivation and deferring physiological fitting and autonomous feedback.
@@ -46,6 +46,11 @@ turning points. Eleven representative continuations and the recorded time-scale
 scan show that names can change while a branch persists. The audit also records
 reference-inherited intervention labels and retains unresolved branch matches.
 
+The author has removed coexistence requirements from the intended seizure and
+herald meanings. The sensitivity study evaluates activity-based definitions,
+including middle-arm low-activity states, while retaining the old classifier.
+Numerical boundaries and revised figure labels remain for author review.
+
 ## Constraints
 
 - Keep `docs/model.md`, the implementation, and tests synchronized when model behavior changes.
@@ -66,8 +71,8 @@ reference-inherited intervention labels and retains unresolved branch matches.
 
 ## Completed
 
+- [x] Evaluated independent activity-based naming boundaries, overlap/gap sensitivity, intervention memberships, and the local stabilization of low-activity middle-arm equilibria; retained explicit cutoff decisions for author review.
 - [x] Characterized unassigned equilibria across the current screen and detailed study; completed eleven targeted continuation follow-ups and prepared diagnostic figures and author-controlled classification proposals.
 - [x] Delivered five rendered and visually reviewed figure drafts from the refreshed 232-case screen, eight targeted circuits, a connected switching sequence, sixteen cycle phases, paired controls, and 84 intervention settings; independently checked 176 trajectories.
 - [x] Completed and archived the historical 74-case response batch, audited corrected regional selections, and retained confirmation differences and source provenance.
 - [x] Prepared the original paper handoff, contribution brief, figure candidates, and experiment card with independent checks of the dated selective-withdrawal witnesses.
-- [x] Implemented two-input equilibrium and response characterization, ordinary switching and paired-control protocols, and archive validation.

@@ -1,0 +1,41 @@
+completed = true
+completeness = "CompletenessNotCertified"
+contexts = 77455
+interventions = 84
+inventory_rows = 215657
+policy = "Exploratory memberships only; no adopted cutoff or changed legacy role"
+source = "reproducibility/equilibrium_audit_20261016/data"
+source_manifest_sha256 = "e1b5810cd041a91a465e7de2f03ba39a13372c47b7e4062432c98c117fc22d46"
+
+[detail_geometry]
+dynamics_records = 20767
+gap_max = 33073
+gap_min = 8556
+max_spectrum_error = 0.0
+middle = 7059
+middle_nonpositive_J_EE = 0
+overlap_max = 11604
+overlap_min = 0
+records = 60559
+scenarios = 729
+smallest_middle_joint_activity = 0.010839819288896237
+
+[screen]
+dynamics_records = 27614
+gap_max = 41939
+gap_min = 10726
+max_spectrum_error = 0.0
+middle = 5120
+middle_nonpositive_J_EE = 0
+overlap_max = 14418
+overlap_min = 0
+records = 74674
+scenarios = 729
+smallest_middle_joint_activity = 0.010050851913321925
+
+[sources]
+"Manifest.toml" = "54c3971df78e42b150c41ecf100f913712244a118bb693e3cfb90ecea4fca7b6"
+"Project.toml" = "5e34f43864bb19cfd3878c8743f49abeefc4b363e5cb635983fd5f02b4535a81"
+"scripts/build_nomenclature_sensitivity.jl" = "6e2605a71088e4b44c9a5473e9a81ea335b246ec4b1aca4c8a16a0edc9f3dad9"
+"scripts/equilibrium_nomenclature.jl" = "a2f15b9da1a0c7ca91a0a0ce5e816b11adb4f4a4f39e012e61585e99752bc1c2"
+"scripts/figure_packet_io.jl" = "36e73199c71163093756aaa615ce2b0e148289368d7c98505ade9aff2b4881f5"
