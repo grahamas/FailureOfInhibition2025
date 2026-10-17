@@ -179,3 +179,9 @@ unchanged. The generated catalog and example paths were confirmed Git-ignored.
 compare explicit endpoint proposals, a complete nine-band activity description,
 partial geometry/dynamics classifications, and continuous input maps. Derived
 annotations stay separate from this catalog; no production labels are changed.
+
+[Occupancy distributions by structural category](catalog_structural_distributions_20261017.md)
+report E and I distributions within E arms and inhibitory response sides,
+including quantile intervals, exact empirical CDFs, one- and two-dimensional
+histograms, and stability
+composition. They require no biological activity thresholds.

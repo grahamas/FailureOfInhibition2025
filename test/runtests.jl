@@ -49,4 +49,5 @@ include("test_support.jl")
     include("test_equilibrium_nomenclature.jl")
     include("test_equilibrium_catalog.jl")
     include("test_catalog_classifications.jl")
+    include("test_catalog_structural_distributions.jl")
 end
