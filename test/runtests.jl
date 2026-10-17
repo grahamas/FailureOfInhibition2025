@@ -47,4 +47,5 @@ include("test_support.jl")
     include("test_equilibrium_role_audit.jl")
     include("test_equilibrium_fold_matches.jl")
     include("test_equilibrium_nomenclature.jl")
+    include("test_equilibrium_catalog.jl")
 end
