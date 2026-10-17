@@ -172,3 +172,10 @@ were visually inspected; the SVG parsed successfully. Catalog/example manifests
 and current source hashes were checked. The original audit, sensitivity packet,
 October 6 figure packet, and manuscript-figure output manifests verified
 unchanged. The generated catalog and example paths were confirmed Git-ignored.
+
+## Exploring classifications
+
+[Candidate classifications and catalog visualizations](catalog_classifications_20261016.md)
+compare explicit endpoint proposals, a complete nine-band activity description,
+partial geometry/dynamics classifications, and continuous input maps. Derived
+annotations stay separate from this catalog; no production labels are changed.
