@@ -81,6 +81,9 @@ It requires geometry leaves to cover the plotted input domain without overlap,
 every selected paired sustained context, every configured paired-pulse duration,
 and every intervention parameter setting exactly once before replaying Figure 4
 and Figure 5 rows.
+Cycle-phase pulse sources must match the baseline's declared initial and, when
+required, confirmation phase grid. Every successful replacement-search grid
+outcome is independently replayed before its witness is selected.
 
 The full details can be restricted to one selected case by a fifth argument
 after `cases`. This does not substitute for the required complete set at

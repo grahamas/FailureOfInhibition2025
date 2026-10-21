@@ -45,6 +45,23 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
     @test_throws ErrorException VerifyFigureRedesign.verify_cell_partition(cells[1:1],unit)
     @test_throws ErrorException VerifyFigureRedesign.verify_cell_partition(
         vcat(cells,cells[1]),unit)
+    initial_phases=["cycle_1_phase_$(fraction)" for fraction in
+        collect(0:cfg.raw["phase_count"]-1)./cfg.raw["phase_count"]]
+    phase_summary=Dict("validated_cycles"=>1,"sources"=>[
+        Dict("source"=>source,"phase_signature"=>"same") for source in initial_phases])
+    @test VerifyFigureRedesign.verify_cycle_sources(phase_summary,initial_phases,cfg.raw)
+    @test_throws ErrorException VerifyFigureRedesign.verify_cycle_sources(
+        phase_summary,initial_phases[2:end],cfg.raw)
+    phase_summary["sources"][1]["phase_signature"]="different"
+    @test_throws ErrorException VerifyFigureRedesign.verify_cycle_sources(
+        phase_summary,initial_phases,cfg.raw)
+    refined_phases=["cycle_1_phase_$(fraction)" for fraction in
+        collect(1:2:cfg.raw["phase_confirmation_count"]-1)./
+        cfg.raw["phase_confirmation_count"]]
+    append!(phase_summary["sources"],[Dict("source"=>source,"phase_signature"=>"refined")
+        for source in refined_phases])
+    @test VerifyFigureRedesign.verify_cycle_sources(phase_summary,
+        vcat(initial_phases,refined_phases),cfg.raw)
     intervention_axes=(("theta_off",vcat(reference["theta_off"],collect(6.:.25:12.))),
         ("e_to_e",filter(x->0<=x<=24,reference["e_to_e"].*[1.,.95,.9,.85,.8,.75,.7,.65,.6])),
         ("e_to_i",filter(x->12<=x<=28,reference["e_to_i"].*[1.,.95,.9,.85,.8,.75,.7,.65,.6])))
@@ -100,21 +117,22 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
             100.,roots,ctx.roles["active"],cfg.raw["followup_times"])
         @test !VerifyFigureRedesign.independent_target(reference,(.35,0.),rest,"E_increase",0.,
             100.,roots,ctx.roles["active"],cfg.raw["followup_times"])
-        for (role,target,winning_axis,winning_amplitudes) in
-            (("rest","active","E_increase",(.25,.5)),
-             ("active","rest","I_increase",(.5,.75)))
-            search=[(;source=role,axis,amplitude,duration=1.,
-                status=(axis==winning_axis && amplitude in winning_amplitudes ? "compatible" : "unresolved"),
-                destination=(axis==winning_axis && amplitude in winning_amplitudes ? target : "unresolved"))
+        for (winning_axis,winning_amplitudes) in
+            (("E_increase",(.25,.5)),("I_increase",(.5,.75)))
+            search=[(;axis,amplitude,duration=1.,
+                success=axis==winning_axis && amplitude in winning_amplitudes)
                 for axis in ("E_increase","I_increase") for amplitude in 0.:.25:8.]
-            FigureDetails.CSV.write(joinpath(dir,role*"_remeasure.csv"),search)
+            witness=VerifyFigureRedesign.remeasured_witness(search,[1.])
+            @test (witness.axis,witness.amplitude,witness.duration)==
+                (winning_axis,(first(winning_amplitudes)+last(winning_amplitudes))/2,1.)
         end
-        witnesses,search_checks=VerifyFigureRedesign.verify_remeasured_witnesses(dir,dir,cfg.raw)
-        @test all(r->r.passed,search_checks)
-        @test (witnesses[1].axis,witnesses[1].amplitude,witnesses[1].duration)==
-            ("E_increase",.375,1.)
-        @test (witnesses[2].axis,witnesses[2].amplitude,witnesses[2].duration)==
-            ("I_increase",.625,1.)
+        successful=(;axis="E_increase",amplitude=.5,duration=100.,
+            status="compatible",destination="active")
+        @test VerifyFigureRedesign.verified_replacement_success(successful,reference,(.35,0.),
+            rest,roots,ctx.roles,"active",cfg.raw["followup_times"],"test")
+        @test_throws ErrorException VerifyFigureRedesign.verified_replacement_success(
+            merge(successful,(;destination="rest")),reference,(.35,0.),rest,roots,
+            ctx.roles,"active",cfg.raw["followup_times"],"test")
         fake_times=[0.,.5,1.]
         fake_orbit=VerifyFigureRedesign.integrate([.2,.2],weak,2.,1.,fake_times)
         orbit_file=joinpath(dir,"orbit_1.csv")

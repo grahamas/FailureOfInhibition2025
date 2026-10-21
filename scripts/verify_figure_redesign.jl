@@ -324,6 +324,13 @@ function independent_target(p,baseline,source,axis,amplitude,duration,roots,targ
     end
     false
 end
+function verified_replacement_success(row,p,baseline,source,roots,roles,target,horizons,file)
+    success=independent_target(p,baseline,source,row.axis,row.amplitude,row.duration,
+        roots,roles[target],horizons)
+    reported=row.status=="compatible" && row.destination==target
+    success==reported || error("replacement pulse outcome changed: $file $(row.axis) $(row.amplitude) $(row.duration)")
+    success
+end
 function verify_negative_search(details,sub,p,baseline,config)
     roots=TOML.parsefile(joinpath(sub,"context.toml"))["equilibria"]
     roles=TOML.parsefile(joinpath(sub,"roles.toml"))
@@ -346,10 +353,8 @@ function verify_negative_search(details,sub,p,baseline,config)
         source=roots[roles[role]]["state"]
         replayed=NamedTuple[]
         for r in rows
-            success=independent_target(p,baseline,source,r.axis,r.amplitude,r.duration,
-                roots,roles[target],config["followup_times"])
-            reported=r.status=="compatible" && r.destination==target
-            success==reported || error("replacement pulse outcome changed: $file $(r.axis) $(r.amplitude) $(r.duration)")
+            success=verified_replacement_success(r,p,baseline,source,roots,roles,
+                target,config["followup_times"],file)
             push!(replayed,(;axis=r.axis,amplitude=r.amplitude,duration=r.duration,success))
         end
         witness=nothing
@@ -370,8 +375,38 @@ function verify_negative_search(details,sub,p,baseline,config)
     all(found) && error("replacement switching was demonstrable within protocol: $sub")
     checks
 end
-function verify_remeasured_witnesses(details,sub,config)
+function remeasured_witness(rows,processed)
+    witness=nothing
+    for duration in processed
+        candidates=NamedTuple[]
+        for axis in ("E_increase","I_increase")
+            ordered=sort(filter(r->r.duration==duration && r.axis==axis,rows);by=r->r.amplitude)
+            start=nothing
+            for (index,row) in enumerate(ordered)
+                if row.success
+                    start===nothing && (start=index)
+                    if index==length(ordered) || !ordered[index+1].success
+                        lo=ordered[start].amplitude;hi=row.amplitude
+                        hi>lo && push!(candidates,(;axis,amplitude=(lo+hi)/2,duration,width=hi-lo))
+                        start=nothing
+                    end
+                else
+                    start=nothing
+                end
+            end
+        end
+        if !isempty(candidates)
+            witness=first(sort(candidates;by=x->(-x.width,x.axis,x.amplitude)))
+            break
+        end
+    end
+    witness
+end
+function verify_remeasured_witnesses(details,sub,p,baseline,config)
     durations=Float64.(config["durations"]);amplitudes=collect(0.:.25:8.)
+    roots=TOML.parsefile(joinpath(sub,"context.toml"))["equilibria"]
+    roles=TOML.parsefile(joinpath(sub,"roles.toml"))
+    all(haskey(roles,r) for r in ("rest","active")) || error("replacement sources unavailable: $sub")
     witnesses=NamedTuple[];checks=NamedTuple[]
     for (role,target) in (("rest","active"),("active","rest"))
         file=joinpath(sub,role*"_remeasure.csv")
@@ -385,32 +420,11 @@ function verify_remeasured_witnesses(details,sub,config)
         actual=Set((r.duration,r.axis,r.amplitude) for r in rows)
         length(rows)==length(expected) && actual==expected && all(r->r.source==role,rows) ||
             error("replacement search grid changed: $file")
-        witness=nothing
-        for duration in processed
-            candidates=NamedTuple[]
-            for axis in ("E_increase","I_increase")
-                ordered=sort(filter(r->r.duration==duration && r.axis==axis,rows);by=r->r.amplitude)
-                start=nothing
-                for (index,row) in enumerate(ordered)
-                    success=row.status=="compatible" && row.destination==target
-                    if success
-                        start===nothing && (start=index)
-                        if index==length(ordered) ||
-                            !(ordered[index+1].status=="compatible" && ordered[index+1].destination==target)
-                            lo=ordered[start].amplitude;hi=row.amplitude
-                            hi>lo && push!(candidates,(;axis,amplitude=(lo+hi)/2,duration,width=hi-lo))
-                            start=nothing
-                        end
-                    else
-                        start=nothing
-                    end
-                end
-            end
-            if !isempty(candidates)
-                witness=first(sort(candidates;by=x->(-x.width,x.axis,x.amplitude)))
-                break
-            end
-        end
+        source=roots[roles[role]]["state"]
+        replayed=[(;axis=r.axis,amplitude=r.amplitude,duration=r.duration,
+            success=verified_replacement_success(r,p,baseline,source,roots,roles,target,
+                config["followup_times"],file)) for r in rows]
+        witness=remeasured_witness(replayed,processed)
         witness===nothing && error("remeasured switching has no search witness: $file")
         processed==durations[1:findfirst(==(witness.duration),durations)] ||
             error("replacement search stopped at wrong duration: $file")
@@ -797,6 +811,26 @@ function verify_intervention_grid(rows,p)
     length(rows)==length(expected) && actual==expected ||
         error("intervention parameter grid changed: $(p["id"])")
 end
+function verify_cycle_sources(summary,actual,config)
+    declared=[row["source"] for row in summary["sources"] if startswith(row["source"],"cycle_")]
+    expected=Set{String}()
+    for index in 1:summary["validated_cycles"]
+        initial=["cycle_$(index)_phase_$(fraction)" for fraction in
+            collect(0:config["phase_count"]-1)./config["phase_count"]]
+        all(source in declared for source in initial) || error("declared cycle phases are incomplete")
+        union!(expected,initial)
+        signatures=[only(row["phase_signature"] for row in summary["sources"]
+            if row["source"]==source) for source in initial]
+        if length(unique(signatures))>1
+            union!(expected,["cycle_$(index)_phase_$(fraction)" for fraction in
+                collect(1:2:config["phase_confirmation_count"]-1)./
+                config["phase_confirmation_count"]])
+        end
+    end
+    length(declared)==length(expected) && Set(declared)==expected &&
+        length(actual)==length(expected) && Set(actual)==expected ||
+        error("cycle phase source set changed")
+end
 function verify(details,output)
     ispath(output) && error("verification output exists")
     metadata=TOML.parsefile(joinpath(details,"metadata.toml"))
@@ -823,13 +857,16 @@ function verify(details,output)
         for baseline in filter(n->startswith(n,"baseline_"),readdir(root))
             folder=joinpath(root,baseline);input=TOML.parsefile(joinpath(folder,"input.toml"))
             orbit_files=filter(n->startswith(n,"orbit_") && endswith(n,".csv"),readdir(folder))
-            TOML.parsefile(joinpath(folder,"summary.toml"))["validated_cycles"]==length(orbit_files) ||
+            summary=TOML.parsefile(joinpath(folder,"summary.toml"))
+            summary["validated_cycles"]==length(orbit_files) ||
                 error("plotted cycle count changed: $folder")
             for name in orbit_files
                 push!(checks,verify_source_orbit(details,joinpath(folder,name),p,
                     (input["B_E"],input["B_I"])))
             end
-            for source in filter(n->startswith(n,"cycle_"),readdir(folder))
+            cycle_sources=filter(n->startswith(n,"cycle_"),readdir(folder))
+            verify_cycle_sources(summary,cycle_sources,config)
+            for source in cycle_sources
                 initial,fraction=orbit_phase_state(folder,source,p,(input["B_E"],input["B_I"]))
                 pulses=joinpath(folder,source,"pulses")
                 pulse_file=joinpath(pulses,"pulses.csv")
@@ -925,7 +962,7 @@ function verify(details,output)
             push!(checks,verify_intervention(details,sub,q,b,row,source))
             append!(checks,verify_switching(details,sub,q,b,"fixed_switching",row.fixed_switching))
             if isfile(joinpath(sub,"remeasured_switching","summary.toml"))
-                witnesses,search_checks=verify_remeasured_witnesses(details,sub,config)
+                witnesses,search_checks=verify_remeasured_witnesses(details,sub,q,b,config)
                 append!(checks,search_checks)
                 (row.up_amplitude,row.down_amplitude,row.duration_up,row.duration_down)==
                     (witnesses[1].amplitude,witnesses[2].amplitude,
