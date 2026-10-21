@@ -75,7 +75,8 @@ equations; filled cells require agreeing corner and center samples.
 Verification checks periodic closure and attraction for phase sources and
 saved periodic destinations,
 independently recomputes the Figure 2 time-scale spectra and continued orbit
-summaries, and replays every connected step plotted in Figure 3D's input-history
+summaries, including bounded minimum-step stops after failed retries or near a
+parameter bound, and replays every connected step plotted in Figure 3D's input-history
 sweep.
 It requires geometry leaves to cover the plotted input domain without overlap,
 every selected paired sustained context, every configured paired-pulse duration,

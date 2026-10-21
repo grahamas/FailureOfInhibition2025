@@ -503,6 +503,28 @@ function verify_cycle_row(details,path,index,row,record,initial,p,baseline)
     (;file="$(relpath(path,details)):$index",maximum_coordinate_error=discrepancy,
         passed=discrepancy<1e-3)
 end
+function verify_continuation_stop(stop,branch,attempts,path,direction)
+    bounds=(.2,4.4)
+    minimum_step=1e-5
+    distance=minimum(abs(last(branch).ratio-bound) for bound in bounds)
+    if stop.termination=="step_limit"
+        count(a->a["accepted"],attempts)==250 ||
+            error("continuation step limit changed: $path:$direction")
+    elseif stop.termination=="parameter_boundary"
+        distance<1e-4 || error("continuation boundary changed: $path:$direction")
+    elseif stop.termination=="minimum_step"
+        failed_retry=!isempty(attempts) && last(attempts)["direction"]==direction &&
+            !last(attempts)["accepted"] &&
+            last(attempts)["status"]!="corrector_converged" &&
+            minimum_step<=last(attempts)["step"]<2minimum_step
+        boundary_limited=distance<=minimum_step/.95
+        failed_retry || boundary_limited ||
+            error("continuation minimum step lacks a failed retry or boundary: $path:$direction")
+    else
+        error("unverified continuation stop: $path:$direction:$(stop.termination)")
+    end
+    nothing
+end
 function verify_timescale_cycles(details,folder,p,baseline)
     path=joinpath(folder,"cycles.csv")
     isfile(path) || error("plotted periodic continuation is missing: $path")
@@ -536,15 +558,7 @@ function verify_timescale_cycles(details,folder,p,baseline)
             push!(checks,verify_cycle_row(details,path,row_index,row,
                 attempt["orbit"],candidate[1:2],q,baseline))
         end
-        if stop.termination=="step_limit"
-            length(accepted)==250 || error("continuation step limit changed: $path:$direction")
-        elseif stop.termination=="parameter_boundary"
-            bound=direction<0 ? .2 : 4.4
-            abs(last(branch).ratio-bound)<1e-4 ||
-                error("continuation boundary changed: $path:$direction")
-        else
-            error("unverified continuation stop: $path:$direction:$(stop.termination)")
-        end
+        verify_continuation_stop(stop,branch,attempts,path,direction)
     end
     checks
 end

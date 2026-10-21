@@ -84,6 +84,23 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         merge(bounds,Dict("B_E"=>bounds["B_E"]/2)),reference,cfg.raw)
     @test_throws ErrorException VerifyFigureRedesign.verify_geometry_bounds(
         merge(bounds,Dict("I_tail_resolved"=>false)),reference,cfg.raw)
+    branch=[(;ratio=1.)]
+    failed=[Dict("direction"=>-1,"accepted"=>false,
+        "status"=>"corrector_line_search_failed","step"=>1.5e-5)]
+    @test VerifyFigureRedesign.verify_continuation_stop((;termination="minimum_step"),
+        branch,failed,"cycles.csv",-1)===nothing
+    @test_throws ErrorException VerifyFigureRedesign.verify_continuation_stop(
+        (;termination="minimum_step"),branch,Any[],"cycles.csv",-1)
+    @test_throws ErrorException VerifyFigureRedesign.verify_continuation_stop(
+        (;termination="minimum_step"),branch,
+        [merge(only(failed),Dict("step"=>3e-5))],"cycles.csv",-1)
+    @test_throws ErrorException VerifyFigureRedesign.verify_continuation_stop(
+        (;termination="minimum_step"),branch,
+        [merge(only(failed),Dict("direction"=>1))],"cycles.csv",-1)
+    @test VerifyFigureRedesign.verify_continuation_stop((;termination="minimum_step"),
+        [(;ratio=.2+1.02e-5)],Any[],"cycles.csv",1)===nothing
+    @test VerifyFigureRedesign.verify_continuation_stop((;termination="parameter_boundary"),
+        [(;ratio=4.4)],Any[],"cycles.csv",-1)===nothing
     protocol_config=merge(cfg.raw,Dict("durations"=>[1.]))
     baseline=(.35,0.)
     protocol_rows=NamedTuple[]
