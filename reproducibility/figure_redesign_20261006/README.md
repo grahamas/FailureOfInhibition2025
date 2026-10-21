@@ -23,7 +23,7 @@ julia --project=. scripts/run_figure_details.jl experiments/figure_redesign.toml
 julia --project=. scripts/run_figure_details.jl experiments/figure_redesign.toml output/figure_screen_new output/figure_details_new interventions
 julia --project=. scripts/run_figure_details.jl experiments/figure_redesign.toml output/figure_screen_new output/figure_details_new paired
 julia --project=. scripts/run_figure_details.jl experiments/figure_redesign.toml output/figure_screen_new output/figure_details_new finalize
-julia --project=. scripts/verify_figure_redesign.jl output/figure_details_new output/figure_details_new/verification
+julia --project=. scripts/verify_figure_redesign.jl output/figure_screen_new output/figure_details_new output/figure_details_new/verification
 julia --project=. scripts/build_figure_redesign.jl output/figure_screen_new output/figure_details_new output/figure_packet_new
 julia --project=plotting scripts/render_figure_redesign.jl output/figure_packet_new output/figure_redesign_new
 ```
@@ -41,6 +41,9 @@ completed detail-stage manifests. If a detail stage is regenerated afterward,
 move the old `verification/` directory aside and rerun the verifier before
 building a packet. The builder rejects stale screen or detail evidence even
 when regenerated stages have valid markers.
+The selected case records and their order are checked against the frozen
+registry and the screen's measured signatures before detail stages resume and
+again before independent verification.
 
 Figure 5 switching attempts retain each driven pulse and available baseline
 continuation, including the leg that ends an unsuccessful cycle. Independent

@@ -4,7 +4,9 @@ using SciMLBase, OrdinaryDiffEqTsit5, LinearAlgebra
 import CSV,TOML,SHA
 import FailureOfInhibition2025 as FoI
 include("figure_packet_io.jl")
+include("run_figure_details.jl")
 const IOChecks=FigurePacketIO
+const D=FigureDetails
 digest(path)=bytes2hex(open(SHA.sha256,path))
 sigmoid(x)=x>=0 ? inv(1+exp(-x)) : exp(x)/(1+exp(x))
 function independent_rhs!(du,x,p,t)
@@ -1090,13 +1092,20 @@ function verify_pulse_protocol_grid(rows,p,baseline,config,folder)
     end
     true
 end
-function verify(details,output)
+function verify(screen,details,output)
     ispath(output) && error("verification output exists")
     metadata=TOML.parsefile(joinpath(details,"metadata.toml"))
-    config=TOML.parsefile(joinpath(details,"config.toml"))
+    config_path=joinpath(details,"config.toml")
+    cfg=D.S.load_config(config_path)
+    config=cfg.raw
+    digest(config_path)==metadata["config_sha256"] || error("recorded configuration changed")
     get(metadata,"completed",false) || error("detail study is incomplete")
     stage_manifests=IOChecks.completed_stage_manifests(details,metadata["completed_stages"])
-    mkpath(output);cases=TOML.parsefile(joinpath(details,"selection.toml"))["cases"]
+    expected=D.expected_selection(cfg,screen,metadata["config_sha256"])
+    selection_path=joinpath(details,"selection.toml")
+    TOML.parsefile(selection_path)==expected ||
+        error("selection differs from the frozen registry and checked screen")
+    mkpath(output);cases=expected["cases"]
     byid=Dict(p["id"]=>p for p in cases);checks=NamedTuple[]
     reference=byid["selective_withdrawal"]
     append!(checks,verify_sequence(details,reference,config))
@@ -1264,6 +1273,6 @@ function verify(details,output)
 end
 end
 if abspath(PROGRAM_FILE)==@__FILE__
-    length(ARGS)==2 || error("usage: verify_figure_redesign.jl DETAILS NEW_VERIFICATION_OUTPUT")
+    length(ARGS)==3 || error("usage: verify_figure_redesign.jl SCREEN DETAILS NEW_VERIFICATION_OUTPUT")
     VerifyFigureRedesign.verify(ARGS...)
 end

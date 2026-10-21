@@ -23,7 +23,7 @@ function initialize(config_path, output)
     cfg,metadata
 end
 
-function select_cases(cfg,screen,output,config_sha256)
+function expected_selection(cfg,screen,config_sha256)
     all_cases=F.registry(cfg)
     metadata=TOML.parsefile(joinpath(screen,"metadata.toml"))
     get(metadata,"completed",false) || error("screen is incomplete")
@@ -60,8 +60,18 @@ function select_cases(cfg,screen,output,config_sha256)
     record=Dict("cases"=>selected,"screen_metadata_sha256"=>S.N.Evidence.file_hash(joinpath(screen,"metadata.toml")),
         "screen_manifest_sha256"=>S.N.Evidence.file_hash(joinpath(screen,"checksums.toml")),
         "selection"=>"Six predeclared contrast leads, then deterministic uncovered screen signatures; not prevalence")
-    S.write_record(joinpath(output,"selection.toml"),record)
-    selected
+    record
+end
+
+function select_cases(cfg,screen,output,config_sha256)
+    expected=expected_selection(cfg,screen,config_sha256)
+    path=joinpath(output,"selection.toml")
+    if isfile(path)
+        TOML.parsefile(path)==expected || error("selection differs from the frozen registry and checked screen")
+    else
+        S.write_record(path,expected)
+    end
+    expected["cases"]
 end
 
 function confirmed_context(p,b,cfg,dir)
@@ -446,9 +456,7 @@ end
 
 function run(config_path,screen,output,stage;case_id=nothing)
     cfg,metadata=initialize(config_path,output)
-    selection_path=joinpath(output,"selection.toml")
-    cases=isfile(selection_path) ? TOML.parsefile(selection_path)["cases"] :
-        select_cases(cfg,screen,output,metadata["config_sha256"])
+    cases=select_cases(cfg,screen,output,metadata["config_sha256"])
     reference=only(filter(p->p["id"]==cfg.raw["redesign"]["reference"],cases))
     if stage=="cases"
         chosen=case_id===nothing ? cases : filter(p->p["id"]==case_id,cases)

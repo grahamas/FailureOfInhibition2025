@@ -398,6 +398,52 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
     end
 end
 
+@testset "Detail selection matches the frozen registry and screen" begin
+    config_path=joinpath(@__DIR__,"..","experiments","figure_redesign.toml")
+    cfg=FigureDetails.S.load_config(config_path)
+    cases=FigureDetails.F.registry(cfg)
+    preferred=Set(("selective_withdrawal","narrative","input_dependent",
+        "threshold_to_active","input_dependent_e_to_e_4.25","figure4_joint_29"))
+    optional=first(filter(p->p["id"] ∉ preferred,cases),2)
+    mktempdir() do root
+        screen=joinpath(root,"screen");details=joinpath(root,"details")
+        mkpath(details)
+        cp(config_path,joinpath(details,"config.toml"))
+        config_hash=FigureRedesignData.IOChecks.digest(config_path)
+        FigureDetails.S.write_record(joinpath(details,"metadata.toml"),Dict(
+            "completed"=>true,"completed_stages"=>String[],"config_sha256"=>config_hash))
+        for p in cases
+            folder=joinpath(screen,p["category"],p["id"])
+            mkpath(folder)
+            regimes=["rest"]
+            for (index,candidate) in enumerate(optional)
+                p["id"]==candidate["id"] && push!(regimes,"new_$index")
+            end
+            FigureDetails.S.write_record(joinpath(folder,"behavior.toml"),Dict("regimes"=>regimes))
+            FigureDetails.S.N.complete_unit(folder)
+        end
+        FigureDetails.S.write_record(joinpath(screen,"metadata.toml"),Dict(
+            "completed"=>true,"config_sha256"=>config_hash,
+            "source_sha256"=>Dict{String,String}()))
+        FigureDetails.F.A.refresh_study_manifest(screen)
+        expected=FigureDetails.expected_selection(cfg,screen,config_hash)
+        @test getindex.(expected["cases"],"id")[7:8]==getindex.(optional,"id")
+        @test FigureDetails.select_cases(cfg,screen,details,config_hash)==expected["cases"]
+
+        changed=deepcopy(expected)
+        changed["cases"][1]["e_to_e"]+=.25
+        FigureDetails.S.write_record(joinpath(details,"selection.toml"),changed)
+        @test_throws ErrorException FigureDetails.select_cases(cfg,screen,details,config_hash)
+        @test_throws ErrorException VerifyFigureRedesign.verify(screen,details,
+            joinpath(root,"verification"))
+
+        changed=deepcopy(expected)
+        changed["cases"][7:8]=reverse(changed["cases"][7:8])
+        FigureDetails.S.write_record(joinpath(details,"selection.toml"),changed)
+        @test_throws ErrorException FigureDetails.select_cases(cfg,screen,details,config_hash)
+    end
+end
+
 @testset "Packet builder rejects changed verified inputs" begin
     C=FigureRedesignData.IOChecks
     mktempdir() do root
