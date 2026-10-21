@@ -28,18 +28,45 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
     paired_coarse=unique(vcat(collect(0.:paired_be/8:paired_be),[paired_be]))
     paired_amplitudes=union(Set(paired_coarse),
         Set((a+b)/2 for (a,b) in zip(paired_coarse,paired_coarse[2:end])))
-    paired_grid=[(;id="selective_withdrawal",baseline=1,duration,amplitude)
+    paired_grid=[(;id="selective_withdrawal",baseline=1,duration,amplitude,
+        herald_status="compatible",herald="herald",
+        seizure_status="compatible",seizure="seizure")
         for duration in durations for amplitude in paired_amplitudes]
-    @test VerifyFigureRedesign.verify_paired_pulse_grid(paired_grid,durations,paired_be)
-    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(paired_grid[2:end],durations,paired_be)
-    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
-        filter(r->r.duration!=first(durations),paired_grid),durations,paired_be)
-    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
-        vcat(paired_grid,paired_grid[1]),durations,paired_be)
-    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
-        vcat(paired_grid,(;id="selective_withdrawal",baseline=1,duration=3.,amplitude=0.)),durations,paired_be)
-    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
-        vcat(paired_grid[1:end-1],merge(last(paired_grid),(;id="other"))),durations,paired_be)
+    mktempdir() do paired_dir
+        for duration in durations
+            FigureDetails.S.write_record(joinpath(paired_dir,"pulse_intervals_$(duration).toml"),
+                Dict("unresolved"=>Any[]))
+        end
+        @test VerifyFigureRedesign.verify_paired_pulse_grid(paired_grid,durations,paired_be,
+            cfg.raw,paired_dir)
+        @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
+            paired_grid[2:end],durations,paired_be,cfg.raw,paired_dir)
+        @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
+            filter(r->r.duration!=first(durations),paired_grid),durations,paired_be,cfg.raw,paired_dir)
+        @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
+            vcat(paired_grid,paired_grid[1]),durations,paired_be,cfg.raw,paired_dir)
+        @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
+            vcat(paired_grid,merge(first(paired_grid),(;duration=3.))),durations,
+            paired_be,cfg.raw,paired_dir)
+        @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
+            vcat(paired_grid[1:end-1],merge(last(paired_grid),(;id="other"))),
+            durations,paired_be,cfg.raw,paired_dir)
+        sample=FigureDetails.S.M.sample_line(a->a<paired_be/3 ?
+            ("compatible","herald","compatible","seizure") :
+            ("compatible","active","compatible","seizure"),0.,paired_be;
+            step=paired_be/8,width=cfg.raw["input_width"],key=identity,
+            max_evaluations=cfg.raw["line_budget"])
+        adaptive=[(;id="selective_withdrawal",baseline=1,duration=first(durations),
+            amplitude,herald_status=value[1],herald=value[2],
+            seizure_status=value[3],seizure=value[4]) for (amplitude,value) in sample.cache]
+        adaptive_grid=vcat(filter(r->r.duration!=first(durations),paired_grid),adaptive)
+        @test VerifyFigureRedesign.verify_paired_pulse_grid(adaptive_grid,durations,paired_be,
+            cfg.raw,paired_dir)
+        refined=first(filter(a->a ∉ paired_amplitudes,keys(sample.cache)))
+        @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
+            filter(r->r.duration!=first(durations) || r.amplitude!=refined,adaptive_grid),
+            durations,paired_be,cfg.raw,paired_dir)
+    end
     sustained_grid=[(;id="selective_withdrawal",baseline=1),(;id="narrative",baseline=1)]
     expected_sustained=Set((row.id,row.baseline) for row in sustained_grid)
     @test VerifyFigureRedesign.verify_paired_sustained_grid(sustained_grid,expected_sustained)
@@ -193,6 +220,12 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         roots_file=joinpath(mechanism_details,"mechanism","roots.csv")
         original_roots=read(roots_file,String)
         root_rows=[NamedTuple(r) for r in FigureDetails.CSV.File(roots_file)]
+        monotone_rows=findall(r->r.condition=="monotone",root_rows)
+        @test length(monotone_rows)>1
+        truncated=copy(root_rows);deleteat!(truncated,last(monotone_rows))
+        FigureDetails.CSV.write(roots_file,truncated)
+        @test_throws ErrorException VerifyFigureRedesign.verify_mechanism(mechanism_details,reference)
+        write(roots_file,original_roots)
         monotone_root=findfirst(r->r.condition=="monotone" && r.stability=="Attracting",root_rows)
         @test monotone_root!==nothing
         root_rows[monotone_root]=merge(root_rows[monotone_root],(;role="seizure"))

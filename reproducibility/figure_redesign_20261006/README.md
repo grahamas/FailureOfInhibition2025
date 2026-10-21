@@ -71,7 +71,9 @@ Figure 1 mechanism data is a completed detail stage. Its responses, nullclines,
 reported equilibria, stability labels, and reference roles are checked against
 independently written equations before packet building. The monotone roots'
 provisional rest and active roles are independently checked from their
-coordinates. Figure 2's sampled geometry signatures are checked against the
+coordinates. The monotone 41×41 finite root search is repeated to check that
+its saved root list is complete for that protocol; this does not certify all
+equilibria. Figure 2's sampled geometry signatures are checked against the
 recorded roots and independent equations; filled cells require agreeing corner
 and center samples.
 Verification checks periodic closure and attraction for phase sources and
@@ -92,7 +94,8 @@ parameters and study configuration. Each plotted cycle pulse source must include
 the configured axis, duration, and coarse amplitude samples.
 The connected sequence must use each source map's widest successful 100 ms
 interior witness; paired withdrawal maps must retain their coarse amplitude
-endpoints and midpoints at every configured duration.
+endpoints and midpoints at every configured duration. Their complete adaptive
+samples and saved budget-stop intervals are checked for each duration.
 Every axial pulse map must also contain the complete adaptive sample cache and
 the recorded boundary and budget-stop summaries for its declared protocol.
 

@@ -2,6 +2,7 @@
 module VerifyFigureRedesign
 using SciMLBase, OrdinaryDiffEqTsit5, LinearAlgebra
 import CSV,TOML,SHA
+import FailureOfInhibition2025 as FoI
 include("figure_packet_io.jl")
 const IOChecks=FigurePacketIO
 digest(path)=bytes2hex(open(SHA.sha256,path))
@@ -753,6 +754,27 @@ function verify_mechanism(details,p)
         group=filter(r->r.condition==condition,roots)
         !isempty(group) && all(r.root==index for (index,r) in enumerate(group)) ||
             error("mechanism root numbering changed: $condition")
+        if control
+            model=FoI.matched_point_models(
+                excitatory=FoI.PopulationParameters(timescale=get(p,"tau_e",7.8),
+                    response=FoI.LogisticResponse(slope=get(p,"slope_e",5.),
+                        threshold=get(p,"theta_e",1.5))),
+                inhibitory_control=FoI.PopulationParameters(
+                    timescale=get(p,"tau_e",7.8)*p["tau_ratio"],
+                    response=FoI.LogisticResponse(slope=get(p,"slope_i",5.),
+                        threshold=get(p,"theta_on",4.))),
+                failure_threshold=p["theta_off"],
+                coupling=FoI.PointCoupling(; (Symbol(k)=>p[k] for k in
+                    ("e_to_e","i_to_e","e_to_i","i_to_i"))...),
+                drive=FoI.PiecewiseConstantDrive(baseline=(.35,0.),pulses=(),
+                    interpretation=FoI.AfferentExcitation)).control
+            searched=FoI.find_equilibria(model;seeds=[[e,i] for e in
+                range(0,.5;length=41) for i in range(0,.5;length=41)]).equilibria
+            length(group)==length(searched) && all(
+                maximum(abs.([row.E,row.I].-root.state))<1e-5 for
+                (row,root) in zip(group,searched)) ||
+                error("monotone mechanism finite root search changed")
+        end
         monotone_roles=control ? independent_geometry_roles(
             [(;E=r.E,I=r.I,B_E=.35,B_I=0.,stability=r.stability) for r in group],
             p,0.;control=true) : Dict{String,Int}()
@@ -887,7 +909,7 @@ function verify_sequence(details,reference,config)
     abs(last(seq).time-previous_end)<1e-10 || error("sequence endpoint changed")
     checks
 end
-function verify_paired_pulse_grid(rows,durations,be)
+function verify_paired_pulse_grid(rows,durations,be,config,folder)
     expected=Set(Float64.(durations))
     actual=Set(row.duration for row in rows)
     actual==expected || error("paired pulse duration grid changed")
@@ -896,11 +918,17 @@ function verify_paired_pulse_grid(rows,durations,be)
     all(0<=row.amplitude<=be for row in rows) || error("paired pulse amplitude outside baseline")
     length(Set((row.duration,row.amplitude) for row in rows))==length(rows) ||
         error("duplicate paired pulse protocol")
-    coarse=unique(vcat(collect(0.:be/8:be),[Float64(be)]))
-    required=union(Set(coarse),Set((a+b)/2 for (a,b) in zip(coarse,coarse[2:end])))
-    all(any(row.duration==duration && row.amplitude==amplitude for row in rows)
-        for duration in expected for amplitude in required) ||
-        error("paired pulse amplitude grid is incomplete")
+    for duration in Float64.(durations)
+        group=filter(row->row.duration==duration,rows)
+        key(row)=(row.herald_status,row.herald,row.seizure_status,row.seizure)
+        _,_,unresolved=verify_line_cache(group,be,be/8,config["input_width"],
+            config["line_budget"],"paired",duration,key)
+        path=joinpath(folder,"pulse_intervals_$(duration).toml")
+        isfile(path) || error("paired pulse stop summary missing: $path")
+        TOML.parsefile(path)["unresolved"]==[collect(interval) for interval in unresolved] ||
+            error("paired pulse stop summary changed: $path")
+    end
+    true
 end
 function expected_paired_sustained(details,cases)
     expected=Set{Tuple{String,Int}}()
@@ -965,19 +993,18 @@ function verify_recorded_rows(path,expected)
             error("pulse sampling summary changed: $path")
     end
 end
-function verify_line_samples(rows,cap,step,width,budget,axis,duration)
+function verify_line_cache(rows,cap,step,width,budget,label,duration,key)
     observed=Dict(row.amplitude=>row for row in rows)
-    sampled=Set{Float64}();unresolved=NamedTuple[]
+    sampled=Set{Float64}();unresolved=Tuple{Float64,Float64}[]
     function probe(amplitude)
         haskey(observed,amplitude) ||
-            error("missing adaptive pulse sample: $axis/$duration/$amplitude")
+            error("missing adaptive pulse sample: $label/$duration/$amplitude")
         push!(sampled,amplitude)
-        row=observed[amplitude]
-        (row.status,row.destination)
+        key(observed[amplitude])
     end
     function visit(a,b)
         if length(sampled)+3>budget
-            push!(unresolved,(;axis,duration,lower=a,upper=b))
+            push!(unresolved,(a,b))
             return
         end
         m=(a+b)/2;ka,kb,km=probe(a),probe(b),probe(m)
@@ -988,11 +1015,18 @@ function verify_line_samples(rows,cap,step,width,budget,axis,duration)
     probe(0.)
     axis_points=unique(vcat(collect(0.:step:cap),[Float64(cap)]))
     for (a,b) in zip(axis_points,axis_points[2:end]);visit(a,b);end
-    Set(keys(observed))==sampled || error("extra adaptive pulse samples: $axis/$duration")
+    Set(keys(observed))==sampled || error("extra adaptive pulse samples: $label/$duration")
+    observed,sampled,unresolved
+end
+function verify_line_samples(rows,cap,step,width,budget,axis,duration)
+    observed,sampled,intervals=verify_line_cache(rows,cap,step,width,budget,
+        axis,duration,row->(row.status,row.destination))
+    unresolved=[(;axis,duration,lower=a,upper=b) for (a,b) in intervals]
     boundaries=NamedTuple[]
     amounts=sort(collect(sampled))
     for (a,b) in zip(amounts,amounts[2:end])
-        probe(a)==probe(b) && continue
+        (observed[a].status,observed[a].destination)==
+            (observed[b].status,observed[b].destination) && continue
         push!(boundaries,(;axis,duration,lower=a,upper=b,
             lower_destination=observed[a].destination,
             upper_destination=observed[b].destination,
@@ -1162,7 +1196,9 @@ function verify(details,output)
         end
     end
     paired_pulses=collect(CSV.File(joinpath(details,"paired_controls","pulses.csv")))
-    verify_paired_pulse_grid(paired_pulses,config["durations"],reference["baselines"][1][1])
+    verify_paired_pulse_grid(paired_pulses,config["durations"],
+        reference["baselines"][1][1],config,
+        joinpath(details,"paired_controls","selective_withdrawal_1"))
     for (index,row) in enumerate(paired_pulses)
         p=byid[row.id]
         sub=joinpath(details,"paired_controls","$(row.id)_$(row.baseline)")
