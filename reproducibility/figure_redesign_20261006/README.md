@@ -77,8 +77,10 @@ saved periodic destinations,
 independently recomputes the Figure 2 time-scale spectra and continued orbit
 summaries, and replays every connected step plotted in Figure 3D's input-history
 sweep.
-It requires every configured paired-pulse duration and every intervention
-parameter setting exactly once before replaying Figure 4A and Figure 5 rows.
+It requires geometry leaves to cover the plotted input domain without overlap,
+every selected paired sustained context, every configured paired-pulse duration,
+and every intervention parameter setting exactly once before replaying Figure 4
+and Figure 5 rows.
 
 The full details can be restricted to one selected case by a fifth argument
 after `cases`. This does not substitute for the required complete set at

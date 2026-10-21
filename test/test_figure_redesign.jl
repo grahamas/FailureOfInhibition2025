@@ -32,6 +32,19 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         vcat(paired_grid,(;id="selective_withdrawal",baseline=1,duration=3.,amplitude=0.)),durations)
     @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
         vcat(paired_grid[1:end-1],merge(last(paired_grid),(;id="other"))),durations)
+    sustained_grid=[(;id="selective_withdrawal",baseline=1),(;id="narrative",baseline=1)]
+    expected_sustained=Set((row.id,row.baseline) for row in sustained_grid)
+    @test VerifyFigureRedesign.verify_paired_sustained_grid(sustained_grid,expected_sustained)
+    @test_throws ErrorException VerifyFigureRedesign.verify_paired_sustained_grid(
+        sustained_grid[1:1],expected_sustained)
+    @test_throws ErrorException VerifyFigureRedesign.verify_paired_sustained_grid(
+        vcat(sustained_grid,sustained_grid[1]),expected_sustained)
+    unit=Dict("B_E"=>1.,"B_I"=>1.)
+    cells=[(;x0=0.,x1=.5,y0=0.,y1=1.),(;x0=.5,x1=1.,y0=0.,y1=1.)]
+    @test VerifyFigureRedesign.verify_cell_partition(cells,unit)
+    @test_throws ErrorException VerifyFigureRedesign.verify_cell_partition(cells[1:1],unit)
+    @test_throws ErrorException VerifyFigureRedesign.verify_cell_partition(
+        vcat(cells,cells[1]),unit)
     intervention_axes=(("theta_off",vcat(reference["theta_off"],collect(6.:.25:12.))),
         ("e_to_e",filter(x->0<=x<=24,reference["e_to_e"].*[1.,.95,.9,.85,.8,.75,.7,.65,.6])),
         ("e_to_i",filter(x->12<=x<=28,reference["e_to_i"].*[1.,.95,.9,.85,.8,.75,.7,.65,.6])))

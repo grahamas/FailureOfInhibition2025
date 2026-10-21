@@ -537,6 +537,21 @@ function verify_hysteresis(details,folder,p,baseline,config)
     index==length(rows)+1 || error("plotted hysteresis has extra steps: $file")
     checks
 end
+function verify_cell_partition(cells,bounds)
+    edges=sort(unique(vcat(0.,bounds["B_E"],
+        [cell.x0 for cell in cells],[cell.x1 for cell in cells])))
+    for (left,right) in zip(edges,edges[2:end])
+        intervals=sort([(cell.y0,cell.y1) for cell in cells
+            if cell.x0<=left && cell.x1>=right];by=first)
+        upper=0.
+        for (lo,hi) in intervals
+            lo==upper || error("geometry cells leave a gap or overlap")
+            upper=hi
+        end
+        upper==bounds["B_I"] || error("geometry cells do not cover input domain")
+    end
+    true
+end
 function verify_geometry(details,p)
     folder=joinpath(details,"cases",p["id"],"geometry")
     inputs=collect(CSV.File(joinpath(folder,"inputs.csv")))
@@ -596,6 +611,7 @@ function verify_geometry(details,p)
             error("unsupported geometry cell status: $(p["id"]):$index")
         end
     end
+    verify_cell_partition(cells,bounds)
     push!(checks,(;file="$(relpath(folder,details))/cells.csv",
         maximum_coordinate_error=0.,passed=true))
     checks
@@ -749,6 +765,29 @@ function verify_paired_pulse_grid(rows,durations)
     length(Set((row.duration,row.amplitude) for row in rows))==length(rows) ||
         error("duplicate paired pulse protocol")
 end
+function expected_paired_sustained(details,cases)
+    expected=Set{Tuple{String,Int}}()
+    for p in cases
+        baselines=copy(p["baselines"])
+        p["id"]=="input_dependent" && push!(baselines,[2.,1.])
+        for (index,b) in enumerate(unique(baselines))
+            b[1]>0 || continue
+            folder=joinpath(details,"cases",p["id"],"baseline_$index")
+            input=TOML.parsefile(joinpath(folder,"input.toml"))
+            (input["B_E"],input["B_I"])==(b[1],b[2]) ||
+                error("selected paired baseline changed: $folder")
+            roles=TOML.parsefile(joinpath(folder,"roles.toml"))
+            all(haskey(roles,role) for role in ("herald","seizure")) &&
+                push!(expected,(p["id"],index))
+        end
+    end
+    expected
+end
+function verify_paired_sustained_grid(rows,expected)
+    actual=Set((row.id,row.baseline) for row in rows)
+    length(rows)==length(expected) && actual==expected ||
+        error("paired sustained context set changed")
+end
 function verify_intervention_grid(rows,p)
     axes=(("theta_off",vcat(p["theta_off"],collect(6.:.25:12.))),
         ("e_to_e",filter(x->0<=x<=24,p["e_to_e"].*[1.,.95,.9,.85,.8,.75,.7,.65,.6])),
@@ -836,7 +875,9 @@ function verify(details,output)
             end
         end
     end
-    for row in CSV.File(joinpath(details,"paired_controls","sustained.csv"))
+    sustained=collect(CSV.File(joinpath(details,"paired_controls","sustained.csv")))
+    verify_paired_sustained_grid(sustained,expected_paired_sustained(details,cases))
+    for row in sustained
         p=byid[row.id]
         sub=joinpath(details,"paired_controls","$(row.id)_$(row.baseline)")
         input=TOML.parsefile(joinpath(sub,"input.toml"))
