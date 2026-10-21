@@ -11,6 +11,23 @@ const COLORS=Dict("rest"=>"#6B7280","active"=>"#009E73","herald"=>"#8B5FB0",
 const MARKERS=Dict("rest"=>:circle,"active"=>:rect,"herald"=>:diamond,
     "seizure"=>:utriangle,"oscillatory"=>:star5,"unassigned"=>:cross,"unresolved"=>:xcross)
 rows(packet,relative)=collect(CSV.File(joinpath(packet,relative);stringtype=String))
+const PERIODIC_DIR="timescales/input_dependent_2.0_1.0"
+function decreasing_endpoint(cycles,stops)
+    branch=filter(r->r.direction==-1,cycles)
+    isempty(branch) && return nothing
+    stop=only(filter(r->r.direction==-1,stops))
+    point=branch[argmax(getproperty.(branch,:index))]
+    (;point,termination=stop.termination)
+end
+termination_label(status)=replace(status,'_'=>' ')
+function continuation_caption(packet)
+    cyclefile=joinpath(packet,PERIODIC_DIR,"cycles.csv")
+    isfile(cyclefile) || return "No validated periodic continuation was recorded in this run."
+    endpoint=decreasing_endpoint(rows(packet,joinpath(PERIODIC_DIR,"cycles.csv")),
+        rows(packet,joinpath(PERIODIC_DIR,"stops.csv")))
+    endpoint===nothing && return "No accepted points were recorded on the initially decreasing periodic continuation."
+    "Initially decreasing periodic continuation termination: $(termination_label(endpoint.termination)). Its birth is not identified."
+end
 color(role)=get(COLORS,role,"#333333")
 marker(role)=get(MARKERS,role,:cross)
 function savefig(fig,out,name)
@@ -138,7 +155,7 @@ function repertoire(packet,out)
     end
     hlines!(ax,[0.];color=:black,linestyle=:dash,linewidth=1)
     axislegend(ax;position=:rb,labelsize=13,framevisible=false)
-    cyclepath="timescales/input_dependent_2.0_1.0/cycles.csv"
+    cyclepath=joinpath(PERIODIC_DIR,"cycles.csv")
     grid=GridLayout(fig[3,2]);amp=Axis(grid[1,1],title="D   Continued periodic dynamics",ylabel="E peak-to-peak")
     per=Axis(grid[2,1],xlabel="Time-scale ratio, τI / τE",ylabel="Period (ms)")
     if isfile(joinpath(packet,cyclepath))
@@ -150,10 +167,14 @@ function repertoire(packet,out)
             unstable=filter(x->x.stability!="PeriodicOrbitAttracting",r)
             isempty(unstable) || scatter!(amp,getproperty.(unstable,:ratio),[x.E_max-x.E_min for x in unstable];marker=:xcross,color=:black,markersize=6)
         end
-        endpoint=cycles[argmin(getproperty.(cycles,:ratio))]
-        scatter!(amp,[endpoint.ratio],[endpoint.E_max-endpoint.E_min];color=:white,strokecolor=:black,
-            strokewidth=1,marker=:rect,markersize=8)
-        text!(amp,.02,.98;text="□ step limit; all shown points attracting",space=:relative,align=(:left,:top),fontsize=12)
+        endpoint=decreasing_endpoint(cycles,rows(packet,joinpath(PERIODIC_DIR,"stops.csv")))
+        if endpoint!==nothing
+            point=endpoint.point
+            scatter!(amp,[point.ratio],[point.E_max-point.E_min];color=:white,strokecolor=:black,
+                strokewidth=1,marker=:rect,markersize=8)
+            text!(amp,.02,.98;text="□ initially decreasing: $(termination_label(endpoint.termination))",
+                space=:relative,align=(:left,:top),fontsize=12)
+        end
     else
         text!(amp,.5,.5;text="No validated continuation in this run",space=:relative,align=(:center,:center),fontsize=15)
     end
@@ -353,7 +374,7 @@ function render(packet,output)
     names=["01_mechanism","02_repertoire","03_accessibility","04_control","05_interventions"]
     captions=[
         "The response mechanism is compared at identical couplings, drives, and time scales. The ordering restriction concerns equilibria of one fixed-input system.",
-        "Two-input maps show sampled equilibrium repertoires. Time scales change stability while equilibrium coordinates stay fixed. The displayed attracting periodic branch ends at a step budget; its birth is not identified.",
+        "Two-input maps show sampled equilibrium repertoires. Time scales change stability while equilibrium coordinates stay fixed. $(continuation_caption(packet))",
         "One connected simulation visits rest, active, herald, and seizure without resetting state. Aligned inputs show all seven pulses. Additional panels measure amplitude-duration dependence and input history.",
         "Matched withdrawal can preserve both high states, recover both, or recover only herald across the measured circuits. A specified class of drive increments has an analytical obstruction. The periodic-source panel compares pulse outcomes across starting phases.",
         "Intervention destination and ordinary switching are separate measurements. Filled circles preserve the original switching protocol; open circles require remeasured pulses. Missing sources and unassigned equilibria retain distinct labels."]
