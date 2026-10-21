@@ -95,6 +95,12 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
             "stability"=>"PeriodicOrbitAttracting","transverse_real"=>.1,
             "transverse_imag"=>0.,"amplitudes"=>[.1,.1]))
         @test_throws ErrorException VerifyFigureRedesign.verify_source_orbit(dir,orbit_file,weak,(2.,1.))
+        @test_throws ErrorException VerifyFigureRedesign.verify_orbit_values(
+            (;closure=0.,E_min=.1,E_max=.2,multiplier=1.2),
+            Dict("validation"=>"NumericallyValidatedPeriodicOrbit",
+                 "stability"=>"PeriodicOrbitAttracting",
+                 "transverse_multiplier"=>Dict("real"=>1.2,"imaginary"=>0.)),"repelling outcome";
+            attracting_only=true)
         pulse=FigureDetails.S.pulse(ctx,rest,.85,0.,100.,cfg)
         switch=last(pulse.pulse_solution.u)
         sampled=(;axis="E_increase",amplitude=.5,duration=100.,B_E=.85,B_I=0.,

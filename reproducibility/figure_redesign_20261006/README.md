@@ -72,7 +72,8 @@ reported equilibria, stability labels, and reference roles are checked against
 independently written equations before packet building. Figure 2's sampled
 geometry signatures are checked against the recorded roots and independent
 equations; filled cells require agreeing corner and center samples.
-Verification checks periodic closure and attraction for phase sources,
+Verification checks periodic closure and attraction for phase sources and
+saved periodic destinations,
 independently recomputes the Figure 2 time-scale spectra and continued orbit
 summaries, and replays every connected step plotted in Figure 3D's input-history
 sweep.

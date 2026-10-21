@@ -75,8 +75,11 @@ function verify_orbit_values(measured,record,where;attracting_only=false)
     else
         error("unsupported plotted orbit stability: $where")
     end
-    abs(measured.multiplier-record["transverse_real"])<1e-3 &&
-        abs(record["transverse_imag"])<1e-3 || error("periodic multiplier changed: $where")
+    transverse=haskey(record,"transverse_multiplier") ?
+        record["transverse_multiplier"] :
+        Dict("real"=>record["transverse_real"],"imaginary"=>record["transverse_imag"])
+    abs(measured.multiplier-transverse["real"])<1e-3 &&
+        abs(transverse["imaginary"])<1e-3 || error("periodic multiplier changed: $where")
 end
 function verify_source_orbit(details,file,p,baseline)
     rows=collect(CSV.File(file));record=TOML.parsefile(replace(file,r"\.csv$"=>".toml"))
@@ -208,14 +211,17 @@ function orbit_curve_distance(point,states)
 end
 function verify_periodic_orbit(folder,name,endpoint,p,baseline)
     orbit=TOML.parsefile(joinpath(folder,name*"_orbit.toml"))
-    orbit["validation"]=="NumericallyValidatedPeriodicOrbit" &&
-        orbit["stability"]=="PeriodicOrbitAttracting" || error("orbit validation changed: $folder/$name")
-    length(orbit["times"])==length(orbit["states"]) || error("orbit samples changed: $folder/$name")
-    independent=integrate(orbit["initial_state"],p,baseline...,orbit["times"])
-    discrepancy=maximum(max(abs(x[1]-r[1]),abs(x[2]-r[2])) for (x,r) in zip(independent.u,orbit["states"]))
-    discrepancy=max(discrepancy,maximum(abs.(last(independent.u).-orbit["initial_state"])))
-    maximum(x[1] for x in independent.u)-minimum(x[1] for x in independent.u)>1e-4 ||
-        error("orbit has no resolved oscillation: $folder/$name")
+    times=Float64.(orbit["times"])
+    length(times)==length(orbit["states"]) && length(times)>=3 &&
+        first(times)==0 && all(diff(times).>0) &&
+        abs(last(times)-orbit["period"])<1e-8 || error("orbit samples changed: $folder/$name")
+    measured=orbit_measurements(orbit["initial_state"],p,baseline,times)
+    verify_orbit_values(measured,orbit,"$folder/$name";attracting_only=true)
+    discrepancy=maximum(max(abs(x[1]-r[1]),abs(x[2]-r[2])) for (x,r) in
+        zip(measured.states,orbit["states"]))
+    discrepancy=max(discrepancy,measured.closure,
+        abs(measured.E_max-measured.E_min-orbit["amplitudes"][1]),
+        abs(measured.I_max-measured.I_min-orbit["amplitudes"][2]))
     orbit_curve_distance(endpoint,orbit["states"])<1e-4 ||
         error("continuation misses recorded orbit: $folder/$name")
     discrepancy

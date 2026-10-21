@@ -113,9 +113,10 @@ equation checks. The latter use separately written response and ODE equations
 with 1e-12 tolerances; they use the same Tsit5 integrator, not an independent
 solver implementation. They check the connected sequence, paired held/released
 trajectories, periodic waveforms, confirmed pulse/restoration trajectories at
-every plotted cycle phase, and intervention trajectories. The mechanism curves
-and reported roots, sampled geometry signatures and fills, time-scale spectra
-and accepted periodic points, and plotted input-history sweep are also checked
+every plotted cycle phase, and intervention trajectories. Periodic source and
+destination checks independently recompute closure and attraction. Mechanism
+curves and reported roots, sampled geometry signatures and fills, time-scale
+spectra and accepted periodic points, and plotted input-history sweep are also checked
 independently before packet building.
 The time-scale stop check supports the declared step limit and parameter
 boundary; a different stop requires explicit verification before rendering.
