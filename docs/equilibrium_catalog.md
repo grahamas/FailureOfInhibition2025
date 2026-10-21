@@ -185,3 +185,10 @@ report E and I distributions within E arms and inhibitory response sides,
 including quantile intervals, exact empirical CDFs, one- and two-dimensional
 histograms, and stability
 composition. They require no biological activity thresholds.
+
+## Layered view
+
+[Three-layer descriptions](layered_equilibrium_catalog.md) expose continuous
+activity, structure/local dynamics, and explicitly deferred biological
+interpretation through `layers` and `layered_text`. The gallery includes
+activity-space stability and spectrum plots without activity cutoffs.

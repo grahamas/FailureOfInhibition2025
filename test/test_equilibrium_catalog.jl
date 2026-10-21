@@ -69,3 +69,24 @@ include(joinpath(@__DIR__,"..","scripts","equilibrium_catalog.jl"))
         @test_throws ErrorException C.read_catalog(dir)
     end
 end
+
+@testset "Continuous three-layer descriptions" begin
+    C=EquilibriumCatalog
+    for arm in values(C.E_ARMS), branch in values(C.I_BRANCHES), status in values(C.STABILITY)
+        d=C.Descriptor(17,2,arm,branch,-0.,.5,-.02,-.1,0.,status,true)
+        x=C.layers(d)
+        @test x.identity==(context_id=d.context_id,root_id=d.root_id)
+        @test isequal(x.activity,(E=d.E,I=d.I))
+        @test all(isequal(getproperty(x.structure_dynamics,k),getproperty(d,k)) for k in keys(x.structure_dynamics))
+        @test x.interpretation==(status=:deferred,label=nothing)
+        @test occursin("biological interpretation deferred",C.layered_text(d))
+        @test occursin("near singular",C.layered_text(d))
+    end
+    for (a,b,w) in ((-.1,-.1,.4),(0.,0.,.2),(.2,-.1,0.))
+        d=C.Descriptor(1,1,2,1,.24,.27,a,b,w,0,false)
+        x=C.layers(d)
+        @test (x.structure_dynamics.lambda_max_real,x.structure_dynamics.lambda_min_real,x.structure_dynamics.omega)==(a,b,w)
+        @test occursin(w==0 ? "real spectrum" : "complex spectrum",C.layered_text(d))
+        @test x.interpretation.label===nothing
+    end
+end

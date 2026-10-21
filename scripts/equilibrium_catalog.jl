@@ -78,6 +78,31 @@ function descriptor_text(d::Descriptor;digits=4)
         "$(name(STABILITY,d.stability)); alpha=$(small(d.lambda_max_real)) ms^-1$flag"
 end
 
+"""Lossless three-layer view of one record; identity is local to its catalog.
+
+Activity is continuous. Structure and dynamics preserve source codes and spectrum.
+Interpretation is deliberately deferred, independently of activity and companions.
+"""
+function layers(d::Descriptor)
+    (;identity=(;context_id=d.context_id,root_id=d.root_id),
+      activity=(;E=d.E,I=d.I),
+      structure_dynamics=(;E_arm=d.E_arm,I_branch=d.I_branch,stability=d.stability,
+          near_singular=d.near_singular,lambda_max_real=d.lambda_max_real,
+          lambda_min_real=d.lambda_min_real,omega=d.omega),
+      interpretation=(;status=:deferred,label=nothing))
+end
+
+"""Readable layered description; rounding is display-only, omega is angular frequency."""
+function layered_text(d::Descriptor;digits=4)
+    x=layers(d);small(v)=string(round(v;sigdigits=digits))
+    arm=name(E_ARMS,d.E_arm);side=name(I_BRANCHES,d.I_branch)
+    mode=d.omega==0 ? "real spectrum" : "complex spectrum"
+    flag=d.near_singular ? "; near singular" : ""
+    "E=$(small(x.activity.E)), I=$(small(x.activity.I)) | E arm: $arm; I response: $side | " *
+        "$(name(STABILITY,d.stability)); $mode; Re λ=($(small(d.lambda_min_real)), $(small(d.lambda_max_real))) ms⁻¹; " *
+        "ω=$(small(d.omega)) rad/ms$flag | biological interpretation deferred"
+end
+
 read_csv(path) = collect(CSV.File(path;stringtype=String))
 read_gzip(path) = open(io->collect(CSV.File(io;stringtype=String)),`gzip -dc $path`)
 function write_gzip(path,rows)
