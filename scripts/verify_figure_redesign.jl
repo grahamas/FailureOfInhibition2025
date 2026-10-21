@@ -607,7 +607,7 @@ function verify_cell_partition(cells,bounds)
     end
     true
 end
-function independent_geometry_roles(group,p,bi)
+function independent_geometry_roles(group,p,bi;control=false)
     a=p["e_to_e"];s=get(p,"slope_e",5.)
     result=Dict{String,Int}()
     a*s>8 || return result
@@ -616,14 +616,14 @@ function independent_geometry_roles(group,p,bi)
     sinks=Int[]
     for (index,root) in enumerate(group)
         root.stability=="Attracting" || continue
-        j=independent_jacobian([root.E,root.I],p,root.B_E,root.B_I)
+        j=independent_jacobian([root.E,root.I],p,root.B_E,root.B_I;control)
         balance=[j.j11*tau j.j12*tau;j.j21*tau_i j.j22*tau_i]
         singular=svdvals(balance)
         minimum(singular)<=1e-10+1e-8*maximum(singular) || push!(sinks,index)
     end
     state(index)=(group[index].E,group[index].I)
     vi(index)=bi+p["e_to_i"]*group[index].E-p["i_to_i"]*group[index].I
-    derivative_sign(index)=begin
+    derivative_sign(index)=control ? 1. : begin
         input=vi(index);slope=get(p,"slope_i",5.)
         sigmoid(slope*(p["theta_off"]-input))-sigmoid(slope*(input-get(p,"theta_on",4.)))
     end
@@ -753,6 +753,10 @@ function verify_mechanism(details,p)
         group=filter(r->r.condition==condition,roots)
         !isempty(group) && all(r.root==index for (index,r) in enumerate(group)) ||
             error("mechanism root numbering changed: $condition")
+        monotone_roles=control ? independent_geometry_roles(
+            [(;E=r.E,I=r.I,B_E=.35,B_I=0.,stability=r.stability) for r in group],
+            p,0.;control=true) : Dict{String,Int}()
+        monotone_labels=Dict(index=>role for (role,index) in monotone_roles)
         matched_reference=Int[]
         for row in group
             state=[row.E,row.I]
@@ -770,7 +774,10 @@ function verify_mechanism(details,p)
             stability=j.determinant<0 ? "Saddle" : abs(alpha)<1e-8 ? "Unresolved" :
                 alpha<0 ? "Attracting" : "Repelling"
             row.stability==stability || error("mechanism root stability changed: $condition/$(row.root)")
-            if !control
+            if control
+                row.role==get(monotone_labels,row.root,"unassigned") ||
+                    error("monotone mechanism root role changed: $(row.root)")
+            else
                 matching=findall(r->maximum(abs.(state.-r["state"]))<1e-5,reference_roots)
                 length(matching)==1 || error("mechanism root lacks reference correspondence: $(row.root)")
                 push!(matched_reference,only(matching))

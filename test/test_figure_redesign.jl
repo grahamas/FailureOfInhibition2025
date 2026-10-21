@@ -165,6 +165,15 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         write(response_file,join(response_lines,"\n")*"\n")
         @test !all(r->r.passed,VerifyFigureRedesign.verify_mechanism(mechanism_details,reference))
         write(response_file,original_response)
+        roots_file=joinpath(mechanism_details,"mechanism","roots.csv")
+        original_roots=read(roots_file,String)
+        root_rows=[NamedTuple(r) for r in FigureDetails.CSV.File(roots_file)]
+        monotone_root=findfirst(r->r.condition=="monotone" && r.stability=="Attracting",root_rows)
+        @test monotone_root!==nothing
+        root_rows[monotone_root]=merge(root_rows[monotone_root],(;role="seizure"))
+        FigureDetails.CSV.write(roots_file,root_rows)
+        @test_throws ErrorException VerifyFigureRedesign.verify_mechanism(mechanism_details,reference)
+        write(roots_file,original_roots)
         @test FigureDetails.input_for(ctx,(;axis="E_withdrawal",amplitude=.35))==(0.,0.)
         @test FigureDetails.input_for(ctx,(;axis="I_increase",amplitude=3.))==(.35,3.)
         rest=ctx.search.equilibria[ctx.roles["rest"]].state

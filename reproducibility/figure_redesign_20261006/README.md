@@ -69,9 +69,11 @@ that panel.
 
 Figure 1 mechanism data is a completed detail stage. Its responses, nullclines,
 reported equilibria, stability labels, and reference roles are checked against
-independently written equations before packet building. Figure 2's sampled
-geometry signatures are checked against the recorded roots and independent
-equations; filled cells require agreeing corner and center samples.
+independently written equations before packet building. The monotone roots'
+provisional rest and active roles are independently checked from their
+coordinates. Figure 2's sampled geometry signatures are checked against the
+recorded roots and independent equations; filled cells require agreeing corner
+and center samples.
 Verification checks periodic closure and attraction for phase sources and
 saved periodic destinations,
 independently recomputes the Figure 2 time-scale spectra and continued orbit
