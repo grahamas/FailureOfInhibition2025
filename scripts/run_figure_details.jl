@@ -288,18 +288,18 @@ function switching(ctx,cfg,witnesses;initial=nothing,output=nothing)
     state=initial===nothing ? copy(ctx.search.equilibria[ctx.roles["rest"]].state) : copy(initial)
     for cycle in 1:2, (leg,(w,destination)) in enumerate(zip(witnesses,("active","rest")))
         be,bi=input_for(ctx,w);trial=S.pulse(ctx,state,be,bi,w.duration,cfg)
-        if trial.status!="compatible" || trial.destination!=destination
-            return finish(trial.destination)
-        end
         if output!==nothing
             name="cycle_$(cycle)_leg_$(leg)"
             mkpath(output)
             write_trajectory_csv(joinpath(output,name*"_pulse.csv"),trial.pulse_solution)
-            S.save_observation(output,name,trial)
+            trial.phase===nothing || S.save_observation(output,name,trial)
             push!(legs,Dict("name"=>name,"cycle"=>cycle,"leg"=>leg,
                 "axis"=>w.axis,"amplitude"=>w.amplitude,"duration"=>w.duration,
                 "B_E"=>be,"B_I"=>bi,"status"=>trial.status,"destination"=>trial.destination,
                 "final_E"=>trial.final[1],"final_I"=>trial.final[2]))
+        end
+        if trial.status!="compatible" || trial.destination!=destination
+            return finish(trial.destination)
         end
         state=copy(trial.final)
     end

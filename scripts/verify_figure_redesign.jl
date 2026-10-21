@@ -40,8 +40,9 @@ function verify_switching(details,sub,p,baseline,protocol,expected_status)
     record["status"]==expected_status || error("switching status changed: $folder")
     legs=get(record,"legs",Any[])
     expected_status=="retained" && length(legs)!=4 && error("retained switching lacks two complete cycles: $folder")
-    expected_status!="retained" && length(legs)==4 && error("complete switching cycle has a non-retained status: $folder")
     expected_status=="sources_unavailable" && !isempty(legs) && error("unavailable switching has recorded legs: $folder")
+    length(legs)>4 && error("switching has more than two cycles: $folder")
+    expected_status!="sources_unavailable" && isempty(legs) && error("switching attempt is missing: $folder")
     isempty(legs) && return NamedTuple[]
     roles=TOML.parsefile(joinpath(sub,"roles.toml"))
     context=TOML.parsefile(joinpath(sub,"context.toml"))
@@ -51,15 +52,21 @@ function verify_switching(details,sub,p,baseline,protocol,expected_status)
         cycle=cld(index,2);number=isodd(index) ? 1 : 2
         name="cycle_$(cycle)_leg_$(number)"
         destination=number==1 ? "active" : "rest"
-        leg["name"]==name && leg["cycle"]==cycle && leg["leg"]==number &&
-            leg["status"]=="compatible" && leg["destination"]==destination ||
+        leg["name"]==name && leg["cycle"]==cycle && leg["leg"]==number ||
             error("switching leg identity changed: $folder")
+        succeeded=leg["status"]=="compatible" && leg["destination"]==destination
+        if index==length(legs) && expected_status!="retained"
+            !succeeded && leg["destination"]==expected_status || error("switching failure changed: $folder")
+        else
+            succeeded || error("switching successful leg changed: $folder")
+        end
         axis=leg["axis"];amplitude=leg["amplitude"]
         axis in ("E_increase","I_increase") || error("unsupported switching input axis: $axis")
         be=baseline[1]+(axis=="E_increase" ? amplitude : 0.)
         bi=baseline[2]+(axis=="I_increase" ? amplitude : 0.)
         max(abs(be-leg["B_E"]),abs(bi-leg["B_I"]))<1e-12 || error("switching input changed: $folder")
         pulse=collect(CSV.File(joinpath(folder,name*"_pulse.csv")))
+        isfile(joinpath(folder,name*".csv")) || error("switching baseline continuation unavailable: $folder/$name")
         followup=collect(CSV.File(joinpath(folder,name*".csv")))
         first(pulse).time==0 && first(followup).time==0 &&
             abs(last(pulse).time-leg["duration"])<1e-10 || error("switching phase times changed: $folder")

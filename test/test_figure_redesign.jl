@@ -56,6 +56,21 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         lines[2]=join(fields,",");write(pulse_file,join(lines,"\n")*"\n")
         @test !all(r->r.passed,VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],
             "fixed_switching","retained"))
+        failed_pulses=[merge(pulses[1],(;amplitude=0.)),pulses[2]]
+        failed=FigureDetails.switching(ctx,cfg,failed_pulses;output=joinpath(dir,"failed_switching"))
+        @test failed!="retained"
+        failed_checks=VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],"failed_switching",failed)
+        @test length(failed_checks)==1
+        @test all(r->r.passed,failed_checks)
+        failed_file=joinpath(dir,"failed_switching","cycle_1_leg_1.csv")
+        lines=readlines(failed_file);fields=split(lines[2],',')
+        fields[2]=string(parse(Float64,fields[2])+.01)
+        lines[2]=join(fields,",");write(failed_file,join(lines,"\n")*"\n")
+        @test !all(r->r.passed,VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],
+            "failed_switching",failed))
+        rm(failed_file)
+        @test_throws ErrorException VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],
+            "failed_switching",failed)
     end
 end
 
