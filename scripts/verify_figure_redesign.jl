@@ -87,8 +87,11 @@ function verify_switching(details,sub,p,baseline,protocol,expected_status)
     expected_status=="sources_unavailable" && !isempty(legs) && error("unavailable switching has recorded legs: $folder")
     length(legs)>4 && error("switching has more than two cycles: $folder")
     expected_status!="sources_unavailable" && isempty(legs) && error("switching attempt is missing: $folder")
-    isempty(legs) && return NamedTuple[]
     roles=TOML.parsefile(joinpath(sub,"roles.toml"))
+    sources_present=all(haskey(roles,role) for role in ("rest","active"))
+    (expected_status=="sources_unavailable")==!sources_present ||
+        error("switching source availability changed: $folder")
+    isempty(legs) && return NamedTuple[]
     context=TOML.parsefile(joinpath(sub,"context.toml"))
     state=Float64.(context["equilibria"][roles["rest"]]["state"])
     checks=NamedTuple[]

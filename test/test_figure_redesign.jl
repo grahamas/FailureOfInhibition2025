@@ -78,6 +78,12 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         checks=VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],"fixed_switching","retained")
         @test length(checks)==4
         @test all(r->r.passed,checks)
+        unavailable_dir=joinpath(dir,"false_unavailable")
+        mkpath(unavailable_dir)
+        FigureDetails.S.write_record(joinpath(unavailable_dir,"summary.toml"),
+            Dict("status"=>"sources_unavailable","legs"=>Any[]))
+        @test_throws ErrorException VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],
+            "false_unavailable","sources_unavailable")
         fixed_dir=joinpath(dir,"fixed_switching")
         fixed_summary=joinpath(fixed_dir,"summary.toml")
         saved_summary=read(fixed_summary,String)
