@@ -53,10 +53,10 @@ function verify_manifest(directory)
 end
 
 """Hash completed-stage markers after checking their exact file sets and contents."""
-function completed_stage_manifests(directory, stages)
+function completed_stage_manifests(directory, stages, separator)
     result=Dict{String,String}()
-    for relative in stages
-        checked_name(relative)
+    for stage_name in stages
+        relative=portable_name(stage_name,separator)
         haskey(result,relative) && error("duplicate completed stage: $relative")
         stage=joinpath(directory,relative)
         isdir(stage) && !islink(stage) || error("missing regular completed stage: $relative")
@@ -65,7 +65,6 @@ function completed_stage_manifests(directory, stages)
         source=get(TOML.parsefile(marker),"files",nothing)
         source isa AbstractDict || error("missing stage file map: $relative")
         recorded=Dict{String,String}()
-        separator=Sys.iswindows() ? '\\' : '/'
         for (name,hash) in source
             canonical=portable_name(name,separator)
             haskey(recorded,canonical) && error("duplicate stage path: $relative/$canonical")
@@ -87,4 +86,6 @@ function completed_stage_manifests(directory, stages)
     end
     result
 end
+completed_stage_manifests(directory,stages)=
+    completed_stage_manifests(directory,stages,Sys.iswindows() ? '\\' : '/')
 end

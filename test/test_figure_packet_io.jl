@@ -15,6 +15,7 @@ include(joinpath(@__DIR__,"..","scripts","figure_packet_io.jl"))
             @test_throws ErrorException FigurePacketIO.checked_name(name)
         end
         @test FigurePacketIO.portable_name("nested\\data.csv",'\\')=="nested/data.csv"
+        @test FigurePacketIO.portable_name("cases\\example",'\\')=="cases/example"
         @test_throws ErrorException FigurePacketIO.portable_name("nested\\..\\escape",'\\')
         @test_throws ErrorException FigurePacketIO.portable_name("C:\\absolute",'\\')
         rm(joinpath(d,"checksums.toml"));@test_throws ErrorException FigurePacketIO.verify_manifest(d)
@@ -39,6 +40,14 @@ end
         end
         complete()
         first_record=FigurePacketIO.completed_stage_manifests(root,["cases/example"])
+        open(marker,"w") do io
+            TOML.print(io,Dict("files"=>Dict("nested\\trajectory.csv"=>FigurePacketIO.digest(data))))
+        end
+        windows_record=FigurePacketIO.completed_stage_manifests(root,["cases\\example"],'\\')
+        @test haskey(windows_record,"cases/example")
+        @test_throws ErrorException FigurePacketIO.completed_stage_manifests(root,
+            ["cases\\example","cases/example"],'\\')
+        complete()
         write(data,"time,E,I\n0,1,0\n")
         @test_throws ErrorException FigurePacketIO.completed_stage_manifests(root,["cases/example"])
         complete()
