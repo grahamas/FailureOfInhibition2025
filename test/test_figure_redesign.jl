@@ -87,6 +87,14 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
     signatures[(.25,.5)]="different"
     @test_throws ErrorException VerifyFigureRedesign.verify_homogeneous_cell(
         signatures,cell,"test")
+    branch=[(;ratio=1.),(;ratio=.9)]
+    attempts=[Dict("direction"=>-1,"accepted"=>true)]
+    @test isnothing(VerifyFigureRedesign.verify_continuation_direction(
+        branch,attempts,"test",-1))
+    @test_throws ErrorException VerifyFigureRedesign.verify_continuation_direction(
+        branch,attempts,"test",1)
+    @test_throws ErrorException VerifyFigureRedesign.verify_continuation_direction(
+        branch,[Dict("direction"=>1,"accepted"=>true)],"test",-1)
     initial_phases=["cycle_1_phase_$(fraction)" for fraction in
         collect(0:cfg.raw["phase_count"]-1)./cfg.raw["phase_count"]]
     phase_summary=Dict("validated_cycles"=>1,"sources"=>[
@@ -207,6 +215,14 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
     mktempdir() do dir
         ctx=FigureDetails.confirmed_context(reference,[.35,0.],cfg,dir)
         @test all(haskey(ctx.roles,r) for r in ("rest","active","herald","seizure"))
+        @test VerifyFigureRedesign.verify_context_roles(dir,reference,(.35,0.))[2]==ctx.roles
+        changed_roles=copy(ctx.roles)
+        changed_roles["herald"],changed_roles["seizure"]=
+            changed_roles["seizure"],changed_roles["herald"]
+        FigureDetails.S.write_record(joinpath(dir,"roles.toml"),changed_roles)
+        @test_throws ErrorException VerifyFigureRedesign.verify_context_roles(
+            dir,reference,(.35,0.))
+        FigureDetails.S.write_record(joinpath(dir,"roles.toml"),ctx.roles)
         mechanism_details=joinpath(dir,"mechanism_details")
         mechanism_reference=joinpath(mechanism_details,"cases","selective_withdrawal","baseline_1")
         mkpath(mechanism_reference)
@@ -305,6 +321,8 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
             (.35,0.),"compatible","herald",herald).passed
         released=FigureDetails.S.context(reference,0.,0.,cfg;tight=true,grid=41)
         FigureDetails.S.save_context(joinpath(dir,"released"),released)
+        @test VerifyFigureRedesign.verify_context_roles(
+            joinpath(dir,"released"),reference,(0.,0.))[2]==released.roles
         withdrawn=FigureDetails.S.observe(released,herald,cfg;reference=ctx,retain=true,tight=true,cycles=true)
         FigureDetails.S.save_observation(dir,"herald_release",withdrawn)
         @test VerifyFigureRedesign.verify_observation(dir,dir,"herald_release",joinpath(dir,"released"),

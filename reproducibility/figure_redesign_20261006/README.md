@@ -86,10 +86,14 @@ independently recomputes the Figure 2 time-scale spectra and continued orbit
 summaries, including bounded minimum-step stops after failed retries or near a
 parameter bound, and replays every connected step plotted in Figure 3D's input-history
 sweep.
+The continued orbit branches must move in their declared initial parameter
+direction, and each recorded attempt must carry that branch direction.
 It requires geometry leaves to cover the plotted input domain without overlap,
 every selected paired sustained context, every configured paired-pulse duration,
 and every intervention parameter setting exactly once before replaying Figure 4
 and Figure 5 rows.
+Equilibrium roles are independently recomputed for selected baselines, paired
+contexts, and intervention contexts before those role labels or sources are used.
 Cycle-phase pulse sources must match the baseline's declared initial and, when
 required, confirmation phase grid. Every successful replacement-search grid
 outcome is independently replayed before its witness is selected.

@@ -131,6 +131,29 @@ function compare(path,p,be,bi,root)
     coordinate_error=maximum(max(abs(x[1]-r.E),abs(x[2]-r.I)) for (x,r) in zip(solution.u,rows))
     (;file=relpath(path,root),maximum_coordinate_error=coordinate_error,passed=coordinate_error<1e-6)
 end
+function verify_context_roles(folder,p,baseline)
+    context=TOML.parsefile(joinpath(folder,"context.toml"))
+    context["frozen_drive"]==collect(baseline) || error("context input changed: $folder")
+    roots=context["equilibria"]
+    group=NamedTuple[]
+    for (index,root) in enumerate(roots)
+        state=Float64.(root["state"])
+        field=zeros(2);independent_rhs!(field,state,(p,baseline...),0.)
+        maximum(abs.(field))<1e-6 || error("context root changed: $folder:$index")
+        j=independent_jacobian(state,p,baseline...)
+        trace=j.j11+j.j22;discriminant=trace^2-4*j.determinant
+        alpha=discriminant>=0 ? (trace+sqrt(discriminant))/2 : trace/2
+        stability=j.determinant<0 ? "Saddle" : abs(alpha)<1e-8 ? "Unresolved" :
+            alpha<0 ? "Attracting" : "Repelling"
+        root["stability"]["classification"]==stability ||
+            error("context root stability changed: $folder:$index")
+        push!(group,(;E=state[1],I=state[2],B_E=baseline[1],B_I=baseline[2],stability))
+    end
+    roles=TOML.parsefile(joinpath(folder,"roles.toml"))
+    roles==independent_geometry_roles(group,p,baseline[2]) ||
+        error("context root roles changed: $folder")
+    roots,roles
+end
 function verify_observation(details,folder,name,context_dir,reference_dir,p,baseline,status,destination,source;final=nothing)
     file=joinpath(folder,name*".csv")
     trace=collect(CSV.File(file))
@@ -506,6 +529,15 @@ function verify_cycle_row(details,path,index,row,record,initial,p,baseline)
     (;file="$(relpath(path,details)):$index",maximum_coordinate_error=discrepancy,
         passed=discrepancy<1e-3)
 end
+function verify_continuation_direction(branch,attempts,path,direction)
+    all(attempt["direction"]==direction for attempt in attempts) ||
+        error("continuation attempt direction changed: $path:$direction")
+    if length(branch)>1
+        (branch[2].ratio-first(branch).ratio)*direction>0 ||
+            error("continued branch initial direction changed: $path:$direction")
+    end
+    nothing
+end
 function verify_continuation_stop(stop,branch,attempts,path,direction)
     bounds=(.2,4.4)
     minimum_step=1e-5
@@ -548,6 +580,7 @@ function verify_timescale_cycles(details,folder,p,baseline)
             all(r.index==index for (index,r) in enumerate(branch)) ||
             error("continued branch point count changed: $path:$direction")
         first(branch).ratio==p["tau_ratio"] || error("continued branch seed changed: $path")
+        verify_continuation_direction(branch,attempts,path,direction)
         seed_index=only(findall(r->r.direction==direction && r.index==1,rows))
         push!(checks,verify_cycle_row(details,path,seed_index,first(branch),
             seed_record,[seed_first.E,seed_first.I],p,baseline))
@@ -1129,8 +1162,16 @@ function verify(screen,details,output)
         joinpath(details,"cases","selective_withdrawal","baseline_1"),reference,(.35,0.),config))
     for p in cases
         root=joinpath(details,"cases",p["id"])
-        for baseline in filter(n->startswith(n,"baseline_"),readdir(root))
-            folder=joinpath(root,baseline);input=TOML.parsefile(joinpath(folder,"input.toml"))
+        baselines=D.target_baselines(p)
+        Set(filter(n->startswith(n,"baseline_"),readdir(root)))==
+            Set("baseline_$index" for index in eachindex(baselines)) ||
+            error("selected baseline set changed: $(p["id"])")
+        for (index,baseline) in enumerate(baselines)
+            folder=joinpath(root,"baseline_$index")
+            input=TOML.parsefile(joinpath(folder,"input.toml"))
+            (input["B_E"],input["B_I"])==Tuple(baseline) ||
+                error("selected baseline input changed: $folder")
+            verify_context_roles(folder,p,Tuple(baseline))
             orbit_files=filter(n->startswith(n,"orbit_") && endswith(n,".csv"),readdir(folder))
             summary=TOML.parsefile(joinpath(folder,"summary.toml"))
             summary["validated_cycles"]==length(orbit_files) ||
@@ -1198,6 +1239,10 @@ function verify(screen,details,output)
         p=byid[row.id]
         sub=joinpath(details,"paired_controls","$(row.id)_$(row.baseline)")
         input=TOML.parsefile(joinpath(sub,"input.toml"))
+        verify_context_roles(sub,p,(input["B_E"],input["B_I"]))
+        verify_context_roles(joinpath(sub,"released"),p,(0.,input["B_I"]))
+        (row.B_E,row.B_I)==Tuple(D.target_baselines(p)[row.baseline]) ||
+            error("paired baseline differs from frozen registry: $sub")
         (row.B_E,row.B_I,row.tau_ratio)==(input["B_E"],input["B_I"],p["tau_ratio"]) ||
             error("paired sustained baseline changed: $sub")
         roots=TOML.parsefile(joinpath(sub,"context.toml"))["equilibria"]
@@ -1233,14 +1278,14 @@ function verify(screen,details,output)
     for id in ("selective_withdrawal","threshold_to_active")
         p=byid[id];b=first(p["baselines"])
         base=joinpath(details,"interventions",id)
-        reference=TOML.parsefile(joinpath(base,"context.toml"))["equilibria"]
-        roles=TOML.parsefile(joinpath(base,"roles.toml"))
+        reference,roles=verify_context_roles(base,p,b)
         source=reference[roles["seizure"]]["state"]
         intervention_rows=collect(CSV.File(joinpath(base,"summary.csv")))
         verify_intervention_grid(intervention_rows,p)
         for row in intervention_rows
             q=merge(p,Dict(row.axis=>row.value))
             sub=joinpath(details,"interventions",id,"$(row.axis)_$(row.value)")
+            verify_context_roles(sub,q,b)
             push!(checks,verify_intervention(details,sub,q,b,row,source))
             append!(checks,verify_switching(details,sub,q,b,"fixed_switching",row.fixed_switching))
             if isfile(joinpath(sub,"remeasured_switching","summary.toml"))
