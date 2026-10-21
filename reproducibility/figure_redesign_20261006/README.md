@@ -41,6 +41,11 @@ move the old `verification/` directory aside and rerun the verifier before
 building a packet. The builder rejects stale screen or detail evidence even
 when regenerated stages have valid markers.
 
+Successful Figure 5 switching legs retain each driven pulse and baseline
+continuation in the full local study. Independent verification replays both
+phases, checks their state handoffs, and binds the resulting report to the
+completed detail stages before packet building.
+
 The full details can be restricted to one selected case by a fifth argument
 after `cases`. This does not substitute for the required complete set at
 `finalize`. The renderer and packet builder refuse existing destinations.

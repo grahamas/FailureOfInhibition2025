@@ -11,13 +11,16 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
     @test cfg.raw["redesign"]["detailed_limit"]==8
     @test all(0<=p["e_to_e"]<=24 && 12<=p["e_to_i"]<=28 &&
         6<=p["theta_off"]<=12 && .2<=p["tau_ratio"]<=4.4 for p in cases)
-    row(a,d;status="compatible")=(;axis="E_increase",amplitude=a,duration=100.,status,destination=d)
+    row(a,d;status="compatible",duration=100.)=(;axis="E_increase",amplitude=a,duration,status,destination=d)
     rows=[row(0.,"rest"),row(.25,"active"),row(.5,"active"),row(.75,"herald"),row(1.,"active")]
     witness=FigureDetails.interior_pulse(rows,"active")
     @test witness.amplitude==.375
     @test witness.width==.25
     @test FigureDetails.interior_pulse(rows,"seizure")===nothing
     @test FigureDetails.interior_pulse([row(0.,"active"),row(.25,"active";status="unresolved"),row(.5,"active")],"active")===nothing
+    longer=[row(0.,"rest";duration=200.),row(.25,"active";duration=200.),row(.5,"active";duration=200.)]
+    @test FigureDetails.interior_pulse(longer,"active";duration=200.).amplitude==.375
+    @test FigureDetails.interior_pulse(longer,"active")===nothing
     reference=only(filter(p->p["id"]=="selective_withdrawal",cases))
     weak=only(filter(p->p["id"]=="input_dependent",cases))
     @test [2.,1.] in FigureDetails.target_baselines(weak)
@@ -41,6 +44,18 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         path=joinpath(dir,"trace.csv")
         FigureDetails.CSV.write(path,[(;time=t,E=x[1],I=x[2]) for (t,x) in zip(held.t,held.u)])
         @test VerifyFigureRedesign.compare(path,reference,.35,0.,dir).file=="trace.csv"
+        pulses=[(;axis="E_increase",amplitude=.5,duration=100.),
+            (;axis="I_increase",amplitude=3.,duration=100.)]
+        @test FigureDetails.switching(ctx,cfg,pulses;output=joinpath(dir,"fixed_switching"))=="retained"
+        checks=VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],"fixed_switching","retained")
+        @test length(checks)==4
+        @test all(r->r.passed,checks)
+        pulse_file=joinpath(dir,"fixed_switching","cycle_1_leg_1_pulse.csv")
+        lines=readlines(pulse_file);fields=split(lines[2],',')
+        fields[2]=string(parse(Float64,fields[2])+.01)
+        lines[2]=join(fields,",");write(pulse_file,join(lines,"\n")*"\n")
+        @test !all(r->r.passed,VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],
+            "fixed_switching","retained"))
     end
 end
 

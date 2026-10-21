@@ -275,15 +275,35 @@ function timescales(p,b,cfg,output)
     S.N.complete_unit(dir)
 end
 
-function switching(ctx,cfg,witnesses;initial=nothing)
-    all(haskey(ctx.roles,r) for r in ("rest","active")) || return "sources_unavailable"
+function switching(ctx,cfg,witnesses;initial=nothing,output=nothing)
+    legs=Dict{String,Any}[]
+    function finish(status)
+        if output!==nothing
+            mkpath(output)
+            S.write_record(joinpath(output,"summary.toml"),Dict("status"=>status,"legs"=>legs))
+        end
+        status
+    end
+    all(haskey(ctx.roles,r) for r in ("rest","active")) || return finish("sources_unavailable")
     state=initial===nothing ? copy(ctx.search.equilibria[ctx.roles["rest"]].state) : copy(initial)
-    for _ in 1:2, (w,destination) in zip(witnesses,("active","rest"))
+    for cycle in 1:2, (leg,(w,destination)) in enumerate(zip(witnesses,("active","rest")))
         be,bi=input_for(ctx,w);trial=S.pulse(ctx,state,be,bi,w.duration,cfg)
-        trial.status=="compatible" && trial.destination==destination || return trial.destination
+        if trial.status!="compatible" || trial.destination!=destination
+            return finish(trial.destination)
+        end
+        if output!==nothing
+            name="cycle_$(cycle)_leg_$(leg)"
+            mkpath(output)
+            write_trajectory_csv(joinpath(output,name*"_pulse.csv"),trial.pulse_solution)
+            S.save_observation(output,name,trial)
+            push!(legs,Dict("name"=>name,"cycle"=>cycle,"leg"=>leg,
+                "axis"=>w.axis,"amplitude"=>w.amplitude,"duration"=>w.duration,
+                "B_E"=>be,"B_I"=>bi,"status"=>trial.status,"destination"=>trial.destination,
+                "final_E"=>trial.final[1],"final_I"=>trial.final[2]))
+        end
         state=copy(trial.final)
     end
-    "retained"
+    finish("retained")
 end
 
 function interventions(p,b,cfg,output)
@@ -304,7 +324,7 @@ function interventions(p,b,cfg,output)
         ctx=confirmed_context(q,b,cfg,sub)
         response=S.observe(ctx,source,cfg;reference=baseline,retain=true,tight=true,cycles=true)
         S.save_observation(sub,"original_seizure",response)
-        fixed_status=switching(ctx,cfg,fixed)
+        fixed_status=switching(ctx,cfg,fixed;output=joinpath(sub,"fixed_switching"))
         remeasured=fixed_status;up=NaN;down=NaN;duration_up=NaN;duration_down=NaN
         if fixed_status!="retained" && all(haskey(ctx.roles,r) for r in ("rest","active"))
             found=Any[]
@@ -324,7 +344,7 @@ function interventions(p,b,cfg,output)
                 push!(found,witness)
             end
             if all(!isnothing,found)
-                remeasured=switching(ctx,cfg,found)
+                remeasured=switching(ctx,cfg,found;output=joinpath(sub,"remeasured_switching"))
                 up=found[1].amplitude;down=found[2].amplitude
                 duration_up=found[1].duration;duration_down=found[2].duration
             else

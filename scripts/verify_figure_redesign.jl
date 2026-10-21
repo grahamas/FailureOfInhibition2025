@@ -34,6 +34,48 @@ function compare(path,p,be,bi,root)
     coordinate_error=maximum(max(abs(x[1]-r.E),abs(x[2]-r.I)) for (x,r) in zip(solution.u,rows))
     (;file=relpath(path,root),maximum_coordinate_error=coordinate_error,passed=coordinate_error<1e-6)
 end
+function verify_switching(details,sub,p,baseline,protocol,expected_status)
+    folder=joinpath(sub,protocol)
+    record=TOML.parsefile(joinpath(folder,"summary.toml"))
+    record["status"]==expected_status || error("switching status changed: $folder")
+    legs=get(record,"legs",Any[])
+    expected_status=="retained" && length(legs)!=4 && error("retained switching lacks two complete cycles: $folder")
+    expected_status!="retained" && length(legs)==4 && error("complete switching cycle has a non-retained status: $folder")
+    expected_status=="sources_unavailable" && !isempty(legs) && error("unavailable switching has recorded legs: $folder")
+    isempty(legs) && return NamedTuple[]
+    roles=TOML.parsefile(joinpath(sub,"roles.toml"))
+    context=TOML.parsefile(joinpath(sub,"context.toml"))
+    state=Float64.(context["equilibria"][roles["rest"]]["state"])
+    checks=NamedTuple[]
+    for (index,leg) in enumerate(legs)
+        cycle=cld(index,2);number=isodd(index) ? 1 : 2
+        name="cycle_$(cycle)_leg_$(number)"
+        destination=number==1 ? "active" : "rest"
+        leg["name"]==name && leg["cycle"]==cycle && leg["leg"]==number &&
+            leg["status"]=="compatible" && leg["destination"]==destination ||
+            error("switching leg identity changed: $folder")
+        axis=leg["axis"];amplitude=leg["amplitude"]
+        axis in ("E_increase","I_increase") || error("unsupported switching input axis: $axis")
+        be=baseline[1]+(axis=="E_increase" ? amplitude : 0.)
+        bi=baseline[2]+(axis=="I_increase" ? amplitude : 0.)
+        max(abs(be-leg["B_E"]),abs(bi-leg["B_I"]))<1e-12 || error("switching input changed: $folder")
+        pulse=collect(CSV.File(joinpath(folder,name*"_pulse.csv")))
+        followup=collect(CSV.File(joinpath(folder,name*".csv")))
+        first(pulse).time==0 && first(followup).time==0 &&
+            abs(last(pulse).time-leg["duration"])<1e-10 || error("switching phase times changed: $folder")
+        start_error=maximum(abs.(state.-[first(pulse).E,first(pulse).I]))
+        handoff_error=max(abs(last(pulse).E-first(followup).E),abs(last(pulse).I-first(followup).I))
+        final_error=max(abs(last(followup).E-leg["final_E"]),abs(last(followup).I-leg["final_I"]))
+        driven=compare(joinpath(folder,name*"_pulse.csv"),p,be,bi,details)
+        restored=compare(joinpath(folder,name*".csv"),p,baseline...,details)
+        discrepancy=max(start_error,handoff_error,final_error,
+            driven.maximum_coordinate_error,restored.maximum_coordinate_error)
+        push!(checks,(;file=relpath(joinpath(folder,name),details),
+            maximum_coordinate_error=discrepancy,passed=discrepancy<1e-6))
+        state=[last(followup).E,last(followup).I]
+    end
+    checks
+end
 function verify(details,output)
     ispath(output) && error("verification output exists")
     metadata=TOML.parsefile(joinpath(details,"metadata.toml"))
@@ -92,8 +134,20 @@ function verify(details,output)
         p=byid[id];b=first(p["baselines"])
         for row in CSV.File(joinpath(details,"interventions",id,"summary.csv"))
             q=merge(p,Dict(row.axis=>row.value))
-            file=joinpath(details,"interventions",id,"$(row.axis)_$(row.value)","original_seizure.csv")
+            sub=joinpath(details,"interventions",id,"$(row.axis)_$(row.value)")
+            file=joinpath(sub,"original_seizure.csv")
             push!(checks,compare(file,q,b...,details))
+            append!(checks,verify_switching(details,sub,q,b,"fixed_switching",row.fixed_switching))
+            if isfile(joinpath(sub,"remeasured_switching","summary.toml"))
+                append!(checks,verify_switching(details,sub,q,b,"remeasured_switching",row.remeasured_switching))
+            elseif row.fixed_switching=="retained"
+                row.remeasured_switching=="retained" || error("retained fixed switching must carry through")
+            elseif row.fixed_switching=="sources_unavailable"
+                row.remeasured_switching=="sources_unavailable" || error("missing switching sources changed")
+            else
+                row.remeasured_switching=="not_demonstrated_within_protocol" ||
+                    error("missing remeasured switching evidence")
+            end
         end
     end
     report=joinpath(output,"trajectories.csv")
