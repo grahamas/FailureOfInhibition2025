@@ -836,7 +836,7 @@ function verify_sequence(details,reference,config)
             file=joinpath(details,"cases",reference["id"],"baseline_1",
                 "root_$(roles[event.source])","pulses","pulses.csv")
             rows=collect(CSV.File(file))
-            verify_pulse_protocol_grid(rows,reference,(.35,0.),config)
+            verify_pulse_protocol_grid(rows,reference,(.35,0.),config,dirname(file))
             all(r->r.source=="root_$(roles[event.source])" && r.source_role==event.source &&
                 r.phase==0,rows) || error("sequence pulse map source changed: $file")
             if event.source=="herald"
@@ -954,7 +954,53 @@ function verify_cycle_sources(summary,actual,config)
         length(actual)==length(expected) && Set(actual)==expected ||
         error("cycle phase source set changed")
 end
-function verify_pulse_protocol_grid(rows,p,baseline,config)
+function verify_recorded_rows(path,expected)
+    isfile(path)==!isempty(expected) || error("pulse sampling summary missing or unexpected: $path")
+    isempty(expected) && return
+    actual=collect(CSV.File(path))
+    length(actual)==length(expected) || error("pulse sampling summary count changed: $path")
+    for (row,want) in zip(actual,expected)
+        Tuple(propertynames(row))==propertynames(want) &&
+            all(getproperty(row,key)==getproperty(want,key) for key in propertynames(want)) ||
+            error("pulse sampling summary changed: $path")
+    end
+end
+function verify_line_samples(rows,cap,step,width,budget,axis,duration)
+    observed=Dict(row.amplitude=>row for row in rows)
+    sampled=Set{Float64}();unresolved=NamedTuple[]
+    function probe(amplitude)
+        haskey(observed,amplitude) ||
+            error("missing adaptive pulse sample: $axis/$duration/$amplitude")
+        push!(sampled,amplitude)
+        row=observed[amplitude]
+        (row.status,row.destination)
+    end
+    function visit(a,b)
+        if length(sampled)+3>budget
+            push!(unresolved,(;axis,duration,lower=a,upper=b))
+            return
+        end
+        m=(a+b)/2;ka,kb,km=probe(a),probe(b),probe(m)
+        if b-a>width && (ka!=kb || ka!=km || occursin("unresolved",string(ka)))
+            visit(a,m);visit(m,b)
+        end
+    end
+    probe(0.)
+    axis_points=unique(vcat(collect(0.:step:cap),[Float64(cap)]))
+    for (a,b) in zip(axis_points,axis_points[2:end]);visit(a,b);end
+    Set(keys(observed))==sampled || error("extra adaptive pulse samples: $axis/$duration")
+    boundaries=NamedTuple[]
+    amounts=sort(collect(sampled))
+    for (a,b) in zip(amounts,amounts[2:end])
+        probe(a)==probe(b) && continue
+        push!(boundaries,(;axis,duration,lower=a,upper=b,
+            lower_destination=observed[a].destination,
+            upper_destination=observed[b].destination,
+            status=b-a<=width ? "sampled_bracket" : "budget_unresolved"))
+    end
+    boundaries,unresolved
+end
+function verify_pulse_protocol_grid(rows,p,baseline,config,folder)
     bounds=independent_input_bounds(p,config)
     durations=Float64.(config["durations"])
     axes=("E_increase","E_withdrawal","I_increase","I_withdrawal")
@@ -987,16 +1033,20 @@ function verify_pulse_protocol_grid(rows,p,baseline,config)
             error("undeclared pulse axis")
         end
     end
+    boundaries=NamedTuple[];unresolved=NamedTuple[]
     for duration in durations,axis in axes
         cap=axis=="E_increase" ? bounds["B_E"]-baseline[1] :
             axis=="E_withdrawal" ? baseline[1] :
             axis=="I_increase" ? bounds["B_I"]-baseline[2] : baseline[2]
+        cap>=0 || error("pulse baseline outside declared domain")
         step=max(min(1.,cap/8),eps())
-        coarse=unique(vcat(collect(0.:step:cap),[Float64(cap)]))
-        required=union(Set(coarse),Set((a+b)/2 for (a,b) in zip(coarse,coarse[2:end])))
-        all((axis,duration,amplitude) in seen for amplitude in required) ||
-            error("pulse protocol grid is incomplete: $axis/$duration")
+        group=filter(row->row.axis==axis && row.duration==duration,rows)
+        found,stopped=verify_line_samples(group,cap,step,config["input_width"],
+            config["line_budget"],axis,duration)
+        append!(boundaries,found);append!(unresolved,stopped)
     end
+    verify_recorded_rows(joinpath(folder,"boundaries.csv"),boundaries)
+    verify_recorded_rows(joinpath(folder,"unresolved_intervals.csv"),unresolved)
     if baseline[1]>0
         for duration in durations,amplitude in (0.,baseline[1]/2,baseline[1]),
             stimulation in (0.,(bounds["B_I"]-baseline[2])/2,bounds["B_I"]-baseline[2])
@@ -1047,7 +1097,8 @@ function verify(details,output)
                 pulse_file=joinpath(pulses,"pulses.csv")
                 trials=collect(CSV.File(pulse_file))
                 all(r->r.source==source && r.phase==fraction,trials) || error("cycle pulse source changed: $source")
-                verify_pulse_protocol_grid(trials,p,(input["B_E"],input["B_I"]),config)
+                verify_pulse_protocol_grid(trials,p,(input["B_E"],input["B_I"]),
+                    config,pulses)
                 if p["id"]=="input_dependent" && (input["B_E"],input["B_I"])==(2.,1.) &&
                     startswith(source,"cycle_1_phase_")
                     roots=TOML.parsefile(joinpath(folder,"context.toml"))["equilibria"]
@@ -1077,7 +1128,8 @@ function verify(details,output)
                     source="root_$(roles[role])"
                     pulse_file=joinpath(folder,source,"pulses","pulses.csv")
                     trials=collect(CSV.File(pulse_file))
-                    verify_pulse_protocol_grid(trials,p,(input["B_E"],input["B_I"]),config)
+                    verify_pulse_protocol_grid(trials,p,(input["B_E"],input["B_I"]),
+                        config,dirname(pulse_file))
                     for (index,row) in enumerate(trials)
                         row.source==source && row.source_role==role && row.phase==0 ||
                             error("plotted pulse source changed: $pulse_file:$index")

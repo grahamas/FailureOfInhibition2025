@@ -93,6 +93,8 @@ the configured axis, duration, and coarse amplitude samples.
 The connected sequence must use each source map's widest successful 100 ms
 interior witness; paired withdrawal maps must retain their coarse amplitude
 endpoints and midpoints at every configured duration.
+Every axial pulse map must also contain the complete adaptive sample cache and
+the recorded boundary and budget-stop summaries for its declared protocol.
 
 The full details can be restricted to one selected case by a fifth argument
 after `cases`. This does not substitute for the required complete set at

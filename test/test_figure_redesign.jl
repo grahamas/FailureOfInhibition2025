@@ -113,7 +113,8 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         for amplitude in union(Set(coarse),Set((a+b)/2 for (a,b) in zip(coarse,coarse[2:end])))
             be=baseline[1]+(axis=="E_increase" ? amplitude : axis=="E_withdrawal" ? -amplitude : 0.)
             bi=baseline[2]+(axis=="I_increase" ? amplitude : axis=="I_withdrawal" ? -amplitude : 0.)
-            push!(protocol_rows,(;axis,duration=1.,amplitude,B_E=be,B_I=bi))
+            push!(protocol_rows,(;axis,duration=1.,amplitude,B_E=be,B_I=bi,
+                status="compatible",destination="rest"))
         end
     end
     for amplitude in (0.,baseline[1]/2,baseline[1]),
@@ -121,11 +122,35 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         push!(protocol_rows,(;axis="joint",duration=1.,amplitude,
             B_E=baseline[1]-amplitude,B_I=stimulation))
     end
-    @test VerifyFigureRedesign.verify_pulse_protocol_grid(protocol_rows,reference,baseline,protocol_config)
-    @test_throws ErrorException VerifyFigureRedesign.verify_pulse_protocol_grid(
-        protocol_rows[2:end],reference,baseline,protocol_config)
-    @test_throws ErrorException VerifyFigureRedesign.verify_pulse_protocol_grid(
-        vcat(protocol_rows,protocol_rows[1]),reference,baseline,protocol_config)
+    mktempdir() do pulse_dir
+        @test VerifyFigureRedesign.verify_pulse_protocol_grid(protocol_rows,reference,
+            baseline,protocol_config,pulse_dir)
+        @test_throws ErrorException VerifyFigureRedesign.verify_pulse_protocol_grid(
+            protocol_rows[2:end],reference,baseline,protocol_config,pulse_dir)
+        @test_throws ErrorException VerifyFigureRedesign.verify_pulse_protocol_grid(
+            vcat(protocol_rows,protocol_rows[1]),reference,baseline,protocol_config,pulse_dir)
+        key(x)=(x.status,x.destination)
+        line=FigureDetails.S.M.sample_line(a->(;status=a<.5 ? "compatible" : "unresolved",
+            destination=a<.5 ? "rest" : "active"),0.,1.;step=.5,width=.05,key,
+            max_evaluations=30)
+        adaptive=[merge((;amplitude),value) for (amplitude,value) in line.cache]
+        found,stopped=VerifyFigureRedesign.verify_line_samples(adaptive,1.,.5,.05,30,
+            "E_increase",1.)
+        @test !isempty(found)
+        @test length(stopped)==length(line.unresolved)
+        @test !isempty(stopped)
+        refined=first(filter(a->a ∉ Set([0.,.25,.5,.75,1.]),keys(line.cache)))
+        @test_throws ErrorException VerifyFigureRedesign.verify_line_samples(
+            filter(r->r.amplitude!=refined,adaptive),1.,.5,.05,30,"E_increase",1.)
+        FigureDetails.CSV.write(joinpath(pulse_dir,"boundaries.csv"),found)
+        @test_throws ErrorException VerifyFigureRedesign.verify_recorded_rows(
+            joinpath(pulse_dir,"unresolved_intervals.csv"),stopped)
+        isempty(stopped) || FigureDetails.CSV.write(
+            joinpath(pulse_dir,"unresolved_intervals.csv"),stopped)
+        @test VerifyFigureRedesign.verify_recorded_rows(joinpath(pulse_dir,"boundaries.csv"),found)===nothing
+        @test_throws ErrorException VerifyFigureRedesign.verify_recorded_rows(
+            joinpath(pulse_dir,"boundaries.csv"),found[2:end])
+    end
     @test [2.,1.] in FigureDetails.target_baselines(weak)
     @test FigureDetails.target_baselines(reference)==reference["baselines"]
     for state in ([0.,0.],[.3,.32],[.5,0.],[1.,1.]), input in ((.35,0.),(0.,4.),(8.,1.))
