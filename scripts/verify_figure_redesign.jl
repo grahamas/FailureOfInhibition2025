@@ -34,6 +34,41 @@ function compare(path,p,be,bi,root)
     coordinate_error=maximum(max(abs(x[1]-r.E),abs(x[2]-r.I)) for (x,r) in zip(solution.u,rows))
     (;file=relpath(path,root),maximum_coordinate_error=coordinate_error,passed=coordinate_error<1e-6)
 end
+function verify_intervention(details,sub,p,baseline,row,source)
+    file=joinpath(sub,"original_seizure.csv")
+    trace=collect(CSV.File(file))
+    observed=TOML.parsefile(joinpath(sub,"original_seizure_summary.toml"))
+    phase=TOML.parsefile(joinpath(sub,"original_seizure.toml"))
+    observed["status"]==row.status && observed["destination"]==row.destination ||
+        error("reported intervention outcome changed: $sub")
+    phase["status"]==(row.status=="periodic_compatible" ? "unresolved" : row.status) ||
+        error("intervention phase status changed: $sub")
+    initial_error=max(abs(first(trace).E-source[1]),abs(first(trace).I-source[2]))
+    final_error=maximum(abs.([last(trace).E-row.final_E,last(trace).I-row.final_I,
+        last(trace).E-phase["final"][1],last(trace).I-phase["final"][2]]))
+    destination_error=0.
+    if row.status=="compatible"
+        roots=TOML.parsefile(joinpath(sub,"context.toml"))["equilibria"]
+        index=phase["destination"]
+        index isa Integer && 1<=index<=length(roots) || error("invalid intervention destination root: $sub")
+        target=roots[index]["state"]
+        destination_error=max(abs(last(trace).E-target[1]),abs(last(trace).I-target[2]))
+        roles=TOML.parsefile(joinpath(sub,"roles.toml"))
+        assigned=[name for (name,k) in roles if k==index]
+        if !isempty(assigned)
+            row.destination==only(assigned) || error("intervention destination role changed: $sub")
+        elseif row.destination!="equilibrium_$index"
+            reference_roles=TOML.parsefile(joinpath(dirname(sub),"roles.toml"))
+            reference=TOML.parsefile(joinpath(dirname(sub),"context.toml"))["equilibria"]
+            haskey(reference_roles,row.destination) || error("unknown intervention destination: $sub")
+            old=reference[reference_roles[row.destination]]["state"]
+            maximum(abs.(target.-old))<.05 || error("intervention destination correspondence changed: $sub")
+        end
+    end
+    replay=compare(file,p,baseline...,details)
+    discrepancy=max(initial_error,final_error,destination_error,replay.maximum_coordinate_error)
+    (;file=replay.file,maximum_coordinate_error=discrepancy,passed=discrepancy<1e-6)
+end
 function verify_switching(details,sub,p,baseline,protocol,expected_status)
     folder=joinpath(sub,protocol)
     record=TOML.parsefile(joinpath(folder,"summary.toml"))
@@ -139,11 +174,14 @@ function verify(details,output)
     end
     for id in ("selective_withdrawal","threshold_to_active")
         p=byid[id];b=first(p["baselines"])
+        base=joinpath(details,"interventions",id)
+        reference=TOML.parsefile(joinpath(base,"context.toml"))["equilibria"]
+        roles=TOML.parsefile(joinpath(base,"roles.toml"))
+        source=reference[roles["seizure"]]["state"]
         for row in CSV.File(joinpath(details,"interventions",id,"summary.csv"))
             q=merge(p,Dict(row.axis=>row.value))
             sub=joinpath(details,"interventions",id,"$(row.axis)_$(row.value)")
-            file=joinpath(sub,"original_seizure.csv")
-            push!(checks,compare(file,q,b...,details))
+            push!(checks,verify_intervention(details,sub,q,b,row,source))
             append!(checks,verify_switching(details,sub,q,b,"fixed_switching",row.fixed_switching))
             if isfile(joinpath(sub,"remeasured_switching","summary.toml"))
                 append!(checks,verify_switching(details,sub,q,b,"remeasured_switching",row.remeasured_switching))

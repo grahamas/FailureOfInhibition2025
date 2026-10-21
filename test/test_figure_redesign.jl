@@ -71,6 +71,23 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         rm(failed_file)
         @test_throws ErrorException VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],
             "failed_switching",failed)
+        source=ctx.search.equilibria[ctx.roles["seizure"]].state
+        outcome=FigureDetails.S.observe(ctx,source,cfg;reference=ctx,retain=true,tight=true,cycles=true)
+        FigureDetails.S.save_observation(dir,"original_seizure",outcome)
+        report=(;status=outcome.status,destination=outcome.destination,
+            final_E=outcome.final[1],final_I=outcome.final[2])
+        @test VerifyFigureRedesign.verify_intervention(dir,dir,reference,[.35,0.],report,source).passed
+        @test !VerifyFigureRedesign.verify_intervention(dir,dir,reference,[.35,0.],
+            merge(report,(;final_E=report.final_E+.01)),source).passed
+        @test_throws ErrorException VerifyFigureRedesign.verify_intervention(dir,dir,reference,[.35,0.],
+            merge(report,(;destination="rest")),source)
+        seizure_file=joinpath(dir,"original_seizure.csv")
+        times=getproperty.(collect(FigureDetails.CSV.File(seizure_file)),:time)
+        alternative=VerifyFigureRedesign.integrate(rest,reference,.35,0.,times)
+        FigureDetails.CSV.write(seizure_file,[(;time=t,E=x[1],I=x[2]) for (t,x) in
+            zip(alternative.t,alternative.u)])
+        @test VerifyFigureRedesign.compare(seizure_file,reference,.35,0.,dir).passed
+        @test !VerifyFigureRedesign.verify_intervention(dir,dir,reference,[.35,0.],report,source).passed
     end
 end
 
