@@ -87,6 +87,9 @@ outcome is independently replayed before its witness is selected.
 Geometry bounds and provisional root roles are recalculated from the model
 parameters and study configuration. Each plotted cycle pulse source must include
 the configured axis, duration, and coarse amplitude samples.
+The connected sequence must use each source map's widest successful 100 ms
+interior witness; paired withdrawal maps must retain their coarse amplitude
+endpoints and midpoints at every configured duration.
 
 The full details can be restricted to one selected case by a fifth argument
 after `cases`. This does not substitute for the required complete set at

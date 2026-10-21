@@ -24,14 +24,22 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
     reference=only(filter(p->p["id"]=="selective_withdrawal",cases))
     weak=only(filter(p->p["id"]=="input_dependent",cases))
     durations=cfg.raw["durations"]
-    paired_grid=[(;id="selective_withdrawal",baseline=1,duration,amplitude=0.) for duration in durations]
-    @test VerifyFigureRedesign.verify_paired_pulse_grid(paired_grid,durations)
-    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(paired_grid[2:end],durations)
-    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(vcat(paired_grid,paired_grid[1]),durations)
+    paired_be=reference["baselines"][1][1]
+    paired_coarse=unique(vcat(collect(0.:paired_be/8:paired_be),[paired_be]))
+    paired_amplitudes=union(Set(paired_coarse),
+        Set((a+b)/2 for (a,b) in zip(paired_coarse,paired_coarse[2:end])))
+    paired_grid=[(;id="selective_withdrawal",baseline=1,duration,amplitude)
+        for duration in durations for amplitude in paired_amplitudes]
+    @test VerifyFigureRedesign.verify_paired_pulse_grid(paired_grid,durations,paired_be)
+    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(paired_grid[2:end],durations,paired_be)
     @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
-        vcat(paired_grid,(;id="selective_withdrawal",baseline=1,duration=3.,amplitude=0.)),durations)
+        filter(r->r.duration!=first(durations),paired_grid),durations,paired_be)
     @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
-        vcat(paired_grid[1:end-1],merge(last(paired_grid),(;id="other"))),durations)
+        vcat(paired_grid,paired_grid[1]),durations,paired_be)
+    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
+        vcat(paired_grid,(;id="selective_withdrawal",baseline=1,duration=3.,amplitude=0.)),durations,paired_be)
+    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
+        vcat(paired_grid[1:end-1],merge(last(paired_grid),(;id="other"))),durations,paired_be)
     sustained_grid=[(;id="selective_withdrawal",baseline=1),(;id="narrative",baseline=1)]
     expected_sustained=Set((row.id,row.baseline) for row in sustained_grid)
     @test VerifyFigureRedesign.verify_paired_sustained_grid(sustained_grid,expected_sustained)
@@ -160,6 +168,12 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
             @test (witness.axis,witness.amplitude,witness.duration)==
                 (winning_axis,(first(winning_amplitudes)+last(winning_amplitudes))/2,1.)
         end
+        sequence_search=[(;axis="E_withdrawal",amplitude,duration=100.,
+            success=amplitude in (.25,.5)) for amplitude in 0.:.25:1.]
+        sequence_witness=VerifyFigureRedesign.remeasured_witness(sequence_search,[100.];
+            axes=("E_increase","I_increase","E_withdrawal","I_withdrawal"))
+        @test (sequence_witness.axis,sequence_witness.amplitude,sequence_witness.duration)==
+            ("E_withdrawal",.375,100.)
         successful=(;axis="E_increase",amplitude=.5,duration=100.,
             status="compatible",destination="active")
         @test VerifyFigureRedesign.verified_replacement_success(successful,reference,(.35,0.),

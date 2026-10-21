@@ -402,11 +402,11 @@ function verify_negative_search(details,sub,p,baseline,config)
     all(found) && error("replacement switching was demonstrable within protocol: $sub")
     checks
 end
-function remeasured_witness(rows,processed)
+function remeasured_witness(rows,processed;axes=("E_increase","I_increase"))
     witness=nothing
     for duration in processed
         candidates=NamedTuple[]
-        for axis in ("E_increase","I_increase")
+        for axis in axes
             ordered=sort(filter(r->r.duration==duration && r.axis==axis,rows);by=r->r.amplitude)
             start=nothing
             for (index,row) in enumerate(ordered)
@@ -785,7 +785,7 @@ function verify_mechanism(details,p)
         passed=discrepancy<1e-10))
     checks
 end
-function verify_sequence(details,reference)
+function verify_sequence(details,reference,config)
     sequence_dir=joinpath(details,"sequence")
     seq=collect(CSV.File(joinpath(sequence_dir,"trajectory.csv")))
     events=collect(CSV.File(joinpath(sequence_dir,"events.csv")))
@@ -804,12 +804,39 @@ function verify_sequence(details,reference)
     checks=NamedTuple[(;file="sequence/prelude",maximum_coordinate_error=pre_error,passed=pre_error<1e-7)]
     initial=last(pre.u)
     previous_end=first(events).onset
+    source_maps=Dict{String,Any}()
     for (index,event) in enumerate(events)
         event.index==index && event.source==route[index] && event.destination==route[index+1] &&
             event.status=="compatible" || error("sequence event route changed: $index")
-        event.axis in ("E_increase","E_withdrawal","I_increase") && event.amplitude>=0 &&
+        event.axis in ("E_increase","E_withdrawal","I_increase","I_withdrawal") && event.amplitude>=0 &&
             abs(event.onset-previous_end)<1e-10 && abs(event.offset-event.onset-event.duration)<1e-10 &&
             event.followup_end>event.offset || error("sequence event timing or input changed: $index")
+        map=get!(source_maps,event.source) do
+            file=joinpath(details,"cases",reference["id"],"baseline_1",
+                "root_$(roles[event.source])","pulses","pulses.csv")
+            rows=collect(CSV.File(file))
+            verify_pulse_protocol_grid(rows,reference,(.35,0.),config)
+            all(r->r.source=="root_$(roles[event.source])" && r.source_role==event.source &&
+                r.phase==0,rows) || error("sequence pulse map source changed: $file")
+            if event.source=="herald"
+                for (row_index,row) in enumerate(rows)
+                    row.duration==100. && row.axis!="joint" || continue
+                    push!(checks,verify_axial_pulse_row(details,file,row_index,row,
+                        roots[roles[event.source]]["state"],reference,(.35,0.),roots,roles,
+                        nothing,config["followup_times"],config["durations"]))
+                end
+            end
+            rows
+        end
+        search=[(;axis=row.axis,amplitude=row.amplitude,duration=row.duration,
+            success=row.status=="compatible" && row.destination==event.destination)
+            for row in map if row.axis!="joint" && row.duration==100.]
+        witness=remeasured_witness(search,[100.];
+            axes=("E_increase","I_increase","E_withdrawal","I_withdrawal"))
+        witness===nothing && error("sequence pulse witness unavailable: $index")
+        (event.axis,event.amplitude,event.duration)==
+            (witness.axis,witness.amplitude,witness.duration) ||
+            error("sequence pulse differs from selected map witness: $index")
         phase=TOML.parsefile(joinpath(sequence_dir,"event_$index.toml"))
         observed=TOML.parsefile(joinpath(sequence_dir,"event_$(index)_summary.toml"))
         phase["status"]=="compatible" && phase["destination"]==roles[event.destination] &&
@@ -820,7 +847,8 @@ function verify_sequence(details,reference)
         source_error=maximum(abs.(initial.-source_root))
         start_error=maximum(abs.(initial.-[event.start_E,event.start_I]))
         be=.35+(event.axis=="E_increase" ? event.amplitude : event.axis=="E_withdrawal" ? -event.amplitude : 0.)
-        bi=event.axis=="I_increase" ? event.amplitude : 0.
+        bi=event.axis=="I_increase" ? event.amplitude :
+            event.axis=="I_withdrawal" ? -event.amplitude : 0.
         pulse_rows=filter(r->event.onset<=r.time<=event.offset,seq)
         followup_rows=filter(r->event.offset<=r.time<=event.followup_end,seq)
         pulse=integrate(initial,reference,be,bi,[r.time-event.onset for r in pulse_rows])
@@ -838,14 +866,20 @@ function verify_sequence(details,reference)
     abs(last(seq).time-previous_end)<1e-10 || error("sequence endpoint changed")
     checks
 end
-function verify_paired_pulse_grid(rows,durations)
+function verify_paired_pulse_grid(rows,durations,be)
     expected=Set(Float64.(durations))
     actual=Set(row.duration for row in rows)
     actual==expected || error("paired pulse duration grid changed")
     all(row.id=="selective_withdrawal" && row.baseline==1 for row in rows) ||
         error("paired pulse source changed")
+    all(0<=row.amplitude<=be for row in rows) || error("paired pulse amplitude outside baseline")
     length(Set((row.duration,row.amplitude) for row in rows))==length(rows) ||
         error("duplicate paired pulse protocol")
+    coarse=unique(vcat(collect(0.:be/8:be),[Float64(be)]))
+    required=union(Set(coarse),Set((a+b)/2 for (a,b) in zip(coarse,coarse[2:end])))
+    all(any(row.duration==duration && row.amplitude==amplitude for row in rows)
+        for duration in expected for amplitude in required) ||
+        error("paired pulse amplitude grid is incomplete")
 end
 function expected_paired_sustained(details,cases)
     expected=Set{Tuple{String,Int}}()
@@ -960,7 +994,7 @@ function verify(details,output)
     mkpath(output);cases=TOML.parsefile(joinpath(details,"selection.toml"))["cases"]
     byid=Dict(p["id"]=>p for p in cases);checks=NamedTuple[]
     reference=byid["selective_withdrawal"]
-    append!(checks,verify_sequence(details,reference))
+    append!(checks,verify_sequence(details,reference,config))
     append!(checks,verify_mechanism(details,reference))
     append!(checks,verify_timescale_spectrum(details,
         joinpath(details,"timescales","selective_withdrawal_0.35_0.0"),reference,(.35,0.)))
@@ -1055,7 +1089,7 @@ function verify(details,output)
         end
     end
     paired_pulses=collect(CSV.File(joinpath(details,"paired_controls","pulses.csv")))
-    verify_paired_pulse_grid(paired_pulses,config["durations"])
+    verify_paired_pulse_grid(paired_pulses,config["durations"],reference["baselines"][1][1])
     for (index,row) in enumerate(paired_pulses)
         p=byid[row.id]
         sub=joinpath(details,"paired_controls","$(row.id)_$(row.baseline)")
