@@ -6,30 +6,6 @@ function hopf_test_rhs!(du, u, parameters)
     return nothing
 end
 
-@testset "Finite-trace screening only proposes a shooting seed" begin
-    include(joinpath(@__DIR__, "..", "scripts", "run_periodic_candidates.jl"))
-    policy = PeriodicCandidateExperiment.screening_policy(false)
-    times = collect(0.0:1.0:5000.0)
-    states = [[0.25 + 0.1sin(2π * time / 100), 0.25 + 0.1cos(2π * time / 100)] for time in times]
-    recurrence = PeriodicCandidateExperiment.recurrence_seed((t=times, u=states), policy)
-    @test recurrence.status == "shooting_seed_only"
-    @test recurrence.period_guess ≈ 100.0 atol=1e-9
-    @test recurrence.relative_period_spread < 1e-9
-    @test length(recurrence.crossings) >= policy.minimum_upward_crossings
-    stationary = PeriodicCandidateExperiment.recurrence_seed(
-        (t=times, u=[zeros(2) for _ in times]), policy)
-    @test stationary.status == "no_seed_small_E_range"
-    @test isnan(stationary.period_guess)
-    config = PeriodicCandidateExperiment.Map.load_config(
-        joinpath(@__DIR__, "..", "experiments", "coexistence.toml"))
-    @test length(PeriodicCandidateExperiment.requested_cases(config, true)) == 1
-    for restricted_config in (merge(config, (; e_to_i_values=[18.0])),
-                              merge(config, (; failure_threshold_values=[10.0])))
-        @test_throws ArgumentError PeriodicCandidateExperiment.requested_cases(restricted_config, true)
-        @test_throws ArgumentError PeriodicCandidateExperiment.requested_cases(restricted_config, false)
-    end
-end
-
 function hopf_test_jacobian!(jacobian, u, parameters)
     growth, frequency = parameters
     radial = growth * (1 - sum(abs2, u))

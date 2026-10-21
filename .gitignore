@@ -13,6 +13,8 @@ foi_codex_local_context.tar.gz
 
 # Generated experiment output
 output/
+# Candidate figure packets are generated output; freeze final results explicitly.
+/reproducibility/figure_redesign_20261006/data/
 *.png
 *.pdf
 *.svg
