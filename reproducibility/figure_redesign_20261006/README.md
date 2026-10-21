@@ -43,9 +43,10 @@ when regenerated stages have valid markers.
 
 Figure 5 switching attempts retain each driven pulse and available baseline
 continuation, including the leg that ends an unsuccessful cycle. Independent
-verification replays both phases, checks their state handoffs, and requires a
-continuation for every attempted leg before packet building. The resulting
-report is bound to the completed detail stages.
+verification replays both phases, checks their state handoffs and destination
+roots, and checks the original E+0.5 and I+3 pulses against their declared
+100 ms protocol. Every attempted leg requires a continuation before packet
+building. The resulting report is bound to the completed detail stages.
 
 Cycle-phase confirmations and paired temporary-pulse controls also retain both
 phases locally. Verification replays their trajectories, checks the declared

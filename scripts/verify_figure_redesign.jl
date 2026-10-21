@@ -105,24 +105,22 @@ function verify_switching(details,sub,p,baseline,protocol,expected_status)
             succeeded || error("switching successful leg changed: $folder")
         end
         axis=leg["axis"];amplitude=leg["amplitude"]
+        if protocol=="fixed_switching"
+            fixed_axis,fixed_amplitude=number==1 ? ("E_increase",.5) : ("I_increase",3.)
+            (axis,amplitude,leg["duration"])==(fixed_axis,fixed_amplitude,100.) ||
+                error("fixed switching protocol changed: $folder/$name")
+        end
         axis in ("E_increase","I_increase") || error("unsupported switching input axis: $axis")
         be=baseline[1]+(axis=="E_increase" ? amplitude : 0.)
         bi=baseline[2]+(axis=="I_increase" ? amplitude : 0.)
         max(abs(be-leg["B_E"]),abs(bi-leg["B_I"]))<1e-12 || error("switching input changed: $folder")
-        pulse=collect(CSV.File(joinpath(folder,name*"_pulse.csv")))
         isfile(joinpath(folder,name*".csv")) || error("switching baseline continuation unavailable: $folder/$name")
+        check=verify_pulse_trace(details,folder,name,sub,p,baseline,be,bi,state,leg["duration"],
+            leg["status"],leg["destination"])
         followup=collect(CSV.File(joinpath(folder,name*".csv")))
-        first(pulse).time==0 && first(followup).time==0 &&
-            abs(last(pulse).time-leg["duration"])<1e-10 || error("switching phase times changed: $folder")
-        start_error=maximum(abs.(state.-[first(pulse).E,first(pulse).I]))
-        handoff_error=max(abs(last(pulse).E-first(followup).E),abs(last(pulse).I-first(followup).I))
         final_error=max(abs(last(followup).E-leg["final_E"]),abs(last(followup).I-leg["final_I"]))
-        driven=compare(joinpath(folder,name*"_pulse.csv"),p,be,bi,details)
-        restored=compare(joinpath(folder,name*".csv"),p,baseline...,details)
-        discrepancy=max(start_error,handoff_error,final_error,
-            driven.maximum_coordinate_error,restored.maximum_coordinate_error)
-        push!(checks,(;file=relpath(joinpath(folder,name),details),
-            maximum_coordinate_error=discrepancy,passed=discrepancy<1e-6))
+        discrepancy=max(final_error,check.maximum_coordinate_error)
+        push!(checks,(;file=check.file,maximum_coordinate_error=discrepancy,passed=discrepancy<1e-6))
         state=[last(followup).E,last(followup).I]
     end
     checks

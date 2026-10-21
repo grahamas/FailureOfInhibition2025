@@ -79,6 +79,14 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         @test length(checks)==4
         @test all(r->r.passed,checks)
         fixed_dir=joinpath(dir,"fixed_switching")
+        fixed_summary=joinpath(fixed_dir,"summary.toml")
+        saved_summary=read(fixed_summary,String)
+        altered=FigureDetails.TOML.parsefile(fixed_summary)
+        altered["legs"][1]["amplitude"]=.75
+        FigureDetails.S.write_record(fixed_summary,altered)
+        @test_throws ErrorException VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],
+            "fixed_switching","retained")
+        write(fixed_summary,saved_summary)
         @test VerifyFigureRedesign.verify_pulse_trace(dir,fixed_dir,"cycle_1_leg_1",dir,
             reference,(.35,0.),.85,0.,rest,100.,"compatible","active").passed
         continuation=joinpath(fixed_dir,"cycle_1_leg_1.csv")
@@ -104,6 +112,19 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         failed_checks=VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],"failed_switching",failed)
         @test length(failed_checks)==1
         @test all(r->r.passed,failed_checks)
+        failed_dir=joinpath(dir,"failed_switching")
+        failed_summary=joinpath(failed_dir,"cycle_1_leg_1_summary.toml")
+        failed_phase=joinpath(failed_dir,"cycle_1_leg_1.toml")
+        original_summary=read(failed_summary,String);original_phase=read(failed_phase,String)
+        spoofed_summary=FigureDetails.TOML.parsefile(failed_summary)
+        spoofed_phase=FigureDetails.TOML.parsefile(failed_phase)
+        spoofed_summary["destination"]="active"
+        spoofed_phase["destination"]=ctx.roles["active"]
+        FigureDetails.S.write_record(failed_summary,spoofed_summary)
+        FigureDetails.S.write_record(failed_phase,spoofed_phase)
+        @test !VerifyFigureRedesign.verify_pulse_trace(dir,failed_dir,"cycle_1_leg_1",dir,
+            reference,(.35,0.),.35,0.,rest,100.,"compatible","active").passed
+        write(failed_summary,original_summary);write(failed_phase,original_phase)
         failed_file=joinpath(dir,"failed_switching","cycle_1_leg_1.csv")
         lines=readlines(failed_file);fields=split(lines[2],',')
         fields[2]=string(parse(Float64,fields[2])+.01)
