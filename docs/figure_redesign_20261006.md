@@ -113,7 +113,12 @@ equation checks. The latter use separately written response and ODE equations
 with 1e-12 tolerances; they use the same Tsit5 integrator, not an independent
 solver implementation. They check the connected sequence, paired held/released
 trajectories, periodic waveforms, confirmed pulse/restoration trajectories at
-every measured cycle phase, and intervention trajectories.
+every plotted cycle phase, and intervention trajectories. The mechanism curves
+and reported roots, sampled geometry signatures and fills, time-scale spectra
+and accepted periodic points, and plotted input-history sweep are also checked
+independently before packet building.
+The time-scale stop check supports the declared step limit and parameter
+boundary; a different stop requires explicit verification before rendering.
 
 The renderer consumes a portable CSV/TOML packet with exact file-set and SHA-256
 checks. It writes PDF, SVG, PNG, and rendering provenance into a new directory.

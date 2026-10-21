@@ -15,44 +15,6 @@ function compact_roots(directory)
         role=something(findfirst(==(k),roles),"unassigned")) for (k,r) in enumerate(context["equilibria"])]
 end
 
-function build_mechanism(selection,output;cfg=S.load_config(joinpath(D.ROOT,"experiments/figure_redesign.toml")))
-    p=only(filter(p->p["id"]=="selective_withdrawal",selection["cases"]))
-    ref=S.context(p,.35,0.,cfg;tight=true,grid=41)
-    mechanism=joinpath(output,"mechanism");mkpath(mechanism)
-    response_rows=NamedTuple[];nullclines=NamedTuple[];roots=NamedTuple[]
-    for (condition,control) in (("monotone",true),("failure",false))
-        model=S.M.model(p,.35,0.;control)
-        search=find_equilibria(model;seeds=[[e,i] for e in range(0,.5;length=41) for i in range(0,.5;length=41)])
-        roles=S.M.roles(model,search)
-        for (k,r) in enumerate(search.equilibria)
-            push!(roots,(;condition,root=k,E=r.state[1],I=r.state[2],stability=string(r.stability.classification),
-                role=something(findfirst(==(k),roles),"unassigned")))
-        end
-        for input in range(-1.,13.;length=701)
-            push!(response_rows,(;condition,input,response=response(model.inhibitory.response,input)))
-        end
-        c=model.coupling
-        for input in range(-c.i_to_e+.35,c.e_to_e+.35;length=6001)
-            e=S.M.occupancy(model.excitatory.response,input)
-            i=(c.e_to_e*e+.35-input)/c.i_to_e
-            0<=i<=1 && push!(nullclines,(;condition,population="E",input,E=e,I=i))
-        end
-        for input in range(-c.i_to_i,c.e_to_i;length=6001)
-            i=S.M.occupancy(model.inhibitory.response,input)
-            e=(input+c.i_to_i*i)/c.e_to_i
-            0<=e<=1 && push!(nullclines,(;condition,population="I",input,E=e,I=i))
-        end
-    end
-    CSV.write(joinpath(mechanism,"responses.csv"),response_rows)
-    CSV.write(joinpath(mechanism,"nullclines.csv"),nullclines);CSV.write(joinpath(mechanism,"roots.csv"),roots)
-    star=ref.search.equilibria[ref.roles["seizure"]].state
-    inhibitory_input=p["e_to_i"]*star[1]-p["i_to_i"]*star[2]
-    S.write_record(joinpath(mechanism,"restriction.toml"),Dict("E_star"=>star[1],"I_star"=>star[2],
-        "inhibitory_input"=>inhibitory_input,"response_peak_input"=>(get(p,"theta_on",4.)+p["theta_off"])/2,
-        "descending_branch_condition"=>inhibitory_input>=(get(p,"theta_on",4.)+p["theta_off"])/2,
-        "drive_condition"=>"Both drive increments are nonnegative relative to baseline throughout the protocol"))
-end
-
 function build(screen,details,output)
     ispath(output) && error("packet destination already exists")
     metadata=TOML.parsefile(joinpath(details,"metadata.toml"))
@@ -183,7 +145,9 @@ function build(screen,details,output)
             end
         end
     end
-    build_mechanism(selection,output;cfg)
+    for name in ("responses.csv","nullclines.csv","roots.csv","restriction.toml")
+        copy_evidence(details,joinpath("mechanism",name))
+    end
     S.write_record(joinpath(output,"packet.toml"),Dict("schema_version"=>1,"purpose"=>"Five question-led figure drafts",
         "copied_artifact_sha256"=>sources,"builder_sha256"=>IOChecks.digest(@__FILE__),
         "derived_artifacts"=>derived,

@@ -27,6 +27,70 @@ function integrate(initial,p,be,bi,times)
     SciMLBase.successful_retcode(solution) || error("independent integration failed")
     solution
 end
+inhibitory_rate(input,p,control)=control ?
+    sigmoid(get(p,"slope_i",5.)*(input-get(p,"theta_on",4.))) :
+    sigmoid(get(p,"slope_i",5.)*(input-get(p,"theta_on",4.)))*
+    sigmoid(get(p,"slope_i",5.)*(p["theta_off"]-input))*
+    (-expm1(-get(p,"slope_i",5.)*(p["theta_off"]-get(p,"theta_on",4.))))
+function independent_jacobian(state,p,be,bi;control=false)
+    e,i=state
+    ue=p["e_to_e"]*e-p["i_to_e"]*i+be
+    ui=p["e_to_i"]*e-p["i_to_i"]*i+bi
+    se=get(p,"slope_e",5.);si=get(p,"slope_i",5.)
+    fe=sigmoid(se*(ue-get(p,"theta_e",1.5)))
+    a=sigmoid(si*(ui-get(p,"theta_on",4.)))
+    b=sigmoid(si*(p["theta_off"]-ui))
+    fi=control ? a : a*b*(-expm1(-si*(p["theta_off"]-get(p,"theta_on",4.))))
+    dfe=se*fe*(1-fe);dfi=control ? si*a*(1-a) : si*fi*(b-a)
+    tau=get(p,"tau_e",7.8);tau_i=tau*p["tau_ratio"]
+    j11=(-1-fe+(1-e)*dfe*p["e_to_e"])/tau
+    j12=-(1-e)*dfe*p["i_to_e"]/tau
+    j21=(1-i)*dfi*p["e_to_i"]/tau_i
+    j22=(-1-fi-(1-i)*dfi*p["i_to_i"])/tau_i
+    (;j11,j12,j21,j22,determinant=j11*j22-j12*j21)
+end
+function orbit_measurements(initial,p,baseline,times)
+    solution=integrate(initial,p,baseline...,times)
+    states=solution.u
+    trace_integral=sum(begin
+        a=independent_jacobian(states[k],p,baseline...)
+        b=independent_jacobian(states[k+1],p,baseline...)
+        (a.j11+a.j22+b.j11+b.j22)*(times[k+1]-times[k])/2
+    end for k in 1:length(times)-1)
+    (;states,closure=maximum(abs.(last(states).-first(states))),
+        E_min=minimum(x[1] for x in states),E_max=maximum(x[1] for x in states),
+        I_min=minimum(x[2] for x in states),I_max=maximum(x[2] for x in states),
+        multiplier=exp(trace_integral))
+end
+function verify_orbit_values(measured,record,where;attracting_only=false)
+    record["validation"]=="NumericallyValidatedPeriodicOrbit" ||
+        error("unvalidated plotted orbit: $where")
+    measured.closure<1e-6 && measured.E_max-measured.E_min>1e-4 &&
+        isfinite(measured.multiplier) || error("periodic closure failed: $where")
+    stability=record["stability"]
+    if stability=="PeriodicOrbitAttracting"
+        measured.multiplier<1-1e-4 || error("periodic attraction failed: $where")
+    elseif stability=="PeriodicOrbitRepelling" && !attracting_only
+        measured.multiplier>1+1e-4 || error("periodic repulsion failed: $where")
+    else
+        error("unsupported plotted orbit stability: $where")
+    end
+    abs(measured.multiplier-record["transverse_real"])<1e-3 &&
+        abs(record["transverse_imag"])<1e-3 || error("periodic multiplier changed: $where")
+end
+function verify_source_orbit(details,file,p,baseline)
+    rows=collect(CSV.File(file));record=TOML.parsefile(replace(file,r"\.csv$"=>".toml"))
+    times=Float64.(getproperty.(rows,:time))
+    length(times)>=3 && first(times)==0 && all(diff(times).>0) &&
+        abs(last(times)-record["period"])<1e-8 || error("periodic source times changed: $file")
+    measured=orbit_measurements([first(rows).E,first(rows).I],p,baseline,times)
+    waveform_error=maximum(max(abs(x[1]-r.E),abs(x[2]-r.I)) for (x,r) in zip(measured.states,rows))
+    verify_orbit_values(measured,record,file;attracting_only=true)
+    amplitude_error=max(abs(measured.E_max-measured.E_min-record["amplitudes"][1]),
+        abs(measured.I_max-measured.I_min-record["amplitudes"][2]))
+    discrepancy=max(waveform_error,measured.closure,amplitude_error)
+    (;file=relpath(file,details),maximum_coordinate_error=discrepancy,passed=discrepancy<1e-6)
+end
 function compare(path,p,be,bi,root)
     rows=collect(CSV.File(path));times=Float64.(getproperty.(rows,:time))
     solution=integrate([first(rows).E,first(rows).I],p,be,bi,times)
@@ -78,7 +142,7 @@ end
 verify_intervention(details,sub,p,baseline,row,source)=verify_observation(details,sub,
     "original_seizure",sub,dirname(sub),p,baseline,row.status,row.destination,source;
     final=(row.final_E,row.final_I))
-function verify_switching(details,sub,p,baseline,protocol,expected_status)
+function verify_switching(details,sub,p,baseline,protocol,expected_status;witnesses=nothing)
     folder=joinpath(sub,protocol)
     record=TOML.parsefile(joinpath(folder,"summary.toml"))
     record["status"]==expected_status || error("switching status changed: $folder")
@@ -112,6 +176,11 @@ function verify_switching(details,sub,p,baseline,protocol,expected_status)
             fixed_axis,fixed_amplitude=number==1 ? ("E_increase",.5) : ("I_increase",3.)
             (axis,amplitude,leg["duration"])==(fixed_axis,fixed_amplitude,100.) ||
                 error("fixed switching protocol changed: $folder/$name")
+        elseif protocol=="remeasured_switching"
+            witnesses===nothing && error("remeasured switching search was not checked: $folder")
+            witness=witnesses[number]
+            (axis,amplitude,leg["duration"])==(witness.axis,witness.amplitude,witness.duration) ||
+                error("remeasured switching witness changed: $folder/$name")
         end
         axis in ("E_increase","I_increase") || error("unsupported switching input axis: $axis")
         be=baseline[1]+(axis=="E_increase" ? amplitude : 0.)
@@ -295,6 +364,323 @@ function verify_negative_search(details,sub,p,baseline,config)
     all(found) && error("replacement switching was demonstrable within protocol: $sub")
     checks
 end
+function verify_remeasured_witnesses(details,sub,config)
+    durations=Float64.(config["durations"]);amplitudes=collect(0.:.25:8.)
+    witnesses=NamedTuple[];checks=NamedTuple[]
+    for (role,target) in (("rest","active"),("active","rest"))
+        file=joinpath(sub,role*"_remeasure.csv")
+        rows=collect(CSV.File(file))
+        processed=sort(unique(r.duration for r in rows))
+        !isempty(processed) && length(processed)<=length(durations) &&
+            processed==durations[1:length(processed)] ||
+            error("replacement duration prefix changed: $file")
+        expected=Set((duration,axis,amplitude) for duration in processed
+            for axis in ("E_increase","I_increase") for amplitude in amplitudes)
+        actual=Set((r.duration,r.axis,r.amplitude) for r in rows)
+        length(rows)==length(expected) && actual==expected && all(r->r.source==role,rows) ||
+            error("replacement search grid changed: $file")
+        witness=nothing
+        for duration in processed
+            candidates=NamedTuple[]
+            for axis in ("E_increase","I_increase")
+                ordered=sort(filter(r->r.duration==duration && r.axis==axis,rows);by=r->r.amplitude)
+                start=nothing
+                for (index,row) in enumerate(ordered)
+                    success=row.status=="compatible" && row.destination==target
+                    if success
+                        start===nothing && (start=index)
+                        if index==length(ordered) ||
+                            !(ordered[index+1].status=="compatible" && ordered[index+1].destination==target)
+                            lo=ordered[start].amplitude;hi=row.amplitude
+                            hi>lo && push!(candidates,(;axis,amplitude=(lo+hi)/2,duration,width=hi-lo))
+                            start=nothing
+                        end
+                    else
+                        start=nothing
+                    end
+                end
+            end
+            if !isempty(candidates)
+                witness=first(sort(candidates;by=x->(-x.width,x.axis,x.amplitude)))
+                break
+            end
+        end
+        witness===nothing && error("remeasured switching has no search witness: $file")
+        processed==durations[1:findfirst(==(witness.duration),durations)] ||
+            error("replacement search stopped at wrong duration: $file")
+        push!(witnesses,witness)
+        push!(checks,(;file=relpath(file,details),maximum_coordinate_error=0.,passed=true))
+    end
+    witnesses,checks
+end
+function verify_timescale_spectrum(details,folder,p,baseline)
+    roots=TOML.parsefile(joinpath(folder,"context.toml"))["equilibria"]
+    path=joinpath(folder,"equilibria.csv");rows=collect(CSV.File(path))
+    ratios=unique(r.ratio for r in rows)
+    all(r->.2<=r<=4.4,ratios) && all(any(abs(r-grid)<1e-10 for r in ratios)
+        for grid in range(.2,4.4;length=85)) || error("time-scale scan grid changed: $path")
+    length(rows)==length(roots)*length(ratios) || error("time-scale spectrum rows changed: $path")
+    seen=Set{Tuple{Float64,Int}}();checks=NamedTuple[]
+    for (index,row) in enumerate(rows)
+        1<=row.root<=length(roots) || error("invalid time-scale root: $path:$index")
+        push!(seen,(row.ratio,row.root))
+        q=merge(p,Dict("tau_ratio"=>row.ratio))
+        state=roots[row.root]["state"]
+        field=zeros(2);independent_rhs!(field,state,(q,baseline...),0.)
+        j=independent_jacobian(state,q,baseline...)
+        trace=j.j11+j.j22;discriminant=trace^2-4*j.determinant
+        alpha=discriminant>=0 ? (trace+sqrt(discriminant))/2 : trace/2
+        stability=j.determinant<0 ? "Saddle" : abs(alpha)<1e-8 ? "Unresolved" :
+            alpha<0 ? "Attracting" : "Repelling"
+        row.stability==stability || error("time-scale stability changed: $path:$index")
+        discrepancy=maximum((abs(row.E-state[1]),abs(row.I-state[2]),
+            abs(row.alpha-alpha),abs(row.determinant-j.determinant),maximum(abs.(field))))
+        push!(checks,(;file="$(relpath(path,details)):$index",
+            maximum_coordinate_error=discrepancy,passed=discrepancy<1e-6))
+    end
+    length(seen)==length(rows) || error("duplicate time-scale spectrum row: $path")
+    checks
+end
+function verify_cycle_row(details,path,index,row,record,initial,p,baseline)
+    period=record["period"]
+    period>0 && abs(row.period-period)<1e-6 &&
+        row.validation==record["validation"] && row.stability==record["stability"] ||
+        error("continued orbit record changed: $path:$index")
+    times=collect(range(0.,period;length=257))
+    measured=orbit_measurements(initial,p,baseline,times)
+    verify_orbit_values(measured,record,"$path:$index")
+    discrepancy=maximum((measured.closure,abs(measured.E_min-row.E_min),
+        abs(measured.E_max-row.E_max),abs(measured.I_min-row.I_min),
+        abs(measured.I_max-row.I_max),abs(measured.multiplier-row.multiplier),
+        abs(measured.closure-row.closure)))
+    (;file="$(relpath(path,details)):$index",maximum_coordinate_error=discrepancy,
+        passed=discrepancy<1e-3)
+end
+function verify_timescale_cycles(details,folder,p,baseline)
+    path=joinpath(folder,"cycles.csv")
+    isfile(path) || error("plotted periodic continuation is missing: $path")
+    rows=collect(CSV.File(path));stops=collect(CSV.File(joinpath(folder,"stops.csv")))
+    Set(r.direction for r in rows)==Set((-1,1)) &&
+        Set(r.direction for r in stops)==Set((-1,1)) ||
+        error("continued branch directions changed: $path")
+    seed_file=joinpath(folder,"seed_$(p["tau_ratio"])","orbit.csv")
+    seed_record=TOML.parsefile(replace(seed_file,r"\.csv$"=>".toml"))
+    seed_first=first(CSV.File(seed_file))
+    checks=NamedTuple[verify_source_orbit(details,seed_file,p,baseline)]
+    for direction in (-1,1)
+        branch=filter(r->r.direction==direction,rows)
+        stop=only(filter(r->r.direction==direction,stops))
+        attempts=TOML.parsefile(joinpath(folder,"attempts_$direction.toml"))["attempts"]
+        accepted=filter(a->a["accepted"],attempts)
+        length(branch)==length(accepted)+1 && stop.points==length(branch) &&
+            all(r.index==index for (index,r) in enumerate(branch)) ||
+            error("continued branch point count changed: $path:$direction")
+        first(branch).ratio==p["tau_ratio"] || error("continued branch seed changed: $path")
+        seed_index=only(findall(r->r.direction==direction && r.index==1,rows))
+        push!(checks,verify_cycle_row(details,path,seed_index,first(branch),
+            seed_record,[seed_first.E,seed_first.I],p,baseline))
+        for (index,attempt) in enumerate(accepted)
+            row=branch[index+1];candidate=attempt["candidate"]
+            abs(candidate[4]-row.ratio)<1e-10 && abs(exp(candidate[3])-row.period)<1e-6 &&
+                attempt["status"]=="corrector_converged" ||
+                error("accepted continuation candidate changed: $path:$direction:$index")
+            q=merge(p,Dict("tau_ratio"=>row.ratio))
+            row_index=only(findall(r->r.direction==direction && r.index==row.index,rows))
+            push!(checks,verify_cycle_row(details,path,row_index,row,
+                attempt["orbit"],candidate[1:2],q,baseline))
+        end
+        if stop.termination=="step_limit"
+            length(accepted)==250 || error("continuation step limit changed: $path:$direction")
+        elseif stop.termination=="parameter_boundary"
+            bound=direction<0 ? .2 : 4.4
+            abs(last(branch).ratio-bound)<1e-4 ||
+                error("continuation boundary changed: $path:$direction")
+        else
+            error("unverified continuation stop: $path:$direction:$(stop.termination)")
+        end
+    end
+    checks
+end
+function verify_hysteresis(details,folder,p,baseline,config)
+    roles=TOML.parsefile(joinpath(folder,"roles.toml"))
+    roots=TOML.parsefile(joinpath(folder,"context.toml"))["equilibria"]
+    file=joinpath(folder,"root_$(roles["rest"])","hysteresis","sweeps.csv")
+    rows=filter(r->r.axis=="B_E" && r.first_direction==-1,collect(CSV.File(file)))
+    cap=TOML.parsefile(joinpath(dirname(folder),"geometry","bounds.toml"))["B_E"]
+    state=roots[roles["rest"]]["state"];current=baseline[1];checks=NamedTuple[]
+    index=1
+    for target in (0.,cap,baseline[1])
+        while abs(current-target)>1e-10
+            index<=length(rows) || error("plotted hysteresis sweep ended early: $file")
+            row=rows[index]
+            abs(row.previous_input-current)<1e-10 &&
+                0<=row.input<=cap && (row.input-current)*(target-current)>0 &&
+                abs(row.input-current)<=abs(target-current)+1e-10 &&
+                row.status=="compatible" || error("plotted hysteresis step changed: $file:$index")
+            discrepancy=Inf
+            for horizon in config["followup_times"]
+                ending=last(integrate(state,p,row.input,baseline[2],[0.,horizon]).u)
+                discrepancy=min(discrepancy,maximum(abs.(ending.-[row.E,row.I])))
+                discrepancy<1e-6 && break
+            end
+            push!(checks,(;file="$(relpath(file,details)):$index",
+                maximum_coordinate_error=discrepancy,passed=discrepancy<1e-6))
+            current=row.input;state=[row.E,row.I];index+=1
+        end
+    end
+    index==length(rows)+1 || error("plotted hysteresis has extra steps: $file")
+    checks
+end
+function verify_geometry(details,p)
+    folder=joinpath(details,"cases",p["id"],"geometry")
+    inputs=collect(CSV.File(joinpath(folder,"inputs.csv")))
+    roots=collect(CSV.File(joinpath(folder,"equilibria.csv")))
+    cells=collect(CSV.File(joinpath(folder,"cells.csv")))
+    bounds=TOML.parsefile(joinpath(folder,"bounds.toml"))
+    byinput=Dict{Tuple{Float64,Float64},Vector{Any}}()
+    for root in roots
+        push!(get!(byinput,(root.B_E,root.B_I),Any[]),root)
+    end
+    length(byinput)==length(inputs) || error("geometry root/input set changed: $(p["id"])")
+    signatures=Dict{Tuple{Float64,Float64},String}();checks=NamedTuple[]
+    for (index,row) in enumerate(inputs)
+        key=(row.B_E,row.B_I)
+        0<=row.B_E<=bounds["B_E"] && 0<=row.B_I<=bounds["B_I"] &&
+            !haskey(signatures,key) && haskey(byinput,key) ||
+            error("geometry input changed: $(p["id"]):$index")
+        group=byinput[key]
+        length(group)==row.roots && all(r.root==k for (k,r) in enumerate(group)) ||
+            error("geometry root count changed: $(p["id"]):$index")
+        labels=String[];maximum_error=0.
+        for root in group
+            state=[root.E,root.I]
+            field=zeros(2);independent_rhs!(field,state,(p,row.B_E,row.B_I),0.)
+            j=independent_jacobian(state,p,row.B_E,row.B_I)
+            trace=j.j11+j.j22;discriminant=trace^2-4*j.determinant
+            alpha=discriminant>=0 ? (trace+sqrt(discriminant))/2 : trace/2
+            stability=j.determinant<0 ? "Saddle" : abs(alpha)<1e-8 ? "Unresolved" :
+                alpha<0 ? "Attracting" : "Repelling"
+            root.stability==stability || error("geometry stability changed: $(p["id"]):$index")
+            maximum_error=max(maximum_error,maximum(abs.(field)))
+            push!(labels,root.stability*":"*root.role)
+        end
+        row.sinks==count(r->r.stability=="Attracting",group) &&
+            coalesce(row.roles,"")==join(sort([r.role for r in group if r.role!="unassigned"]),",") ||
+            error("geometry role counts changed: $(p["id"]):$index")
+        suffix=row.discovery_status=="index_unresolved" ? "|index_unresolved" :
+            row.discovery_status=="index_consistent_not_complete" ? "" :
+            error("geometry discovery status changed: $(p["id"]):$index")
+        signature=join(sort(labels),"|")*suffix
+        row.signature==signature || error("geometry signature changed: $(p["id"]):$index")
+        signatures[key]=signature
+        push!(checks,(;file="$(relpath(folder,details))/inputs.csv:$index",
+            maximum_coordinate_error=maximum_error,passed=maximum_error<1e-6))
+    end
+    for (index,cell) in enumerate(cells)
+        0<=cell.x0<cell.x1<=bounds["B_E"] &&
+            0<=cell.y0<cell.y1<=bounds["B_I"] ||
+            error("geometry cell outside bounds: $(p["id"]):$index")
+        if cell.status=="sampled_homogeneous"
+            points=((cell.x0,cell.y0),(cell.x0,cell.y1),(cell.x1,cell.y0),
+                (cell.x1,cell.y1),((cell.x0+cell.x1)/2,(cell.y0+cell.y1)/2))
+            all(haskey(signatures,point) for point in points) &&
+                length(Set(signatures[point] for point in points))==1 ||
+                error("geometry fill lacks agreeing samples: $(p["id"]):$index")
+        elseif cell.status ∉ ("budget_unresolved","boundary_bracket","mixed")
+            error("unsupported geometry cell status: $(p["id"]):$index")
+        end
+    end
+    push!(checks,(;file="$(relpath(folder,details))/cells.csv",
+        maximum_coordinate_error=0.,passed=true))
+    checks
+end
+function verify_mechanism(details,p)
+    folder=joinpath(details,"mechanism");checks=NamedTuple[]
+    responses=collect(CSV.File(joinpath(folder,"responses.csv")))
+    nullclines=collect(CSV.File(joinpath(folder,"nullclines.csv")))
+    roots=collect(CSV.File(joinpath(folder,"roots.csv")))
+    reference=joinpath(details,"cases","selective_withdrawal","baseline_1")
+    reference_roots=TOML.parsefile(joinpath(reference,"context.toml"))["equilibria"]
+    reference_roles=TOML.parsefile(joinpath(reference,"roles.toml"))
+    for (condition,control) in (("monotone",true),("failure",false))
+        response_rows=filter(r->r.condition==condition,responses)
+        length(response_rows)==701 || error("mechanism response grid changed: $condition")
+        response_error=maximum(begin
+            abs(row.input-input)<1e-10 || error("mechanism response input changed: $condition")
+            abs(row.response-inhibitory_rate(input,p,control))
+        end for (row,input) in zip(response_rows,range(-1.,13.;length=701)))
+        push!(checks,(;file="mechanism/responses.csv:$condition",
+            maximum_coordinate_error=response_error,passed=response_error<1e-10))
+        for population in ("E","I")
+            group=filter(r->r.condition==condition && r.population==population,nullclines)
+            inputs=population=="E" ? range(-p["i_to_e"]+.35,p["e_to_e"]+.35;length=6001) :
+                range(-p["i_to_i"],p["e_to_i"];length=6001)
+            expected=NamedTuple[]
+            for input in inputs
+                if population=="E"
+                    rate=sigmoid(get(p,"slope_e",5.)*(input-get(p,"theta_e",1.5)))
+                    e=rate/(1+rate);i=(p["e_to_e"]*e+.35-input)/p["i_to_e"]
+                else
+                    rate=inhibitory_rate(input,p,control)
+                    i=rate/(1+rate);e=(input+p["i_to_i"]*i)/p["e_to_i"]
+                end
+                0<=e<=1 && 0<=i<=1 && push!(expected,(;input,E=e,I=i))
+            end
+            length(group)==length(expected) || error("mechanism nullcline grid changed: $condition/$population")
+            error=maximum(max(abs(row.input-value.input),abs(row.E-value.E),abs(row.I-value.I))
+                for (row,value) in zip(group,expected))
+            push!(checks,(;file="mechanism/nullclines.csv:$condition/$population",
+                maximum_coordinate_error=error,passed=error<1e-10))
+        end
+        group=filter(r->r.condition==condition,roots)
+        !isempty(group) && all(r.root==index for (index,r) in enumerate(group)) ||
+            error("mechanism root numbering changed: $condition")
+        matched_reference=Int[]
+        for row in group
+            state=[row.E,row.I]
+            all(0<=x<=1 for x in state) || error("mechanism root outside state domain: $condition")
+            ue=p["e_to_e"]*row.E-p["i_to_e"]*row.I+.35
+            ui=p["e_to_i"]*row.E-p["i_to_i"]*row.I
+            fe=sigmoid(get(p,"slope_e",5.)*(ue-get(p,"theta_e",1.5)))
+            fi=inhibitory_rate(ui,p,control)
+            tau=get(p,"tau_e",7.8)
+            field=((-row.E+(1-row.E)*fe)/tau,
+                (-row.I+(1-row.I)*fi)/(tau*p["tau_ratio"]))
+            j=independent_jacobian(state,p,.35,0.;control)
+            trace=j.j11+j.j22;discriminant=trace^2-4*j.determinant
+            alpha=discriminant>=0 ? (trace+sqrt(discriminant))/2 : trace/2
+            stability=j.determinant<0 ? "Saddle" : abs(alpha)<1e-8 ? "Unresolved" :
+                alpha<0 ? "Attracting" : "Repelling"
+            row.stability==stability || error("mechanism root stability changed: $condition/$(row.root)")
+            if !control
+                matching=findall(r->maximum(abs.(state.-r["state"]))<1e-5,reference_roots)
+                length(matching)==1 || error("mechanism root lacks reference correspondence: $(row.root)")
+                push!(matched_reference,only(matching))
+                assigned=[role for (role,k) in reference_roles if k==only(matching)]
+                expected_role=isempty(assigned) ? "unassigned" : only(assigned)
+                row.role==expected_role || error("mechanism root role changed: $(row.root)")
+            end
+            discrepancy=max(abs(field[1]),abs(field[2]))
+            push!(checks,(;file="mechanism/roots.csv:$condition:$(row.root)",
+                maximum_coordinate_error=discrepancy,passed=discrepancy<1e-6))
+        end
+        !control && sort(matched_reference)!=collect(eachindex(reference_roots)) &&
+            error("mechanism omits a recorded reference root")
+    end
+    restriction=TOML.parsefile(joinpath(folder,"restriction.toml"))
+    seizure=reference_roots[reference_roles["seizure"]]["state"]
+    input=p["e_to_i"]*seizure[1]-p["i_to_i"]*seizure[2]
+    peak=(get(p,"theta_on",4.)+p["theta_off"])/2
+    restriction["descending_branch_condition"]==(input>=peak) ||
+        error("mechanism restriction condition changed")
+    discrepancy=maximum((abs(restriction["E_star"]-seizure[1]),
+        abs(restriction["I_star"]-seizure[2]),
+        abs(restriction["inhibitory_input"]-input),
+        abs(restriction["response_peak_input"]-peak)))
+    push!(checks,(;file="mechanism/restriction.toml",maximum_coordinate_error=discrepancy,
+        passed=discrepancy<1e-10))
+    checks
+end
 function verify_sequence(details,reference)
     sequence_dir=joinpath(details,"sequence")
     seq=collect(CSV.File(joinpath(sequence_dir,"trajectory.csv")))
@@ -358,12 +744,27 @@ function verify(details,output)
     byid=Dict(p["id"]=>p for p in cases);checks=NamedTuple[]
     reference=byid["selective_withdrawal"]
     append!(checks,verify_sequence(details,reference))
+    append!(checks,verify_mechanism(details,reference))
+    append!(checks,verify_timescale_spectrum(details,
+        joinpath(details,"timescales","selective_withdrawal_0.35_0.0"),reference,(.35,0.)))
+    weak=byid["input_dependent"]
+    append!(checks,verify_geometry(details,reference))
+    append!(checks,verify_geometry(details,weak))
+    weak_timescales=joinpath(details,"timescales","input_dependent_2.0_1.0")
+    append!(checks,verify_timescale_spectrum(details,weak_timescales,weak,(2.,1.)))
+    append!(checks,verify_timescale_cycles(details,weak_timescales,weak,(2.,1.)))
+    append!(checks,verify_hysteresis(details,
+        joinpath(details,"cases","selective_withdrawal","baseline_1"),reference,(.35,0.),config))
     for p in cases
         root=joinpath(details,"cases",p["id"])
         for baseline in filter(n->startswith(n,"baseline_"),readdir(root))
             folder=joinpath(root,baseline);input=TOML.parsefile(joinpath(folder,"input.toml"))
-            for name in filter(n->startswith(n,"orbit_") && endswith(n,".csv"),readdir(folder))
-                push!(checks,compare(joinpath(folder,name),p,input["B_E"],input["B_I"],details))
+            orbit_files=filter(n->startswith(n,"orbit_") && endswith(n,".csv"),readdir(folder))
+            TOML.parsefile(joinpath(folder,"summary.toml"))["validated_cycles"]==length(orbit_files) ||
+                error("plotted cycle count changed: $folder")
+            for name in orbit_files
+                push!(checks,verify_source_orbit(details,joinpath(folder,name),p,
+                    (input["B_E"],input["B_I"])))
             end
             for source in filter(n->startswith(n,"cycle_"),readdir(folder))
                 initial,fraction=orbit_phase_state(folder,source,p,(input["B_E"],input["B_I"]))
@@ -455,7 +856,14 @@ function verify(details,output)
             push!(checks,verify_intervention(details,sub,q,b,row,source))
             append!(checks,verify_switching(details,sub,q,b,"fixed_switching",row.fixed_switching))
             if isfile(joinpath(sub,"remeasured_switching","summary.toml"))
-                append!(checks,verify_switching(details,sub,q,b,"remeasured_switching",row.remeasured_switching))
+                witnesses,search_checks=verify_remeasured_witnesses(details,sub,config)
+                append!(checks,search_checks)
+                (row.up_amplitude,row.down_amplitude,row.duration_up,row.duration_down)==
+                    (witnesses[1].amplitude,witnesses[2].amplitude,
+                     witnesses[1].duration,witnesses[2].duration) ||
+                    error("reported remeasured protocol changed: $sub")
+                append!(checks,verify_switching(details,sub,q,b,"remeasured_switching",
+                    row.remeasured_switching;witnesses))
             elseif row.fixed_switching=="retained"
                 row.remeasured_switching=="retained" || error("retained fixed switching must carry through")
             elseif row.fixed_switching=="sources_unavailable"

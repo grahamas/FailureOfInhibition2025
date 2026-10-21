@@ -31,10 +31,37 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         FigureDetails.point_rhs!(package,state,model,0.)
         VerifyFigureRedesign.independent_rhs!(independent,state,(reference,input...),0.)
         @test package≈independent atol=1e-12 rtol=1e-12
+        j=VerifyFigureRedesign.independent_jacobian(state,reference,input...)
+        for coordinate in 1:2
+            shifted=copy(state);shifted[coordinate]+=1e-6
+            plus=zeros(2);VerifyFigureRedesign.independent_rhs!(plus,shifted,(reference,input...),0.)
+            shifted[coordinate]-=2e-6
+            minus=zeros(2);VerifyFigureRedesign.independent_rhs!(minus,shifted,(reference,input...),0.)
+            column=(plus.-minus)./2e-6
+            expected=coordinate==1 ? [j.j11,j.j21] : [j.j12,j.j22]
+            @test column≈expected atol=1e-7 rtol=1e-7
+        end
     end
     mktempdir() do dir
         ctx=FigureDetails.confirmed_context(reference,[.35,0.],cfg,dir)
         @test all(haskey(ctx.roles,r) for r in ("rest","active","herald","seizure"))
+        mechanism_details=joinpath(dir,"mechanism_details")
+        mechanism_reference=joinpath(mechanism_details,"cases","selective_withdrawal","baseline_1")
+        mkpath(mechanism_reference)
+        for name in ("context.toml","roles.toml")
+            cp(joinpath(dir,name),joinpath(mechanism_reference,name))
+        end
+        FigureDetails.mechanism(reference,cfg,mechanism_details)
+        @test all(r->r.passed,VerifyFigureRedesign.verify_mechanism(mechanism_details,reference))
+        response_file=joinpath(mechanism_details,"mechanism","responses.csv")
+        original_response=read(response_file,String)
+        response_lines=readlines(response_file)
+        response_fields=split(response_lines[2],',')
+        response_fields[3]="1.0"
+        response_lines[2]=join(response_fields,",")
+        write(response_file,join(response_lines,"\n")*"\n")
+        @test !all(r->r.passed,VerifyFigureRedesign.verify_mechanism(mechanism_details,reference))
+        write(response_file,original_response)
         @test FigureDetails.input_for(ctx,(;axis="E_withdrawal",amplitude=.35))==(0.,0.)
         @test FigureDetails.input_for(ctx,(;axis="I_increase",amplitude=3.))==(.35,3.)
         rest=ctx.search.equilibria[ctx.roles["rest"]].state
@@ -43,6 +70,31 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
             100.,roots,ctx.roles["active"],cfg.raw["followup_times"])
         @test !VerifyFigureRedesign.independent_target(reference,(.35,0.),rest,"E_increase",0.,
             100.,roots,ctx.roles["active"],cfg.raw["followup_times"])
+        for (role,target,winning_axis,winning_amplitudes) in
+            (("rest","active","E_increase",(.25,.5)),
+             ("active","rest","I_increase",(.5,.75)))
+            search=[(;source=role,axis,amplitude,duration=1.,
+                status=(axis==winning_axis && amplitude in winning_amplitudes ? "compatible" : "unresolved"),
+                destination=(axis==winning_axis && amplitude in winning_amplitudes ? target : "unresolved"))
+                for axis in ("E_increase","I_increase") for amplitude in 0.:.25:8.]
+            FigureDetails.CSV.write(joinpath(dir,role*"_remeasure.csv"),search)
+        end
+        witnesses,search_checks=VerifyFigureRedesign.verify_remeasured_witnesses(dir,dir,cfg.raw)
+        @test all(r->r.passed,search_checks)
+        @test (witnesses[1].axis,witnesses[1].amplitude,witnesses[1].duration)==
+            ("E_increase",.375,1.)
+        @test (witnesses[2].axis,witnesses[2].amplitude,witnesses[2].duration)==
+            ("I_increase",.625,1.)
+        fake_times=[0.,.5,1.]
+        fake_orbit=VerifyFigureRedesign.integrate([.2,.2],weak,2.,1.,fake_times)
+        orbit_file=joinpath(dir,"orbit_1.csv")
+        FigureDetails.CSV.write(orbit_file,[(;time=t,E=x[1],I=x[2]) for (t,x) in
+            zip(fake_times,fake_orbit.u)])
+        FigureDetails.S.write_record(joinpath(dir,"orbit_1.toml"),Dict(
+            "period"=>1.,"validation"=>"NumericallyValidatedPeriodicOrbit",
+            "stability"=>"PeriodicOrbitAttracting","transverse_real"=>.1,
+            "transverse_imag"=>0.,"amplitudes"=>[.1,.1]))
+        @test_throws ErrorException VerifyFigureRedesign.verify_source_orbit(dir,orbit_file,weak,(2.,1.))
         pulse=FigureDetails.S.pulse(ctx,rest,.85,0.,100.,cfg)
         switch=last(pulse.pulse_solution.u)
         sampled=(;axis="E_increase",amplitude=.5,duration=100.,B_E=.85,B_I=0.,

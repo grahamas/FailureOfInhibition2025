@@ -140,6 +140,44 @@ orbit_record(o)=(;period=o.period,validation=string(o.validation),stability=stri
     transverse_imag=imag(o.transverse_multiplier),refinement_difference=o.refinement_difference,
     reasons=string.(o.reasons))
 
+function mechanism(p,cfg,output)
+    dir=joinpath(output,"mechanism");S.N.checked_unit(dir) && return
+    ref=S.context(p,.35,0.,cfg;tight=true,grid=41)
+    mkpath(dir);response_rows=NamedTuple[];nullclines=NamedTuple[];roots=NamedTuple[]
+    for (condition,control) in (("monotone",true),("failure",false))
+        model=S.M.model(p,.35,0.;control)
+        search=find_equilibria(model;seeds=[[e,i] for e in range(0,.5;length=41) for i in range(0,.5;length=41)])
+        roles=S.M.roles(model,search)
+        for (k,r) in enumerate(search.equilibria)
+            push!(roots,(;condition,root=k,E=r.state[1],I=r.state[2],stability=string(r.stability.classification),
+                role=something(findfirst(==(k),roles),"unassigned")))
+        end
+        for input in range(-1.,13.;length=701)
+            push!(response_rows,(;condition,input,response=response(model.inhibitory.response,input)))
+        end
+        c=model.coupling
+        for input in range(-c.i_to_e+.35,c.e_to_e+.35;length=6001)
+            e=S.M.occupancy(model.excitatory.response,input)
+            i=(c.e_to_e*e+.35-input)/c.i_to_e
+            0<=i<=1 && push!(nullclines,(;condition,population="E",input,E=e,I=i))
+        end
+        for input in range(-c.i_to_i,c.e_to_i;length=6001)
+            i=S.M.occupancy(model.inhibitory.response,input)
+            e=(input+c.i_to_i*i)/c.e_to_i
+            0<=e<=1 && push!(nullclines,(;condition,population="I",input,E=e,I=i))
+        end
+    end
+    CSV.write(joinpath(dir,"responses.csv"),response_rows)
+    CSV.write(joinpath(dir,"nullclines.csv"),nullclines);CSV.write(joinpath(dir,"roots.csv"),roots)
+    star=ref.search.equilibria[ref.roles["seizure"]].state
+    inhibitory_input=p["e_to_i"]*star[1]-p["i_to_i"]*star[2]
+    S.write_record(joinpath(dir,"restriction.toml"),Dict("E_star"=>star[1],"I_star"=>star[2],
+        "inhibitory_input"=>inhibitory_input,"response_peak_input"=>(get(p,"theta_on",4.)+p["theta_off"])/2,
+        "descending_branch_condition"=>inhibitory_input>=(get(p,"theta_on",4.)+p["theta_off"])/2,
+        "drive_condition"=>"Both drive increments are nonnegative relative to baseline throughout the protocol"))
+    S.N.complete_unit(dir)
+end
+
 """Pick the midpoint of the widest observed successful interval, then remeasure it."""
 function interior_pulse(rows,destination;duration=100.)
     candidates=NamedTuple[]
@@ -420,6 +458,8 @@ function run(config_path,screen,output,stage;case_id=nothing)
         end
     elseif stage=="sequence"
         sequence(reference,cfg,output)
+    elseif stage=="mechanism"
+        mechanism(reference,cfg,output)
     elseif stage=="timescales"
         timescales(reference,[.35,0.],cfg,output)
         weak=only(filter(p->p["id"]=="input_dependent",cases))
@@ -432,7 +472,7 @@ function run(config_path,screen,output,stage;case_id=nothing)
         paired_controls(cases,cfg,output)
     elseif stage=="finalize"
         required=vcat([joinpath("cases",p["id"]) for p in cases],
-            ["sequence","paired_controls","interventions/selective_withdrawal","interventions/threshold_to_active",
+            ["sequence","mechanism","paired_controls","interventions/selective_withdrawal","interventions/threshold_to_active",
              "timescales/selective_withdrawal_0.35_0.0","timescales/input_dependent_2.0_1.0"])
         all(S.N.checked_unit(joinpath(output,p)) for p in required) || error("required detail stage incomplete")
         metadata["completed"]=true;metadata["completed_stages"]=required

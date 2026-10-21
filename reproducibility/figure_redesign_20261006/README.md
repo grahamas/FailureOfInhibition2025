@@ -17,6 +17,7 @@ copy, the pipeline is:
 ```sh
 julia --project=. scripts/run_figure_screen.jl experiments/figure_redesign.toml output/figure_screen_new
 julia --project=. scripts/run_figure_details.jl experiments/figure_redesign.toml output/figure_screen_new output/figure_details_new cases
+julia --project=. scripts/run_figure_details.jl experiments/figure_redesign.toml output/figure_screen_new output/figure_details_new mechanism
 julia --project=. scripts/run_figure_details.jl experiments/figure_redesign.toml output/figure_screen_new output/figure_details_new sequence
 julia --project=. scripts/run_figure_details.jl experiments/figure_redesign.toml output/figure_screen_new output/figure_details_new timescales
 julia --project=. scripts/run_figure_details.jl experiments/figure_redesign.toml output/figure_screen_new output/figure_details_new interventions
@@ -47,6 +48,9 @@ verification replays both phases, checks their state handoffs and destination
 roots, and checks the original E+0.5 and I+3 pulses against their declared
 100 ms protocol. Every attempted leg requires a continuation before packet
 building. The resulting report is bound to the completed detail stages.
+Remeasured switching legs must match the deterministic interior witnesses from
+the recorded finite search; their pulse and return trajectories are checked
+independently.
 
 Cycle-phase confirmations and paired temporary-pulse controls also retain both
 phases locally. Verification replays their trajectories, checks the declared
@@ -62,6 +66,16 @@ against both the original and released contexts. Every axial cycle-phase pulse
 row used to choose or draw Figure 4D is independently replayed from its declared
 orbit phase; the joint-input maps remain in the local study but are not used by
 that panel.
+
+Figure 1 mechanism data is a completed detail stage. Its responses, nullclines,
+reported equilibria, stability labels, and reference roles are checked against
+independently written equations before packet building. Figure 2's sampled
+geometry signatures are checked against the recorded roots and independent
+equations; filled cells require agreeing corner and center samples.
+Verification checks periodic closure and attraction for phase sources,
+independently recomputes the Figure 2 time-scale spectra and continued orbit
+summaries, and replays every connected step plotted in Figure 3D's input-history
+sweep.
 
 The full details can be restricted to one selected case by a fifth argument
 after `cases`. This does not substitute for the required complete set at
