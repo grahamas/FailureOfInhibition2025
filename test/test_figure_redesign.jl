@@ -23,6 +23,23 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
     @test FigureDetails.interior_pulse(longer,"active")===nothing
     reference=only(filter(p->p["id"]=="selective_withdrawal",cases))
     weak=only(filter(p->p["id"]=="input_dependent",cases))
+    durations=cfg.raw["durations"]
+    paired_grid=[(;id="selective_withdrawal",baseline=1,duration,amplitude=0.) for duration in durations]
+    @test VerifyFigureRedesign.verify_paired_pulse_grid(paired_grid,durations)
+    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(paired_grid[2:end],durations)
+    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(vcat(paired_grid,paired_grid[1]),durations)
+    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
+        vcat(paired_grid,(;id="selective_withdrawal",baseline=1,duration=3.,amplitude=0.)),durations)
+    @test_throws ErrorException VerifyFigureRedesign.verify_paired_pulse_grid(
+        vcat(paired_grid[1:end-1],merge(last(paired_grid),(;id="other"))),durations)
+    intervention_axes=(("theta_off",vcat(reference["theta_off"],collect(6.:.25:12.))),
+        ("e_to_e",filter(x->0<=x<=24,reference["e_to_e"].*[1.,.95,.9,.85,.8,.75,.7,.65,.6])),
+        ("e_to_i",filter(x->12<=x<=28,reference["e_to_i"].*[1.,.95,.9,.85,.8,.75,.7,.65,.6])))
+    intervention_grid=[(;axis,value) for (axis,values) in intervention_axes for value in unique(values)]
+    @test length(intervention_grid)==42
+    @test VerifyFigureRedesign.verify_intervention_grid(intervention_grid,reference)
+    @test_throws ErrorException VerifyFigureRedesign.verify_intervention_grid(intervention_grid[2:end],reference)
+    @test_throws ErrorException VerifyFigureRedesign.verify_intervention_grid(vcat(intervention_grid,intervention_grid[1]),reference)
     @test [2.,1.] in FigureDetails.target_baselines(weak)
     @test FigureDetails.target_baselines(reference)==reference["baselines"]
     for state in ([0.,0.],[.3,.32],[.5,0.],[1.,1.]), input in ((.35,0.),(0.,4.),(8.,1.))

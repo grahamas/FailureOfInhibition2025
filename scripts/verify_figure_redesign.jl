@@ -740,6 +740,24 @@ function verify_sequence(details,reference)
     abs(last(seq).time-previous_end)<1e-10 || error("sequence endpoint changed")
     checks
 end
+function verify_paired_pulse_grid(rows,durations)
+    expected=Set(Float64.(durations))
+    actual=Set(row.duration for row in rows)
+    actual==expected || error("paired pulse duration grid changed")
+    all(row.id=="selective_withdrawal" && row.baseline==1 for row in rows) ||
+        error("paired pulse source changed")
+    length(Set((row.duration,row.amplitude) for row in rows))==length(rows) ||
+        error("duplicate paired pulse protocol")
+end
+function verify_intervention_grid(rows,p)
+    axes=(("theta_off",vcat(p["theta_off"],collect(6.:.25:12.))),
+        ("e_to_e",filter(x->0<=x<=24,p["e_to_e"].*[1.,.95,.9,.85,.8,.75,.7,.65,.6])),
+        ("e_to_i",filter(x->12<=x<=28,p["e_to_i"].*[1.,.95,.9,.85,.8,.75,.7,.65,.6])))
+    expected=Set((axis,value) for (axis,values) in axes for value in values)
+    actual=Set((row.axis,row.value) for row in rows)
+    length(rows)==length(expected) && actual==expected ||
+        error("intervention parameter grid changed: $(p["id"])")
+end
 function verify(details,output)
     ispath(output) && error("verification output exists")
     metadata=TOML.parsefile(joinpath(details,"metadata.toml"))
@@ -835,7 +853,9 @@ function verify(details,output)
                 (protocol=="held" ? row.B_E : 0.,row.B_I),status,destination,source))
         end
     end
-    for (index,row) in enumerate(CSV.File(joinpath(details,"paired_controls","pulses.csv")))
+    paired_pulses=collect(CSV.File(joinpath(details,"paired_controls","pulses.csv")))
+    verify_paired_pulse_grid(paired_pulses,config["durations"])
+    for (index,row) in enumerate(paired_pulses)
         p=byid[row.id]
         sub=joinpath(details,"paired_controls","$(row.id)_$(row.baseline)")
         input=TOML.parsefile(joinpath(sub,"input.toml"))
@@ -856,7 +876,9 @@ function verify(details,output)
         reference=TOML.parsefile(joinpath(base,"context.toml"))["equilibria"]
         roles=TOML.parsefile(joinpath(base,"roles.toml"))
         source=reference[roles["seizure"]]["state"]
-        for row in CSV.File(joinpath(details,"interventions",id,"summary.csv"))
+        intervention_rows=collect(CSV.File(joinpath(base,"summary.csv")))
+        verify_intervention_grid(intervention_rows,p)
+        for row in intervention_rows
             q=merge(p,Dict(row.axis=>row.value))
             sub=joinpath(details,"interventions",id,"$(row.axis)_$(row.value)")
             push!(checks,verify_intervention(details,sub,q,b,row,source))
