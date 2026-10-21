@@ -373,6 +373,7 @@ function paired_controls(cases,cfg,output)
         controls=[S.observe(ctx,x,cfg;reference=ctx,retain=true,tight=true,cycles=true) for x in sources]
         outcomes=[S.observe(released,x,cfg;reference=ctx,retain=true,tight=true,cycles=true) for x in sources]
         sub=joinpath(dir,p["id"]*"_$(index)");mkpath(sub)
+        S.save_context(sub,ctx)
         for (k,role) in enumerate(("herald","seizure"))
             S.save_observation(sub,role*"_held",controls[k]);S.save_observation(sub,role*"_release",outcomes[k])
             controls[k].status=="compatible" && controls[k].destination==role || error("held control changed")
@@ -384,6 +385,12 @@ function paired_controls(cases,cfg,output)
         for duration in cfg.raw["durations"]
             function at(amplitude)
                 pair=[S.pulse(ctx,x,b[1]-amplitude,b[2],duration,cfg) for x in sources]
+                row_index=length(rows)+1
+                traces=joinpath(sub,"pulse_trials","row_$row_index");mkpath(traces)
+                for (k,role) in enumerate(("herald","seizure"))
+                    write_trajectory_csv(joinpath(traces,role*"_pulse.csv"),pair[k].pulse_solution)
+                    pair[k].phase===nothing || S.save_observation(traces,role,pair[k])
+                end
                 push!(rows,(;id=p["id"],baseline=index,amplitude,duration,
                     herald=pair[1].destination,seizure=pair[2].destination,
                     herald_status=pair[1].status,seizure_status=pair[2].status))

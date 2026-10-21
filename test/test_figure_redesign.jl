@@ -38,6 +38,11 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         @test FigureDetails.input_for(ctx,(;axis="E_withdrawal",amplitude=.35))==(0.,0.)
         @test FigureDetails.input_for(ctx,(;axis="I_increase",amplitude=3.))==(.35,3.)
         rest=ctx.search.equilibria[ctx.roles["rest"]].state
+        roots=FigureDetails.TOML.parsefile(joinpath(dir,"context.toml"))["equilibria"]
+        @test VerifyFigureRedesign.independent_target(reference,(.35,0.),rest,"E_increase",.5,
+            100.,roots,ctx.roles["active"],cfg.raw["followup_times"])
+        @test !VerifyFigureRedesign.independent_target(reference,(.35,0.),rest,"E_increase",0.,
+            100.,roots,ctx.roles["active"],cfg.raw["followup_times"])
         held=VerifyFigureRedesign.integrate(rest,reference,.35,0.,[0.,1.])
         @test length(held.u)==2
         @test maximum(abs.(last(held.u).-rest))<1e-8
@@ -50,6 +55,20 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         checks=VerifyFigureRedesign.verify_switching(dir,dir,reference,[.35,0.],"fixed_switching","retained")
         @test length(checks)==4
         @test all(r->r.passed,checks)
+        fixed_dir=joinpath(dir,"fixed_switching")
+        @test VerifyFigureRedesign.verify_pulse_trace(dir,fixed_dir,"cycle_1_leg_1",dir,
+            reference,(.35,0.),.85,0.,rest,100.,"compatible","active").passed
+        continuation=joinpath(fixed_dir,"cycle_1_leg_1.csv")
+        original=read(continuation,String)
+        continuation_rows=collect(FigureDetails.CSV.File(continuation))
+        shifted=VerifyFigureRedesign.integrate([first(continuation_rows).E+.01,
+            first(continuation_rows).I],reference,.35,0.,getproperty.(continuation_rows,:time))
+        FigureDetails.CSV.write(continuation,[(;time=t,E=x[1],I=x[2]) for (t,x) in
+            zip(shifted.t,shifted.u)])
+        @test VerifyFigureRedesign.compare(continuation,reference,.35,0.,dir).passed
+        @test !VerifyFigureRedesign.verify_pulse_trace(dir,fixed_dir,"cycle_1_leg_1",dir,
+            reference,(.35,0.),.85,0.,rest,100.,"compatible","active").passed
+        write(continuation,original)
         pulse_file=joinpath(dir,"fixed_switching","cycle_1_leg_1_pulse.csv")
         lines=readlines(pulse_file);fields=split(lines[2],',')
         fields[2]=string(parse(Float64,fields[2])+.01)

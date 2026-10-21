@@ -47,6 +47,13 @@ verification replays both phases, checks their state handoffs, and requires a
 continuation for every attempted leg before packet building. The resulting
 report is bound to the completed detail stages.
 
+Cycle-phase confirmations and paired temporary-pulse controls also retain both
+phases locally. Verification replays their trajectories, checks the declared
+source and handoff, and compares the outcome with the saved equilibrium or
+validated orbit. For a reported unsuccessful replacement search, verification
+replays the complete sampled pulse grid and its stopping rule before accepting
+the bounded `not_demonstrated_within_protocol` label.
+
 The full details can be restricted to one selected case by a fifth argument
 after `cases`. This does not substitute for the required complete set at
 `finalize`. The renderer and packet builder refuse existing destinations.
