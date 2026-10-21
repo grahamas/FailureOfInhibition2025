@@ -118,6 +118,14 @@ function verify_switching(details,sub,p,baseline,protocol,expected_status)
     end
     checks
 end
+function orbit_curve_distance(point,states)
+    length(states)>=2 || error("periodic orbit has too few samples")
+    minimum(begin
+        direction=b.-a
+        fraction=clamp(sum((point.-a).*direction)/sum(abs2,direction),0.,1.)
+        maximum(abs.(point.-(a.+fraction.*direction)))
+    end for (a,b) in zip(states,states[2:end]))
+end
 function verify_pulse_trace(details,folder,name,context_dir,p,baseline,be,bi,initial,duration,status,destination)
     pulse_path=joinpath(folder,name*"_pulse.csv")
     followup_path=joinpath(folder,name*".csv")
@@ -149,11 +157,15 @@ function verify_pulse_trace(details,folder,name,context_dir,p,baseline,be,bi,ini
         orbit=TOML.parsefile(joinpath(folder,name*"_orbit.toml"))
         orbit["validation"]=="NumericallyValidatedPeriodicOrbit" &&
             orbit["stability"]=="PeriodicOrbitAttracting" || error("pulse orbit validation changed: $folder/$name")
+        length(orbit["times"])==length(orbit["states"]) || error("pulse orbit samples changed: $folder/$name")
         independent=integrate(orbit["initial_state"],p,baseline...,orbit["times"])
         destination_error=maximum(max(abs(x[1]-r[1]),abs(x[2]-r[2])) for (x,r) in zip(independent.u,orbit["states"]))
         destination_error=max(destination_error,maximum(abs.(last(independent.u).-orbit["initial_state"])))
         maximum(x[1] for x in independent.u)-minimum(x[1] for x in independent.u)>1e-4 ||
             error("pulse orbit has no resolved oscillation: $folder/$name")
+        endpoint=[last(followup).E,last(followup).I]
+        orbit_curve_distance(endpoint,orbit["states"])<1e-4 ||
+            error("pulse continuation misses recorded orbit: $folder/$name")
     else
         destination==status || error("unresolved pulse destination changed: $folder/$name")
     end
