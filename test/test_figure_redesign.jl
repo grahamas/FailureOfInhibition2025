@@ -80,6 +80,13 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
     @test_throws ErrorException VerifyFigureRedesign.verify_cell_partition(cells[1:1],unit)
     @test_throws ErrorException VerifyFigureRedesign.verify_cell_partition(
         vcat(cells,cells[1]),unit)
+    cell=(;x0=0.,x1=1.,y0=0.,y1=1.)
+    signatures=Dict((x,y)=>"same" for (x,y) in
+        ((0.,0.),(0.,1.),(1.,0.),(1.,1.),(.5,.5)))
+    @test VerifyFigureRedesign.verify_homogeneous_cell(signatures,cell,"test")
+    signatures[(.25,.5)]="different"
+    @test_throws ErrorException VerifyFigureRedesign.verify_homogeneous_cell(
+        signatures,cell,"test")
     initial_phases=["cycle_1_phase_$(fraction)" for fraction in
         collect(0:cfg.raw["phase_count"]-1)./cfg.raw["phase_count"]]
     phase_summary=Dict("validated_cycles"=>1,"sources"=>[

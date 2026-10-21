@@ -77,8 +77,9 @@ provisional rest and active roles are independently checked from their
 coordinates. The monotone 41×41 finite root search is repeated to check that
 its saved root list is complete for that protocol; this does not certify all
 equilibria. Figure 2's sampled geometry signatures are checked against the
-recorded roots and independent equations; filled cells require agreeing corner
-and center samples.
+recorded roots and independent equations. Filled cells require every recorded
+observation inside their bounds to agree, including points added while
+neighboring cells were refined.
 Verification checks periodic closure and attraction for phase sources and
 saved periodic destinations,
 independently recomputes the Figure 2 time-scale spectra and continued orbit

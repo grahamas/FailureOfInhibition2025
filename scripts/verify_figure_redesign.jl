@@ -643,6 +643,17 @@ function independent_geometry_roles(group,p,bi;control=false)
     length(herald)==1 && (result["herald"]=only(herald))
     result
 end
+function verify_homogeneous_cell(signatures,cell,label)
+    points=((cell.x0,cell.y0),(cell.x0,cell.y1),(cell.x1,cell.y0),
+        (cell.x1,cell.y1),((cell.x0+cell.x1)/2,(cell.y0+cell.y1)/2))
+    all(haskey(signatures,point) for point in points) ||
+        error("geometry fill lacks required samples: $label")
+    center=signatures[last(points)]
+    all(signature==center for ((x,y),signature) in signatures
+        if cell.x0<=x<=cell.x1 && cell.y0<=y<=cell.y1) ||
+        error("geometry fill contains a differing observation: $label")
+    true
+end
 function verify_geometry(details,p,config)
     folder=joinpath(details,"cases",p["id"],"geometry")
     inputs=collect(CSV.File(joinpath(folder,"inputs.csv")))
@@ -701,11 +712,7 @@ function verify_geometry(details,p,config)
             0<=cell.y0<cell.y1<=bounds["B_I"] ||
             error("geometry cell outside bounds: $(p["id"]):$index")
         if cell.status=="sampled_homogeneous"
-            points=((cell.x0,cell.y0),(cell.x0,cell.y1),(cell.x1,cell.y0),
-                (cell.x1,cell.y1),((cell.x0+cell.x1)/2,(cell.y0+cell.y1)/2))
-            all(haskey(signatures,point) for point in points) &&
-                length(Set(signatures[point] for point in points))==1 ||
-                error("geometry fill lacks agreeing samples: $(p["id"]):$index")
+            verify_homogeneous_cell(signatures,cell,"$(p["id"]):$index")
         elseif cell.status ∉ ("budget_unresolved","boundary_bracket","mixed")
             error("unsupported geometry cell status: $(p["id"]):$index")
         end
