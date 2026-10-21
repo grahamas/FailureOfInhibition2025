@@ -2,68 +2,37 @@
 
 ## Goals
 
-- Maintain a tested two-population point-model implementation for the failure-of-inhibition study.
-- Produce deterministic CPU experiments and traceable figure data from documented model assumptions.
-- Explain coexistence, controllable rest–active switching, and the measured tradeoffs between ordinary activity and control of high-E/low-I activity.
-- Preserve the distinction between herald and seizure candidates, and between tonic-input withdrawal and direct activity displacement.
+- Maintain a tested two-population model and a reproducible path from new figure measurements to rendered figures.
+- Explain the model's measured coexistence, switching, and intervention tradeoffs without extending bounded numerical observations into completeness or biological claims.
 
 ## Next Steps
 
-- [ ] Reconcile the completed 74-case batch with corrected geometry selection across the 306 archived cases; rerun affected screens, responses, and proposed figure witnesses under the exact-domain handoff policy while retaining provenance and confirmation differences.
-- [ ] Review the contribution brief, four figure questions, and 24 calendar-sized deliverables in `docs/paper_delivery.md` and `docs/paper_evidence.md`.
-- [ ] Choose the proposed coupling and response-parameter domains in `docs/paper_experiment_card.md` before launching the staged expansion.
-- [ ] Connect ordinary switching, paired high-state control, and intervention tradeoffs across selected parameter regions, remeasuring effective stimuli where needed.
-- [ ] Assemble the confirmed figures and manually revise the manuscript using the new candidate paragraphs; retain the derivation and defer fitting competition and autonomous feedback.
+- [ ] Review the five figure claims and candidate captions in `docs/figure_redesign_20261006.md`; choose the final manuscript presentation and biological wording.
+- [ ] If the paper needs a cycle-onset claim, extend and independently test the truncated periodic branch before identifying a bifurcation.
+- [ ] Revise the manuscript manually using the selected results, keeping its scientific choices and wording under author control.
+- [ ] After final result selection, freeze the corresponding data, code, environment, and replay instructions as the active reproducibility packet.
 
 ## Context
 
-The equations remain documented in `docs/model.md`. The frozen narrative
-study screened 2,103 contexts and qualified seven examples for ordinary
-switching plus seizure access. The selected positive-input four-state example
-supports a paired herald/seizure displacement comparison and 44 intervention
-settings. Raising the failure threshold preserves the measured switching but
-sends the former seizure source to herald in that selected example. Subsequent
-matched counterexamples show that this destination is parameter-dependent:
-positive-input withdrawal can recover herald while seizure persists, and a
-higher failure threshold can send seizure to intermediate activity.
-See `docs/narrative_study.md` for the protocol and `docs/narrative_results.md`
-for the original results, limitations, and manual manuscript revision
-instructions. Those witnesses predate the exact-domain handoff correction.
-`docs/input_response_study.md` documents the systematic two-input
-characterization and its sampling limits.
-Its eight anchors, 224-case parameter screen, and 74 selected detailed cases
-completed under the frozen source. The corrected selection audit found changed
-representatives; only three cases have had geometry replay under the latest
-rule, and affected response protocols remain to be rerun. The dated local
-handoff also recorded 13 selective-withdrawal contexts, including
-herald-to-rest contrasts at time-scale ratios about 1.143 and 4.4. Those
-records are historical, and the retired Python handoff is not replayable from
-a fresh checkout. The paper targets staged parameter-region evidence within
-the point model. See `docs/paper_evidence.md` for the dated handoff and
-`docs/input_response_results.md` for study details.
+The five-figure candidate used a 232-case screen, eight detailed circuits, and
+independent trajectory checks. It is bounded point-model evidence. The candidate
+packet is not shipped; current code and inputs support a new run
+using `reproducibility/figure_redesign_20261006/README.md`. The periodic branch's
+onset is unresolved. Final results have not been selected.
 
 ## Constraints
 
-- Keep `docs/model.md`, the implementation, and tests synchronized when model behavior changes.
-- Preserve the approved model; new scientific parameter choices and biological interpretations remain author inputs.
-- Keep the excitatory mechanism and every non-inhibitory parameter identical in matched model comparisons.
-- Preserve `[E, I]`, `source_to_target` coupling names, and CSV column order `time,E,I`.
-- Require deterministic configurations, explicit tolerances, and machine-readable outputs for reported experiments.
-- Treat pulsed-drive snapshots as frozen autonomous systems and report numerical searches as incomplete discovery rather than completeness certification.
-- Separate discovered equilibria and local spectra, finite-window trajectory observations, validated periodic orbits, and biological interpretations. Unsupported classifications remain unresolved.
-- Describe recovery only over its recorded post-intervention horizon; do not infer permanent rescue from finite follow-up.
-- Keep implementation work in this repository and manuscript edits manual. Use sub-agents with separate file ownership and independent review for execution.
+- Keep `docs/model.md`, implementation, and tests synchronized when model behavior changes.
+- Preserve the approved model and the recorded five-figure protocol until an author-approved scientific change is specified.
+- Keep discovered equilibria, finite-window destinations, validated periodic orbits, and biological interpretation distinct. Numerical searches do not certify completeness.
+- Keep manuscript edits manual.
 
 ## Open Questions
 
-- Which parameter regions support ordinary switching, high-state access, and selective control together?
-- Which proposed expansion domains should be selected for the next bounded batch?
-- What biological evidence supports the final interpretation of the measured activity and switching properties?
+- Which bounded model results belong in the final manuscript and supplement?
+- Does the paper need the periodic branch's onset identified?
+- What biological evidence supports the final interpretation?
 
 ## Completed
 
-- [x] Completed and archived the frozen 74-case response batch, audited corrected regional selections, and retained confirmation differences and source provenance.
-- [x] Prepared the 24-task paper handoff, contribution brief, figure candidates, and proposed experiment card; independently checked 13 selective-withdrawal contexts with 52 trajectories in the dated local handoff.
-- [x] Implemented two-input equilibrium and response characterization, completed the anchor maps and parameter screen, and independently checked selective withdrawal, neighboring parameterizations, pulse boundaries, and archived-source replay.
-- [x] Completed the narrative study, paired reduction measurements, intervention comparisons, local map, neighborhood checks, independent numerical checks, and archived-source trajectory replay; delivered figures and an author-facing outline.
-- [x] Implemented and independently reviewed pseudo-arclength continuation, numerical periodic shooting, and explicit pulse experiments with retained unresolved outcomes and replayable evidence.
+- [x] Built and visually reviewed the five-figure candidate study; retired its generated packet from the active tree.

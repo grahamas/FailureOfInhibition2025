@@ -405,24 +405,3 @@ equilibrium.
   sampled transition intervals; a single monotone amplitude threshold need
   not exist. Integrated input has effective-input-times-time units, and a
   scalar combination across targets requires an explicit cost convention.
-
-## Manuscript locations for author review
-
-The manuscript was read through the GitHub API at revision
-`ed18f283f2c947d6a4710989664b2a05dcc74447`; no manuscript files were changed.
-The [Figure 3 caption](https://github.com/grahamas/FailureOfInhibitionWCM/blob/ed18f283f2c947d6a4710989664b2a05dcc74447/sn-article.tex#L360)
-specifies the first coupling anchor. The
-[Figure 4 caption](https://github.com/grahamas/FailureOfInhibitionWCM/blob/ed18f283f2c947d6a4710989664b2a05dcc74447/sn-article.tex#L371)
-specifies the second anchor's three fixed couplings but omits the varying
-E-to-I values. The
-[parameter table](https://github.com/grahamas/FailureOfInhibitionWCM/blob/ed18f283f2c947d6a4710989664b2a05dcc74447/sn-article.tex#L390)
-gives the stated time constants, slopes, onset/failure thresholds, and zero
-stimulus.
-
-The author should review the
-[unit-connectivity reduction](https://github.com/grahamas/FailureOfInhibitionWCM/blob/ed18f283f2c947d6a4710989664b2a05dcc74447/sn-article.tex#L285)
-against the general ordering proof above, the
-[independent-slope claim](https://github.com/grahamas/FailureOfInhibitionWCM/blob/ed18f283f2c947d6a4710989664b2a05dcc74447/sn-article.tex#L279)
-against the approved symmetric response, and the
-[rescue claim](https://github.com/grahamas/FailureOfInhibitionWCM/blob/ed18f283f2c947d6a4710989664b2a05dcc74447/sn-article.tex#L352)
-against an explicit intervention class and reachable-target definition.
