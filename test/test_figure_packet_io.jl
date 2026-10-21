@@ -14,6 +14,9 @@ include(joinpath(@__DIR__,"..","scripts","figure_packet_io.jl"))
         for name in ("../escape","/absolute","nested\\data.csv","a/./b","a//b","C:/absolute")
             @test_throws ErrorException FigurePacketIO.checked_name(name)
         end
+        @test FigurePacketIO.portable_name("nested\\data.csv",'\\')=="nested/data.csv"
+        @test_throws ErrorException FigurePacketIO.portable_name("nested\\..\\escape",'\\')
+        @test_throws ErrorException FigurePacketIO.portable_name("C:\\absolute",'\\')
         rm(joinpath(d,"checksums.toml"));@test_throws ErrorException FigurePacketIO.verify_manifest(d)
         if !Sys.iswindows()
             write(joinpath(d,"real"),"x");symlink(joinpath(d,"real"),joinpath(d,"link"))
@@ -25,12 +28,13 @@ end
 @testset "Verification binds completed stage contents" begin
     mktempdir() do root
         stage=joinpath(root,"cases","example");mkpath(stage)
-        data=joinpath(stage,"trajectory.csv")
+        mkpath(joinpath(stage,"nested"))
+        data=joinpath(stage,"nested","trajectory.csv")
         write(data,"time,E,I\n0,0,0\n")
         marker=joinpath(stage,"done.toml")
         function complete()
             open(marker,"w") do io
-                TOML.print(io,Dict("files"=>Dict("trajectory.csv"=>FigurePacketIO.digest(data))))
+                TOML.print(io,Dict("files"=>Dict("nested/trajectory.csv"=>FigurePacketIO.digest(data))))
             end
         end
         complete()

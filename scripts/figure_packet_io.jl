@@ -8,14 +8,16 @@ function checked_name(name)
         all(p->!isempty(p) && p!="." && p!="..",split(name,'/')) || error("unsafe packet path")
     name
 end
+portable_name(name,separator)=checked_name(replace(name,separator=>'/'))
 function files(directory)
     isdir(directory) && !islink(directory) || error("packet must be a regular directory")
     result=Dict{String,String}()
+    separator=Sys.iswindows() ? '\\' : '/'
     for (dir,folders,names) in walkdir(directory;follow_symlinks=false)
         any(islink(joinpath(dir,n)) for n in vcat(folders,names)) && error("packet symlink")
         for name in names
             path=joinpath(dir,name);isfile(path) || error("nonregular packet file")
-            relative=replace(relpath(path,directory),'\\'=>'/')
+            relative=portable_name(relpath(path,directory),separator)
             relative=="checksums.toml" && continue
             result[checked_name(relative)]=digest(path)
         end
@@ -60,11 +62,15 @@ function completed_stage_manifests(directory, stages)
         isdir(stage) && !islink(stage) || error("missing regular completed stage: $relative")
         marker=joinpath(stage,"done.toml")
         isfile(marker) && !islink(marker) || error("missing regular stage manifest: $relative")
-        recorded=get(TOML.parsefile(marker),"files",nothing)
-        recorded isa AbstractDict || error("missing stage file map: $relative")
-        for (name,hash) in recorded
-            checked_name(name)
+        source=get(TOML.parsefile(marker),"files",nothing)
+        source isa AbstractDict || error("missing stage file map: $relative")
+        recorded=Dict{String,String}()
+        separator=Sys.iswindows() ? '\\' : '/'
+        for (name,hash) in source
+            canonical=portable_name(name,separator)
+            haskey(recorded,canonical) && error("duplicate stage path: $relative/$canonical")
             hash isa AbstractString && occursin(r"^[0-9a-f]{64}$",hash) || error("invalid stage digest: $relative/$name")
+            recorded[canonical]=hash
         end
         actual=Dict{String,String}()
         for (root,folders,names) in walkdir(stage;follow_symlinks=false)
@@ -73,7 +79,7 @@ function completed_stage_manifests(directory, stages)
                 name=="done.toml" && continue
                 path=joinpath(root,name)
                 isfile(path) || error("nonregular stage file: $relative")
-                actual[checked_name(replace(relpath(path,stage),'\\'=>'/'))]=digest(path)
+                actual[portable_name(relpath(path,stage),separator)]=digest(path)
             end
         end
         actual==recorded || error("stage file set or content changed: $relative")
