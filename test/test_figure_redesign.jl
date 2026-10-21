@@ -70,6 +70,37 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
     @test VerifyFigureRedesign.verify_intervention_grid(intervention_grid,reference)
     @test_throws ErrorException VerifyFigureRedesign.verify_intervention_grid(intervention_grid[2:end],reference)
     @test_throws ErrorException VerifyFigureRedesign.verify_intervention_grid(vcat(intervention_grid,intervention_grid[1]),reference)
+    bounds=VerifyFigureRedesign.independent_input_bounds(reference,cfg.raw)
+    @test VerifyFigureRedesign.verify_geometry_bounds(bounds,reference,cfg.raw)==bounds
+    @test_throws ErrorException VerifyFigureRedesign.verify_geometry_bounds(
+        merge(bounds,Dict("B_E"=>bounds["B_E"]/2)),reference,cfg.raw)
+    @test_throws ErrorException VerifyFigureRedesign.verify_geometry_bounds(
+        merge(bounds,Dict("I_tail_resolved"=>false)),reference,cfg.raw)
+    protocol_config=merge(cfg.raw,Dict("durations"=>[1.]))
+    baseline=(.35,0.)
+    protocol_rows=NamedTuple[]
+    for axis in ("E_increase","E_withdrawal","I_increase","I_withdrawal")
+        cap=axis=="E_increase" ? bounds["B_E"]-baseline[1] :
+            axis=="E_withdrawal" ? baseline[1] :
+            axis=="I_increase" ? bounds["B_I"]-baseline[2] : baseline[2]
+        step=max(min(1.,cap/8),eps())
+        coarse=unique(vcat(collect(0.:step:cap),[cap]))
+        for amplitude in union(Set(coarse),Set((a+b)/2 for (a,b) in zip(coarse,coarse[2:end])))
+            be=baseline[1]+(axis=="E_increase" ? amplitude : axis=="E_withdrawal" ? -amplitude : 0.)
+            bi=baseline[2]+(axis=="I_increase" ? amplitude : axis=="I_withdrawal" ? -amplitude : 0.)
+            push!(protocol_rows,(;axis,duration=1.,amplitude,B_E=be,B_I=bi))
+        end
+    end
+    for amplitude in (0.,baseline[1]/2,baseline[1]),
+        stimulation in (0.,bounds["B_I"]/2,bounds["B_I"])
+        push!(protocol_rows,(;axis="joint",duration=1.,amplitude,
+            B_E=baseline[1]-amplitude,B_I=stimulation))
+    end
+    @test VerifyFigureRedesign.verify_pulse_protocol_grid(protocol_rows,reference,baseline,protocol_config)
+    @test_throws ErrorException VerifyFigureRedesign.verify_pulse_protocol_grid(
+        protocol_rows[2:end],reference,baseline,protocol_config)
+    @test_throws ErrorException VerifyFigureRedesign.verify_pulse_protocol_grid(
+        vcat(protocol_rows,protocol_rows[1]),reference,baseline,protocol_config)
     @test [2.,1.] in FigureDetails.target_baselines(weak)
     @test FigureDetails.target_baselines(reference)==reference["baselines"]
     for state in ([0.,0.],[.3,.32],[.5,0.],[1.,1.]), input in ((.35,0.),(0.,4.),(8.,1.))
@@ -112,6 +143,9 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
         @test FigureDetails.input_for(ctx,(;axis="E_withdrawal",amplitude=.35))==(0.,0.)
         @test FigureDetails.input_for(ctx,(;axis="I_increase",amplitude=3.))==(.35,3.)
         rest=ctx.search.equilibria[ctx.roles["rest"]].state
+        group=[(;E=x.state[1],I=x.state[2],B_E=.35,B_I=0.,
+            stability=string(x.stability.classification)) for x in ctx.search.equilibria]
+        @test VerifyFigureRedesign.independent_geometry_roles(group,reference,0.)==ctx.roles
         roots=FigureDetails.TOML.parsefile(joinpath(dir,"context.toml"))["equilibria"]
         @test VerifyFigureRedesign.independent_target(reference,(.35,0.),rest,"E_increase",.5,
             100.,roots,ctx.roles["active"],cfg.raw["followup_times"])

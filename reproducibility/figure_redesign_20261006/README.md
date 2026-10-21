@@ -84,6 +84,9 @@ and Figure 5 rows.
 Cycle-phase pulse sources must match the baseline's declared initial and, when
 required, confirmation phase grid. Every successful replacement-search grid
 outcome is independently replayed before its witness is selected.
+Geometry bounds and provisional root roles are recalculated from the model
+parameters and study configuration. Each plotted cycle pulse source must include
+the configured axis, duration, and coarse amplitude samples.
 
 The full details can be restricted to one selected case by a fifth argument
 after `cases`. This does not substitute for the required complete set at

@@ -1,6 +1,6 @@
 """Independent equations for checking the figure trajectories; no package RHS calls."""
 module VerifyFigureRedesign
-using SciMLBase, OrdinaryDiffEqTsit5
+using SciMLBase, OrdinaryDiffEqTsit5, LinearAlgebra
 import CSV,TOML,SHA
 include("figure_packet_io.jl")
 const IOChecks=FigurePacketIO
@@ -32,6 +32,33 @@ inhibitory_rate(input,p,control)=control ?
     sigmoid(get(p,"slope_i",5.)*(input-get(p,"theta_on",4.)))*
     sigmoid(get(p,"slope_i",5.)*(p["theta_off"]-input))*
     (-expm1(-get(p,"slope_i",5.)*(p["theta_off"]-get(p,"theta_on",4.))))
+function independent_input_bounds(p,config)
+    on=get(p,"theta_on",4.);off=p["theta_off"]
+    peak=inhibitory_rate((on+off)/2,p,false)
+    imax=peak/(1+peak)
+    be=Float64(config["initial_input_bound"]);bi=be;ne=ni=0
+    epsilon=config["tail_tolerance"];limit=config["maximum_expansions"]
+    evalue()=sigmoid(get(p,"slope_e",5.)*(be-p["i_to_e"]*imax-get(p,"theta_e",1.5)))
+    ivalue()=inhibitory_rate(bi-p["i_to_i"]*imax,p,false)
+    eok()=evalue()>=1-epsilon
+    iok()=bi-p["i_to_i"]*imax>=(on+off)/2 && ivalue()<=epsilon
+    while !eok() && ne<limit;be*=2;ne+=1;end
+    while !iok() && ni<limit;bi*=2;ni+=1;end
+    Dict("B_E"=>be,"B_I"=>bi,"E_tail_resolved"=>eok(),"I_tail_resolved"=>iok(),
+        "E_tail_value"=>evalue(),"I_tail_value"=>ivalue(),
+        "E_expansions"=>ne,"I_expansions"=>ni,"epsilon"=>epsilon)
+end
+function verify_geometry_bounds(record,p,config)
+    expected=independent_input_bounds(p,config)
+    for (key,value) in expected
+        if key in ("E_tail_value","I_tail_value")
+            abs(record[key]-value)<1e-12 || error("geometry tail value changed: $(p["id"])/$key")
+        else
+            record[key]==value || error("geometry bound changed: $(p["id"])/$key")
+        end
+    end
+    expected
+end
 function independent_jacobian(state,p,be,bi;control=false)
     e,i=state
     ue=p["e_to_e"]*e-p["i_to_e"]*i+be
@@ -566,12 +593,46 @@ function verify_cell_partition(cells,bounds)
     end
     true
 end
-function verify_geometry(details,p)
+function independent_geometry_roles(group,p,bi)
+    a=p["e_to_e"];s=get(p,"slope_e",5.)
+    result=Dict{String,Int}()
+    a*s>8 || return result
+    lower=(1-sqrt(1-8/(a*s)))/4;upper=(1+sqrt(1-8/(a*s)))/4
+    tau=get(p,"tau_e",7.8);tau_i=tau*p["tau_ratio"]
+    sinks=Int[]
+    for (index,root) in enumerate(group)
+        root.stability=="Attracting" || continue
+        j=independent_jacobian([root.E,root.I],p,root.B_E,root.B_I)
+        balance=[j.j11*tau j.j12*tau;j.j21*tau_i j.j22*tau_i]
+        singular=svdvals(balance)
+        minimum(singular)<=1e-10+1e-8*maximum(singular) || push!(sinks,index)
+    end
+    state(index)=(group[index].E,group[index].I)
+    vi(index)=bi+p["e_to_i"]*group[index].E-p["i_to_i"]*group[index].I
+    derivative_sign(index)=begin
+        input=vi(index);slope=get(p,"slope_i",5.)
+        sigmoid(slope*(p["theta_off"]-input))-sigmoid(slope*(input-get(p,"theta_on",4.)))
+    end
+    rest=filter(k->state(k)[1]<lower,sinks)
+    active=filter(k->lower<state(k)[1]<upper && derivative_sign(k)>0,sinks)
+    length(rest)==1 && (result["rest"]=only(rest))
+    length(active)==1 && (result["active"]=only(active))
+    high=filter(k->state(k)[1]>upper,sinks)
+    seizure=filter(k->derivative_sign(k)<0 &&
+        any(h->state(h)[2]>state(k)[2]+1e-6 && state(h)[1]<=state(k)[1]+1e-6,sinks),high)
+    length(seizure)==1 && (result["seizure"]=only(seizure))
+    herald=filter(k->haskey(result,"seizure") && k!=result["seizure"] &&
+        state(k)[2]>state(result["seizure"])[2]+1e-6,high)
+    length(herald)==1 && (result["herald"]=only(herald))
+    result
+end
+function verify_geometry(details,p,config)
     folder=joinpath(details,"cases",p["id"],"geometry")
     inputs=collect(CSV.File(joinpath(folder,"inputs.csv")))
     roots=collect(CSV.File(joinpath(folder,"equilibria.csv")))
     cells=collect(CSV.File(joinpath(folder,"cells.csv")))
     bounds=TOML.parsefile(joinpath(folder,"bounds.toml"))
+    verify_geometry_bounds(bounds,p,config)
     byinput=Dict{Tuple{Float64,Float64},Vector{Any}}()
     for root in roots
         push!(get!(byinput,(root.B_E,root.B_I),Any[]),root)
@@ -586,7 +647,7 @@ function verify_geometry(details,p)
         group=byinput[key]
         length(group)==row.roots && all(r.root==k for (k,r) in enumerate(group)) ||
             error("geometry root count changed: $(p["id"]):$index")
-        labels=String[];maximum_error=0.
+        maximum_error=0.
         for root in group
             state=[root.E,root.I]
             field=zeros(2);independent_rhs!(field,state,(p,row.B_E,row.B_I),0.)
@@ -597,10 +658,17 @@ function verify_geometry(details,p)
                 alpha<0 ? "Attracting" : "Repelling"
             root.stability==stability || error("geometry stability changed: $(p["id"]):$index")
             maximum_error=max(maximum_error,maximum(abs.(field)))
-            push!(labels,root.stability*":"*root.role)
+        end
+        roles=independent_geometry_roles(group,p,row.B_I)
+        assigned=Dict(index=>role for (role,index) in roles)
+        labels=String[]
+        for (root_index,root) in enumerate(group)
+            expected_role=get(assigned,root_index,"unassigned")
+            root.role==expected_role || error("geometry root role changed: $(p["id"]):$index:$root_index")
+            push!(labels,root.stability*":"*expected_role)
         end
         row.sinks==count(r->r.stability=="Attracting",group) &&
-            coalesce(row.roles,"")==join(sort([r.role for r in group if r.role!="unassigned"]),",") ||
+            coalesce(row.roles,"")==join(sort(collect(keys(roles))),",") ||
             error("geometry role counts changed: $(p["id"]):$index")
         suffix=row.discovery_status=="index_unresolved" ? "|index_unresolved" :
             row.discovery_status=="index_consistent_not_complete" ? "" :
@@ -831,6 +899,58 @@ function verify_cycle_sources(summary,actual,config)
         length(actual)==length(expected) && Set(actual)==expected ||
         error("cycle phase source set changed")
 end
+function verify_pulse_protocol_grid(rows,p,baseline,config)
+    bounds=independent_input_bounds(p,config)
+    durations=Float64.(config["durations"])
+    axes=("E_increase","E_withdrawal","I_increase","I_withdrawal")
+    seen=Set{Tuple{String,Float64,Float64}}()
+    joint_seen=Set{Tuple{Float64,Float64,Float64}}()
+    for row in rows
+        row.duration in durations || error("undeclared pulse duration")
+        if row.axis in axes
+            cap=row.axis=="E_increase" ? bounds["B_E"]-baseline[1] :
+                row.axis=="E_withdrawal" ? baseline[1] :
+                row.axis=="I_increase" ? bounds["B_I"]-baseline[2] : baseline[2]
+            0<=row.amplitude<=cap || error("pulse amplitude outside declared domain")
+            be=baseline[1]+(row.axis=="E_increase" ? row.amplitude :
+                row.axis=="E_withdrawal" ? -row.amplitude : 0.)
+            bi=baseline[2]+(row.axis=="I_increase" ? row.amplitude :
+                row.axis=="I_withdrawal" ? -row.amplitude : 0.)
+            abs(row.B_E-be)<1e-10 && abs(row.B_I-bi)<1e-10 ||
+                error("pulse input does not match protocol")
+            key=(row.axis,row.duration,row.amplitude)
+            key ∉ seen || error("duplicate axial pulse protocol")
+            push!(seen,key)
+        elseif row.axis=="joint" && baseline[1]>0
+            0<=row.amplitude<=baseline[1] &&
+                abs(row.B_E-(baseline[1]-row.amplitude))<1e-10 &&
+                baseline[2]<=row.B_I<=bounds["B_I"] || error("joint pulse outside declared domain")
+            key=(row.duration,row.amplitude,row.B_I)
+            key ∉ joint_seen || error("duplicate joint pulse protocol")
+            push!(joint_seen,key)
+        else
+            error("undeclared pulse axis")
+        end
+    end
+    for duration in durations,axis in axes
+        cap=axis=="E_increase" ? bounds["B_E"]-baseline[1] :
+            axis=="E_withdrawal" ? baseline[1] :
+            axis=="I_increase" ? bounds["B_I"]-baseline[2] : baseline[2]
+        step=max(min(1.,cap/8),eps())
+        coarse=unique(vcat(collect(0.:step:cap),[Float64(cap)]))
+        required=union(Set(coarse),Set((a+b)/2 for (a,b) in zip(coarse,coarse[2:end])))
+        all((axis,duration,amplitude) in seen for amplitude in required) ||
+            error("pulse protocol grid is incomplete: $axis/$duration")
+    end
+    if baseline[1]>0
+        for duration in durations,amplitude in (0.,baseline[1]/2,baseline[1]),
+            stimulation in (0.,(bounds["B_I"]-baseline[2])/2,bounds["B_I"]-baseline[2])
+            (duration,amplitude,baseline[2]+stimulation) in joint_seen ||
+                error("joint pulse protocol grid is incomplete: $duration")
+        end
+    end
+    true
+end
 function verify(details,output)
     ispath(output) && error("verification output exists")
     metadata=TOML.parsefile(joinpath(details,"metadata.toml"))
@@ -845,8 +965,8 @@ function verify(details,output)
     append!(checks,verify_timescale_spectrum(details,
         joinpath(details,"timescales","selective_withdrawal_0.35_0.0"),reference,(.35,0.)))
     weak=byid["input_dependent"]
-    append!(checks,verify_geometry(details,reference))
-    append!(checks,verify_geometry(details,weak))
+    append!(checks,verify_geometry(details,reference,config))
+    append!(checks,verify_geometry(details,weak,config))
     weak_timescales=joinpath(details,"timescales","input_dependent_2.0_1.0")
     append!(checks,verify_timescale_spectrum(details,weak_timescales,weak,(2.,1.)))
     append!(checks,verify_timescale_cycles(details,weak_timescales,weak,(2.,1.)))
@@ -872,6 +992,7 @@ function verify(details,output)
                 pulse_file=joinpath(pulses,"pulses.csv")
                 trials=collect(CSV.File(pulse_file))
                 all(r->r.source==source && r.phase==fraction,trials) || error("cycle pulse source changed: $source")
+                verify_pulse_protocol_grid(trials,p,(input["B_E"],input["B_I"]),config)
                 if p["id"]=="input_dependent" && (input["B_E"],input["B_I"])==(2.,1.) &&
                     startswith(source,"cycle_1_phase_")
                     roots=TOML.parsefile(joinpath(folder,"context.toml"))["equilibria"]
@@ -900,10 +1021,12 @@ function verify(details,output)
                 for role in ("rest","active")
                     source="root_$(roles[role])"
                     pulse_file=joinpath(folder,source,"pulses","pulses.csv")
-                    for (index,row) in enumerate(CSV.File(pulse_file))
-                        row.axis=="joint" && continue
+                    trials=collect(CSV.File(pulse_file))
+                    verify_pulse_protocol_grid(trials,p,(input["B_E"],input["B_I"]),config)
+                    for (index,row) in enumerate(trials)
                         row.source==source && row.source_role==role && row.phase==0 ||
                             error("plotted pulse source changed: $pulse_file:$index")
+                        row.axis=="joint" && continue
                         push!(checks,verify_axial_pulse_row(details,pulse_file,index,row,
                             roots[roles[role]]["state"],p,(input["B_E"],input["B_I"]),
                             roots,roles,nothing,config["followup_times"],config["durations"]))
