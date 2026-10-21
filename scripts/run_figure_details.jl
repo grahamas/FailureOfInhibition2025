@@ -374,6 +374,7 @@ function paired_controls(cases,cfg,output)
         outcomes=[S.observe(released,x,cfg;reference=ctx,retain=true,tight=true,cycles=true) for x in sources]
         sub=joinpath(dir,p["id"]*"_$(index)");mkpath(sub)
         S.save_context(sub,ctx)
+        S.save_context(joinpath(sub,"released"),released)
         for (k,role) in enumerate(("herald","seizure"))
             S.save_observation(sub,role*"_held",controls[k]);S.save_observation(sub,role*"_release",outcomes[k])
             controls[k].status=="compatible" && controls[k].destination==role || error("held control changed")

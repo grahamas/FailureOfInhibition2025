@@ -43,6 +43,29 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
             100.,roots,ctx.roles["active"],cfg.raw["followup_times"])
         @test !VerifyFigureRedesign.independent_target(reference,(.35,0.),rest,"E_increase",0.,
             100.,roots,ctx.roles["active"],cfg.raw["followup_times"])
+        pulse=FigureDetails.S.pulse(ctx,rest,.85,0.,100.,cfg)
+        switch=last(pulse.pulse_solution.u)
+        sampled=(;axis="E_increase",amplitude=.5,duration=100.,B_E=.85,B_I=0.,
+            status=pulse.status,destination=pulse.destination,switch_E=switch[1],switch_I=switch[2])
+        pulse_file=joinpath(dir,"sampled_pulses.csv")
+        @test VerifyFigureRedesign.verify_axial_pulse_row(dir,pulse_file,1,sampled,rest,reference,
+            (.35,0.),roots,ctx.roles,nothing,cfg.raw["followup_times"],cfg.raw["durations"]).passed
+        @test_throws ErrorException VerifyFigureRedesign.verify_axial_pulse_row(dir,pulse_file,1,
+            merge(sampled,(;destination="rest")),rest,reference,(.35,0.),roots,ctx.roles,
+            nothing,cfg.raw["followup_times"],cfg.raw["durations"])
+        herald=ctx.search.equilibria[ctx.roles["herald"]].state
+        held=FigureDetails.S.observe(ctx,herald,cfg;reference=ctx,retain=true,tight=true,cycles=true)
+        FigureDetails.S.save_observation(dir,"herald_held",held)
+        @test VerifyFigureRedesign.verify_observation(dir,dir,"herald_held",dir,dir,reference,
+            (.35,0.),"compatible","herald",herald).passed
+        released=FigureDetails.S.context(reference,0.,0.,cfg;tight=true,grid=41)
+        FigureDetails.S.save_context(joinpath(dir,"released"),released)
+        withdrawn=FigureDetails.S.observe(released,herald,cfg;reference=ctx,retain=true,tight=true,cycles=true)
+        FigureDetails.S.save_observation(dir,"herald_release",withdrawn)
+        @test VerifyFigureRedesign.verify_observation(dir,dir,"herald_release",joinpath(dir,"released"),
+            dir,reference,(0.,0.),withdrawn.status,withdrawn.destination,herald).passed
+        @test_throws ErrorException VerifyFigureRedesign.verify_observation(dir,dir,"herald_release",
+            joinpath(dir,"released"),dir,reference,(0.,0.),withdrawn.status,"seizure",herald)
         held=VerifyFigureRedesign.integrate(rest,reference,.35,0.,[0.,1.])
         @test length(held.u)==2
         @test maximum(abs.(last(held.u).-rest))<1e-8

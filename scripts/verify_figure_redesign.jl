@@ -34,41 +34,50 @@ function compare(path,p,be,bi,root)
     coordinate_error=maximum(max(abs(x[1]-r.E),abs(x[2]-r.I)) for (x,r) in zip(solution.u,rows))
     (;file=relpath(path,root),maximum_coordinate_error=coordinate_error,passed=coordinate_error<1e-6)
 end
-function verify_intervention(details,sub,p,baseline,row,source)
-    file=joinpath(sub,"original_seizure.csv")
+function verify_observation(details,folder,name,context_dir,reference_dir,p,baseline,status,destination,source;final=nothing)
+    file=joinpath(folder,name*".csv")
     trace=collect(CSV.File(file))
-    observed=TOML.parsefile(joinpath(sub,"original_seizure_summary.toml"))
-    phase=TOML.parsefile(joinpath(sub,"original_seizure.toml"))
-    observed["status"]==row.status && observed["destination"]==row.destination ||
-        error("reported intervention outcome changed: $sub")
-    phase["status"]==(row.status=="periodic_compatible" ? "unresolved" : row.status) ||
-        error("intervention phase status changed: $sub")
+    observed=TOML.parsefile(joinpath(folder,name*"_summary.toml"))
+    phase=TOML.parsefile(joinpath(folder,name*".toml"))
+    observed["status"]==status && observed["destination"]==destination ||
+        error("reported observation outcome changed: $folder/$name")
+    phase["status"]==(status=="periodic_compatible" ? "unresolved" : status) ||
+        error("observation phase status changed: $folder/$name")
     initial_error=max(abs(first(trace).E-source[1]),abs(first(trace).I-source[2]))
-    final_error=maximum(abs.([last(trace).E-row.final_E,last(trace).I-row.final_I,
-        last(trace).E-phase["final"][1],last(trace).I-phase["final"][2]]))
+    endpoint=[last(trace).E,last(trace).I]
+    final_error=maximum(abs.(endpoint.-phase["final"]))
+    final===nothing || (final_error=max(final_error,maximum(abs.(endpoint.-final))))
     destination_error=0.
-    if row.status=="compatible"
-        roots=TOML.parsefile(joinpath(sub,"context.toml"))["equilibria"]
+    if status=="compatible"
+        roots=TOML.parsefile(joinpath(context_dir,"context.toml"))["equilibria"]
         index=phase["destination"]
-        index isa Integer && 1<=index<=length(roots) || error("invalid intervention destination root: $sub")
+        index isa Integer && 1<=index<=length(roots) || error("invalid observation destination root: $folder/$name")
         target=roots[index]["state"]
-        destination_error=max(abs(last(trace).E-target[1]),abs(last(trace).I-target[2]))
-        roles=TOML.parsefile(joinpath(sub,"roles.toml"))
-        assigned=[name for (name,k) in roles if k==index]
+        destination_error=maximum(abs.(endpoint.-target))
+        roles=TOML.parsefile(joinpath(context_dir,"roles.toml"))
+        assigned=[role for (role,k) in roles if k==index]
         if !isempty(assigned)
-            row.destination==only(assigned) || error("intervention destination role changed: $sub")
-        elseif row.destination!="equilibrium_$index"
-            reference_roles=TOML.parsefile(joinpath(dirname(sub),"roles.toml"))
-            reference=TOML.parsefile(joinpath(dirname(sub),"context.toml"))["equilibria"]
-            haskey(reference_roles,row.destination) || error("unknown intervention destination: $sub")
-            old=reference[reference_roles[row.destination]]["state"]
-            maximum(abs.(target.-old))<.05 || error("intervention destination correspondence changed: $sub")
+            destination==only(assigned) || error("observation destination role changed: $folder/$name")
+        elseif destination!="equilibrium_$index"
+            reference_roles=TOML.parsefile(joinpath(reference_dir,"roles.toml"))
+            reference=TOML.parsefile(joinpath(reference_dir,"context.toml"))["equilibria"]
+            haskey(reference_roles,destination) || error("unknown observation destination: $folder/$name")
+            old=reference[reference_roles[destination]]["state"]
+            maximum(abs.(target.-old))<.05 || error("observation destination correspondence changed: $folder/$name")
         end
+    elseif status=="periodic_compatible"
+        destination=="oscillatory" || error("periodic observation destination changed: $folder/$name")
+        destination_error=verify_periodic_orbit(folder,name,endpoint,p,baseline)
+    else
+        destination==status || error("unresolved observation destination changed: $folder/$name")
     end
     replay=compare(file,p,baseline...,details)
     discrepancy=max(initial_error,final_error,destination_error,replay.maximum_coordinate_error)
     (;file=replay.file,maximum_coordinate_error=discrepancy,passed=discrepancy<1e-6)
 end
+verify_intervention(details,sub,p,baseline,row,source)=verify_observation(details,sub,
+    "original_seizure",sub,dirname(sub),p,baseline,row.status,row.destination,source;
+    final=(row.final_E,row.final_I))
 function verify_switching(details,sub,p,baseline,protocol,expected_status)
     folder=joinpath(sub,protocol)
     record=TOML.parsefile(joinpath(folder,"summary.toml"))
@@ -121,10 +130,25 @@ end
 function orbit_curve_distance(point,states)
     length(states)>=2 || error("periodic orbit has too few samples")
     minimum(begin
-        direction=b.-a
-        fraction=clamp(sum((point.-a).*direction)/sum(abs2,direction),0.,1.)
-        maximum(abs.(point.-(a.+fraction.*direction)))
-    end for (a,b) in zip(states,states[2:end]))
+        a=states[index];b=states[index+1]
+        de=b[1]-a[1];di=b[2]-a[2]
+        fraction=clamp(((point[1]-a[1])*de+(point[2]-a[2])*di)/(de*de+di*di),0.,1.)
+        max(abs(point[1]-a[1]-fraction*de),abs(point[2]-a[2]-fraction*di))
+    end for index in 1:length(states)-1)
+end
+function verify_periodic_orbit(folder,name,endpoint,p,baseline)
+    orbit=TOML.parsefile(joinpath(folder,name*"_orbit.toml"))
+    orbit["validation"]=="NumericallyValidatedPeriodicOrbit" &&
+        orbit["stability"]=="PeriodicOrbitAttracting" || error("orbit validation changed: $folder/$name")
+    length(orbit["times"])==length(orbit["states"]) || error("orbit samples changed: $folder/$name")
+    independent=integrate(orbit["initial_state"],p,baseline...,orbit["times"])
+    discrepancy=maximum(max(abs(x[1]-r[1]),abs(x[2]-r[2])) for (x,r) in zip(independent.u,orbit["states"]))
+    discrepancy=max(discrepancy,maximum(abs.(last(independent.u).-orbit["initial_state"])))
+    maximum(x[1] for x in independent.u)-minimum(x[1] for x in independent.u)>1e-4 ||
+        error("orbit has no resolved oscillation: $folder/$name")
+    orbit_curve_distance(endpoint,orbit["states"])<1e-4 ||
+        error("continuation misses recorded orbit: $folder/$name")
+    discrepancy
 end
 function verify_pulse_trace(details,folder,name,context_dir,p,baseline,be,bi,initial,duration,status,destination)
     pulse_path=joinpath(folder,name*"_pulse.csv")
@@ -154,18 +178,8 @@ function verify_pulse_trace(details,folder,name,context_dir,p,baseline,be,bi,ini
         destination==expected || error("pulse destination label changed: $folder/$name")
     elseif status=="periodic_compatible"
         destination=="oscillatory" || error("periodic pulse destination changed: $folder/$name")
-        orbit=TOML.parsefile(joinpath(folder,name*"_orbit.toml"))
-        orbit["validation"]=="NumericallyValidatedPeriodicOrbit" &&
-            orbit["stability"]=="PeriodicOrbitAttracting" || error("pulse orbit validation changed: $folder/$name")
-        length(orbit["times"])==length(orbit["states"]) || error("pulse orbit samples changed: $folder/$name")
-        independent=integrate(orbit["initial_state"],p,baseline...,orbit["times"])
-        destination_error=maximum(max(abs(x[1]-r[1]),abs(x[2]-r[2])) for (x,r) in zip(independent.u,orbit["states"]))
-        destination_error=max(destination_error,maximum(abs.(last(independent.u).-orbit["initial_state"])))
-        maximum(x[1] for x in independent.u)-minimum(x[1] for x in independent.u)>1e-4 ||
-            error("pulse orbit has no resolved oscillation: $folder/$name")
         endpoint=[last(followup).E,last(followup).I]
-        orbit_curve_distance(endpoint,orbit["states"])<1e-4 ||
-            error("pulse continuation misses recorded orbit: $folder/$name")
+        destination_error=verify_periodic_orbit(folder,name,endpoint,p,baseline)
     else
         destination==status || error("unresolved pulse destination changed: $folder/$name")
     end
@@ -180,13 +194,46 @@ function orbit_phase_state(folder,source,p,baseline)
     capture===nothing && error("unsupported cycle source: $source")
     orbit=joinpath(folder,"orbit_$(capture.captures[1])")
     record=TOML.parsefile(orbit*".toml")
-    record["validation"]=="NumericallyValidatedPeriodicOrbit" || error("unvalidated cycle source: $source")
+    record["validation"]=="NumericallyValidatedPeriodicOrbit" &&
+        record["stability"]=="PeriodicOrbitAttracting" || error("unvalidated cycle source: $source")
     fraction=parse(Float64,capture.captures[2])
     0<=fraction<1 || error("invalid cycle phase: $source")
     firstrow=first(CSV.File(orbit*".csv"))
     initial=[firstrow.E,firstrow.I]
     state=fraction==0 ? initial : last(integrate(initial,p,baseline...,[0.,fraction*record["period"]]).u)
     state,fraction
+end
+function verify_axial_pulse_row(details,file,index,row,source,p,baseline,roots,roles,orbit_states,horizons,durations)
+    row.axis in ("E_increase","E_withdrawal","I_increase","I_withdrawal") ||
+        error("unsupported plotted pulse axis: $file:$index")
+    row.amplitude>=0 && row.duration in durations || error("invalid plotted pulse protocol: $file:$index")
+    signed=row.axis in ("E_withdrawal","I_withdrawal") ? -row.amplitude : row.amplitude
+    be=baseline[1]+(startswith(row.axis,"E_") ? signed : 0.)
+    bi=baseline[2]+(startswith(row.axis,"I_") ? signed : 0.)
+    be>=0 && bi>=0 && abs(row.B_E-be)<1e-10 && abs(row.B_I-bi)<1e-10 ||
+        error("plotted pulse input changed: $file:$index")
+    driven=last(integrate(source,p,be,bi,[0.,row.duration]).u)
+    switch_error=max(abs(driven[1]-row.switch_E),abs(driven[2]-row.switch_I))
+    state=driven;previous=0.
+    status="unresolved";destination="unresolved"
+    for horizon in horizons
+        state=last(integrate(state,p,baseline...,[0.,horizon-previous]).u)
+        distances=[maximum(abs.(state.-root["state"])) for root in roots]
+        if minimum(distances)<1e-6
+            root=argmin(distances)
+            assigned=[role for (role,k) in roles if k==root]
+            status="compatible"
+            destination=isempty(assigned) ? "equilibrium_$root" : only(assigned)
+            break
+        elseif orbit_states!==nothing && orbit_curve_distance(state,orbit_states)<1e-4
+            status="periodic_compatible";destination="oscillatory"
+            break
+        end
+        previous=horizon
+    end
+    (row.status,row.destination)==(status,destination) ||
+        error("plotted pulse outcome changed: $file:$index $(row.status)/$(row.destination) vs $status/$destination")
+    (;file="$(relpath(file,details)):$index",maximum_coordinate_error=switch_error,passed=switch_error<1e-6)
 end
 function independent_target(p,baseline,source,axis,amplitude,duration,roots,target,horizons)
     be=baseline[1]+(axis=="E_increase" ? amplitude : 0.)
@@ -247,20 +294,39 @@ function verify_negative_search(details,sub,p,baseline,config)
     all(found) && error("replacement switching was demonstrable within protocol: $sub")
     checks
 end
-function verify(details,output)
-    ispath(output) && error("verification output exists")
-    metadata=TOML.parsefile(joinpath(details,"metadata.toml"))
-    config=TOML.parsefile(joinpath(details,"config.toml"))
-    get(metadata,"completed",false) || error("detail study is incomplete")
-    stage_manifests=IOChecks.completed_stage_manifests(details,metadata["completed_stages"])
-    mkpath(output);cases=TOML.parsefile(joinpath(details,"selection.toml"))["cases"]
-    byid=Dict(p["id"]=>p for p in cases);checks=NamedTuple[]
-    reference=byid["selective_withdrawal"]
-    seq=collect(CSV.File(joinpath(details,"sequence","trajectory.csv")))
-    events=collect(CSV.File(joinpath(details,"sequence","events.csv")))
-    initial=[first(seq).E,first(seq).I]
-    initial=last(integrate(initial,reference,.35,0.,[0.,50.]).u)
-    for event in events
+function verify_sequence(details,reference)
+    sequence_dir=joinpath(details,"sequence")
+    seq=collect(CSV.File(joinpath(sequence_dir,"trajectory.csv")))
+    events=collect(CSV.File(joinpath(sequence_dir,"events.csv")))
+    route=["rest","active","rest","herald","active","rest","active","seizure"]
+    TOML.parsefile(joinpath(sequence_dir,"summary.toml"))["route"]==route || error("sequence route changed")
+    length(events)==length(route)-1 || error("sequence event count changed")
+    roots=TOML.parsefile(joinpath(sequence_dir,"context.toml"))["equilibria"]
+    roles=TOML.parsefile(joinpath(sequence_dir,"roles.toml"))
+    all(haskey(roles,role) for role in route) || error("sequence route source unavailable")
+    rest=roots[roles["rest"]]["state"]
+    maximum(abs.([first(seq).E,first(seq).I].-rest))<1e-6 || error("sequence does not start at rest")
+    first(seq).time==0 || error("sequence time origin changed")
+    pre_rows=filter(r->r.time<=first(events).onset,seq)
+    pre=integrate(rest,reference,.35,0.,getproperty.(pre_rows,:time))
+    pre_error=maximum(max(abs(x[1]-r.E),abs(x[2]-r.I)) for (x,r) in zip(pre.u,pre_rows))
+    checks=NamedTuple[(;file="sequence/prelude",maximum_coordinate_error=pre_error,passed=pre_error<1e-7)]
+    initial=last(pre.u)
+    previous_end=first(events).onset
+    for (index,event) in enumerate(events)
+        event.index==index && event.source==route[index] && event.destination==route[index+1] &&
+            event.status=="compatible" || error("sequence event route changed: $index")
+        event.axis in ("E_increase","E_withdrawal","I_increase") && event.amplitude>=0 &&
+            abs(event.onset-previous_end)<1e-10 && abs(event.offset-event.onset-event.duration)<1e-10 &&
+            event.followup_end>event.offset || error("sequence event timing or input changed: $index")
+        phase=TOML.parsefile(joinpath(sequence_dir,"event_$index.toml"))
+        observed=TOML.parsefile(joinpath(sequence_dir,"event_$(index)_summary.toml"))
+        phase["status"]=="compatible" && phase["destination"]==roles[event.destination] &&
+            observed["status"]==event.status && observed["destination"]==event.destination ||
+            error("sequence event destination changed: $index")
+        source_root=roots[roles[event.source]]["state"]
+        destination_root=roots[roles[event.destination]]["state"]
+        source_error=maximum(abs.(initial.-source_root))
         start_error=maximum(abs.(initial.-[event.start_E,event.start_I]))
         be=.35+(event.axis=="E_increase" ? event.amplitude : event.axis=="E_withdrawal" ? -event.amplitude : 0.)
         bi=event.axis=="I_increase" ? event.amplitude : 0.
@@ -272,9 +338,25 @@ function verify(details,output)
         waveform_error=maximum(max(abs(x[1]-r.E),abs(x[2]-r.I)) for (sol,rows) in
             ((pulse,pulse_rows),(followup,followup_rows)) for (x,r) in zip(sol.u,rows))
         initial=last(followup.u)
-        discrepancy=max(start_error,waveform_error,maximum(abs.(initial.-[event.final_E,event.final_I])))
+        discrepancy=max(source_error,start_error,waveform_error,
+            maximum(abs.(initial.-[event.final_E,event.final_I])),
+            maximum(abs.(initial.-phase["final"])),maximum(abs.(initial.-destination_root)))
         push!(checks,(;file="sequence/event_$(event.index)",maximum_coordinate_error=discrepancy,passed=discrepancy<1e-7))
+        previous_end=event.followup_end
     end
+    abs(last(seq).time-previous_end)<1e-10 || error("sequence endpoint changed")
+    checks
+end
+function verify(details,output)
+    ispath(output) && error("verification output exists")
+    metadata=TOML.parsefile(joinpath(details,"metadata.toml"))
+    config=TOML.parsefile(joinpath(details,"config.toml"))
+    get(metadata,"completed",false) || error("detail study is incomplete")
+    stage_manifests=IOChecks.completed_stage_manifests(details,metadata["completed_stages"])
+    mkpath(output);cases=TOML.parsefile(joinpath(details,"selection.toml"))["cases"]
+    byid=Dict(p["id"]=>p for p in cases);checks=NamedTuple[]
+    reference=byid["selective_withdrawal"]
+    append!(checks,verify_sequence(details,reference))
     for p in cases
         root=joinpath(details,"cases",p["id"])
         for baseline in filter(n->startswith(n,"baseline_"),readdir(root))
@@ -285,8 +367,22 @@ function verify(details,output)
             for source in filter(n->startswith(n,"cycle_"),readdir(folder))
                 initial,fraction=orbit_phase_state(folder,source,p,(input["B_E"],input["B_I"]))
                 pulses=joinpath(folder,source,"pulses")
-                trials=collect(CSV.File(joinpath(pulses,"pulses.csv")))
+                pulse_file=joinpath(pulses,"pulses.csv")
+                trials=collect(CSV.File(pulse_file))
                 all(r->r.source==source && r.phase==fraction,trials) || error("cycle pulse source changed: $source")
+                if p["id"]=="input_dependent" && (input["B_E"],input["B_I"])==(2.,1.) &&
+                    startswith(source,"cycle_1_phase_")
+                    roots=TOML.parsefile(joinpath(folder,"context.toml"))["equilibria"]
+                    roles=TOML.parsefile(joinpath(folder,"roles.toml"))
+                    orbit_states=[[r.E,r.I] for r in CSV.File(joinpath(folder,"orbit_1.csv"))]
+                    for (index,row) in enumerate(trials)
+                        row.axis=="joint" && continue
+                        row.source_role=="oscillatory" || error("plotted pulse source role changed: $pulse_file:$index")
+                        push!(checks,verify_axial_pulse_row(details,pulse_file,index,row,initial,p,
+                            (input["B_E"],input["B_I"]),roots,roles,orbit_states,
+                            config["followup_times"],config["durations"]))
+                    end
+                end
                 for destination in sort(unique(r.destination for r in trials))
                     destination in ("integration_failed","unresolved") && continue
                     witness=first(sort(filter(r->r.destination==destination,trials);by=r->(r.duration,r.B_E,r.B_I)))
@@ -296,13 +392,39 @@ function verify(details,output)
                         witness.duration,witness.status,witness.destination))
                 end
             end
+            if p["id"]=="selective_withdrawal" && (input["B_E"],input["B_I"])==(.35,0.)
+                roots=TOML.parsefile(joinpath(folder,"context.toml"))["equilibria"]
+                roles=TOML.parsefile(joinpath(folder,"roles.toml"))
+                for role in ("rest","active")
+                    source="root_$(roles[role])"
+                    pulse_file=joinpath(folder,source,"pulses","pulses.csv")
+                    for (index,row) in enumerate(CSV.File(pulse_file))
+                        row.axis=="joint" && continue
+                        row.source==source && row.source_role==role && row.phase==0 ||
+                            error("plotted pulse source changed: $pulse_file:$index")
+                        push!(checks,verify_axial_pulse_row(details,pulse_file,index,row,
+                            roots[roles[role]]["state"],p,(input["B_E"],input["B_I"]),
+                            roots,roles,nothing,config["followup_times"],config["durations"]))
+                    end
+                end
+            end
         end
     end
     for row in CSV.File(joinpath(details,"paired_controls","sustained.csv"))
         p=byid[row.id]
+        sub=joinpath(details,"paired_controls","$(row.id)_$(row.baseline)")
+        input=TOML.parsefile(joinpath(sub,"input.toml"))
+        (row.B_E,row.B_I,row.tau_ratio)==(input["B_E"],input["B_I"],p["tau_ratio"]) ||
+            error("paired sustained baseline changed: $sub")
+        roots=TOML.parsefile(joinpath(sub,"context.toml"))["equilibria"]
+        roles=TOML.parsefile(joinpath(sub,"roles.toml"))
         for role in ("herald","seizure"), protocol in ("held","release")
-            file=joinpath(details,"paired_controls","$(row.id)_$(row.baseline)","$(role)_$(protocol).csv")
-            push!(checks,compare(file,p,protocol=="held" ? row.B_E : 0.,row.B_I,details))
+            source=roots[roles[role]]["state"]
+            status=protocol=="held" ? "compatible" : getproperty(row,Symbol(role*"_status"))
+            destination=protocol=="held" ? role : getproperty(row,Symbol(role))
+            context_dir=protocol=="held" ? sub : joinpath(sub,"released")
+            push!(checks,verify_observation(details,sub,"$(role)_$(protocol)",context_dir,sub,p,
+                (protocol=="held" ? row.B_E : 0.,row.B_I),status,destination,source))
         end
     end
     for (index,row) in enumerate(CSV.File(joinpath(details,"paired_controls","pulses.csv")))
