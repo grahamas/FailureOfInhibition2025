@@ -23,10 +23,11 @@ function initialize(config_path, output)
     cfg,metadata
 end
 
-function select_cases(cfg,screen,output)
+function select_cases(cfg,screen,output,config_sha256)
     all_cases=F.registry(cfg)
     metadata=TOML.parsefile(joinpath(screen,"metadata.toml"))
     get(metadata,"completed",false) || error("screen is incomplete")
+    get(metadata,"config_sha256",nothing)==config_sha256 || error("screen configuration differs from detail study")
     F.A.verify_study_manifest(screen)
     for (relative,hash) in metadata["source_sha256"]
         S.N.Evidence.file_hash(joinpath(ROOT,relative))==hash || error("screen source is stale: $relative")
@@ -380,7 +381,8 @@ end
 function run(config_path,screen,output,stage;case_id=nothing)
     cfg,metadata=initialize(config_path,output)
     selection_path=joinpath(output,"selection.toml")
-    cases=isfile(selection_path) ? TOML.parsefile(selection_path)["cases"] : select_cases(cfg,screen,output)
+    cases=isfile(selection_path) ? TOML.parsefile(selection_path)["cases"] :
+        select_cases(cfg,screen,output,metadata["config_sha256"])
     reference=only(filter(p->p["id"]==cfg.raw["redesign"]["reference"],cases))
     if stage=="cases"
         chosen=case_id===nothing ? cases : filter(p->p["id"]==case_id,cases)

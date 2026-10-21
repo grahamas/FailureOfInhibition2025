@@ -50,12 +50,14 @@ end
         details=joinpath(root,"details");screen=joinpath(root,"screen")
         stage=joinpath(details,"sequence");mkpath(stage)
         mkpath(screen)
-        FigureRedesignData.S.write_record(joinpath(screen,"metadata.toml"),Dict("completed"=>true))
+        config=joinpath(details,"config.toml")
+        cp(joinpath(@__DIR__,"..","experiments","figure_redesign.toml"),config)
+        screen_metadata=joinpath(screen,"metadata.toml")
+        FigureRedesignData.S.write_record(screen_metadata,Dict(
+            "completed"=>true,"config_sha256"=>C.digest(config)))
         screen_data=joinpath(screen,"screen.csv")
         write(screen_data,"id,regime\nexample,rest\n")
         FigureRedesignData.D.F.A.refresh_study_manifest(screen)
-        config=joinpath(details,"config.toml")
-        cp(joinpath(@__DIR__,"..","experiments","figure_redesign.toml"),config)
         data=joinpath(stage,"trajectory.csv");marker=joinpath(stage,"done.toml")
         function finish_stage(value)
             write(data,"time,E,I\n0,$value,0\n")
@@ -106,5 +108,19 @@ end
         err=build_error()
         @test err isa ErrorException
         @test occursin("verification trajectory report changed",sprint(showerror,err))
+        FigureRedesignData.S.write_record(screen_metadata,Dict(
+            "completed"=>true,"config_sha256"=>"different"))
+        cfg=FigureRedesignData.S.load_config(config)
+        err=try
+            FigureRedesignData.D.select_cases(cfg,screen,details,C.digest(config))
+            nothing
+        catch e
+            e
+        end
+        @test err isa ErrorException
+        @test occursin("screen configuration differs from detail study",sprint(showerror,err))
+        err=build_error()
+        @test err isa ErrorException
+        @test occursin("screen configuration differs from detail study",sprint(showerror,err))
     end
 end

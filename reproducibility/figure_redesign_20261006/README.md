@@ -28,10 +28,11 @@ julia --project=plotting scripts/render_figure_redesign.jl output/figure_packet_
 ```
 
 The screen and detailed stages resume only against the same recorded sources
-and configuration. Completed units are checked before reuse. Limit scientific
-case concurrency to two; two Julia threads allow the existing case scheduler
-to run both. A third argument to the screen runner limits case count for a
-development check and explicitly leaves its completion flag false.
+and configuration; detail selection and packet building also require matching
+screen and detail configuration hashes. Completed units are checked before
+reuse. Limit scientific case concurrency to two; two Julia threads allow the
+existing case scheduler to run both. A third argument to the screen runner
+limits case count for a development check and leaves its completion flag false.
 
 Selection records the screen's complete checksum manifest. A changed screen
 requires a new detail study and selection. Verification records the exact
