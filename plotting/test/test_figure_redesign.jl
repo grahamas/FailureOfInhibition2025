@@ -17,15 +17,27 @@ include(joinpath(@__DIR__,"..","..","scripts","render_figure_redesign.jl"))
         CSV.write(joinpath(timescales,"stops.csv"),stops)
         @test occursin("minimum step",R.continuation_caption(packet))
         root=joinpath(packet,"cases","input_dependent","baseline_3")
+        mkpath(root)
+        write(joinpath(root,"summary.toml"),"B_E = 2.0\nB_I = 1.0\nvalidated_cycles = 1\n")
+        write(joinpath(root,"orbit_1.toml"),"validation = \"NumericallyValidatedPeriodicOrbit\"\n")
         for phase in (0.,.5)
             d=joinpath(root,"cycle_1_phase_$phase","pulses");mkpath(d)
             CSV.write(joinpath(d,"pulses.csv"),[
                 (;axis="I_increase",duration=100.,amplitude=1.,phase,destination=phase==0 ? "rest" : "seizure"),
                 (;axis="E_increase",duration=100.,amplitude=1.,phase,destination="rest")])
         end
+        other=joinpath(packet,"cases","input_dependent","baseline_1");mkpath(other)
+        write(joinpath(other,"summary.toml"),"B_E = 0.5\nB_I = 0.0\nvalidated_cycles = 1\n")
+        for phase in (0.,.5)
+            d=joinpath(other,"cycle_1_phase_$phase","pulses");mkpath(d)
+            CSV.write(joinpath(d,"pulses.csv"),[(;axis="E_increase",duration=50.,amplitude=a,phase,
+                destination=phase==0 ? "rest" : "seizure") for a in (1.,2.)])
+        end
         points,choice=R.phase_data(packet)
         @test choice==("I_increase",100.)
         @test Set(x.phase for x in points)==Set((0.,.5))
         @test length(unique(x.destination for x in points))==2
+        write(joinpath(root,"summary.toml"),"B_E = 2.0\nB_I = 1.0\nvalidated_cycles = 2\n")
+        @test_throws ErrorException R.phase_data(packet)
     end
 end

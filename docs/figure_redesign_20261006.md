@@ -238,9 +238,11 @@ do not constitute equilibrium continuation.
 Figure 4's rectangle is a schematic analytical region E≥E*, I≤I* for a source
 on the descending inhibitory response. Its drive assumption is ΔB_E≥0 and
 ΔB_I≥0 relative to baseline throughout the intervention. Nonnegative total
-input alone does not meet that assumption. The phase panel selects the
-axis-duration combination with the largest number of sampled amplitudes that
-have different destinations across phases, with deterministic tie-breaking.
+input alone does not meet that assumption. The phase panel uses the B=(2,1)
+baseline and its unique validated orbit; multiple orbits require author
+selection. It selects the axis-duration combination with the largest number of
+sampled amplitudes that have different destinations across phases, with
+deterministic tie-breaking.
 It is a measured comparison, not phase-complete control or a probability map.
 Phase is elapsed time divided by the validated period, measured from the stored
 orbit initial state; zero and one denote the same cycle position.

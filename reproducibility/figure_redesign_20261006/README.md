@@ -62,3 +62,5 @@ phase and the exact displayed windows of the connected trajectory. Joint-input
 pulse maps and omitted settled intervals remain in the full study. Each filtered
 CSV records its original digest, input/output row counts, and exact selection
 rule in `packet.toml`; no observations are interpolated or relabeled.
+The phase panel uses only the B=(2,1) baseline and its sole validated orbit;
+multiple validated orbits require an explicit author selection before rendering.

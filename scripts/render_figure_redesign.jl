@@ -246,13 +246,28 @@ function accessibility(packet,out)
 end
 
 function phase_data(packet)
-    root=joinpath(packet,"cases","input_dependent");all=NamedTuple[]
-    for (dir,_,names) in walkdir(root)
-        "pulses.csv" in names && occursin("cycle_",dir) || continue
-        append!(all,NamedTuple.(collect(CSV.File(joinpath(dir,"pulses.csv");stringtype=String))))
+    root=joinpath(packet,"cases","input_dependent")
+    baselines=filter(name->startswith(name,"baseline_"),readdir(root))
+    selected=filter(name->begin
+        summary=TOML.parsefile(joinpath(root,name,"summary.toml"))
+        summary["B_E"]==2. && summary["B_I"]==1.
+    end,baselines)
+    length(selected)==1 || error("phase panel requires one B=(2,1) baseline")
+    baseline=joinpath(root,only(selected))
+    count=TOML.parsefile(joinpath(baseline,"summary.toml"))["validated_cycles"]
+    count==0 && return NamedTuple[],nothing
+    count==1 || error("phase panel requires a declared orbit when multiple cycles are validated")
+    isfile(joinpath(baseline,"orbit_1.toml")) || error("phase panel lacks its declared orbit")
+    all=NamedTuple[]
+    for name in readdir(baseline)
+        startswith(name,"cycle_1_phase_") || continue
+        file=joinpath(baseline,name,"pulses","pulses.csv")
+        isfile(file) || continue
+        append!(all,NamedTuple.(collect(CSV.File(file;stringtype=String))))
     end
     isempty(all) && return all,nothing
     choices=sort(unique((r.axis,r.duration) for r in all if r.axis!="joint"))
+    isempty(choices) && return NamedTuple[],nothing
     score(choice)=begin
         r=filter(x->(x.axis,x.duration)==choice,all)
         sum(length(unique(x.destination for x in r if x.amplitude==a))>1 for a in unique(x.amplitude for x in r))
@@ -305,9 +320,9 @@ function control(packet,out)
         ylabel="Starting cycle phase",yticks=0:.25:1)
     if !isempty(phase)
         outcome_scatter!(d,phase;y=:phase)
-        text!(d,.98,.98;text="Weak circuit, B=(2,1); $(choice[2]) ms",space=:relative,align=(:right,:top),fontsize=12)
+        text!(d,.98,.98;text="Weak circuit, B=(2,1), orbit 1; $(choice[2]) ms",space=:relative,align=(:right,:top),fontsize=12)
     else
-        text!(d,.5,.5;text="No validated periodic source",space=:relative,align=(:center,:center))
+        text!(d,.5,.5;text="No phase-resolved pulse data",space=:relative,align=(:center,:center))
     end
     ylims!(d,-.03,1.06)
     role_legend(fig[3,1:2])
