@@ -1,211 +1,42 @@
 # FailureOfInhibition2025
 
-This Julia 1.10 package implements a deterministic, CPU-only,
-two-population point model for a failure-of-inhibition study. The implemented
-model assumptions and numerical conventions are documented in
-[`docs/model.md`](docs/model.md).
+A Julia 1.10 package for a deterministic, CPU-only, two-population point model.
+States are dimensionless active-population fractions ordered `[E, I]` in
+`[0,1]^2`. [The model reference](docs/model.md) defines the equations, response
+families, coupling convention, numerical methods, and output contracts.
+[The analytical notes](docs/theory_notes.md) state the assumptions behind the
+equilibrium-ordering and positive-drive restrictions.
 
-The [intervention study plan](docs/intervention_study.md) specifies the
-manuscript-anchor coexistence maps, matched controls, continuation, pulse
-experiments, periodic-orbit checks, and intervention/robustness sweeps.
-Its exploration bounds are not physiological calibration. See the
-[analytical constraints](docs/theory_notes.md) for equilibrium ordering,
-response symmetry, and the scope of positive-drive rescue claims.
-The [initial results](docs/intervention_results.md) report executed maps,
-branch continuation, pulse transitions, and remaining scientific limits.
+The package provides matched monotone-control and failure-of-inhibition models,
+equilibrium discovery and local stability, finite-window trajectory diagnostics,
+equilibrium and periodic-orbit continuation, pulse experiments, and basin
+measurements. Numerical searches report discovered results and unresolved
+outcomes; they do not certify a complete attractor set or a biological state.
+The trajectory CSV column order is `time,E,I`.
 
-States are dimensionless active-population fractions ordered `[E, I]` in the
-physical domain `[0,1]^2`. Because the logistic response can be nonzero at
-zero effective input, the origin need not be an equilibrium.
+## Current figure study
 
-Version 0.3 is an intentional pre-1.0 API break: `PopulationParameters` no
-longer has `decay` or `saturation` fields, and inhibitory couplings are supplied
-as nonnegative magnitudes rather than signed coefficients.
-
-## Point-model interface
-
-The example below constructs matched control and failure-of-inhibition models.
-The four coupling values are nonnegative `source_to_target` magnitudes;
-inhibitory-source terms are subtracted internally.
-
-```julia
-using FailureOfInhibition2025
-
-excitatory = PopulationParameters(
-    timescale=2.0,
-    response=LogisticResponse(slope=2.0, threshold=0.1),
-)
-inhibitory_control = PopulationParameters(
-    timescale=1.5,
-    response=LogisticResponse(slope=1.5, threshold=0.2),
-)
-
-coupling = PointCoupling(
-    e_to_e=1.2,
-    i_to_e=0.6,
-    e_to_i=0.7,
-    i_to_i=0.4,
-)
-
-pulses = [
-    DrivePulse(onset=2.0, offset=5.0, increment=(0.20, 0.10)),
-    DrivePulse(onset=4.0, offset=7.0, increment=(0.05, 0.00)),
-]
-drive = PiecewiseConstantDrive(
-    baseline=(0.0, 0.0),
-    pulses=pulses,
-    interpretation=AfferentExcitation,
-)
-
-models = matched_point_models(
-    excitatory=excitatory,
-    inhibitory_control=inhibitory_control,
-    failure_threshold=1.1,
-    coupling=coupling,
-    drive=drive,
-)
-
-control_solution = solve_point_model(
-    [0.1, 0.15],
-    (0.0, 20.0),
-    models.control;
-    saveat=0.1,
-    abstol=1e-10,
-    reltol=1e-10,
-    domain_atol=1e-8,
-)
-failure_solution = solve_point_model(
-    [0.1, 0.15],
-    (0.0, 20.0),
-    models.failure_of_inhibition;
-    saveat=0.1,
-    abstol=1e-10,
-    reltol=1e-10,
-    domain_atol=1e-8,
-)
-
-write_trajectory_csv("control.csv", control_solution)
-write_trajectory_csv("failure_of_inhibition.csv", failure_solution)
-```
-
-`matched_point_models` returns a named tuple with `control` and
-`failure_of_inhibition` models. They share all supplied parameters and the
-inhibitory onset response; only the latter subtracts the equal-slope failure
-component.
-
-## Equilibria and local stability
-
-The following is a synthetic API usage demonstration, not a scientific
-result. Because the example models use a pulsed protocol, each analysis names
-the finite source time whose E/I drive is frozen into an autonomous system:
-
-```julia
-control_local = solve_equilibrium(
-    models.control,
-    [0.1, 0.15];
-    snapshot_time=4.0,
-)
-
-control_search = find_equilibria(models.control; snapshot_time=4.0)
-failure_search = find_equilibria(
-    models.failure_of_inhibition;
-    snapshot_time=4.0,
-)
-
-control_local.attempt.solver_status
-control_local.attempt.validation
-control_local.stability.classification
-control_search.completeness  # CompletenessNotCertified
-```
-
-`solve_equilibrium` performs one local solve. `find_equilibria` performs a
-deterministic multistart search, independently validates balance residuals and
-physical bounds, deduplicates roots, and classifies local linear stability
-with the original time constants. The result retains every seed and solver
-outcome. It reports equilibria found; it never certifies that the search is
-complete. Detailed tolerances, frozen-drive semantics, and limitations are in
-[`docs/model.md`](docs/model.md).
-
-## Responses and external drive
-
-`LogisticResponse` is the supported excitatory response and monotone
-inhibitory control. `FailureOfInhibitionResponse` is the raw,
-unnormalized, unclamped equal-slope difference of ordered logistic responses.
-It can also be constructed directly:
-
-```julia
-onset = LogisticResponse(slope=1.5, threshold=0.2)
-foi = FailureOfInhibitionResponse(onset; failure_threshold=1.1)
-```
-
-`DrivePulse` uses the half-open interval `[onset, offset)`. Pulses are additive,
-so the two example pulses overlap and sum between 4 and 5 ms.
-`AfferentExcitation` requires nonnegative total E/I drive on every constant
-segment; use `AbstractIntervention` when a protocol has signed totals. Solver
-stops and saved times automatically include every in-span pulse transition.
-
-The exported rectified and unequal-slope difference response candidates remain
-available for standalone comparisons, but `PointModelParameters` rejects them
-as supported population responses.
-
-## Physical-domain and output guarantees
-
-`solve_point_model` rejects nonfinite initial states and initial states outside
-`[0,1]^2`. It checks accepted steps and returned states against
-`[-domain_atol, 1+domain_atol]`, with a default `domain_atol=1e-8`, and throws
-`DomainError` for a larger excursion. It never clips or projects states. The
-low-level `point_rhs!` and `point_jacobian!` functions remain evaluable outside
-the physical domain for numerical methods and mathematical diagnostics.
-
-`write_trajectory_csv` preserves the stable column order:
-
-```text
-time,E,I
-```
-
-## Synthetic reproducible experiment
-
-Run the matched example above under both zero baseline input and its pulsed
-protocol, with the standard settings, tighter tolerances/finer sampling, and
-a longer observation horizon:
-
-```sh
-julia --project=. scripts/run_minimal_experiment.jl \
-    --config experiments/minimal.toml --output output/minimal
-```
-
-Use a new output directory for each run. The configuration is a synthetic
-workflow check, not a scientific parameter set or biological result.
-`cases.csv` records execution status and sampled trajectory classifications;
-`comparisons.csv` records changes under numerical refinement and horizon
-extension. Trajectories keep the `time,E,I` schema. Separate equilibrium
-tables, full search-context records, and diagnostic records retain rejected
-candidates, solver failures, raw residuals, local spectra, and unresolved
-outcomes. Metadata, a snapshot of the working source and environment, and
-artifact checksums make the run traceable even before its code is committed.
-The [synthetic experiment report](docs/minimal_experiment.md) records the
-observed equilibria, unresolved outcomes, and repeat/replay verification.
-
-`diagnose_trajectory(solution, model; equilibria=search)` reports whether two
-terminal sample windows are compatible with one discovered equilibrium.
-`EquilibriumCompatible` is a finite-window observation; a stationary saddle
-can satisfy it. Local stability stays separate, all unmet criteria are
-`TrajectoryUnresolved`, and oscillatory appearance does not validate a
-periodic orbit. The exact contract and numerical defaults are in
-[`docs/model.md`](docs/model.md#sampled-trajectory-diagnostics).
+The five-figure candidate's questions, historical measurements, limits, and
+caption requirements are in [the figure study note](docs/figure_redesign_20261006.md).
+The parameter registry and protocol are fixed by
+`reproducibility/figure_redesign_20261006/cases.toml` and
+`experiments/figure_redesign.toml`. The generated candidate packet is outside
+the repository. Use Julia
+1.10.12 and [the study workflow](reproducibility/figure_redesign_20261006/README.md)
+to make new measurements, build a checked packet, and render figures. Final
+result selection will determine which data and provenance need an active packet.
 
 ## Development
 
-The repository tracks `Manifest.toml` because reproducibility takes priority
-over library-style environment flexibility.
+The root and plotting environments have tracked manifests. From the working
+copy, instantiate and run the test suites with:
 
-```julia
-using Pkg
-Pkg.instantiate()
-Pkg.test()
+```sh
+julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
+julia --project=plotting -e 'using Pkg; Pkg.instantiate()'
+julia --project=plotting plotting/test/runtests.jl
 ```
 
-Completeness certification, continuation, periodic-orbit and bifurcation
-analysis, biological regime definitions, scientific experiments, plotting,
-and manuscript writing remain future work. See `NEXT_STEPS.md` for the current
-sequence.
+[Current next steps](NEXT_STEPS.md) concern author review of the figure claims
+and any further numerical work needed for the final paper. Scientific parameter
+choices, biological wording, and manuscript edits remain with the author.

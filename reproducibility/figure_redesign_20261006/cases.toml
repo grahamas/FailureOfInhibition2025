@@ -1,0 +1,4632 @@
+schema_version = 1
+purpose = "Frozen historical parameter list only; all numerical results are recomputed."
+
+[[cases]]
+category = "anchors"
+parameter_record_sha256 = "4098c6468d2d509315ac135263d79c397db838076143cdcd3ad54c79d59f7273"
+baselines = [[0.0, 0.0]]
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central"
+name = "four_sinks_central"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "anchors"
+parameter_record_sha256 = "7c24c30dcf14972263d551a82286a90ab4ee5542e9b3af88d390f968fe3c2ccc"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+e_to_e = 4.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "anchors"
+parameter_record_sha256 = "b26a9346e1578fa46acff9c54145f1f67f53d802b1e560f4ba34e82607453ac3"
+baselines = [[0.015625, 0.0]]
+e_to_e = 19.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "anchors"
+parameter_record_sha256 = "40cf357b2d956d4b6e8ebc5b1aac56d754993eefe8752d7042f434dd6d935287"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "anchors"
+parameter_record_sha256 = "ca176f26c27a884b04b9fc291f0ba34f8be3cd586ffe5454c60432cad738a089"
+baselines = [[0.0, 0.0]]
+e_to_e = 19.0
+e_to_i = 14.0
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "anchors"
+parameter_record_sha256 = "a48d4cb21d27d18018768e6cb71eb940b2f3821941ca61e0bfe89e1bc613139f"
+baselines = [[0.0, 0.0]]
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "anchors"
+parameter_record_sha256 = "8e136075de4c78d5181a181db943333c11967c17b556d0dba6878ccddd5760f6"
+baselines = [[0.5, 0.0]]
+e_to_e = 16.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "threshold_to_active"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "anchors"
+parameter_record_sha256 = "7ca981e9457edfcac5cf537ce8ca51c66ba52ed22f9e6e8ce4f4e5a1a8fb3075"
+baselines = [[0.0, 0.0]]
+e_to_e = 17.0
+e_to_i = 12.0
+family = "figure3"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "two_sinks_ascending"
+name = "two_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "b13319c471eafea0b51bf8b153a55189744e939ae71a6be1465e2236a859e9fe"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 12.0
+e_to_i = 17.333333333333332
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_1"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.8
+theta_e = 1.5
+theta_off = 7.2
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "0ecc1a1242c93589a771065cdbc5de09ae58db25a0fd14d868fb40bfe2705ef5"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 7.5
+e_to_i = 17.925925925925924
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_10"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.085714285714286
+theta_e = 1.5
+theta_off = 6.48
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "c7bba70402e4b72f9f7d71dac0382b77e39ed33c75cce28d90843d0cffc9f563"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 19.5
+e_to_i = 23.25925925925926
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_11"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.685714285714286
+theta_e = 1.5
+theta_off = 7.68
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "2e4bd31347949647d3cc50c51180c6c1204992a8b1a6cd443e06f3272494f6a7"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 4.5
+e_to_i = 14.37037037037037
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_12"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.2857142857142856
+theta_e = 1.5
+theta_off = 8.88
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "db7bc50eb0fc7dc3f9b4d4cf3fbdb3c18429ba1112a8837abd2ad0f5c49c2f33"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 16.5
+e_to_i = 19.703703703703702
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_13"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.885714285714286
+theta_e = 1.5
+theta_off = 10.08
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "74b8076b8b6c3f1ef66f5f02feb98b582673c559eb4903b5afa890f4d48dd161"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 10.5
+e_to_i = 25.037037037037035
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_14"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.37142857142857144
+theta_e = 1.5
+theta_off = 11.280000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "234cd03debeaea41917f1b257e35df54cfeb8a73aaa8d6279345194a1b242d1d"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 22.5
+e_to_i = 16.14814814814815
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_15"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.9714285714285713
+theta_e = 1.5
+theta_off = 6.72
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "edb6d757450d945b284f1f6e45a0d7b9e9454f2a1efe2c64cd39e73cd80449b2"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 0.75
+e_to_i = 21.48148148148148
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_16"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.5714285714285714
+theta_e = 1.5
+theta_off = 7.92
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "016d85438985a29db0153b51d361aa54da1197ac6270073f02ef85dcdcece454"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 12.75
+e_to_i = 26.814814814814813
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_17"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.1714285714285713
+theta_e = 1.5
+theta_off = 9.120000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "eac2d7c174b7dbf63edc7b4410afa3924a8794a80d0a311f278caa2dc9c21535"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 6.75
+e_to_i = 13.185185185185185
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_18"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.771428571428572
+theta_e = 1.5
+theta_off = 10.32
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "ca366439363377361ea370fb6e86228ac8b0e8afe294086b1271489cd5394e7f"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 18.75
+e_to_i = 18.51851851851852
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_19"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.3714285714285714
+theta_e = 1.5
+theta_off = 11.52
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "ee8db491a9bcf837b9dfb2ee60ece0a5ea3d4e2c61a4bbbf4259488a58be2d34"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 6.0
+e_to_i = 22.666666666666664
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_2"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.4
+theta_e = 1.5
+theta_off = 8.4
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "0b6e170b11fff8b21e4e56a3be3be8d79490c948cc73536971431bd3ea242d18"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 3.75
+e_to_i = 23.85185185185185
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_20"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.971428571428572
+theta_e = 1.5
+theta_off = 6.96
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "443d0e90e41d619614b8f0cdace7e4ff6932bb294c0a6b811e3a6b52c59b2d9f"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 15.75
+e_to_i = 14.962962962962962
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_21"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.4571428571428572
+theta_e = 1.5
+theta_off = 8.16
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "23b3c19750ef4b78268dceab1c9fc84a23ff41c57ae344ce0e4d490e3830f695"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 9.75
+e_to_i = 20.296296296296298
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_22"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.0571428571428572
+theta_e = 1.5
+theta_off = 9.36
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "b9c899da85284375bb7827fe34df0ebd36cd79f949bfc5ace8aeca6fe008d0ec"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 21.75
+e_to_i = 25.629629629629626
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_23"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.6571428571428573
+theta_e = 1.5
+theta_off = 10.56
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "e574fde8f1831a0c55487aee67d99ab6bc6a45ac472c8aeae22e4cf5073d2bc6"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 2.25
+e_to_i = 16.74074074074074
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_24"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.2571428571428576
+theta_e = 1.5
+theta_off = 11.760000000000002
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "fd8a9a6969b0da6f8e5a63095fec38b27ebc025ac4ec9b7103afea02a8b83fd7"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 14.25
+e_to_i = 22.074074074074076
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_25"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.857142857142857
+theta_e = 1.5
+theta_off = 6.048
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "0cf8c841ab72414183c11fb99fde8842ebbda6491eb91203c32cb74e0f367252"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 8.25
+e_to_i = 27.407407407407405
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_26"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.457142857142857
+theta_e = 1.5
+theta_off = 7.248
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "125099ae47081a2b87b9716476e57a6e9c6e09a2bbc69fc3bee38f13422fe522"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 20.25
+e_to_i = 12.197530864197532
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_27"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.057142857142857
+theta_e = 1.5
+theta_off = 8.448
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "b2c3ef4af37444fc5231c5a12678ff65ad93cdf420c1e9b78f76c8acb744031c"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 5.25
+e_to_i = 17.530864197530864
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_28"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.5428571428571429
+theta_e = 1.5
+theta_off = 9.648
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "e7d194b4f3bcb35f374fd6a7e762f666926439b6d17f26621cc9234bed8398b1"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 17.25
+e_to_i = 22.864197530864196
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_29"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.1428571428571428
+theta_e = 1.5
+theta_off = 10.848
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "b37a28e7b2054f6e6953163acb3f0721a7a7a6671b7f7118be50932285d73244"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 18.0
+e_to_i = 13.777777777777779
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_3"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.0
+theta_e = 1.5
+theta_off = 9.600000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "8c6d277d1260813d94ffadf79a3eac6fdac6e323a769ee3836adb670894e4040"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 11.25
+e_to_i = 13.975308641975309
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_30"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.7428571428571427
+theta_e = 1.5
+theta_off = 6.288
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "c215324759b58b3d73cef95b0403345cb0546dccf4b1c4aaf15d0383121ad551"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 23.25
+e_to_i = 19.308641975308642
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_31"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.342857142857143
+theta_e = 1.5
+theta_off = 7.488
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "5b277285f1fbf35d8c2b450bbb765bd699908edacdd83575ca143e55e1556614"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 0.375
+e_to_i = 24.641975308641975
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_32"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.942857142857143
+theta_e = 1.5
+theta_off = 8.688
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "0dad1c5e5a8283725b900b30be2154ec74646959e32408dff16780c5493ddb24"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 12.375
+e_to_i = 15.753086419753085
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_33"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.5428571428571427
+theta_e = 1.5
+theta_off = 9.888000000000002
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "94fef7c298994c206b3934e7258979b80e097ca73bbf8fc340c581029fa06d7e"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 6.375
+e_to_i = 21.08641975308642
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_34"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.142857142857142
+theta_e = 1.5
+theta_off = 11.088000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "5168f34339c489e13a9ab35809fa1578eec03726020d3db63ee233b170ceec08"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 18.375
+e_to_i = 26.419753086419753
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_35"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.6285714285714286
+theta_e = 1.5
+theta_off = 6.5280000000000005
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "43ad5d77f363041f49b3a40898f5beb8285421a30beba4f54ff7f195e12b637a"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 3.375
+e_to_i = 12.790123456790123
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_36"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.2285714285714286
+theta_e = 1.5
+theta_off = 7.728
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "665e639a9566cdd7aeeee727f53398eb76cf07ff2c9ba9f93543533e8dc8346e"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 15.375
+e_to_i = 18.123456790123456
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_37"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.8285714285714285
+theta_e = 1.5
+theta_off = 8.928
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "c1ca9c971d2f3404a154ae5256cd8eedbaf081ee50bc454fc192cac662be24e8"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 9.375
+e_to_i = 23.45679012345679
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_38"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.4285714285714284
+theta_e = 1.5
+theta_off = 10.128
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "697daa93941566557c340e0b0750a7874c18d4b172bf8729e152bc3adb6ac379"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 21.375
+e_to_i = 14.567901234567902
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_39"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.028571428571429
+theta_e = 1.5
+theta_off = 11.328
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "31a2d4ffc1a62e633c7524ab80a83b2a004297184f8a4458c0f93e5146ee2891"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 3.0
+e_to_i = 19.11111111111111
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_4"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.6
+theta_e = 1.5
+theta_off = 10.8
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "eacea7510098cf0e609f3f0b1012a45d9860f8825b94449c98faa17bf97cefcf"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 1.875
+e_to_i = 19.901234567901234
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_40"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.6285714285714286
+theta_e = 1.5
+theta_off = 6.768
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "21ffd7ba00a6db05613e7df84179d8f227f879770ef35c9fa4bdedd5761026c5"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 13.875
+e_to_i = 25.234567901234566
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_41"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.228571428571429
+theta_e = 1.5
+theta_off = 7.968
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "5da4db6a861195e52161e5ececc8007e1188a110e8370af443934b1bfcc2538e"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 7.875
+e_to_i = 16.345679012345677
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_42"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.7142857142857144
+theta_e = 1.5
+theta_off = 9.168
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "9f6ec3f134c8e7a7e5079ccc28dd98f4d013915d55257d7be52868726d9cec20"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 19.875
+e_to_i = 21.679012345679013
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_43"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.314285714285714
+theta_e = 1.5
+theta_off = 10.368
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "7c1335d595664e4f92be42828945f395c6a03fa6b1e337d9b2fd142817484f69"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 4.875
+e_to_i = 27.012345679012345
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_44"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.9142857142857144
+theta_e = 1.5
+theta_off = 11.568000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "88f1acc93f8c619bd8b75d50948429ea099ec1830c448802fc6201552a8a072b"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 16.875
+e_to_i = 13.382716049382715
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_45"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.5142857142857142
+theta_e = 1.5
+theta_off = 7.008
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "f9412eab8085b6d9acccca7375dc34558cfeda6b24588bc71711b66391f90058"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 10.875
+e_to_i = 18.71604938271605
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_46"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.1142857142857148
+theta_e = 1.5
+theta_off = 8.208
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "4a851e07fe23fdc9e1c7f900dfd1091231d2b79e6ca4e4019f1ed5f4e2a4f6b6"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 22.875
+e_to_i = 24.049382716049383
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_47"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.7142857142857144
+theta_e = 1.5
+theta_off = 9.408000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "644eb9e2ff758e83da8746e97d45a736efe97e624d61a1b1f087dc48244475d1"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 1.125
+e_to_i = 15.160493827160494
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_48"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.314285714285715
+theta_e = 1.5
+theta_off = 10.608
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "9c17ca757b1c8eebc16b52d4d96c86833eb35422437a5a127b4f24750518f0d2"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 13.125
+e_to_i = 20.493827160493826
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_49"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2122448979591837
+theta_e = 1.5
+theta_off = 11.808
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "cc103078f2ad21d3b34687a8b06a3ddf204c35719e53d6fd8172096ce67eb0e4"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 15.0
+e_to_i = 24.444444444444443
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_5"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.1999999999999997
+theta_e = 1.5
+theta_off = 6.24
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "36d4671671460fa02d6b86db5c44ea84c844f5b230a8edc915cfdec842b961d7"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 7.125
+e_to_i = 25.827160493827158
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_50"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.8122448979591836
+theta_e = 1.5
+theta_off = 6.096
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "3dc65ecb0c052c97be0099cfa6ddc3e143f032f7a139f4ce1a717c8ae1e68bba"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 19.125
+e_to_i = 16.938271604938272
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_51"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.4122448979591835
+theta_e = 1.5
+theta_off = 7.296
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "8c1e99c5b8dc891202682ef0db74086d4a813ebde3189f38db1b08c04db37809"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 4.125
+e_to_i = 22.271604938271604
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_52"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.012244897959184
+theta_e = 1.5
+theta_off = 8.496
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "fe0eeca5c51d10ccb098262b55145199e1f296f6dec3ae20f98850418f8b0cfa"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 16.125
+e_to_i = 27.604938271604937
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_53"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.612244897959184
+theta_e = 1.5
+theta_off = 9.696000000000002
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "42c08f5cc5abf1b8dbf74c41c60052f50022dc2e7eb5878dc6c891a30b1ab3c7"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 10.125
+e_to_i = 12.395061728395062
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_54"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.2122448979591836
+theta_e = 1.5
+theta_off = 10.896
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "d0dfee2b0a3c8239639262feef47d0fbfa3a88a7818500c806931bc77c100499"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 22.125
+e_to_i = 17.728395061728396
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_55"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.8122448979591836
+theta_e = 1.5
+theta_off = 6.336
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "7eb8cf288d4df9d36bd9a2586561af9f923ce807d162234fbbd0d086ffbb9656"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 2.625
+e_to_i = 23.061728395061728
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_56"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2979591836734694
+theta_e = 1.5
+theta_off = 7.536
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "4ec2e0b4a9c6fecbbc4c78924bfa3cec53b2c2cd326f04ba4e7c4595cb95aed2"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 14.625
+e_to_i = 14.172839506172838
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_57"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.8979591836734693
+theta_e = 1.5
+theta_off = 8.736
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "cb9b687ab42a351ed20b8f6b23ddbf6d37e41997401e6babc318c941a92ea44f"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 8.625
+e_to_i = 19.50617283950617
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_58"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.4979591836734694
+theta_e = 1.5
+theta_off = 9.936
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "102c47f166704c2fe7b410a67d0545583b3405b34aa062acf4ee74700892b88a"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 20.625
+e_to_i = 24.839506172839506
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_59"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.0979591836734697
+theta_e = 1.5
+theta_off = 11.136000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "127e4efd4b811f0db5bfa3a9336cdec67976ce9db13119c08d8cc399a23d6212"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 9.0
+e_to_i = 15.555555555555555
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_6"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.8000000000000003
+theta_e = 1.5
+theta_off = 7.44
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "1f81efb2aae2af5bea8696a194ab0853653102d7992c3d066066ca62cab2a0e8"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 5.625
+e_to_i = 15.950617283950617
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_60"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.6979591836734698
+theta_e = 1.5
+theta_off = 6.5760000000000005
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "1838aaf10394b85a70b55619f8367f485adef6415fa3c70e20c481e1c6701232"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 17.625
+e_to_i = 21.28395061728395
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_61"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.2979591836734694
+theta_e = 1.5
+theta_off = 7.776
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "a74949d8c1e8a4364d1c7ca1431fca9e96987033799e41ed79dd4f080d786eb6"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 11.625
+e_to_i = 26.617283950617285
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_62"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.8979591836734695
+theta_e = 1.5
+theta_off = 8.976
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "49083432f0dcf8aebe5411532f3514b442489fbf42a7256eb7d5541b32f6ae7d"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 23.625
+e_to_i = 12.987654320987655
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_63"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.38367346938775515
+theta_e = 1.5
+theta_off = 10.176
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "b9487180098a7a3a895736f0d5dc422f25973f57d05cd541106b1f87702dbb16"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 0.1875
+e_to_i = 18.320987654320987
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_64"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.9836734693877549
+theta_e = 1.5
+theta_off = 11.376000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "486de5104d2a65186c94a78b50cba232b41ccf4e8210f4748d1d99a5ea783cdd"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 21.0
+e_to_i = 20.88888888888889
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_7"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2857142857142857
+theta_e = 1.5
+theta_off = 8.64
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "23434a45e72dc11f24a91d25002d89a747aa1d3413c98f468fde9728d0172d7c"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 1.5
+e_to_i = 26.22222222222222
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_8"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.8857142857142857
+theta_e = 1.5
+theta_off = 9.84
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "2a404c0531e4f2dbd12be397bcf7e44a89fc716f625ff2d69cd14db2961d81ee"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 13.5
+e_to_i = 12.592592592592592
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "figure3_joint_9"
+name = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.4857142857142858
+theta_e = 1.5
+theta_off = 11.040000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "dd6e5fec3baab93a531561aef5fb8785199bdc2b32b648199cfda55383ea104d"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 12.0
+e_to_i = 17.333333333333332
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_1"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.8
+theta_e = 1.5
+theta_off = 7.2
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "98c66e306883785835e6baa369e089d2a7e11d1a6126b9b6336707f250566137"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 7.5
+e_to_i = 17.925925925925924
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_10"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.085714285714286
+theta_e = 1.5
+theta_off = 6.48
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "f992b8acdf87ba343ea5161093df1e2e7b037fabf05bd17da2b49a654079ba80"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 19.5
+e_to_i = 23.25925925925926
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_11"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.685714285714286
+theta_e = 1.5
+theta_off = 7.68
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "bbcbe39c767169e91a6b426a292bcc30c2fcbc58d673f8ac22e99826c3999f4e"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 4.5
+e_to_i = 14.37037037037037
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_12"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.2857142857142856
+theta_e = 1.5
+theta_off = 8.88
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "0ccc14b5f57c4c9878904cf63675bd9f7ac3bce2cba9471a34cd381e4bcaf5ba"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 16.5
+e_to_i = 19.703703703703702
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_13"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.885714285714286
+theta_e = 1.5
+theta_off = 10.08
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "8fc5146e5f8115888ce63fd30a872d581ef963291cc6a59f5a7279722a1aa09b"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 10.5
+e_to_i = 25.037037037037035
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_14"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.37142857142857144
+theta_e = 1.5
+theta_off = 11.280000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "1ad04e57e63d7e298c0343854ac8d7bde14dfb1bd9e926b01dd92631da51c900"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 22.5
+e_to_i = 16.14814814814815
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_15"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.9714285714285713
+theta_e = 1.5
+theta_off = 6.72
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "92ea925870d810110e2d4f2924bd7b363293b51c9dffa87d8650048c6d2dba59"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 0.75
+e_to_i = 21.48148148148148
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_16"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.5714285714285714
+theta_e = 1.5
+theta_off = 7.92
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "dfd7f0e10f88ea3eef946a23825b9f92930ce02c6327dbaf4b5aa5fef7d54608"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 12.75
+e_to_i = 26.814814814814813
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_17"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.1714285714285713
+theta_e = 1.5
+theta_off = 9.120000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "7dc0008952f43383cc08a126db54d4577e088eb1e35377d0c368e292d2a0d251"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 6.75
+e_to_i = 13.185185185185185
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_18"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.771428571428572
+theta_e = 1.5
+theta_off = 10.32
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "b72514a7c2e1d957f0da130ffc7a540505e3eae75a1d9f8779b62d7f85f9582c"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 18.75
+e_to_i = 18.51851851851852
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_19"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.3714285714285714
+theta_e = 1.5
+theta_off = 11.52
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "ffc3b210bd5d9551fe08fb797b3d0e7f62e44cef688d15f4a5bcd96f4f064818"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 6.0
+e_to_i = 22.666666666666664
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_2"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.4
+theta_e = 1.5
+theta_off = 8.4
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "70bc1f99988c051351c88fae6e010806b20dc746294c9d3e5d10879a94175bf4"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 3.75
+e_to_i = 23.85185185185185
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_20"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.971428571428572
+theta_e = 1.5
+theta_off = 6.96
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "051714d77335cf4b72f0201fc29671692ddac31ada1139db6b42cf8d70818038"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 15.75
+e_to_i = 14.962962962962962
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_21"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.4571428571428572
+theta_e = 1.5
+theta_off = 8.16
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "eddc198c4788d7fe6f81321f088f0413edb35f5684db082afdd8719142f74d2b"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 9.75
+e_to_i = 20.296296296296298
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_22"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.0571428571428572
+theta_e = 1.5
+theta_off = 9.36
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "179f5f8985bcfd9c1d41d032283f20d3d8ddb5b2d1fc17d3191945f1e3fa5df4"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 21.75
+e_to_i = 25.629629629629626
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_23"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.6571428571428573
+theta_e = 1.5
+theta_off = 10.56
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "82361fc72b35c4339a5a2f2495ecc90b855e6753452a8df74cb74e89424ca0e9"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 2.25
+e_to_i = 16.74074074074074
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_24"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.2571428571428576
+theta_e = 1.5
+theta_off = 11.760000000000002
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "ebfbe78b7ae74648df7849649f3984e8512058223b04f0a82eb764b9e122c71c"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 14.25
+e_to_i = 22.074074074074076
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_25"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.857142857142857
+theta_e = 1.5
+theta_off = 6.048
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "ef64ee46c605f686f6a05c9cae71e5cd4687123a8d8156e5ff6a36948b0d0371"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 8.25
+e_to_i = 27.407407407407405
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_26"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.457142857142857
+theta_e = 1.5
+theta_off = 7.248
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "d9fd117f0d87fcd233420c48309d83366d58daf6ada4848b110cd5fdc2ef39e1"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 20.25
+e_to_i = 12.197530864197532
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_27"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.057142857142857
+theta_e = 1.5
+theta_off = 8.448
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "2eaad91f4d71759111279d26477f9673843f9dfa61bdfe1712926cd9da0174e2"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 5.25
+e_to_i = 17.530864197530864
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_28"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.5428571428571429
+theta_e = 1.5
+theta_off = 9.648
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "6c4159f307355f70f74be52050b746e36442fba2f90c99d45ac869cc931a8daa"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 17.25
+e_to_i = 22.864197530864196
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_29"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.1428571428571428
+theta_e = 1.5
+theta_off = 10.848
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "28e72550c49a60bf4ba33bb8162171d4e6e4d45a7375d0e7b8ff4d92d686b308"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 18.0
+e_to_i = 13.777777777777779
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_3"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.0
+theta_e = 1.5
+theta_off = 9.600000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "11850e72d7f877ff2465e6d72006f5556a04a35902854e340d1c70d24a4f2c67"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 11.25
+e_to_i = 13.975308641975309
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_30"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.7428571428571427
+theta_e = 1.5
+theta_off = 6.288
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "ab294b9af95a9faa231070ee0fb7f8882ae4000905e1a6212daa3bef15b6d01b"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 23.25
+e_to_i = 19.308641975308642
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_31"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.342857142857143
+theta_e = 1.5
+theta_off = 7.488
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "c7320ac1fe34fcd259278598cfea24b89bad33aabee8c72ba7a11ff55050878d"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 0.375
+e_to_i = 24.641975308641975
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_32"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.942857142857143
+theta_e = 1.5
+theta_off = 8.688
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "b3882b23f35534b1cf3f57643268d403295eef4c2212e404bc415cf99420faa9"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 12.375
+e_to_i = 15.753086419753085
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_33"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.5428571428571427
+theta_e = 1.5
+theta_off = 9.888000000000002
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "488109ad44fc894be539a8142cd407c2d7682edb63c5255c243b2009173faaa7"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 6.375
+e_to_i = 21.08641975308642
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_34"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.142857142857142
+theta_e = 1.5
+theta_off = 11.088000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "03c6ce477774b4fa5801419d0e7a05de2b93c83df6d6efc890e651feb2ef38a0"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 18.375
+e_to_i = 26.419753086419753
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_35"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.6285714285714286
+theta_e = 1.5
+theta_off = 6.5280000000000005
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "f5cb888594c698bec9db3be77fc5ff415e0de6dddda84b06a0b6d1a36977397a"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 3.375
+e_to_i = 12.790123456790123
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_36"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.2285714285714286
+theta_e = 1.5
+theta_off = 7.728
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "dff5bb63f640123019f1d2dd0218ef1fe7754d8796a1ecb6c9b02715b3104933"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 15.375
+e_to_i = 18.123456790123456
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_37"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.8285714285714285
+theta_e = 1.5
+theta_off = 8.928
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "8a5113a1a41828ed7ba7b28c2b43387b7eb3255a5a4a57a0358c7f52c3dd254a"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 9.375
+e_to_i = 23.45679012345679
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_38"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.4285714285714284
+theta_e = 1.5
+theta_off = 10.128
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "fbd31a29268835d29219ec66e98e15319a4bfa46f4221450db2b7ca41c361f69"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 21.375
+e_to_i = 14.567901234567902
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_39"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.028571428571429
+theta_e = 1.5
+theta_off = 11.328
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "07c3693fc76f8cbacb833fea9bb000736c003d2b3984c774173b90cf6c8d8c3e"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 3.0
+e_to_i = 19.11111111111111
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_4"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.6
+theta_e = 1.5
+theta_off = 10.8
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "31cad1ad19a04136a51c3886da8ecf15cb1a8421eb8f304bade4142b27b7c40d"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 1.875
+e_to_i = 19.901234567901234
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_40"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.6285714285714286
+theta_e = 1.5
+theta_off = 6.768
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "89507cb06a113e1dbfc6a4a890c36de08dfe5a395286a3e3ccadfc38c09abf9c"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 13.875
+e_to_i = 25.234567901234566
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_41"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.228571428571429
+theta_e = 1.5
+theta_off = 7.968
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "a4fef0ae20e505d18743a4fd08bbc678fbe92bbd21f7022bdda5bea2c4e4a955"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 7.875
+e_to_i = 16.345679012345677
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_42"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.7142857142857144
+theta_e = 1.5
+theta_off = 9.168
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "bf1d6e0610190dc96e2a88bcfc335851c3273383a02e6dd00ba867273563b23a"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 19.875
+e_to_i = 21.679012345679013
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_43"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.314285714285714
+theta_e = 1.5
+theta_off = 10.368
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "a0a50dd72aa0739f5f7c8b51534479d9bce6452db43d1b48343639af77f5dc5c"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 4.875
+e_to_i = 27.012345679012345
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_44"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.9142857142857144
+theta_e = 1.5
+theta_off = 11.568000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "5de0519877f841fbc55bce0084f2f2597d19af83b2db81e7d64c35d13a5a4cd2"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 16.875
+e_to_i = 13.382716049382715
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_45"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.5142857142857142
+theta_e = 1.5
+theta_off = 7.008
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "1dd749c18367cab240e8a814be26e08a69e5b368a8bf978d654cb23734359d16"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 10.875
+e_to_i = 18.71604938271605
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_46"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.1142857142857148
+theta_e = 1.5
+theta_off = 8.208
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "d0496a0e41cc16a4dc6502a846f4ce3e0c27b810b21e2feafe133bc8c2d4480c"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 22.875
+e_to_i = 24.049382716049383
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_47"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.7142857142857144
+theta_e = 1.5
+theta_off = 9.408000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "bb3ec8ad14df2bf9248cfa62dc3c1196486f230139e937b6dae6e921790e7e2e"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 1.125
+e_to_i = 15.160493827160494
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_48"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.314285714285715
+theta_e = 1.5
+theta_off = 10.608
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "af721b6a65bc047aca971527f13ab6aed4c063df2f554c705e0c69e0d12026fb"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 13.125
+e_to_i = 20.493827160493826
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_49"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2122448979591837
+theta_e = 1.5
+theta_off = 11.808
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "70400c6ec69a86c148cfb3adf1a681be093189752cc087afc4c6767977c8f052"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 15.0
+e_to_i = 24.444444444444443
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_5"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.1999999999999997
+theta_e = 1.5
+theta_off = 6.24
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "f6f7f82764e0769c786def540183a7bdfb9d918a328083ccb3f4499ee6475b93"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 7.125
+e_to_i = 25.827160493827158
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_50"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.8122448979591836
+theta_e = 1.5
+theta_off = 6.096
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "f4e4914ed765d52b8c38a492de6203737e1a8724bae7b78d90797061fe3313ac"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 19.125
+e_to_i = 16.938271604938272
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_51"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.4122448979591835
+theta_e = 1.5
+theta_off = 7.296
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "e0fc9a45d0015f53f143966c1b84bfb88c1060b12dfe6570d0e984616727e7ba"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 4.125
+e_to_i = 22.271604938271604
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_52"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.012244897959184
+theta_e = 1.5
+theta_off = 8.496
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "2ab81a8a22456b9da12ffda5b046ca10f49d5fa21491fcb02e1d9f3a462d877b"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 16.125
+e_to_i = 27.604938271604937
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_53"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.612244897959184
+theta_e = 1.5
+theta_off = 9.696000000000002
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "212c28cf39b7f3da81dc6bc5fe686dd731f8bd27fa3f0016621c8c7de4e35be3"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 10.125
+e_to_i = 12.395061728395062
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_54"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.2122448979591836
+theta_e = 1.5
+theta_off = 10.896
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "f92eb6aac75ecbc6f930d89f5a84a5b3b8ffbc71a352a030079b9cf01bcb6dda"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 22.125
+e_to_i = 17.728395061728396
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_55"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.8122448979591836
+theta_e = 1.5
+theta_off = 6.336
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "971ca20576cc7b71ee77ad698137c054b64dff5948f9b03bab5aa7126a3c1450"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 2.625
+e_to_i = 23.061728395061728
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_56"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2979591836734694
+theta_e = 1.5
+theta_off = 7.536
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "836c3f1428cb24c94d0b55d2c85d4176dab2f74bc2bdcad4e2c9c3ff17dee711"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 14.625
+e_to_i = 14.172839506172838
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_57"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.8979591836734693
+theta_e = 1.5
+theta_off = 8.736
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "be1ddb1a71eac5562a2f059ca24288348f72774f941b3a34830e63c8313ad45d"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 8.625
+e_to_i = 19.50617283950617
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_58"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.4979591836734694
+theta_e = 1.5
+theta_off = 9.936
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "8e58d3ceaa8afa0071f4d1b50030b13a582edc0c1325e51b74b6a4831ae2dde0"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 20.625
+e_to_i = 24.839506172839506
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_59"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.0979591836734697
+theta_e = 1.5
+theta_off = 11.136000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "0c112ea31c52bd02a06e05d38148b5afee1c202eaa04f119b014e64e5f6f62bc"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 9.0
+e_to_i = 15.555555555555555
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_6"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.8000000000000003
+theta_e = 1.5
+theta_off = 7.44
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "92570a55933cea3ff55a7765923bbd648c30dbd4df5444a15a8a34c93a52c783"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 5.625
+e_to_i = 15.950617283950617
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_60"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 2.6979591836734698
+theta_e = 1.5
+theta_off = 6.5760000000000005
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "a4db6adf0bad381f740fa44837f3f089d30a28521fb22e019453517caa84b7c4"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 17.625
+e_to_i = 21.28395061728395
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_61"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.2979591836734694
+theta_e = 1.5
+theta_off = 7.776
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "665983723fd8d3f896de2f3dd5155d9703a5d4c291d8db3495bc17fe97a2f4bd"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 11.625
+e_to_i = 26.617283950617285
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_62"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 3.8979591836734695
+theta_e = 1.5
+theta_off = 8.976
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "5d51ff4e32ff8a2ecdf2c901df92d6810bb3a672092a54734705da17f59336ca"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 23.625
+e_to_i = 12.987654320987655
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_63"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.38367346938775515
+theta_e = 1.5
+theta_off = 10.176
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "9c88b0f27ca3cb8d3d70797a892eeaa40fe7b05d49178287a9964ef7046d4d56"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 0.1875
+e_to_i = 18.320987654320987
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_64"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.9836734693877549
+theta_e = 1.5
+theta_off = 11.376000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "d4563537f680e14b756d062945d46b6538768a8055fdf2f236d437fe6d9ccc10"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 21.0
+e_to_i = 20.88888888888889
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_7"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2857142857142857
+theta_e = 1.5
+theta_off = 8.64
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "f40e36e87fd9ace56565633adfe0b92e618121643bc5795f0ffdee609c7b0a48"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 1.5
+e_to_i = 26.22222222222222
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_8"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.8857142857142857
+theta_e = 1.5
+theta_off = 9.84
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "179e4c7ba6eec4a2baa48577d21c5010f65bbb8970ae6cede227ca556180b86a"
+baselines = [[0.0, 0.0], [0.35, 0.0], [1.0, 1.0]]
+e_to_e = 13.5
+e_to_i = 12.592592592592592
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "figure4_joint_9"
+name = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 1.4857142857142858
+theta_e = 1.5
+theta_off = 11.040000000000001
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "c9f3b4e2941a6e3ad02aba0a681979d673550fe82b93d653bb22ee9a291ca4c0"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 16.75
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_e_to_e_16.75"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "c4054c21da1eaa2833252ba9bc2221916a967a7b171d94240964b90a35e76552"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 16.875
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_e_to_e_16.75_midpoint"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "35b7b275ddc063f738c0195ed5a1a4890a622792384dfc992e5728bdfa225220"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 17.25
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_e_to_e_17.25"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "4623f9de64c66d0c6ffd5fa54298ecdadfac81bde9f2f216d2024372f996a627"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 17.125
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_e_to_e_17.25_midpoint"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "371f13b8b910000e7939dc5931b3b42f61ab7688ac63612dd9278358431e69c2"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 18.5
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_e_to_i_18.5"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "608964ebc94a6e35f74cdc577dee2e5b754a7f006c69c18057d37c03fc9a8dae"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 18.75
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_e_to_i_18.5_midpoint"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "d52003b4398047cc21886bc9ae6bab534b1553192aadb0170f5d3448c767bfd6"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 19.5
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_e_to_i_19.5"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "51eea615c6d4d4859e409a410b3e9ef94a321883461958a24dc14f69475989f7"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 19.25
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_e_to_i_19.5_midpoint"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "0b6cea453da8f791e0cae513a7961140594c9e9047cd504d4d6cae52378f8f56"
+baselines = [[0.0, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_tau_ratio_0.4"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "aa7be869e33515775798cbc577bdc114d3c25c415716301062eb0888645661c1"
+baselines = [[0.0, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_tau_ratio_0.4_midpoint"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.30000000000000004
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "104958ad203f7ea3806d1576c2453dc12545f418e2a2973dae0e5e6756072183"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_theta_off_7.75"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 7.75
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "457549088202da2f6048d6392f09282d1a092eb3234d8ebba3bc08856f49f987"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_theta_off_7.75_midpoint"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 7.875
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "5254141cea98c7c9e3e64811b93f0e743f8f852e582a78d27025f0b2c627dd2c"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_theta_off_8.25"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.25
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "ef741b0afe3e5443462455314c3b40a40b05eef738090cbeda6292d9d8ca14b5"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 couplings with faster inhibitory timescale"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "four_sinks_central_theta_off_8.25_midpoint"
+name = "four_sinks_central"
+parent = "four_sinks_central"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 0.2
+theta_e = 1.5
+theta_off = 8.125
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "aa7f97fd68d1857826130615257888d428ca1256548ca9eb38fd12db7b68f90a"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 3.75
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_e_to_e_3.75"
+name = "three_sinks_descending"
+parent = "input_dependent"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "de9937f9d6c948b646e05cafdb0311207feedecf37efc843e156b075a3378092"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 3.875
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_e_to_e_3.75_midpoint"
+name = "three_sinks_descending"
+parent = "input_dependent"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "c98d3a474ea58b648f464b71efa95bb5521454720b79f4b604c580da15eb228d"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 4.25
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_e_to_e_4.25"
+name = "three_sinks_descending"
+parent = "input_dependent"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "d12b45fbfb29a941c1ff623762c18cc145c6063839acb356483ef86d9facda08"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 4.125
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_e_to_e_4.25_midpoint"
+name = "three_sinks_descending"
+parent = "input_dependent"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "780fd2f6e39e3b9d751a66e081c858332a05bd42e4a8a5bdc73afc0bc4bba60d"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 4.0
+e_to_i = 18.5
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_e_to_i_18.5"
+name = "three_sinks_descending"
+parent = "input_dependent"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "75ea7d5b926981d36f460de23fc86e25b85a12f79e2e7dde0bb82e819076ec72"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 4.0
+e_to_i = 18.75
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_e_to_i_18.5_midpoint"
+name = "three_sinks_descending"
+parent = "input_dependent"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "a58b8fdb6170e52b2a84228d4c8fd7295a91d0cba81c633507ba9cfee6a4200f"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 4.0
+e_to_i = 19.5
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_e_to_i_19.5"
+name = "three_sinks_descending"
+parent = "input_dependent"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "590898f2dce488011a46814c6a909896dee3627f0561e9c87aebd368563cf86d"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 4.0
+e_to_i = 19.25
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_e_to_i_19.5_midpoint"
+name = "three_sinks_descending"
+parent = "input_dependent"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "f999931e450200109a2573ced128f3334c05953db7dc20bffecbc43898fb981b"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 4.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_tau_ratio_4.2"
+name = "three_sinks_descending"
+parent = "input_dependent"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "ed16a2086d17a0398a60fc81eeb359b39aca714420d6668c46340ed7ac9c51b2"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 4.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_tau_ratio_4.2_midpoint"
+name = "three_sinks_descending"
+parent = "input_dependent"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.300000000000001
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "9556bf727976e99a415c2f9f919f5c5854fb6642e1f5fa199a8bd7d63950a0be"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 4.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_theta_off_7.75"
+name = "three_sinks_descending"
+parent = "input_dependent"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 7.75
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "f1af89345b31af2c6abb7d97e581f607342776699252ea6c9af42a5d0c55b783"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 4.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_theta_off_7.75_midpoint"
+name = "three_sinks_descending"
+parent = "input_dependent"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 7.875
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "96a0f0a934c2791a5d99bf92c23ae3b99dfd91a6c478a05c3de4cb87c7bf29b9"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 4.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_theta_off_8.25"
+name = "three_sinks_descending"
+parent = "input_dependent"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.25
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "b48b052839ffe5ace399e5066a2060ffbaa1bfe0e538e54df17bcd19d8501087"
+baselines = [[8.0, 0.0], [0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 4.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "input_dependent_theta_off_8.25_midpoint"
+name = "three_sinks_descending"
+parent = "input_dependent"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.125
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "7cb40837ac0fadfc0bc10bfd43757ff92d996b5a345bfcb97dbb23dfcf2ca3c5"
+baselines = [[0.015625, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 18.75
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative_e_to_e_18.75"
+parent = "narrative"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "bd4e4269e3da1b09bd5dd25f815b5d91b84033202ece0a7cf819d4c00c1f81ed"
+baselines = [[0.015625, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 19.25
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative_e_to_e_19.25"
+parent = "narrative"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "32c14d485d38ba32b916ae52708152c47790291c55dc73c64ef62ce7c6a4bc21"
+baselines = [[0.015625, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 19.0
+e_to_i = 18.5
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative_e_to_i_18.5"
+parent = "narrative"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "033e80c137c714ac5be1a0093ad38089c233030ce2872a2c3002c6480a71b5b5"
+baselines = [[0.015625, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 19.0
+e_to_i = 18.75
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative_e_to_i_18.5_midpoint"
+parent = "narrative"
+refined = true
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "631f944289d23ebd14477d6671ad6583d3320c1c33323ef82a6e5b0e06507415"
+baselines = [[0.015625, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 19.0
+e_to_i = 19.5
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative_e_to_i_19.5"
+parent = "narrative"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "3bedc4b2150b017deb5d5ebf2d6ffa412b156149b6dfde02cc5a950ff61bc6f1"
+baselines = [[0.015625, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 19.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative_tau_ratio_0.4"
+parent = "narrative"
+tau_ratio = 0.4
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "e0b2e6e0b1a2a62f1d3e3756e236f6d2f93b933650fa4952b286ad7f00b38390"
+baselines = [[0.015625, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 19.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative_tau_ratio_0.4_midpoint"
+parent = "narrative"
+refined = true
+tau_ratio = 0.30000000000000004
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "f884705d65e2e5c242126743e4f98fe50376e4e8e68b70a5491f8be1e963993b"
+baselines = [[0.015625, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 19.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative_theta_off_7.75"
+parent = "narrative"
+tau_ratio = 0.2
+theta_off = 7.75
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "94f1481dc20a1d65fd26fc5450b23d16cda174ec514db6999077c669af7ebb90"
+baselines = [[0.015625, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 19.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative_theta_off_8.25"
+parent = "narrative"
+tau_ratio = 0.2
+theta_off = 8.25
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "6c4d5fca9a2b1723800bb7efbbd357783ad329816724b86c68d86c67a7806ebc"
+baselines = [[0.015625, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 19.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "narrative_theta_off_8.25_midpoint"
+parent = "narrative"
+refined = true
+tau_ratio = 0.2
+theta_off = 8.125
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "c921b73c9da09dfc73e83d5445d6c35ab416b23ac39284474d98eca119ad62e5"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 16.75
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_e_to_e_16.75"
+parent = "selective_withdrawal"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "1bea24b8c84757a2a1143fc4d4cda49b8c9208d533a99dfcca5597655c43b793"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 16.875
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_e_to_e_16.75_midpoint"
+parent = "selective_withdrawal"
+refined = true
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "247a320305de2b2cf92200009d2b724269a8aaf3440e32a6914b269c9369c02e"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 17.25
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_e_to_e_17.25"
+parent = "selective_withdrawal"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "6403bf37ae4b2a17af1e9b2f7c2fd2cbf2765c70291e14b5e52ee3b7acd45340"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 18.5
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_e_to_i_18.5"
+parent = "selective_withdrawal"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "e1d9815257b942d4c8163090f0d6d1f4061673099e82051fdbb6c912c03da146"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 18.75
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_e_to_i_18.5_midpoint"
+parent = "selective_withdrawal"
+refined = true
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "18de617b93060bce49b8c089f5a81e7dd873badf6d12c2a4fbc151db9570b731"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 19.5
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_e_to_i_19.5"
+parent = "selective_withdrawal"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "5b7d8ea60c29a561a321384d6fe1a55b6fa2425df35555b625ba13f8d1dbe919"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 19.25
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_e_to_i_19.5_midpoint"
+parent = "selective_withdrawal"
+refined = true
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "ec61aba7a557b7f57b080c61deee44fd36b26cbd26f71388c174b24dfa420fd3"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_tau_ratio_0.4"
+parent = "selective_withdrawal"
+tau_ratio = 0.4
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "cab5ce9135af017bcb289b70b4a1037f00e6a70b4558fb218b3316fbf00a6d65"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_tau_ratio_0.4_midpoint"
+parent = "selective_withdrawal"
+refined = true
+tau_ratio = 0.30000000000000004
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "08612678f89702a2231be8846d82783b9c0373080b69f6c344a32af139619915"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_theta_off_7.75"
+parent = "selective_withdrawal"
+tau_ratio = 0.2
+theta_off = 7.75
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "ef2f467f41218a9b2015571923181b9d448be28809222c29661b395874fc1e60"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_theta_off_7.75_midpoint"
+parent = "selective_withdrawal"
+refined = true
+tau_ratio = 0.2
+theta_off = 7.875
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "8edd17e70d79b3b181e4aaf1cb59aef6d86256f872d19e0d88b1fb0c397b7a48"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_theta_off_8.25"
+parent = "selective_withdrawal"
+tau_ratio = 0.2
+theta_off = 8.25
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "1704617534d64ce446233699e725b448be292f56269dffa617ef1f212ea10daa"
+baselines = [[0.35, 0.0], [0.1, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "selective_withdrawal_theta_off_8.25_midpoint"
+parent = "selective_withdrawal"
+refined = true
+tau_ratio = 0.2
+theta_off = 8.125
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "6c81c84ffb7af8e9b32f3396322951a23055f28558b7aaa8e1e4ba6fed6c60df"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 18.75
+e_to_i = 14.0
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_e_to_e_18.75"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "a3c3369a21d2b8be5a60fbfd508dd1ca60ccf36377cf5aeec2237282882b90bb"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 18.875
+e_to_i = 14.0
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_e_to_e_18.75_midpoint"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "4584a3909a7c1a18425cf85a3ce34717b6ad94b53921770e381e60ec9542c159"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 19.25
+e_to_i = 14.0
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_e_to_e_19.25"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "116fb8f4906a87c39669743af4151d41ac50c1484a9f8ea70b71ba1cc6c97209"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 19.125
+e_to_i = 14.0
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_e_to_e_19.25_midpoint"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "96ee2e69a88cacc6e71ba723e68e1e1a2a693fad5767deba5c85d323fdb9077f"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 19.0
+e_to_i = 13.5
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_e_to_i_13.5"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "b6b70a6f30a8b7bdb901979904f1c3af38e34248ffb3a835e98eb3d29a58da9c"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 19.0
+e_to_i = 13.75
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_e_to_i_13.5_midpoint"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "c5238dd13a750a5db007036ddfe9dd8ec9142cca9aba9365f0de68a606b92016"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 19.0
+e_to_i = 14.5
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_e_to_i_14.5"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "444a1adaa876a36c690d507326a0aceda59e329059352986f6e1bce805258ee6"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 19.0
+e_to_i = 14.25
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_e_to_i_14.5_midpoint"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "75787d8260367b8a810a75d999ea74fc364802c7491baeabb7135f4a80961ae7"
+baselines = [[0.0, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 19.0
+e_to_i = 14.0
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_tau_ratio_4.2"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.2
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "7bac99a41b87a98cf0b51acf0150e0234fae965f9db99e4b6d76ad0e1294a9eb"
+baselines = [[0.0, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 19.0
+e_to_i = 14.0
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_tau_ratio_4.2_midpoint"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.300000000000001
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "f25f4fc9675d00d33b71dc448686c2daaa43f6885f2670390321602f66d68ea1"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 19.0
+e_to_i = 14.0
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_theta_off_6.25"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.25
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "02eb94cf62826e35aef0eabcde26ad83379c56e2b28b7f47f7b1dc645affd92f"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 19.0
+e_to_i = 14.0
+family = "figure4"
+historical_reference = "Figure 4 rising-branch exploration cell"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "three_sinks_ascending_theta_off_6.25_midpoint"
+name = "three_sinks_ascending"
+parent = "three_sinks_ascending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.125
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "542275b37c0193b433b601de66cfbfd45d122a750d9568f9e7698cce39018458"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 16.75
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_e_to_e_16.75"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "a56de2e676dee5a63613f6a00b8819762ec2769993d902bf0f7a82af3169c7bb"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 16.875
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_e_to_e_16.75_midpoint"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "e4533a76535670e353b92c265748a7f916cdeb9fb2e30e9d856f5876826df1de"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 17.25
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_e_to_e_17.25"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "7385f4b5a017e324a53612225fae0239b105d2b84c043fbcd31781cc0d7bf88a"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 17.125
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_e_to_e_17.25_midpoint"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "80d69f50c61bba5ffa345805d5eb41ff5f8a67a30f25f257d9c7568140dc5157"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 18.5
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_e_to_i_18.5"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "7219a3eb142fec8151222fd606a5ccc90c1fed8da63e7dd0bef48d7b6a683e12"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 18.75
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_e_to_i_18.5_midpoint"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "8be7b0fa4c7e0573377478a6510e4a85b951a4b5bfc2074a09e80433458e1db0"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 19.5
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_e_to_i_19.5"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "19f31a178ddc1e294c16280395d1e5ee4bf85768ce68f05ebc234dc676541161"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 19.25
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_e_to_i_19.5_midpoint"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "68331031d5ab07ba3b9ef36273a1ecc81a44095c9adee8cd957c0e46d5a6f2e4"
+baselines = [[0.0, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_tau_ratio_4.2"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.2
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "649aaf0f7bf2dbce5dbe994dbc4285802e64efcccb99e1b7947b64950812c92c"
+baselines = [[0.0, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_tau_ratio_4.2_midpoint"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.300000000000001
+theta_e = 1.5
+theta_off = 8.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "28410bb4f34ef0bb75a9e97fe6648566735e9e3906527e1ecd5732b441d5154c"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_theta_off_7.75"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 7.75
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "245cb41345ac16718e46f52830c0c0d963dc63720d60ca88b84c99c0ce99abe1"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_theta_off_7.75_midpoint"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 7.875
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "34688933e0cab9d00d69a590d3b3f5bd8892783041f5ffead0b59b8850134291"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_theta_off_8.25"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.25
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "7fcbd5263aacdd7f908eaf7216e35b940dc48454f193cd71744974bb12698ed3"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 19.0
+family = "figure3"
+historical_reference = "Figure 3 anchor"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "three_sinks_descending_theta_off_8.25_midpoint"
+name = "three_sinks_descending"
+parent = "three_sinks_descending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 8.125
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "696a2f4a5f82131f3bf912af089df262863a95e23e2d6fff85399a28d93c4df1"
+baselines = [[0.5, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 15.75
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "threshold_to_active_e_to_e_15.75"
+parent = "threshold_to_active"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "dce7bbbfec079d80199fe3c78f27db152fd0e188ceb64ae41ba2aef403ad97ba"
+baselines = [[0.5, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 16.25
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "threshold_to_active_e_to_e_16.25"
+parent = "threshold_to_active"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "5bbef6fe2142967881df1ad9a7a37304887aae1a4dd67f0cd808dfc3982b3489"
+baselines = [[0.5, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 16.0
+e_to_i = 18.5
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "threshold_to_active_e_to_i_18.5"
+parent = "threshold_to_active"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "43e2f42ee440888c9567613dcae252a76bff5978399fa118cdb0119c486474d0"
+baselines = [[0.5, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 16.0
+e_to_i = 19.5
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "threshold_to_active_e_to_i_19.5"
+parent = "threshold_to_active"
+tau_ratio = 0.2
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "cf97008f057861030aed265d138c673096f7ab3c8ebcfc5c0d1c6bf5f4ab9eb3"
+baselines = [[0.5, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 16.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "threshold_to_active_tau_ratio_0.4"
+parent = "threshold_to_active"
+tau_ratio = 0.4
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "b893d73ea7b4be0aa30e4304e8e48d791cb249195a97da90ae1db0a5adf2dafe"
+baselines = [[0.5, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 16.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "threshold_to_active_tau_ratio_0.4_midpoint"
+parent = "threshold_to_active"
+refined = true
+tau_ratio = 0.30000000000000004
+theta_off = 8.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "2b44e97eb2df2aa0735b9532028128fccd2b80a5fb0290dd59e305612bda2565"
+baselines = [[0.5, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 16.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "threshold_to_active_theta_off_7.75"
+parent = "threshold_to_active"
+tau_ratio = 0.2
+theta_off = 7.75
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "be9d5814b415344702a8d8d1f5a4778c12b6e6c3d3ace7c46af111b8bf431f32"
+baselines = [[0.5, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 16.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "threshold_to_active_theta_off_7.75_midpoint"
+parent = "threshold_to_active"
+refined = true
+tau_ratio = 0.2
+theta_off = 7.875
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "433c77ff3f6d405e644d9c0861fe2126e6674ff496d08bb383aa909c41a7986c"
+baselines = [[0.5, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 16.0
+e_to_i = 19.0
+family = "figure4"
+i_to_e = 13.0
+i_to_i = 6.0
+id = "threshold_to_active_theta_off_8.25"
+parent = "threshold_to_active"
+tau_ratio = 0.2
+theta_off = 8.25
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "7f03960fb0fb058d037fd5a7590051af631dfb24d7f119f89de8d7252721d205"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 16.75
+e_to_i = 12.0
+family = "figure3"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "two_sinks_ascending_e_to_e_16.75"
+name = "two_sinks_ascending"
+parent = "two_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "036e6d51183f0c46ba3a47f4294b6921fb4e2033c0cc76a0b114e8d07d0bb497"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 16.875
+e_to_i = 12.0
+family = "figure3"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "two_sinks_ascending_e_to_e_16.75_midpoint"
+name = "two_sinks_ascending"
+parent = "two_sinks_ascending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "16814c2c526814c4824439958a5014d20c0b520df84a5cda1e1ef5725d70a9f0"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 17.25
+e_to_i = 12.0
+family = "figure3"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "two_sinks_ascending_e_to_e_17.25"
+name = "two_sinks_ascending"
+parent = "two_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "69515e32d78aeed3e62d74ed9b1645c9f033b01993848510a523351e3c449549"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_e"
+e_to_e = 17.125
+e_to_i = 12.0
+family = "figure3"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "two_sinks_ascending_e_to_e_17.25_midpoint"
+name = "two_sinks_ascending"
+parent = "two_sinks_ascending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "609260b81833e75527f77647ecb7421a60a805d13fc71db9064f1df7543a901a"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 12.5
+family = "figure3"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "two_sinks_ascending_e_to_i_12.5"
+name = "two_sinks_ascending"
+parent = "two_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "b95bddd39dd78d5cfd89b917e81110a754858322acf01711c54a6cb8df04b702"
+baselines = [[0.0, 0.0]]
+changed_axis = "e_to_i"
+e_to_e = 17.0
+e_to_i = 12.25
+family = "figure3"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "two_sinks_ascending_e_to_i_12.5_midpoint"
+name = "two_sinks_ascending"
+parent = "two_sinks_ascending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "e28f353e5f0c0d09e8b1e555864f96b4e1085af566fc05c8f2df37e28b32434f"
+baselines = [[0.0, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 17.0
+e_to_i = 12.0
+family = "figure3"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "two_sinks_ascending_tau_ratio_4.2"
+name = "two_sinks_ascending"
+parent = "two_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.2
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "d7448d147dda288a42deb4efc99559470a4a35391aaae563c42227ac40810867"
+baselines = [[0.0, 0.0]]
+changed_axis = "tau_ratio"
+e_to_e = 17.0
+e_to_i = 12.0
+family = "figure3"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "two_sinks_ascending_tau_ratio_4.2_midpoint"
+name = "two_sinks_ascending"
+parent = "two_sinks_ascending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.300000000000001
+theta_e = 1.5
+theta_off = 6.0
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "cdba0f6785570cde7ea3ccd1fdef0ec781a1d84c816042e2faa9ea45650c42be"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 12.0
+family = "figure3"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "two_sinks_ascending_theta_off_6.25"
+name = "two_sinks_ascending"
+parent = "two_sinks_ascending"
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.25
+theta_on = 4.0
+
+[[cases]]
+category = "expansion"
+parameter_record_sha256 = "16ec07f0211a658972d227235d0cb7a8f19d52fc517bbad4f25c5dd0e9a7446e"
+baselines = [[0.0, 0.0]]
+changed_axis = "theta_off"
+e_to_e = 17.0
+e_to_i = 12.0
+family = "figure3"
+historical_reference = "Figure 3 coupling plane, lower e_to_i and failure threshold"
+i_to_e = 9.0
+i_to_i = 4.0
+id = "two_sinks_ascending_theta_off_6.25_midpoint"
+name = "two_sinks_ascending"
+parent = "two_sinks_ascending"
+refined = true
+slope_e = 5.0
+slope_i = 5.0
+tau_e = 7.8
+tau_ratio = 4.4
+theta_e = 1.5
+theta_off = 6.125
+theta_on = 4.0

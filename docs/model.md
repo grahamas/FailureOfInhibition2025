@@ -395,7 +395,7 @@ caller's explicit model context.
 ## Synthetic experiment records
 
 `experiments/minimal.toml` defines a synthetic matched-model workflow check.
-It uses the README example's population parameters, coupling, initial state,
+It uses one declared set of population parameters, coupling, initial state,
 and pulses, plus an otherwise identical zero-drive baseline. The control and
 failure-of-inhibition conditions differ only in the inhibitory failure term.
 
@@ -463,90 +463,6 @@ are adjacent-point screening brackets, not located or certified
 bifurcations. Branch switching and nondegeneracy verification are not
 performed automatically.
 
-## Finite tetrastability search
-
-`scripts/run_tetrastability_search.jl` executes the protocol in
-`experiments/tetrastability.toml`. It searches for at least four distinct
-discovered locally attracting equilibria in one autonomous failure-of-
-inhibition model. The matched monotone control is evaluated and retained at
-every parameter cell, but it is not required to have fewer attractors.
-
-The protocol fixes zero drive, `tau_E = 7.8` ms, `tau_I/tau_E = 4.4`, response
-slopes `a_E = a_I = 5`, `theta_E = 1.5`, and `theta_on = 4`. It first repeats
-the supplied Figure 3 and Figure 4 exploration planes over
-`e_to_i = 12:0.5:28` and `theta_off = 6:0.25:12`. It then evaluates an
-unscrambled, one-indexed Halton sequence over `(e_to_e, i_to_e, e_to_i,
-i_to_i, theta_off)` with bases `(2,3,5,7,11)` and bounds `[14,24]`, `[6,18]`,
-`[12,28]`, `[0,10]`, and `[6,12]`. Indices 1--1024 form the initial batch. If
-the planes and initial batch contain no screen-positive FoI cell, indices
-1025--4096 are evaluated as one extension batch.
-
-Discovery uses the union of the default 5-by-5 equilibrium seeds and an
-11-by-11 grid over the same sharper rectangle. A screen-positive cell has at
-least four discovered FoI equilibria classified locally attracting. Only that
-FoI attracting count contributes to the threshold; total roots,
-matched-control counts, and unresolved stability do not, and a failed FoI
-search cannot qualify. Each screen-positive cell is rerun for both conditions
-with 21-by-21 and 41-by-41 grids and tenfold tighter solver, residual,
-near-singularity, and spectral tolerances. The matched-control confirmation
-searches must complete. FoI confirmation requires at least four one-to-one
-coordinate tracks within `1e-6`, pairwise separation greater than
-`100 * dedup_atol = 1e-5` at all three grid densities, recomputed residuals and
-Jacobians within the declared tolerances, spectral abscissa at most `-1e-8`,
-and no near-singular or unresolved-nearby flags. The recomputation uses the
-same package balance and Jacobian kernels, so it can reveal inconsistent
-artifacts but not a shared formula defect.
-
-Every confirmed FoI root is continued separately along each of the four
-couplings and `theta_off`, with the other parameters frozen at the candidate
-cell. Continuation starts at step `0.01`, permits steps from `1e-5` through
-`0.03`, and retains both directions, partial branches, corrector failures, and
-fold or Hopf screening brackets. The search streams every declared cell,
-matched-condition result, nonlinear attempt, equilibrium, failure,
-confirmation match, and continuation record, and archives its configuration,
-source snapshot, environment, and checksums. A completed run with no execution
-failures and no sampled cell meeting the confirmation rule is a successful
-finite negative result. Partial artifacts are diagnostic only and are not
-resumable; an interrupted run must restart in a new empty output directory.
-Neither discovery nor confirmation certifies completeness, an exact attractor
-count, general prevalence, biological states, or a publication claim.
-
-## Low-ratio equilibrium coexistence
-
-`scripts/run_low_ratio_coexistence.jl` uses the two declared manuscript anchor
-planes and their `e_to_i`/`theta_off` grids from `experiments/tetrastability.toml`.
-`experiments/low_ratio_coexistence.toml` fixes the time-constant ratio interval
-`r = tau_I/tau_E` to `[0.2, 4.4]`, with `tau_E = 7.8 ms`. Run a two-anchor smoke
-check with `--smoke --output output/low_ratio_smoke` or the full finite planes
-with `--output output/low_ratio_coexistence`.
-
-For a fixed equilibrium, let `Dg = [a b; c d]` be the balance Jacobian. Changing
-positive time constants leaves its coordinates and `Dg` unchanged. The ODE
-Jacobian has trace `(a + d/r)/tau_E` and determinant `(a*d-b*c)/(tau_E^2*r)`.
-Thus a resolved root is locally attracting where its determinant is positive
-and its trace is negative. When `a > 0` and `d < 0`, the central root can be
-attracting only for `r < -d/a`; the threshold itself is a linear trace-zero
-candidate, not a certified Hopf bifurcation. The runner computes the stability
-interval for every discovered root and screens open ratio segments for at least
-four attracting roots, rather than searching equilibria again at each ratio.
-
-Each screen-positive cell is independently searched with 11-by-11, 21-by-21,
-and 41-by-41 deterministic seed grids. Confirmation requires four distinct,
-uniquely coordinate-matched roots with recomputed balance residuals and
-Jacobians, resolved negative original-time spectral margins, adequate root
-separation, and no unresolved-nearby groups. All search attempts, failed
-contexts, root observations, interval witnesses, configuration, source snapshot,
-and checksums are retained. `cells.csv` is a finite-grid map;
-`intervals.csv` records open screen ratio segments and confirmation of a
-representative witness inside each segment, not every point in the segment;
-`anchors.csv` records the two manuscript examples. A screen-positive cell is
-not itself a confirmed result. Neither a confirmed cell nor an empty finite
-screen certifies exhaustive roots, prevalence, periodic dynamics, a functional
-state, or a manuscript claim.
-
-The completed finite-grid results and their limits are recorded in
-[`low_ratio_coexistence_results.md`](low_ratio_coexistence_results.md).
-
 ## Numerical periodic-orbit shooting
 
 `solve_periodic_orbit(model, state_guess, period_guess; options)` uses a
@@ -606,11 +522,10 @@ and runner-level Hopf, fold, or homoclinic interpretation remains separate.
 
 ## Basin and tonic-drive measurements
 
-The separate [basin and tonic-drive study](basin_rescue.md) adds finite
-state-space basin sampling and simultaneous temporary reduction of a
-nonnegative tonic E drive with nonnegative I excitation. Its geometric
-distances, sampled area fractions, and rescue-onset brackets are numerical
-observations, not exact attractor counts or asymptotic basin proofs.
+`measure_basin`, `basin_destination`, and `run_tonic_rescue_trial` support
+finite state-space sampling and temporary changes to tonic input. Their
+sampled destinations and onset brackets do not establish exact basin areas,
+complete attractor counts, or permanent recovery.
 
 ## Explicit pulse experiments
 
@@ -624,11 +539,10 @@ baseline allows it; negative E-drive uses `AbstractIntervention`.
 
 The API defaults are amplitudes `0:0.25:8`, discovery-grid durations
 `[1,2,5,10,20,50,100,200]` ms, no duration refinement, and post-withdrawal
-follow-ups of `[5000,10000,20000]` ms. The tracked study configuration requests
-one duration-refinement level. These values define numerical coverage; they do
-not assert that every duration is scientifically informative. An unresolved
-observation is rerun from the same
-initial state and pulse with the longer horizon. Each terminal diagnostic
+follow-ups of `[5000,10000,20000]` ms. These values define numerical coverage;
+they do not assert that every duration is scientifically informative. An
+unresolved observation is rerun from the same initial state and pulse with the
+longer horizon. Each terminal diagnostic
 window defaults to 100 ms with 21 samples and exact window endpoints;
 coordinate and balance tolerances remain `1e-6` and `1e-8`. Successful
 integration and compatibility with a uniquely matched locally attracting
@@ -659,249 +573,7 @@ durations. Islands between equal-outcome sampled endpoints can be missed.
 Artifacts report duration in milliseconds and normalized by both population
 timescales. The component integrals are signed `duration * increment`; the sum
 of their absolute values is a defined input cost, not biological energy. A
-resolved implementation run does not by itself change a manuscript-claim
-disposition; see the claim-specific protocol in the intervention study.
-
-## Figure-5b topology and local Hopf candidates
-
-`classify_figure5b_topology` compares the independently generated 11×11,
-21×21, and 41×41 equilibrium-search refinements. The schedule is fixed and
-each search must contain the exact deterministic union of the default seeds
-and the declared sharper grid. It requires seven uniquely coordinate-matched
-roots at every refinement, with three locally attracting equilibria, three
-saddles, and one repeller. Every root is checked against a recomputed balance
-residual, balance Jacobian, and original-time spectrum with a fixed safety
-margin. Matched roots cannot change classification across refinements. The
-repeller must lie where both implicit nullclines rise:
-`-g_E,E/g_E,I > 0` and `-g_I,E/g_I,I > 0`. Passing this classifier describes
-a finite discovered topology; it does not certify that all equilibria or
-attractors have been found.
-
-The internal Figure-5b root-lineage component is the numerical identity
-contract for later targeted continuation. At each parameter point it checks
-the deterministic 11×11, 21×21, and 41×41 searches for a common model and
-seed schedule, consistent discovered root count, unique cross-grid matches,
-root separation, no unresolved nearby roots, and independently recomputed
-balance residuals, Jacobians, and local spectra. A locally unresolved
-stability label passes only when every eigenvalue real part is within the
-lineage spectral margin; the label alone is insufficient. The component
-reconstructs each frozen model and drive from its source model and snapshot
-time, and rejects inconsistent stored search records. Search policies must
-retain finite, nonnegative tolerances and a positive iteration limit. Each root
-must be tied to admissible solver candidates within discovery's maximum-
-coordinate deduplication tolerance; duplicate members may have an unsuccessful
-solver return code or meet only the search residual tolerance. The selected
-representative still must meet the stricter lineage residual gate, and its
-stored residuals and local stability fields must agree with independent
-recomputation. Every admissible attempt must belong to exactly one discovered
-root's member set; dropping equilibria while retaining their attempts leaves
-the search unresolved. Numerical options are validated through both keyword and
-positional construction. Intermediate points may have a different root count
-from the initial seven-root topology; the full seven-root gate still applies
-separately to an initial Figure-5b seed and a
-proposed Hopf point. A transition carries the prior three-grid root
-constellation and accepts the followed root only when forward and reciprocal
-matches, an optional predictor, the corrected root, and a displacement bound
-agree uniquely. The bound must be smaller than half the local root separation
-after coordinate uncertainty is included. When roots disappear, each
-destination root must map to a distinct prior root. When roots appear, every
-prior root must have a distinct destination; unmatched destinations are
-retained as new discoveries. Equal-count transitions require a bijection,
-so a simultaneous disappearance and appearance remains unresolved. Missing,
-ambiguous, poorly resolved, or skipped required checks remain unresolved.
-These are finite numerical tracking rules, not proof that a branch cannot
-change between sampled parameter points; later continuation must adapt its
-step size and retain unresolved intervals.
-
-The internal Figure-5b axis search starts from a genuine seven-root central
-seed and searches both parameter directions. A local solve advances the path
-only after an independent three-grid search and root-lineage transition.
-Its initial, minimum, and maximum step settings are fractions of the
-authorized parameter interval width (defaults 0.01, 0.00001, and 0.05),
-not absolute coupling increments. Each trial retains an immutable snapshot
-of its local solver candidate, validation, status, residual, near-singularity
-flag, and reasons even when the solve is rejected; exceptions are separate.
-Bracket corrections retain the raw augmented-solver status, iteration
-count, and any internal exception text separately from the final validation
-status. Singleton zero-trace checks explicitly record that no augmented
-corrector ran.
-Trace sign changes retain both accepted endpoint anchors; a balance-plus-trace
-correction evaluates the model only within that bracket, then independently
-checks residuals, augmented Jacobian rank, and lineage from both endpoints.
-A trace-zero sampled point is validated as a singleton, with rank probes
-inside the authorized parameter bounds. Both rank gates compare three
-distinct, representable finite-difference scales, reducing the base step
-for narrow intervals and leaving unresolvable intervals unresolved. Full
-Jacobian changes must be small relative to the finest minimum singular value;
-this prevents a stationary trace zero from qualifying on a spurious derivative
-or three probes clipped to the same width. Failed solves, bracket corrections,
-and step retries remain typed unresolved evidence. `finite_exhausted` requires
-both exact parameter bounds and every detected sign-change bracket or sampled
-zero endpoint resolved. This describes the finite sampled path, not model-wide
-absence.
-
-The internal two-parameter Figure-5b seed component is a separate finite
-discovery layer; it does not continue a curve. It accepts an autonomous FoI
-base model with all five coordinates inside the authorized search domain,
-two distinct parameter names from those coordinates, a bounded rectangle
-inside their authorized ranges, and a claimed central state. Box endpoints
-must already be finite Float64 values; no silent conversion can widen the
-supplied rectangle. The box must be strictly ordered, authorized, and contain
-the original base parameters and their Float64 representation.
-Regenerating the origin at Float64 precision must preserve the supplied model identity.
-It independently confirms the origin's seven-root repeller topology and
-central-root lineage. From that origin it always tries one bounded normalized
-interior stationary-distance KKT solve and all four bounded
-edge solves, retaining every numerical attempt and failed backtrack. Each
-converged candidate is assessed independently before only qualified duplicate
-seeds are collapsed. KKT stationarity does not establish a local or global
-minimum-distance or search-completeness certificate.
-
-A qualified seed needs fresh 11×11, 21×21, and 41×41 searches at its own
-model. These must contain seven well-resolved matched roots, three robust
-outer attractors, three saddles, and the same near-neutral central root on
-both rising nullcline arms, using the same robust slope tolerance as the
-origin topology gate. The center must be classified neutral on every grid,
-with trace bounded by an independent 1e-7 ceiling even if axis options are
-looser. Independently recomputed balance, original-time
-trace and determinant must resolve a simple imaginary pair. A regular
-three-equation/four-variable Jacobian must agree across three distinct,
-box-confined finite-difference scales and an independent derivative. Adaptive
-straight-line parameter homotopy from the origin uses local solves and the
-reciprocal three-grid root-lineage gate at every accepted step; any gap leaves
-the candidate unresolved. Numerical solver success or a locally
-Hopf-compatible trace zero alone never qualifies a seed. No cycles,
-biological interpretation, or manuscript claim follows from these records.
-The result distinguishes `qualified_seeds`, `no_qualified_seed` (all five
-methods completed but had resolved finite rejections),
-`search_unresolved` (one or more methods failed or were numerically
-unresolved with no qualified seed), and `origin_unresolved`. Raw attempts,
-qualifications, and unresolved method names remain available for audit. None
-of these statuses certifies global absence or completeness.
-
-The internal Figure-5b curve-traversal component starts only from an indexed,
-qualified seed record. It rechecks the frozen model, exact parameter box,
-selected method and candidate, then freshly verifies that seed's origin,
-central-root lineage, and numerical qualification. Its traversal core uses a
-source-agnostic verified-seed token, which `traverse_verified_seed` accepts so a
-later search runner can add a separate adapter that freshly verifies accepted
-one-parameter axis-zero locations and their endpoint lineages before using them.
-That entry performs no qualification of its own, so a caller must obtain its
-token from a gate that does. This component alone cannot establish a
-ratio-4.4 branch when its seed search found no qualified seed.
-
-Two signed normalized pseudo-arclength directions use an independently
-recomputed balance/trace/phase residual, regular three-by-four curve rank,
-regular four-by-four corrector rank, positive oriented progress, and bounded
-local predictor correction. Before any gate reads a candidate, its state is
-refined to a machine-precision equilibrium at the frozen parameters with the
-same local equilibrium solver the root search uses, so a stored point is the
-equilibrium rather than a loosely corrected state. The trace-zero comparison
-uses one shared tolerance (bounded by the neutral-trace and spectral-margin
-caps) at every gate. Every accepted point gets new 11×11, 21×21, and
-41×41 searches and reciprocal predictor/corrected central-root lineage.
-Seven-root neutral-center Hopf qualification is recorded separately for each
-point; a tracked five-root trace-zero point is not a Figure-5b Hopf candidate.
-That per-point record is not advisory: a directional exit is reported as a
-qualified boundary only when its own neutrality evidence qualifies it, and a
-segment containing any unqualified point is reported as
-`finite_two_unqualified_boundary_segment` rather than as a two-boundary segment.
-`finite_two_boundary_segment` is therefore a statement about geometry and
-neutrality together, and a consumer must still read `point.hopf.qualified` at
-every point it treats as a Figure-5b Hopf candidate.
-Failed correctors, retries, rank loss, loops, and iteration-cap endpoints
-remain explicit unresolved outcomes. A revisit is reported only when it is the
-sole failure of its step; `revisit_atol` is required to stay below the smallest
-forward progress a legal step can make, so a perfectly forward step can never
-read as a loop. Projection folds may be traversed.
-
-A parameter-box endpoint is qualified only by a local fixed-edge three-variable
-balance/trace solve from the first tangent-ray intersection. The remaining
-parameter must stay in range, the fixed-edge Jacobian must have stable full
-rank, the corrected tangent must cross outward, and independent residual,
-phase, locality, progress, and reciprocal lineage checks must pass. Near-corner
-hits retain both edge attempts and remain unresolved for that step, because the
-first crossed edge is not geometrically unique at that tolerance; a later
-smaller step may resolve the geometry to a single edge, which is then judged on
-its own merits. A wrong or stale edge ray is rejected before numerical correction.
-An out-of-box corrector is never itself boundary evidence. A validated exit is
-carried as a typed endpoint, so it never has to be rediscovered inside a
-boundary-attempt history that also holds rejected and ambiguous attempts. Two
-qualified directional endpoints describe only a finite sampled segment, not a
-complete curve, parameter domain, or attractor regime.
-
-For a fixed balance field and `r = tau_I/tau_E`, `hopf_diagnostics` evaluates
-the local trace-zero candidate `r_H = -Dg[2,2] / Dg[1,1]`. It requires a
-positive determinant and nonzero eigenvalue transversality. The calculation
-is explicitly `Float64`: state coordinates and `tau_E` may be integers,
-rationals, `Float32`, or `Float64`, with exact `Float64` representability
-required for integer and rational values. Higher-precision inputs such as
-`BigFloat` are rejected rather than silently narrowed. The first
-Lyapunov coefficient uses the original-time Taylor convention
-`f = A*y + B(y,y)/2 + C(y,y,y)/6`, a unit Euclidean right eigenvector, and
-the Kuznetsov normalization `l1 = real(G21)/(2omega)`. A ForwardDiff tensor
-calculation must agree with a separately finite-differenced planar
-Guckenheimer-Holmes formula over several steps. Near-zero coefficients,
-missing finite-difference plateaus, and sign or magnitude disagreement remain
-unresolved. A negative coefficient is reported as a
-`supercritical_candidate`; the signed nonzero transversality separately says
-which parameter side contains the branch. Local diagnostics do not prove
-that a periodic orbit exists.
-
-The modal normal-form amplitude obeys
-`rho^2 approximately -beta*(r-r_H)/real(c1)`, where `c1=G21/2` and
-`l1=real(c1)/omega`. The dimensionless `l1` is not the physical-time cubic
-coefficient. Orbit continuation and independent shooting evidence are
-required before comparing this local scaling with a finite-amplitude cycle.
-
-The tracked `experiments/figure5b_hopf.toml` and
-`scripts/run_figure5b_protocol.jl` freeze the Figure-5b anchor
-`(e_to_e,i_to_e,e_to_i,i_to_i)=(19,13,19,6)` with `theta_off=8` and zero
-drive. The candidate-specific runner independently repeats the 11×11, 21×21,
-and 41×41 root searches at timescale ratios 4.4, 0.5, and 0.4; bisects trace
-zero using finite-difference ODE Jacobians; shoots deterministic Hopf-eigenspace
-seeds; and validates any selected orbit with tighter integration, doubled
-sampling, primitive-period, winding, phase-equivalence, Jacobian, divergence,
-and finite-difference Poincare checks. A validated ratio-0.5 orbit can then be
-continued over the configured finite interval. All shooting failures and
-continuation corrector failures are retained.
-
-A non-smoke run requires `--accepted-revision` and is evidence-eligible only
-when that exact 40-character revision is checked out at detached `HEAD` with a
-clean worktree. `--replay-parent` verifies the parent artifact's complete
-checksum manifest plus its archived config and source hashes before repeating
-the parent mode from the snapshot into a sibling output directory, leaving the
-source artifact checksum-valid. Replays never become scientific evidence and
-do not require a Git checkout. Runner endpoint labels are conservative
-compatibility observations: Hopf requires a successful near-Hopf parameter
-boundary with shrinking radius and matching period; fold requires both a
-parameter reversal and near-unit transverse multipliers; global saddle and
-state-boundary labels require monotone validated terminal segments with the
-configured period, distance, and boundary checks. Unresolved solver
-termination remains recorded separately, and none of these labels is a
-bifurcation proof.
-
-The output is an ignored numerical artifact with archived source/configuration
-hashes and checksums, not tracked evidence. Smoke mode exercises the exact
-candidate with fewer orbit seeds and continuation steps but disables all
-scientific acceptance. Passing the full finite protocol can support only the
-reported coexistence of three discovered locally attracting equilibria and
-one numerically validated attracting orbit, or four discovered locally
-attracting equilibria below the Hopf point. It does not establish an exact
-attractor count, search completeness, prevalence, biological states, or a
-global bifurcation diagram.
-
-## Scientific experiment configurations
-
-[The intervention study](intervention_study.md) describes the supplied
-exploration bounds, execution commands, and evidence gates. Separate TOML
-configurations drive the coexistence map, pulse experiments, and individual
-intervention/targeted robustness sweeps. All preserve matched non-inhibitory
-parameters and the approved response family, retain unstable equilibria and
-failed attempts, and archive source/configuration provenance with checksums.
-The manuscript-facing analytical restrictions are in
-[the theory notes](theory_notes.md). Numerical candidates do not inherit
-biological labels from these workflows.
+resolved implementation run does not by itself establish a manuscript claim.
 
 ## Comparison responses and analysis limitations
 
@@ -916,17 +588,3 @@ above. The minimal matched-model experiment remains a synthetic workflow
 check. Search completeness, rigorous existence and bifurcation certificates,
 biological regime definitions, and publication claims are not supplied by
 these numerical labels.
-
-## Permanent input release
-
-The [input-release study](input_release.md) pairs autonomous models at
-`B_E=8` and `B_E=0`, with identical population and coupling parameters and
-`B_I=0`. Its high-E/low-I source is identified in the driven system, without
-requiring a zero-input counterpart. Each phase uses its own independently
-discovered equilibrium context. Induction, permanent release, and continued
-input are classified separately; both follow-ups begin at the actual final
-induction state. Finite recovery requires return to the original zero-input
-starting equilibrium, with the kept-on control retaining the driven state.
-This protocol is distinct from temporary tonic withdrawal followed by
-restoration of baseline. The model equations and public package API are
-unchanged; configuration and runners live in the experiment/script layer.
