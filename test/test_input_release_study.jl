@@ -1,3 +1,5 @@
+isdefined(@__MODULE__, :BasinRescueStudy) ||
+    include(joinpath(@__DIR__, "..", "scripts", "run_basin_rescue_study.jl"))
 include(joinpath(@__DIR__, "..", "scripts", "run_input_release_study.jl"))
 
 @testset "Permanent release protocol" begin
@@ -10,7 +12,7 @@ include(joinpath(@__DIR__, "..", "scripts", "run_input_release_study.jl"))
     models = study.release_models(case; e_to_e=4.0)
     # Compare the paired helper with the established constructor, independently.
     changed = merge(case, Dict("e_to_e" => 4.0))
-    established = study.BasinRescueStudy.model_for(changed, 8.0)
+    established = BasinRescueStudy.model_for(changed, 8.0)
     for state in ([0.01, 0.02], [0.3, 0.4], [0.5, 0.001])
         a, b = zeros(2), zeros(2)
         point_rhs!(a, state, models.on, 0.0)

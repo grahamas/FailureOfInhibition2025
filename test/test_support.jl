@@ -1,3 +1,24 @@
+import TOML
+
+"""Check that a captured runner can load its literal include closure from source/."""
+function assert_archived_include_closure(output, entrypoint)
+    metadata = TOML.parsefile(joinpath(output, "metadata.toml"))
+    declared = Set(keys(metadata["source_sha256"]))
+    visited = Set{String}()
+    function visit(relative)
+        relative in visited && return
+        push!(visited, relative)
+        @test relative in declared
+        source = joinpath(output, "source", relative)
+        @test isfile(source)
+        isfile(source) || return
+        for match in eachmatch(r"include\(\"([^\"]+\.jl)\"\)", read(source, String))
+            visit(normpath(joinpath(dirname(relative), match.captures[1])))
+        end
+    end
+    visit(joinpath("scripts", entrypoint))
+end
+
 function synthetic_model(;
     excitatory_response=LogisticResponse(slope=2.0, threshold=0.1),
     inhibitory_response=LogisticResponse(slope=1.5, threshold=0.2),

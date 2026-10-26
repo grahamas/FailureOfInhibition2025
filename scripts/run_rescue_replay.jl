@@ -3,7 +3,7 @@ module RescueReplay
 
 using FailureOfInhibition2025
 import TOML
-include("run_pulse_experiment.jl")
+include("pulse_experiment_core.jl")
 using .PulseExperiment
 
 const REPOSITORY_ROOT = normpath(joinpath(@__DIR__, ".."))

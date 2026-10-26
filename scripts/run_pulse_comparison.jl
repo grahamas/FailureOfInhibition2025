@@ -3,7 +3,7 @@ module PulseComparison
 
 import CSV
 import TOML
-include(joinpath(@__DIR__, "run_pulse_experiment.jl"))
+include("pulse_experiment_core.jl")
 using .PulseExperiment.MinimalExperiment: write_toml, archive_provenance,
     artifact_checksums, file_hash, error_record
 
@@ -70,7 +70,8 @@ end
 
 function comparison_provenance(config_path, output, names; smoke)
     metadata = archive_provenance(config_path, output)
-    for relative in ("scripts/run_pulse_comparison.jl", "scripts/run_pulse_experiment.jl")
+    for relative in ("scripts/run_pulse_comparison.jl", "scripts/run_pulse_experiment.jl",
+        "scripts/pulse_experiment_core.jl")
         destination = joinpath(output, "source", relative)
         cp(joinpath(REPOSITORY_ROOT, relative), destination)
         metadata["source_sha256"][relative] = file_hash(destination)

@@ -201,6 +201,7 @@ end
         @test occursin("not resumable", metadata["interruption_policy"])
         @test occursin("not an absence proof", metadata["scientific_outcome"])
         @test haskey(metadata["source_sha256"], "scripts/run_tetrastability_search.jl")
+        assert_archived_include_closure(first_output, "run_tetrastability_search.jl")
         checksums = Tetrastability.TOML.parsefile(joinpath(first_output, "checksums.toml"))["files"]
         @test all(relative -> Tetrastability.Evidence.file_hash(
             joinpath(first_output, relative)) == checksums[relative], keys(checksums))

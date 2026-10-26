@@ -64,12 +64,12 @@ CSV records its original digest, input/output row counts, and exact selection
 rule in `packet.toml`; no observations are interpolated or relabeled.
 
 An interrupted local run encountered recursive serialization of a periodic
-continuation attempt's solver object. `scripts/repair_figure_serialization.jl`
-accepts only the exact storage-only source replacement, preserves the previous
-driver and metadata, and records both hashes. It rejects any additional source
-change. This repair does not change an equation, solver option, candidate,
-trajectory, or validation criterion. Fresh runs use the corrected serialization
-directly. The local packet retains the repair record.
+continuation attempt's solver object. A guarded, one-use repair script preserved
+the previous driver and metadata and recorded both hashes. That script is retained
+in VCS history; it is no longer applicable to the reorganized current driver.
+The repair did not change an equation, solver option, candidate, trajectory, or
+validation criterion. Fresh runs use the corrected serialization directly. The
+local packet retains the repair record.
 A second exact, metadata-only repair corrects the inherited screen replay command
 in the detailed driver. Its command uses `SCREEN_OUTPUT` and `STAGE` as explicit
 placeholders; the complete invocation sequence above supplies them. Both repair

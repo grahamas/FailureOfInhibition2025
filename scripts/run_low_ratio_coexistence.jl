@@ -6,7 +6,7 @@ using LinearAlgebra: det, eigvals
 import CSV
 import TOML
 
-include("run_tetrastability_search.jl")
+include("tetrastability_core.jl")
 const BaseStudy = TetrastabilityExperiment
 const Map = BaseStudy.Map
 const Evidence = BaseStudy.Evidence
@@ -105,13 +105,9 @@ end
 _distance(left, right) = max(abs(left[1] - right[1]), abs(left[2] - right[2]))
 
 function unique_match(reference, references, candidates, tolerance)
-    matches = findall(candidate -> _distance(reference.state, candidate.state) <= tolerance,
-        candidates)
-    length(matches) == 1 || return nothing
-    selected = only(matches)
-    count(other -> _distance(other.state, candidates[selected].state) <= tolerance,
-        references) == 1 || return nothing
-    return selected
+    distance(left, right) = _distance(left.state, right.state)
+    return Evidence.unique_reciprocal_match(reference, references, candidates,
+        tolerance, distance)
 end
 
 function root_quality(equilibrium, model, ratio, config)
@@ -282,7 +278,10 @@ function run_experiment(config_path::AbstractString, output_dir::AbstractString;
     metadata = Evidence.archive_provenance(config_path, output)
     cp(config.base_path, joinpath(output, basename(config.base_path)))
     for name in ("run_coexistence_map.jl", "run_tetrastability_search.jl",
-        "run_low_ratio_coexistence.jl")
+        "run_low_ratio_coexistence.jl", "coexistence_core.jl",
+        "tetrastability_core.jl", "tetrastability_config.jl",
+        "tetrastability_sampling.jl", "tetrastability_confirmation.jl",
+        "tetrastability_continuation.jl", "tetrastability_artifacts.jl")
         relative = joinpath("scripts", name)
         destination = joinpath(output, "source", relative)
         cp(joinpath(REPOSITORY_ROOT, relative), destination)

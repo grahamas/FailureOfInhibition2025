@@ -489,17 +489,19 @@ end
         parent = joinpath(directory, "parent")
         mkpath(joinpath(parent, "source", "scripts"))
         config_source = joinpath(@__DIR__, "..", "experiments", "figure5b_hopf.toml")
-        runner_source = joinpath(@__DIR__, "..", "scripts", "run_figure5b_protocol.jl")
         cp(config_source, joinpath(parent, "config.toml"))
-        cp(runner_source, joinpath(parent, "source", "scripts",
-            "run_figure5b_protocol.jl"))
+        sources = Dict{String,String}()
+        for name in Figure5b.PROTOCOL_SOURCES
+            relative = joinpath("scripts", name)
+            destination = joinpath(parent, "source", relative)
+            cp(joinpath(@__DIR__, "..", relative), destination)
+            sources[relative] = Figure5b.Evidence.file_hash(destination)
+        end
         metadata = Dict(
             "smoke" => false,
             "config_sha256" => Figure5b.Evidence.file_hash(
                 joinpath(parent, "config.toml")),
-            "source_sha256" => Dict("scripts/run_figure5b_protocol.jl" =>
-                Figure5b.Evidence.file_hash(joinpath(parent, "source", "scripts",
-                    "run_figure5b_protocol.jl"))))
+            "source_sha256" => sources)
         Figure5b.Evidence.write_toml(joinpath(parent, "metadata.toml"), metadata)
         replay_target = joinpath(parent, "replay-target")
         mkpath(replay_target)
@@ -533,6 +535,16 @@ end
         revalidated = Figure5b.validate_replay_parent(parent,
             joinpath(parent, "config.toml"))
         @test revalidated.parent == abspath(parent)
+        fragment = joinpath(parent, "source", "scripts", "figure5b_protocol_hopf.jl")
+        open(fragment, "a") do io
+            println(io, "# altered archived protocol source")
+        end
+        metadata["source_sha256"]["scripts/figure5b_protocol_hopf.jl"] =
+            Figure5b.Evidence.file_hash(fragment)
+        Figure5b.Evidence.write_toml(joinpath(parent, "metadata.toml"), metadata)
+        Figure5b.Evidence.artifact_checksums(parent)
+        @test_throws ArgumentError Figure5b.validate_replay_parent(parent,
+            joinpath(parent, "config.toml"))
     end
 end
 
@@ -594,6 +606,7 @@ end
         @test metadata["stage_status"]["tight_validation"] == "completed"
         @test metadata["stage_status"]["continuation"] == "completed"
         @test haskey(metadata["source_sha256"], "scripts/run_figure5b_protocol.jl")
+        assert_archived_include_closure(output, "run_figure5b_protocol.jl")
         checksums = TOML.parsefile(joinpath(output, "checksums.toml"))["files"]
         @test all(relative -> Figure5b.Evidence.file_hash(joinpath(output, relative)) ==
             checksums[relative], keys(checksums))

@@ -2,7 +2,7 @@
 module FigureRedesignData
 using FailureOfInhibition2025
 import CSV,TOML
-include("run_figure_details.jl")
+include("figure_details_core.jl")
 include("figure_packet_io.jl")
 const D=FigureDetails
 const S=D.S

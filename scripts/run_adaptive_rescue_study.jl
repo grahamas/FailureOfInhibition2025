@@ -5,7 +5,7 @@ using FailureOfInhibition2025
 import CSV
 import SHA
 import TOML
-include("run_basin_rescue_study.jl")
+include("basin_rescue_core.jl")
 using .BasinRescueStudy: model_for, search_model
 using .BasinRescueStudy.MinimalExperiment: archive_provenance,
     artifact_checksums, context_record, file_hash, write_rows, write_toml
@@ -123,34 +123,9 @@ function parameter_cells(case, sensitivity)
 end
 
 function match_roles(search, references, tolerance)
-    matches = Dict{String,Union{Nothing,Int}}()
-    reasons = Dict{String,String}()
-    for (role, reference) in references
-        if reference === nothing
-            matches[role], reasons[role] = nothing, "tracking_lost"
-            continue
-        end
-        candidates = [(index, hypot(root.state[1] - reference[1],
-                root.state[2] - reference[2]))
-            for (index, root) in enumerate(search.equilibria)
-            if root.stability.classification == Attracting]
-        sort!(candidates; by=last)
-        if isempty(candidates) || first(candidates)[2] > tolerance
-            matches[role], reasons[role] = nothing, "not_matched"
-        elseif length(candidates) > 1 && candidates[2][2] - candidates[1][2] < 1e-6
-            matches[role], reasons[role] = nothing, "ambiguous"
-        else
-            matches[role], reasons[role] = first(candidates)[1], "matched"
-        end
-    end
-    used = [index for index in values(matches) if index !== nothing]
-    for role in keys(matches)
-        index = matches[role]
-        if index !== nothing && count(==(index), used) > 1
-            matches[role], reasons[role] = nothing, "ambiguous"
-        end
-    end
-    return matches, reasons
+    matches, reasons = BasinRescueStudy.MinimalExperiment.match_attracting_roles(
+        search, references, tolerance)
+    return matches, Dict(role => string(reason) for (role, reason) in reasons)
 end
 
 function tracked_contexts(case, cell, reference_roles, baselines, grid_points, tolerance)
@@ -519,7 +494,7 @@ function run_experiment(config_path, output_dir; case_filter=nothing,
     else
         isempty(readdir(output)) || throw(ArgumentError("output is not an adaptive checkpoint"))
         metadata = archive_provenance(config_path, output)
-        for relative in ("scripts/run_basin_rescue_study.jl",
+        for relative in ("scripts/run_basin_rescue_study.jl", "scripts/basin_rescue_core.jl",
             "scripts/run_adaptive_rescue_study.jl")
             destination = joinpath(output, "source", relative)
             cp(joinpath(ROOT, relative), destination; force=true)

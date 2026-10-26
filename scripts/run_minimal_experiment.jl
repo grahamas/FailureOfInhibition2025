@@ -8,49 +8,15 @@ using LinearAlgebra: BLAS
 import SHA
 import TOML
 
+include("study_support.jl")
+using .StudySupport: require_keys, finite_number, pair, positive_integer, options_from,
+    toml_value, write_toml, error_record, source_files, file_hash, git_output,
+    archive_provenance, context_record, summary_attempt, summary_equilibrium,
+    write_rows, artifact_checksums
+
 const REPOSITORY_ROOT = normpath(joinpath(@__DIR__, ".."))
 const CONDITIONS = (:control, :failure_of_inhibition)
 const PROTOCOLS = (:baseline, :pulsed)
-
-function require_keys(table, keys, name)
-    table isa AbstractDict || throw(ArgumentError("$name must be a table"))
-    Set(Base.keys(table)) == Set(keys) || throw(ArgumentError(
-        "$name requires exactly these keys: $(join(sort(collect(keys)), ", "))",
-    ))
-end
-
-function finite_number(value, name; positive=false, nonnegative=false)
-    value isa Real && !(value isa Bool) && isfinite(value) ||
-        throw(ArgumentError("$name must be a finite real number"))
-    converted = Float64(value)
-    isfinite(converted) || throw(ArgumentError("$name must be representable as Float64"))
-    positive && converted <= 0 && throw(ArgumentError("$name must be positive"))
-    nonnegative && converted < 0 && throw(ArgumentError("$name must be nonnegative"))
-    return converted
-end
-
-function pair(value, name)
-    value isa AbstractVector && length(value) == 2 ||
-        throw(ArgumentError("$name must contain exactly two numbers"))
-    return Tuple(finite_number(x, name) for x in value)
-end
-
-function positive_integer(value, name)
-    value isa Integer && !(value isa Bool) && 0 < value <= typemax(Int) ||
-        throw(ArgumentError("$name must be a positive integer"))
-    return Int(value)
-end
-
-function options_from(table, constructor, keys, name; integer_key=nothing)
-    require_keys(table, keys, name)
-    entries = Pair{Symbol,Any}[]
-    for key in keys
-        value = key == integer_key ? positive_integer(table[key], "$name.$key") :
-                finite_number(table[key], "$name.$key"; nonnegative=true)
-        push!(entries, Symbol(key) => value)
-    end
-    return constructor(; entries...)
-end
 
 """Validate the complete version-1 configuration without creating output files."""
 function load_config(path::AbstractString)
@@ -138,111 +104,6 @@ end
 
 # TOML has no null or complex scalar. Missing objects use an explicit string;
 # spectra retain separate real/imaginary components, and matrices use rows.
-toml_value(x::Union{Symbol,Enum}) = string(x)
-toml_value(::Nothing) = "not_available"
-toml_value(x::Complex) = Dict("real" => real(x), "imaginary" => imag(x))
-toml_value(x::AbstractMatrix) = [toml_value(collect(row)) for row in eachrow(x)]
-toml_value(x::Union{AbstractVector,Tuple}) = [toml_value(v) for v in x]
-toml_value(x::Union{Real,AbstractString}) = x
-toml_value(x::AbstractDict) = Dict(string(k) => toml_value(v) for (k, v) in x)
-toml_value(x) = Dict(string(k) => toml_value(getproperty(x, k)) for k in propertynames(x))
-
-function write_toml(path, data)
-    open(path, "w") do io
-        TOML.print(io, toml_value(data); sorted=true)
-    end
-end
-
-error_record(error) = Dict("type" => string(typeof(error)), "message" => sprint(showerror, error))
-
-function source_files(root)
-    files = ["Project.toml", "Manifest.toml", "scripts/run_minimal_experiment.jl"]
-    for (directory, _, names) in walkdir(joinpath(root, "src"))
-        for name in names
-            endswith(name, ".jl") && push!(files, relpath(joinpath(directory, name), root))
-        end
-    end
-    isfile(joinpath(root, "docs/model.md")) && push!(files, "docs/model.md")
-    return sort!(files)
-end
-
-file_hash(path) = bytes2hex(SHA.sha256(read(path)))
-
-function git_output(root, arguments...)
-    try
-        return strip(read(`git --no-optional-locks -C $root $arguments`, String))
-    catch error
-        return "unavailable: " * sprint(showerror, error)
-    end
-end
-
-function archive_provenance(config_path, output)
-    files = source_files(REPOSITORY_ROOT)
-    hashes = Dict{String,String}()
-    for relative in files
-        source = joinpath(REPOSITORY_ROOT, relative)
-        destination = joinpath(output, "source", relative)
-        mkpath(dirname(destination))
-        cp(source, destination)
-        hashes[relative] = file_hash(destination)
-    end
-    cp(config_path, joinpath(output, "config.toml"))
-    return Dict(
-        "schema_version" => 1,
-        "purpose" => "synthetic workflow validation; no biological regime inference",
-        "julia_version" => string(VERSION), "architecture" => string(Sys.ARCH),
-        "kernel" => string(Sys.KERNEL), "julia_threads" => Threads.nthreads(),
-        "blas_configuration" => string(BLAS.get_config()),
-        "blas_threads" => BLAS.get_num_threads(),
-        "ode_solver" => "OrdinaryDiffEqTsit5.Tsit5",
-        "equilibrium_solver" => "SimpleNonlinearSolve.SimpleTrustRegion",
-        "equilibrium_seed_policy" => "default deterministic 5-by-5 sharper-rectangle grid",
-        "git_revision" => git_output(REPOSITORY_ROOT, "rev-parse", "HEAD"),
-        "git_status_porcelain" => git_output(REPOSITORY_ROOT, "status", "--porcelain=v1", "--untracked-files=all"),
-        "source_sha256" => hashes,
-        "config_sha256" => file_hash(joinpath(output, "config.toml")),
-        "replay_from_artifact_directory" => "julia --project=source source/scripts/run_minimal_experiment.jl --config config.toml --output replay",
-        "artifact_schema" => Dict("version" => 1,
-            "trajectory_columns" => ["time", "E", "I"],
-            "toml_unavailable_value" => "not_available",
-            "matrices" => "array of rows", "complex_values" => "real and imaginary tables",
-            "contexts" => "complete search attempts, deduplication, equilibria and stability",
-            "cases" => "one row per condition, protocol and numerical variant",
-            "comparisons" => "each non-default case compared with its default counterpart"),
-    )
-end
-
-function context_record(result)
-    return Dict("status" => "completed", "source_time" => result.source_time,
-        "frozen_drive" => result.frozen_drive, "options" => result.options,
-        "stability_options" => result.stability_options, "attempts" => result.attempts,
-        "equilibria" => result.equilibria, "unresolved_nearby" => result.unresolved_nearby,
-        "completeness" => result.completeness)
-end
-
-function summary_attempt(context_id, index, attempt)
-    return (; context_id, attempt=index, seed_E=attempt.seed[1], seed_I=attempt.seed[2],
-        candidate_E=attempt.candidate[1], candidate_I=attempt.candidate[2],
-        solver_status=string(attempt.solver_status), solver_success=attempt.solver_success,
-        residual_norm=attempt.residual_norm, validation=string(attempt.validation),
-        near_singular=attempt.near_singular, reasons=join(string.(attempt.reasons), ";"))
-end
-
-function summary_equilibrium(context_id, index, equilibrium)
-    stability = equilibrium.stability
-    return (; context_id, equilibrium=index, E=equilibrium.state[1], I=equilibrium.state[2],
-        residual_norm=maximum(abs, equilibrium.balance_residual),
-        near_singular=equilibrium.near_singular,
-        representative_attempt=equilibrium.representative_attempt,
-        member_attempts=join(equilibrium.member_attempts, ";"),
-        stability=string(stability.classification), geometry=string(stability.geometry),
-        eigenvalue_1_real=real(stability.eigenvalues[1]),
-        eigenvalue_1_imaginary=imag(stability.eigenvalues[1]),
-        eigenvalue_2_real=real(stability.eigenvalues[2]),
-        eigenvalue_2_imaginary=imag(stability.eigenvalues[2]),
-        spectral_abscissa=stability.spectral_abscissa)
-end
-
 function search_contexts(config, output)
     searches = Dict{String,Any}()
     contexts = Dict{Tuple{Symbol,Symbol},Vector{String}}()
@@ -363,14 +224,6 @@ function run_case(config, variant, condition, protocol, search_data, output)
         execution_error_message=error_message)
 end
 
-function write_rows(path, rows, empty_columns)
-    if isempty(rows)
-        CSV.write(path, NamedTuple{Tuple(empty_columns)}(Tuple(String[] for _ in empty_columns)))
-    else
-        CSV.write(path, rows)
-    end
-end
-
 function comparison_rows(cases)
     rows = NamedTuple[]
     for case in cases
@@ -388,17 +241,6 @@ function comparison_rows(cases)
     return rows
 end
 
-function artifact_checksums(output)
-    hashes = Dict{String,String}()
-    for (directory, _, files) in walkdir(output), filename in files
-        path = joinpath(directory, filename)
-        relative = relpath(path, output)
-        relative == "checksums.toml" && continue
-        hashes[relative] = file_hash(path)
-    end
-    write_toml(joinpath(output, "checksums.toml"), Dict("schema_version" => 1,
-        "algorithm" => "SHA-256", "files" => hashes))
-end
 
 """
     run_experiment(config_path, output_dir)

@@ -5,7 +5,8 @@ using FailureOfInhibition2025
 import CSV
 import TOML
 
-include(joinpath(@__DIR__, "run_minimal_experiment.jl"))
+include("study_support.jl")
+const MinimalExperiment = StudySupport
 using .MinimalExperiment: require_keys, finite_number, positive_integer, options_from,
     write_toml, write_rows, archive_provenance, artifact_checksums, file_hash,
     error_record, context_record, summary_attempt, summary_equilibrium

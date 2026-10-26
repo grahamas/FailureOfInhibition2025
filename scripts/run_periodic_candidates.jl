@@ -2,7 +2,7 @@
 module PeriodicCandidateExperiment
 
 using FailureOfInhibition2025
-include("run_coexistence_map.jl")
+include("coexistence_core.jl")
 const Map = CoexistenceExperiment
 const Evidence = Map.MinimalExperiment
 
@@ -181,7 +181,7 @@ function run_experiment(config_path, output_dir; smoke=false)
         mkpath(joinpath(output, directory))
     end
     metadata = Evidence.archive_provenance(config_path, output)
-    for name in ("run_coexistence_map.jl", "run_periodic_candidates.jl")
+    for name in ("run_coexistence_map.jl", "coexistence_core.jl", "run_periodic_candidates.jl")
         relative = joinpath("scripts", name)
         destination = joinpath(output, "source", relative)
         cp(joinpath(@__DIR__, name), destination)

@@ -153,6 +153,7 @@ include(joinpath(@__DIR__,"..","scripts","run_input_response_study.jl"))
     mktempdir() do dir
         path=joinpath(@__DIR__,"..","experiments","input_response.toml")
         metadata=A.initialize(path,cfg,dir;stage="geometry",case_filter="figure3")
+        assert_archived_include_closure(dir, "run_input_response_study.jl")
         @test occursin("two-input response",metadata["purpose"])
         @test occursin("run_input_response_study.jl",metadata["replay_from_artifact_directory"])
         @test occursin("--stage geometry --case 'figure3'",metadata["replay_from_artifact_directory"])

@@ -35,7 +35,10 @@ end
         @test_throws ErrorException PaperFigureData.check_numerical_environment(
             joint, tonic, environment)
     end
-    @test PaperFigureData.check_reviewed_sources(joint, tonic) == joint["source_sha256"]
+    @test joint["source_sha256"] == tonic["metadata"]["source_sha256"]
+    # These historical source hashes predate the study-runner extraction.
+    # A fresh build must refuse to treat today's code as the reviewed source.
+    @test_throws ErrorException PaperFigureData.check_reviewed_sources(joint, tonic)
     changed_tonic = deepcopy(tonic)
     delete!(changed_tonic["metadata"]["source_sha256"], "src/diagnostics.jl")
     @test_throws ErrorException PaperFigureData.check_reviewed_sources(joint, changed_tonic)
