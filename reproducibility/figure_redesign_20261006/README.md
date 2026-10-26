@@ -63,12 +63,14 @@ replays the complete sampled pulse grid and its stopping rule before accepting
 the bounded `not_demonstrated_within_protocol` label.
 
 The connected sequence is replayed from its declared rest root through every
-reported source and destination. Every plotted axial pulse in Figure 3B/C is
-replayed from its declared equilibrium. Paired sustained outcomes are checked
-against both the original and released contexts. Every axial cycle-phase pulse
-row used to choose or draw Figure 4D is independently replayed from its declared
-orbit phase; the joint-input maps remain in the local study but are not used by
-that panel.
+reported source and destination. Verification requires the complete prelude,
+pulse, and continuation sampling grids, and replays the adaptive hysteresis
+steps, including probes that caused a step to be halved. Every plotted axial
+pulse in Figure 3B/C is replayed from its declared equilibrium. Paired
+sustained outcomes are checked against both the original and released contexts.
+Every axial cycle-phase pulse row used to choose or draw Figure 4D is
+independently replayed from its declared orbit phase; the joint-input maps
+remain in the local study but are not used by that panel.
 
 Figure 1 mechanism data is a completed detail stage. Its responses, nullclines,
 reported equilibria, stability labels, and reference roles are checked against

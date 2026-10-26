@@ -80,6 +80,26 @@ include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
     @test_throws ErrorException VerifyFigureRedesign.verify_cell_partition(cells[1:1],unit)
     @test_throws ErrorException VerifyFigureRedesign.verify_cell_partition(
         vcat(cells,cells[1]),unit)
+    sequence_event=(;onset=50.,offset=150.,duration=100.,followup_end=160.)
+    sequence_config=Dict("durations"=>[100.],"followup_times"=>[10.],
+        "diagnostics"=>Dict("window_duration"=>5.,"min_samples"=>2))
+    sequence_times=vcat(collect(0.:.5:50.),
+        50. .+ collect(range(0.,100.;length=101))[2:end],
+        150. .+ collect(1.:10.))
+    sequence_rows=[(;time) for time in sequence_times]
+    @test VerifyFigureRedesign.verify_sequence_grid(sequence_rows,[sequence_event],sequence_config)
+    @test_throws ErrorException VerifyFigureRedesign.verify_sequence_grid(
+        sequence_rows[1:2:end],[sequence_event],sequence_config)
+    hysteresis_probe(next,state)=(;status="compatible",
+        destination=next>1.5 ? "active" : "rest",final=[next,0.])
+    hysteresis_inputs=[(1.,0.),(0.,1.),(1.,1.5),(1.5,2.),(2.,1.5),(1.5,1.)]
+    hysteresis_rows=[(;previous_input=previous,input=next,status="compatible",
+        destination=next>1.5 ? "active" : "rest",E=next,I=0.)
+        for (previous,next) in hysteresis_inputs]
+    @test length(VerifyFigureRedesign.verify_hysteresis_schedule(
+        hysteresis_rows,1.,2.,.5,20,[1.,0.],hysteresis_probe))==6
+    @test_throws ErrorException VerifyFigureRedesign.verify_hysteresis_schedule(
+        hysteresis_rows[[1,2,4,5,6]],1.,2.,.5,20,[1.,0.],hysteresis_probe)
     cell=(;x0=0.,x1=1.,y0=0.,y1=1.)
     signatures=Dict((x,y)=>"same" for (x,y) in
         ((0.,0.),(0.,1.),(1.,0.),(1.,1.),(.5,.5)))

@@ -604,29 +604,52 @@ function verify_hysteresis(details,folder,p,baseline,config)
     file=joinpath(folder,"root_$(roles["rest"])","hysteresis","sweeps.csv")
     rows=filter(r->r.axis=="B_E" && r.first_direction==-1,collect(CSV.File(file)))
     cap=TOML.parsefile(joinpath(dirname(folder),"geometry","bounds.toml"))["B_E"]
-    state=roots[roles["rest"]]["state"];current=baseline[1];checks=NamedTuple[]
-    index=1
-    for target in (0.,cap,baseline[1])
-        while abs(current-target)>1e-10
-            index<=length(rows) || error("plotted hysteresis sweep ended early: $file")
-            row=rows[index]
-            abs(row.previous_input-current)<1e-10 &&
-                0<=row.input<=cap && (row.input-current)*(target-current)>0 &&
-                abs(row.input-current)<=abs(target-current)+1e-10 &&
-                row.status=="compatible" || error("plotted hysteresis step changed: $file:$index")
-            discrepancy=Inf
-            for horizon in config["followup_times"]
-                ending=last(integrate(state,p,row.input,baseline[2],[0.,horizon]).u)
-                discrepancy=min(discrepancy,maximum(abs.(ending.-[row.E,row.I])))
-                discrepancy<1e-6 && break
-            end
-            push!(checks,(;file="$(relpath(file,details)):$index",
-                maximum_coordinate_error=discrepancy,passed=discrepancy<1e-6))
-            current=row.input;state=[row.E,row.I];index+=1
+    state=roots[roles["rest"]]["state"];checks=NamedTuple[]
+    cfg=D.S.load_config(joinpath(details,"config.toml"))
+    reference=D.S.context(p,baseline...,cfg;tight=true,grid=cfg.raw["confirmation_grid"])
+    cache=Dict{Float64,Any}(baseline[1]=>reference)
+    probe(next,initial)=D.S.observe(get!(() -> D.S.context(p,next,baseline[2],cfg),cache,next),
+        initial,cfg;reference,cycles=true)
+    accepted=verify_hysteresis_schedule(rows,baseline[1],cap,config["input_width"],
+        config["line_budget"],state,probe)
+    for (index,(row,initial)) in enumerate(accepted)
+        discrepancy=Inf
+        for horizon in config["followup_times"]
+            ending=last(integrate(initial,p,row.input,baseline[2],[0.,horizon]).u)
+            discrepancy=min(discrepancy,maximum(abs.(ending.-[row.E,row.I])))
+            discrepancy<1e-6 && break
         end
+        push!(checks,(;file="$(relpath(file,details)):$index",
+            maximum_coordinate_error=discrepancy,passed=discrepancy<1e-6))
     end
-    index==length(rows)+1 || error("plotted hysteresis has extra steps: $file")
     checks
+end
+function verify_hysteresis_schedule(rows,base,cap,width,budget,initial,probe)
+    current=base;state=copy(initial);previous="rest";index=1;accepted=Tuple[]
+    for target in (0.,cap,base)
+        step=min(1.,abs(target-current));count=0
+        while abs(target-current)>1e-12 && count<budget
+            next=current+sign(target-current)*min(step,abs(target-current))
+            trial=probe(next,state)
+            if trial.destination!=previous && abs(next-current)>width
+                step/=2;continue
+            end
+            index<=length(rows) || error("plotted hysteresis sweep ended early")
+            row=rows[index]
+            abs(row.previous_input-current)<1e-10 && abs(row.input-next)<1e-10 &&
+                row.status==trial.status && row.destination==trial.destination &&
+                max(abs(row.E-trial.final[1]),abs(row.I-trial.final[2]))<1e-6 ||
+                error("plotted hysteresis adaptive step changed at row $index")
+            trial.status=="compatible" || error("plotted hysteresis step is not compatible at row $index")
+            push!(accepted,(row,copy(state)))
+            current=next;state=copy(trial.final);previous=trial.destination
+            index+=1;count+=1
+            step=min(1.,max(width,step*2))
+        end
+        abs(target-current)<=1e-12 || error("plotted hysteresis leg did not reach its target")
+    end
+    index==length(rows)+1 || error("plotted hysteresis has extra steps")
+    accepted
 end
 function verify_cell_partition(cells,bounds)
     edges=sort(unique(vcat(0.,bounds["B_E"],
@@ -870,6 +893,27 @@ function verify_mechanism(details,p)
         passed=discrepancy<1e-10))
     checks
 end
+function verify_sequence_grid(seq,events,config)
+    first(events).onset==50. || error("sequence prelude duration changed")
+    expected=collect(0.:.5:50.)
+    window=config["diagnostics"]["window_duration"]
+    samples=config["diagnostics"]["min_samples"]
+    for (index,event) in enumerate(events)
+        event.duration in config["durations"] || error("sequence pulse duration changed: $index")
+        horizon=event.followup_end-event.offset
+        horizon in config["followup_times"] || error("sequence followup duration changed: $index")
+        append!(expected,event.onset .+ collect(range(0.,event.duration;length=101))[2:end])
+        continuation=sort!(unique(vcat([0.],
+            collect(range(horizon-2window,horizon-window;length=samples)),
+            collect(range(horizon-window,horizon;length=samples)),
+            collect(0.:1.:horizon))))
+        append!(expected,event.offset .+ continuation[2:end])
+    end
+    length(seq)==length(expected) &&
+        all(abs(row.time-time)<1e-9 for (row,time) in zip(seq,expected)) ||
+        error("sequence sampling grid changed")
+    true
+end
 function verify_sequence(details,reference,config)
     sequence_dir=joinpath(details,"sequence")
     seq=collect(CSV.File(joinpath(sequence_dir,"trajectory.csv")))
@@ -877,6 +921,7 @@ function verify_sequence(details,reference,config)
     route=["rest","active","rest","herald","active","rest","active","seizure"]
     TOML.parsefile(joinpath(sequence_dir,"summary.toml"))["route"]==route || error("sequence route changed")
     length(events)==length(route)-1 || error("sequence event count changed")
+    verify_sequence_grid(seq,events,config)
     roots=TOML.parsefile(joinpath(sequence_dir,"context.toml"))["equilibria"]
     roles=TOML.parsefile(joinpath(sequence_dir,"roles.toml"))
     all(haskey(roles,role) for role in route) || error("sequence route source unavailable")
