@@ -58,7 +58,7 @@ end
 """
     SevenRootTopologyOptions(; kwargs...)
 
-Numerical gates for recognizing the seven-equilibrium seven-root topology in
+Numerical gates for recognizing the seven-equilibrium topology in
 three independently searched refinements. Coordinate matching is deliberately
 stricter than equilibrium discovery deduplication. This finite classifier does
 not certify search completeness or an attractor count. Tolerances use the
@@ -90,7 +90,7 @@ function SevenRootTopologyOptions(;
     return SevenRootTopologyOptions(converted...)
 end
 
-"""Finite result of matching the seven-root seven-root topology across refinements."""
+"""Finite result of matching the seven-root topology across refinements."""
 struct SevenRootTopologyResult
     qualified::Bool
     reasons::Vector{Symbol}

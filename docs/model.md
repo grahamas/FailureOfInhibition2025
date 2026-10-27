@@ -873,6 +873,12 @@ The semantic rename changes the artifact `experiment` identifier to
 not accept those artifacts as parents. The artifact schema remains version 1
 within each experiment identifier.
 
+The exported `Figure5bTopologyOptions`, `Figure5bTopologyResult`, and
+`classify_figure5b_topology` names were replaced by
+`SevenRootTopologyOptions`, `SevenRootTopologyResult`, and
+`classify_seven_root_topology`. Callers using the former names must update;
+the former API remains available in VCS change `tlxqtzqw`.
+
 A non-smoke run requires `--accepted-revision` and is evidence-eligible only
 when that exact 40-character revision is checked out at detached `HEAD` with a
 clean worktree. `--replay-parent` verifies the parent artifact's complete
