@@ -28,15 +28,20 @@ file against a complete expected file set, selected model/protocol sources, the
 recorded Julia version and root/plotting project and manifest hashes, every
 numerical source recorded in the joint and tonic references, and all four
 reviewed reference files before writing PDF, SVG, and PNG files. Bundle
-checksum paths use `/` on every platform. To rebuild the bundle from the
-retained local archives, use the Julia builder:
+checksum paths use `/` on every platform. The reviewed source hashes predate
+the runner consolidation. Rebuild from a separate working copy at change
+`wkkotuwyqlsr` (the consolidation parent); the builder intentionally rejects
+the newer runner sources. Point it at the retained archives in the main working
+copy:
 
 ```sh
+jj workspace add ../workspaces/paper-figure-replay -r wkkotuwyqlsr
+cd ../workspaces/paper-figure-replay
 julia --project=. scripts/build_paper_figure_data.jl \
-  output/selective_anchor_joint_postmerge_20261006 \
-  output/selective_tonic_e_release_postmerge_20261006 \
-  output/input_response_20260929_v3/anchors/selective_withdrawal/responses/baseline_1 \
-  output/paper_figure_data_rebuilt
+  ../../main/output/selective_anchor_joint_postmerge_20261006 \
+  ../../main/output/selective_tonic_e_release_postmerge_20261006 \
+  ../../main/output/input_response_20260929_v3/anchors/selective_withdrawal/responses/baseline_1 \
+  ../../main/output/paper_figure_data_rebuilt
 ```
 
 The builder checks the first two local summaries byte for byte against their

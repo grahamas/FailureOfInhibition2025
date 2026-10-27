@@ -9,7 +9,9 @@ matched kept-on control. Where a seizure source is discovered at the first
 confirmed qualifying input of a sampled success interval, it tests that source
 under the same three releases and its own kept-on control.
 
-Run from the working-copy root with Julia 1.10:
+Run from a working copy at change `wkkotuwyqlsr` with Julia 1.10. The replay
+checks historical runner hashes and intentionally rejects the newer consolidated
+runner sources:
 
 ```sh
 julia --project=. reproducibility/selective_tonic_e_release_20261005/replay.jl output/selective_tonic_e_release_20261005
