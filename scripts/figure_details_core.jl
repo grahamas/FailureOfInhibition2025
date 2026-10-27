@@ -19,12 +19,13 @@ function initialize(config_path, output)
     metadata["source_sha256"][relative]=hash
     end
     metadata["purpose"]="Targeted figure measurements; finite discovery, no completeness certification"
-    metadata["replay_from_artifact_directory"]="julia --project=source source/scripts/run_figure_details.jl config.toml SCREEN_OUTPUT replay STAGE"
+    metadata["replay_from_artifact_directory"]=haskey(metadata,"replay_invocations") ?
+        join(metadata["replay_invocations"]," && ") : "pending completed detail stage"
     S.write_record(joinpath(output,"metadata.toml"),metadata)
     cfg,metadata
 end
 
-function select_cases(cfg,screen,output)
+function selection_record(cfg,screen)
     all_cases=F.registry(cfg)
     metadata=TOML.parsefile(joinpath(screen,"metadata.toml"))
     get(metadata,"completed",false) || error("screen is incomplete")
@@ -56,10 +57,14 @@ function select_cases(cfg,screen,output)
         q=copy(p);q["selection_reason"]="first remaining registry case with a new measured screen signature"
         push!(selected,q);union!(covered,observed)
     end
-    record=Dict("cases"=>selected,"screen_metadata_sha256"=>S.N.Evidence.file_hash(joinpath(screen,"metadata.toml")),
+    return Dict("cases"=>selected,"screen_metadata_sha256"=>S.N.Evidence.file_hash(joinpath(screen,"metadata.toml")),
         "selection"=>"Six predeclared contrast leads, then deterministic uncovered screen signatures; not prevalence")
+end
+
+function select_cases(cfg,screen,output)
+    record=selection_record(cfg,screen)
     S.write_record(joinpath(output,"selection.toml"),record)
-    selected
+    record["cases"]
 end
 
 function confirmed_context(p,b,cfg,dir)
@@ -376,10 +381,45 @@ function paired_controls(cases,cfg,output)
     CSV.write(joinpath(dir,"pulses.csv"),rows);S.N.complete_unit(dir)
 end
 
+function checked_selection(cfg,screen,output,metadata)
+    selection_path=joinpath(output,"selection.toml")
+    if isfile(selection_path)
+        selection=TOML.parsefile(selection_path)
+        hash=S.N.Evidence.file_hash(selection_path)
+        if haskey(metadata,"selection_sha256")
+            metadata["selection_sha256"]==hash || error("detail selection changed; use a new output")
+        else
+            selection==selection_record(cfg,screen) || error("detail selection changed; use a new output")
+            metadata["selection_sha256"]=hash
+            S.write_record(joinpath(output,"metadata.toml"),metadata)
+        end
+        selection["screen_metadata_sha256"]==S.N.Evidence.file_hash(joinpath(screen,"metadata.toml")) ||
+            error("detail screen changed; use a new output")
+        return selection["cases"]
+    else
+        haskey(metadata,"selection_sha256") && error("detail selection is missing")
+        cases=select_cases(cfg,screen,output)
+        metadata["selection_sha256"]=S.N.Evidence.file_hash(selection_path)
+        S.write_record(joinpath(output,"metadata.toml"),metadata)
+        return cases
+    end
+end
+
+function record_replay!(metadata,screen,output,stage,case_id)
+    command="julia --project=source source/scripts/run_figure_details.jl config.toml " *
+        S.N.shell_quote(relpath(abspath(screen),abspath(output))) *
+        " replay " * S.N.shell_quote(stage)
+    case_id===nothing || (command *= " " * S.N.shell_quote(case_id))
+    commands=get!(metadata,"replay_invocations",String[])
+    command in commands || push!(commands,command)
+    metadata["replay_from_artifact_directory"]=join(commands," && ")
+    metadata["screen_metadata_sha256"]=S.N.Evidence.file_hash(joinpath(screen,"metadata.toml"))
+    S.write_record(joinpath(output,"metadata.toml"),metadata)
+end
+
 function run(config_path,screen,output,stage;case_id=nothing)
     cfg,metadata=initialize(config_path,output)
-    selection_path=joinpath(output,"selection.toml")
-    cases=isfile(selection_path) ? TOML.parsefile(selection_path)["cases"] : select_cases(cfg,screen,output)
+    cases=checked_selection(cfg,screen,output,metadata)
     reference=only(filter(p->p["id"]==cfg.raw["redesign"]["reference"],cases))
     if stage=="cases"
         chosen=case_id===nothing ? cases : filter(p->p["id"]==case_id,cases)
@@ -409,6 +449,7 @@ function run(config_path,screen,output,stage;case_id=nothing)
     else
         error("unknown stage: $stage")
     end
+    record_replay!(metadata,screen,output,stage,case_id)
     S.N.Evidence.artifact_checksums(output)
 end
 end

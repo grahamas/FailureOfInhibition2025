@@ -8,6 +8,54 @@ include(joinpath(@__DIR__,"..","scripts","verify_figure_redesign.jl"))
     @test count(p->p["category"]=="anchors",cases)==8
     @test count(p->p["category"]=="expansion",cases)==224
     @test cfg.raw["redesign"]["detailed_limit"]==8
+    mktempdir() do outside
+        unsafe=merge(cfg,(raw=deepcopy(cfg.raw),))
+        unsafe.raw["redesign"]["registry"]=joinpath(outside,"registry.toml")
+        @test_throws ArgumentError FigureDetails.F.registry(unsafe)
+        unsafe.raw["redesign"]["registry"]="../registry.toml"
+        @test_throws ArgumentError FigureDetails.F.registry(unsafe)
+    end
+    mktempdir(joinpath(@__DIR__,"..")) do temporary
+        unsafe=merge(cfg,(raw=deepcopy(cfg.raw),))
+        registry=joinpath(temporary,"registry.toml")
+        bad_case=copy(first(cases))
+        bad_case["id"]="../outside"
+        open(registry,"w") do io
+            FigureDetails.F.TOML.print(io,Dict("schema_version"=>1,"cases"=>[bad_case]))
+        end
+        unsafe.raw["redesign"]["registry"]=relpath(registry,FigureDetails.F.ROOT)
+        @test_throws ArgumentError FigureDetails.F.registry(unsafe)
+        mktempdir() do outside
+            external=joinpath(outside,"registry.toml")
+            cp(registry,external)
+            symlink(outside,joinpath(temporary,"linked"))
+            unsafe.raw["redesign"]["registry"]=relpath(joinpath(temporary,"linked","registry.toml"),FigureDetails.F.ROOT)
+            @test_throws ArgumentError FigureDetails.F.registry(unsafe)
+        end
+    end
+    mktempdir() do temporary
+        screen=joinpath(temporary,"screen")
+        output=joinpath(temporary,"detail")
+        mkpath(screen);mkpath(output)
+        write(joinpath(screen,"metadata.toml"),"completed = true\n")
+        selection=joinpath(output,"selection.toml")
+        FigureDetails.S.write_record(selection,Dict("cases"=>[first(cases)],
+            "screen_metadata_sha256"=>FigureDetails.S.N.Evidence.file_hash(joinpath(screen,"metadata.toml"))))
+        metadata=Dict{String,Any}("selection_sha256"=>FigureDetails.S.N.Evidence.file_hash(selection))
+        @test only(FigureDetails.checked_selection(cfg,screen,output,metadata))["id"]==first(cases)["id"]
+        write(selection,read(selection,String)*"\n# changed\n")
+        @test_throws ErrorException FigureDetails.checked_selection(cfg,screen,output,metadata)
+        metadata["selection_sha256"]=FigureDetails.S.N.Evidence.file_hash(selection)
+        write(joinpath(screen,"metadata.toml"),"completed = false\n")
+        @test_throws ErrorException FigureDetails.checked_selection(cfg,screen,output,metadata)
+        FigureDetails.record_replay!(metadata,screen,output,"cases","a'b")
+        FigureDetails.record_replay!(metadata,screen,output,"cases","a'b")
+        @test length(metadata["replay_invocations"])==1
+        @test occursin("'a'\\''b'",only(metadata["replay_invocations"]))
+        @test occursin("'../screen'",only(metadata["replay_invocations"]))
+        @test FigureDetails.F.TOML.parsefile(joinpath(output,"metadata.toml"))["screen_metadata_sha256"]==
+            FigureDetails.S.N.Evidence.file_hash(joinpath(screen,"metadata.toml"))
+    end
     @test all(0<=p["e_to_e"]<=24 && 12<=p["e_to_i"]<=28 &&
         6<=p["theta_off"]<=12 && .2<=p["tau_ratio"]<=4.4 for p in cases)
     row(a,d;status="compatible")=(;axis="E_increase",amplitude=a,duration=100.,status,destination=d)

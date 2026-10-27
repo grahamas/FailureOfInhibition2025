@@ -43,7 +43,9 @@ julia --project=plotting scripts/render_figure_redesign.jl output/figure_packet_
 ```
 
 The screen and detailed stages resume only against the same recorded sources
-and configuration. Completed units are checked before reuse. Limit scientific
+and configuration. The detail replay command records the screen artifact's
+relative path and metadata hash; keep that relative placement when moving the
+two artifacts. Completed units are checked before reuse. Limit scientific
 case concurrency to two; two Julia threads allow the existing case scheduler
 to run both. A third argument to the screen runner limits case count for a
 development check and explicitly leaves its completion flag false.

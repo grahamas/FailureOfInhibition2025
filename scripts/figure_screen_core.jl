@@ -7,14 +7,29 @@ const S = InputResponseStudy
 const A = InputResponseArchives
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 
-function registry(config)
+function registry_path(config)
     relative = config.raw["redesign"]["registry"]
+    relative isa AbstractString && !isempty(relative) && !isabspath(relative) &&
+        normpath(relative) == relative && !(".." in splitpath(relative)) ||
+        throw(ArgumentError("registry must be a repository-relative file path"))
+    source = joinpath(ROOT, relative)
+    isfile(source) && !islink(source) &&
+        !(".." in splitpath(relpath(realpath(source), realpath(ROOT)))) ||
+        throw(ArgumentError("registry must be a regular file inside the repository"))
+    return relative
+end
+
+function registry(config)
+    relative = registry_path(config)
     data = TOML.parsefile(joinpath(ROOT, relative))
     data["schema_version"] == 1 || error("unsupported case registry")
     cases = data["cases"]
     ids = [p["id"] for p in cases]
     length(ids) == length(unique(ids)) || error("duplicate case identifiers")
     for p in cases
+        id = p["id"]
+        id isa AbstractString && occursin(r"^[A-Za-z0-9_][A-Za-z0-9_.-]*$", id) ||
+            throw(ArgumentError("case id must be a single safe path component"))
         S.M.model(p)
         p["category"] in ("anchors", "expansion") || error("invalid category")
         for b in p["baselines"]
@@ -26,10 +41,11 @@ function registry(config)
 end
 
 function initialize(config_path, cfg, output)
+    relative_registry = registry_path(cfg)
     metadata = S.initialize(config_path,cfg,output;stage="geometry")
     for relative in ("scripts/run_figure_screen.jl", "scripts/figure_screen_core.jl",
                      "scripts/archive_input_response_contexts.jl",
-                     cfg.raw["redesign"]["registry"])
+                     relative_registry)
         hash = S.N.Evidence.file_hash(joinpath(ROOT,relative))
         old = get(metadata["source_sha256"],relative,hash)
         old == hash || error("screen source changed: $relative")
