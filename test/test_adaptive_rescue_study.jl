@@ -90,6 +90,7 @@ end
             "scripts/run_minimal_experiment.jl", "Project.toml", "Manifest.toml",
             "scripts/run_adaptive_rescue_study.jl"]
         exemplar = joinpath(root, "custom_exemplars.toml")
+        archive = joinpath(root, "archive")
         write(exemplar, "original exemplars")
         hashes = Dict("experiments/exemplar_models.toml" =>
             AdaptiveRescueStudy.file_hash(exemplar))
@@ -99,8 +100,16 @@ end
             write(path, "original $relative")
             hashes[relative] = AdaptiveRescueStudy.file_hash(path)
         end
+        for (relative, source_hash) in hashes
+            source = relative == "experiments/exemplar_models.toml" ?
+                exemplar : joinpath(root, relative)
+            destination = joinpath(archive, "source", relative)
+            mkpath(dirname(destination))
+            cp(source, destination)
+            @test AdaptiveRescueStudy.file_hash(destination) == source_hash
+        end
         metadata = Dict("source_sha256" => hashes)
-        verify() = AdaptiveRescueStudy.verify_resume_sources(metadata, exemplar; root)
+        verify() = AdaptiveRescueStudy.verify_resume_sources(metadata, exemplar, archive; root)
         @test verify() === nothing
         for path in [joinpath.(root, paths); exemplar]
             original = read(path)
@@ -109,6 +118,16 @@ end
             rm(path)
             @test_throws ArgumentError verify()
             write(path, original)
+        end
+        @test verify() === nothing
+        for relative in keys(hashes)
+            archived = joinpath(archive, "source", relative)
+            original = read(archived)
+            write(archived, "changed")
+            @test_throws ArgumentError verify()
+            rm(archived)
+            @test_throws ArgumentError verify()
+            write(archived, original)
         end
         @test verify() === nothing
     end

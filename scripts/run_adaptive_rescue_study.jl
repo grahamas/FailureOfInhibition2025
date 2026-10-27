@@ -300,12 +300,15 @@ function write_completion_marker(path, data; writer=write_toml)
     return nothing
 end
 
-function verify_resume_sources(metadata, exemplar_path; root=ROOT)
+function verify_resume_sources(metadata, exemplar_path, output; root=ROOT)
     for (relative, expected) in metadata["source_sha256"]
         source = relative == "experiments/exemplar_models.toml" ?
             exemplar_path : joinpath(root, relative)
         isfile(source) && file_hash(source) == expected ||
             throw(ArgumentError("source changed or missing since checkpoint: $relative"))
+        archived = joinpath(output, "source", relative)
+        isfile(archived) && file_hash(archived) == expected ||
+            throw(ArgumentError("archived source changed or missing: $relative"))
     end
     return nothing
 end
@@ -490,7 +493,7 @@ function run_experiment(config_path, output_dir; case_filter=nothing,
         metadata["case_filter"] == (case_filter === nothing ? "all" : case_filter) &&
             metadata["cell_filter"] == (cell_filter === nothing ? "all" : cell_filter) ||
             throw(ArgumentError("resume case or cell filter differs"))
-        verify_resume_sources(metadata, config.exemplar_path)
+        verify_resume_sources(metadata, config.exemplar_path, output)
     else
         isempty(readdir(output)) || throw(ArgumentError("output is not an adaptive checkpoint"))
         metadata = archive_provenance(config_path, output)
