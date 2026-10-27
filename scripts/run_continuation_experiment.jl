@@ -23,12 +23,9 @@ function run_experiment(config_path, output_dir; smoke=false)
         throw(ArgumentError("output must be absent or an empty directory"))
     mkpath(joinpath(output, "branches"))
     metadata = Evidence.archive_provenance(config_path, output)
-    for name in ("run_coexistence_map.jl", "coexistence_core.jl", "run_continuation_experiment.jl")
-        relative = joinpath("scripts", name)
-        destination = joinpath(output, "source", relative)
-        cp(joinpath(@__DIR__, name), destination)
-        metadata["source_sha256"][relative] = Evidence.file_hash(destination)
-    end
+    Evidence.archive_sources!(metadata, output,
+        ("scripts/run_coexistence_map.jl", "scripts/coexistence_core.jl",
+            "scripts/run_continuation_experiment.jl"))
     metadata["purpose"] = "representative equilibrium branch continuation; no completeness certification"
     metadata["smoke"] = smoke
     metadata["replay_from_artifact_directory"] =

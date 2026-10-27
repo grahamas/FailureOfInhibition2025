@@ -215,10 +215,8 @@ function _run_experiment(config, config_path::AbstractString, output_dir::Abstra
         mkpath(joinpath(output, directory))
     end
     metadata = PulseExperiment.pulse_provenance(config_path, output; smoke=false)
-    relative = "scripts/run_rescue_replay.jl"
-    cp(joinpath(REPOSITORY_ROOT, relative), joinpath(output, "source", relative))
-    metadata["source_sha256"][relative] = PulseExperiment.file_hash(
-        joinpath(output, "source", relative))
+    PulseExperiment.MinimalExperiment.archive_sources!(metadata, output,
+        ("scripts/run_rescue_replay.jl",))
     canonical_relative = "experiments/rescue_replay.toml"
     canonical_archive = joinpath(output, "source", canonical_relative)
     mkpath(dirname(canonical_archive))
