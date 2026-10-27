@@ -204,5 +204,4 @@ end
 
 end
 
-include("test_paper_figures.jl")
 include("test_figure_redesign.jl")

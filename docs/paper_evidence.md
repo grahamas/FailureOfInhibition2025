@@ -100,7 +100,7 @@ fast-inhibition setting. `selective_confirmation.json` records coordinates,
 spectra, errors, and source hashes. Induction and neighborhood extent remain
 separate measurements.
 
-The [three-context handoff records](../reproducibility/paper_handoff_20260930/README.md)
+The [three-context handoff records in VCS history](figure_redesign_20261006.md#prior-figure-records)
 retain the dated inputs and source records for independently integrated
 trajectories at ratios 0.2, about 1.143, and 4.4. The original Python replay
 and figure renderer have been retired from the active repository. The local
@@ -137,7 +137,7 @@ high-state responses, even before adding an autonomous feedback mechanism.
 
 ## Four figure handoffs and candidate Results paragraphs
 
-The [selective-anchor figure packet](paper_figures_20261005.md) is a candidate
+The [retired selective-anchor figure packet](figure_redesign_20261006.md#prior-figure-records) was a candidate
 single-setting sequence for author review. Its main switching and tonic-input
 traces were regenerated from merged-source replays. Its supplementary
 established-state withdrawal panel retains the frozen-batch status described

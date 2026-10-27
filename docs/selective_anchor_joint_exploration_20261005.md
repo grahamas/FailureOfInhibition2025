@@ -3,8 +3,8 @@
 **6 October replay status:** The switching, induction, and threshold protocols
 below were rerun on the merged source after the exact-domain phase handoff
 correction. Their destination labels and repeated-switching outcomes agreed
-with the original run. The tracked [reference summary](../reproducibility/selective_anchor_joint_20261005/reference_summary.toml)
-now records the merged-source hashes and endpoints; the new detailed run is
+with the original run. The tracked [reference summary](figure_redesign_20261006.md#prior-figure-records)
+records the merged-source hashes and endpoints in VCS; the new detailed run is
 in [local output](../output/selective_anchor_joint_postmerge_20261006/summary.toml).
 The tonic-E scan also completed on the merged source with the same sampled
 brackets and destination labels. The earlier paired-withdrawal batch uses the
@@ -40,7 +40,7 @@ the [input-response results](input_response_results.md#finite-withdrawal-can-con
 
 ## Tonic E induction and cessation
 
-A separate [Julia tonic-E replay](../reproducibility/selective_tonic_e_release_20261005/README.md)
+A separate [Julia tonic-E replay](figure_redesign_20261006.md#prior-figure-records)
 starts from rest and active separately at `B_E=0.35` for each of the seven
 failure thresholds above. The input is raised and held until a finite-window
 destination is classified; the *actual* on-input endpoint is then released to
@@ -65,7 +65,7 @@ returned to herald at all seven thresholds.
 | 8, 8.25, 8.5 | Discovered and 41-by-41 checked; kept-on control remains seizure | Seizure after release to `0.35`, `0.17`, and `0` |
 | 8.75, 9, 10, 12 | No seizure source identified by the 41-by-41 search | No seizure cessation trial available |
 
-The [reviewed reference summary](../reproducibility/selective_tonic_e_release_20261005/reference_summary.toml)
+The [reviewed reference summary](figure_redesign_20261006.md#prior-figure-records)
 retains all seven threshold rows; the [local merged-source run](../output/selective_tonic_e_release_postmerge_20261006/summary.toml)
 retains 147 sampled on-input points per threshold and the source-specific
 induction, control, and release outcomes. These are sampled onset brackets and
@@ -75,8 +75,8 @@ absence.
 
 ## Evidence and decision boundary
 
-The [Julia replay](../reproducibility/selective_anchor_joint_20261005/README.md)
-and its [reference summary](../reproducibility/selective_anchor_joint_20261005/reference_summary.toml)
+The [Julia replay](figure_redesign_20261006.md#prior-figure-records)
+and its [reference summary](figure_redesign_20261006.md#prior-figure-records)
 record the exact pulse settings, sampled threshold values, Julia version, and
 source hashes. The local [merged-source run output](../output/selective_anchor_joint_postmerge_20261006/summary.toml)
 retains trajectory and diagnostic files. Baseline and threshold-8.75

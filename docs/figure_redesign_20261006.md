@@ -6,6 +6,14 @@ with contrasting regimes, and detailed work on at most eight parameterizations.
 This replaces the previous single-setting figure design. It does not extend
 the model to spatial recruitment, autonomous feedback, or physiological fitting.
 
+## Prior figure records
+
+The superseded single-setting builder, renderer, tests, and dated replay packets
+were retired from the working tree. They remain in VCS at change `uxykwssn`;
+for example, `jj file show --no-pager -r uxykwssn reproducibility/paper_figures_20261005/README.md`
+retrieves the old packet instructions. The current five-figure replay is in
+`reproducibility/figure_redesign_20261006/`.
+
 ## What earns a panel
 
 Each main panel must reveal a mechanism, dependence, boundary, or comparison.
