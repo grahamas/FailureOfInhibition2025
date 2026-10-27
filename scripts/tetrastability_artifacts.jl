@@ -1,16 +1,12 @@
 """Tetrastability protocol functions included by run_tetrastability_search.jl."""
 function _archive_provenance(config_path, output, config, smoke)
     metadata = Evidence.archive_provenance(config_path, output)
-    for name in ("run_coexistence_map.jl", "coexistence_core.jl",
+    Evidence.archive_sources!(metadata, output,
+        (joinpath("scripts", name) for name in ("run_coexistence_map.jl", "coexistence_core.jl",
         "run_tetrastability_search.jl", "tetrastability_core.jl",
         "tetrastability_config.jl", "tetrastability_sampling.jl",
         "tetrastability_confirmation.jl", "tetrastability_continuation.jl",
-        "tetrastability_artifacts.jl")
-        relative = joinpath("scripts", name)
-        destination = joinpath(output, "source", relative)
-        cp(joinpath(REPOSITORY_ROOT, relative), destination)
-        metadata["source_sha256"][relative] = Evidence.file_hash(destination)
-    end
+        "tetrastability_artifacts.jl")))
     merge!(metadata, Dict(
         "purpose" => "finite equilibrium tetrastability discovery and confirmation; no biological interpretation",
         "experiment" => "tetrastability_search", "smoke" => smoke,

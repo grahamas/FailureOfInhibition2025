@@ -96,10 +96,8 @@ function initialize(config_path,cfg,output;stage="all",case_filter=nothing)
     data["replay_invocations"]=String[]
     data["replay_from_artifact_directory"]=N.replay_command("run_input_response_study.jl";
         stage,case_filter,smoke=cfg.smoke)
-    for file in vcat(source_files,["experiments/exemplar_models.toml"])
-        target=joinpath(output,"source",file);mkpath(dirname(target));cp(joinpath(ROOT,file),target;force=true)
-        data["source_sha256"][file]=N.Evidence.file_hash(target)
-    end
+    N.Evidence.archive_sources!(data, output,
+        vcat(source_files,["experiments/exemplar_models.toml"]); force=true)
     data["smoke"]=cfg.smoke;data["completed"]=false
     data["claim_limits"]="numerical equilibrium/critical sets; finite-window transitions; no biological or global completeness certification"
     write_record(path,data);data

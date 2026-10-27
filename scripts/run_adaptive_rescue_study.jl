@@ -497,12 +497,9 @@ function run_experiment(config_path, output_dir; case_filter=nothing,
     else
         isempty(readdir(output)) || throw(ArgumentError("output is not an adaptive checkpoint"))
         metadata = archive_provenance(config_path, output)
-        for relative in ("scripts/run_basin_rescue_study.jl", "scripts/basin_rescue_core.jl",
-            "scripts/run_adaptive_rescue_study.jl")
-            destination = joinpath(output, "source", relative)
-            cp(joinpath(ROOT, relative), destination; force=true)
-            metadata["source_sha256"][relative] = file_hash(destination)
-        end
+        BasinRescueStudy.MinimalExperiment.archive_sources!(metadata, output,
+            ("scripts/run_basin_rescue_study.jl", "scripts/basin_rescue_core.jl",
+                "scripts/run_adaptive_rescue_study.jl"); force=true)
         exemplar_destination = joinpath(output, "source", "experiments", "exemplar_models.toml")
         mkpath(dirname(exemplar_destination))
         cp(config.exemplar_path, exemplar_destination)

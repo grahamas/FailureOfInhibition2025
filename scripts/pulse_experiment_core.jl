@@ -84,13 +84,8 @@ end
 
 function pulse_provenance(config_path, output; smoke)
     metadata = archive_provenance(config_path, output)
-    relative = "scripts/run_pulse_experiment.jl"
-    cp(joinpath(REPOSITORY_ROOT, relative), joinpath(output, "source", relative))
-    metadata["source_sha256"][relative] = file_hash(joinpath(output, "source", relative))
-    core_relative = "scripts/pulse_experiment_core.jl"
-    core_destination = joinpath(output, "source", core_relative)
-    cp(joinpath(REPOSITORY_ROOT, core_relative), core_destination)
-    metadata["source_sha256"][core_relative] = file_hash(core_destination)
+    MinimalExperiment.archive_sources!(metadata, output,
+        ("scripts/run_pulse_experiment.jl", "scripts/pulse_experiment_core.jl"))
     metadata["purpose"] = "explicit pulse transitions; finite-window equilibrium compatibility; no biological labels"
     metadata["smoke"] = smoke
     metadata["equilibrium_seed_policy"] = "configured uniform grid on analytical sharper rectangle plus default seeds; discovery completeness not certified"

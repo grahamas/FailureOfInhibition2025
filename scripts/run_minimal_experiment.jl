@@ -11,7 +11,7 @@ import TOML
 include("study_support.jl")
 using .StudySupport: require_keys, finite_number, pair, positive_integer, options_from,
     toml_value, write_toml, error_record, source_files, file_hash, git_output,
-    archive_provenance, context_record, summary_attempt, summary_equilibrium,
+    archive_provenance, archive_sources!, context_record, summary_attempt, summary_equilibrium,
     write_rows, artifact_checksums
 
 const REPOSITORY_ROOT = normpath(joinpath(@__DIR__, ".."))

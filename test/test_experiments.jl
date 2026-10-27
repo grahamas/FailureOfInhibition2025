@@ -1,5 +1,30 @@
 include(joinpath(@__DIR__, "..", "scripts", "run_minimal_experiment.jl"))
 
+@testset "Source archive copy and hash modes" begin
+    mktempdir() do directory
+        source = joinpath(directory, "source.jl")
+        write(source, "first")
+        output = joinpath(directory, "artifact")
+        metadata = Dict("source_sha256" => Dict{String,String}())
+        relative = "source.jl"
+        MinimalExperiment.archive_sources!(metadata, output, (relative,); root=directory)
+        archived = joinpath(output, "source", relative)
+        @test read(archived, String) == "first"
+        @test metadata["source_sha256"][relative] == MinimalExperiment.file_hash(archived)
+
+        write(source, "second")
+        MinimalExperiment.archive_sources!(metadata, output, (relative,);
+            root=directory, missing_only=true)
+        @test read(archived, String) == "first"
+        MinimalExperiment.archive_sources!(metadata, output, (relative,);
+            root=directory, force=true)
+        @test read(archived, String) == "second"
+        @test metadata["source_sha256"][relative] == MinimalExperiment.file_hash(archived)
+        @test_throws ArgumentError MinimalExperiment.archive_sources!(metadata, output,
+            ("../source.jl",); root=directory)
+    end
+end
+
 @testset "Synthetic experiment configuration" begin
     config_path = joinpath(@__DIR__, "..", "experiments", "minimal.toml")
     config = MinimalExperiment.load_config(config_path)

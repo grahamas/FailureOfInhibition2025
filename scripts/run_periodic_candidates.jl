@@ -181,12 +181,9 @@ function run_experiment(config_path, output_dir; smoke=false)
         mkpath(joinpath(output, directory))
     end
     metadata = Evidence.archive_provenance(config_path, output)
-    for name in ("run_coexistence_map.jl", "coexistence_core.jl", "run_periodic_candidates.jl")
-        relative = joinpath("scripts", name)
-        destination = joinpath(output, "source", relative)
-        cp(joinpath(@__DIR__, name), destination)
-        metadata["source_sha256"][relative] = Evidence.file_hash(destination)
-    end
+    Evidence.archive_sources!(metadata, output,
+        (joinpath("scripts", name) for name in
+            ("run_coexistence_map.jl", "coexistence_core.jl", "run_periodic_candidates.jl")))
     merge!(metadata, Dict("purpose" => "finite basin screen and numerical periodic candidate validation",
         "time_unit" => "millisecond", "smoke" => smoke, "baseline_drive" => [0.0, 0.0],
         "biological_interpretation" => "not_assigned", "completeness" => CompletenessNotCertified,

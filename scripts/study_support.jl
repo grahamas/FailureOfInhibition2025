@@ -78,6 +78,22 @@ end
 
 file_hash(path) = bytes2hex(SHA.sha256(read(path)))
 
+"""Archive explicit repository-relative sources and record their copied hashes."""
+function archive_sources!(metadata, output, relatives; root=REPOSITORY_ROOT,
+    force=false, missing_only=false)
+    for relative in relatives
+        relative isa AbstractString && !isabspath(relative) &&
+            !(".." in splitpath(relative)) || throw(ArgumentError("invalid source path: $relative"))
+        destination = joinpath(output, "source", relative)
+        mkpath(dirname(destination))
+        if !missing_only || !isfile(destination)
+            cp(joinpath(root, relative), destination; force)
+        end
+        metadata["source_sha256"][relative] = file_hash(destination)
+    end
+    return metadata
+end
+
 function git_output(root, arguments...)
     try
         return strip(read(`git --no-optional-locks -C $root $arguments`, String))
@@ -89,13 +105,7 @@ end
 function archive_provenance(config_path, output)
     files = source_files(REPOSITORY_ROOT)
     hashes = Dict{String,String}()
-    for relative in files
-        source = joinpath(REPOSITORY_ROOT, relative)
-        destination = joinpath(output, "source", relative)
-        mkpath(dirname(destination))
-        cp(source, destination)
-        hashes[relative] = file_hash(destination)
-    end
+    archive_sources!(Dict("source_sha256" => hashes), output, files)
     cp(config_path, joinpath(output, "config.toml"))
     return Dict(
         "schema_version" => 1,

@@ -181,10 +181,8 @@ end
 
 function archive_run(config_path, output, config; smoke, robustness)
     metadata = archive_provenance(config_path, output)
-    relative = "scripts/run_intervention_experiment.jl"
-    destination = joinpath(output, "source", relative)
-    cp(joinpath(REPOSITORY_ROOT, relative), destination)
-    metadata["source_sha256"][relative] = file_hash(destination)
+    MinimalExperiment.archive_sources!(metadata, output,
+        ("scripts/run_intervention_experiment.jl",))
     metadata["purpose"] = "independent matched-model intervention and targeted robustness equilibrium discovery"
     metadata["smoke"] = smoke
     metadata["robustness_enabled"] = robustness

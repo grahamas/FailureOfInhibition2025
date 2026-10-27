@@ -5,7 +5,7 @@ import CSV
 import TOML
 include("pulse_experiment_core.jl")
 using .PulseExperiment.MinimalExperiment: write_toml, archive_provenance,
-    artifact_checksums, file_hash, error_record
+    archive_sources!, artifact_checksums, file_hash, error_record
 
 const REPOSITORY_ROOT = normpath(joinpath(@__DIR__, ".."))
 const CASE_NAMES = ("baseline", "theta_off_10", "theta_off_12", "e_to_i_60_percent",
@@ -70,12 +70,9 @@ end
 
 function comparison_provenance(config_path, output, names; smoke)
     metadata = archive_provenance(config_path, output)
-    for relative in ("scripts/run_pulse_comparison.jl", "scripts/run_pulse_experiment.jl",
-        "scripts/pulse_experiment_core.jl")
-        destination = joinpath(output, "source", relative)
-        cp(joinpath(REPOSITORY_ROOT, relative), destination)
-        metadata["source_sha256"][relative] = file_hash(destination)
-    end
+    archive_sources!(metadata, output,
+        ("scripts/run_pulse_comparison.jl", "scripts/run_pulse_experiment.jl",
+            "scripts/pulse_experiment_core.jl"))
     metadata["purpose"] = "explicit pulse comparisons across independent parameter cases"
     metadata["case_names"] = names
     metadata["smoke"] = smoke

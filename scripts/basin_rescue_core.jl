@@ -165,14 +165,8 @@ end
 
 function _metadata(config_path, output, mode, case_name, smoke, parameter_values)
     metadata = archive_provenance(config_path, output)
-    relative = "scripts/run_basin_rescue_study.jl"
-    destination = joinpath(output, "source", relative)
-    cp(joinpath(ROOT, relative), destination)
-    metadata["source_sha256"][relative] = file_hash(destination)
-    core_relative = "scripts/basin_rescue_core.jl"
-    core_destination = joinpath(output, "source", core_relative)
-    cp(joinpath(ROOT, core_relative), core_destination)
-    metadata["source_sha256"][core_relative] = file_hash(core_destination)
+    MinimalExperiment.archive_sources!(metadata, output,
+        ("scripts/run_basin_rescue_study.jl", "scripts/basin_rescue_core.jl"))
     metadata["purpose"] = "finite basin and nonnegative-total-drive protocol observations"
     metadata["mode"] = mode
     metadata["case"] = case_name

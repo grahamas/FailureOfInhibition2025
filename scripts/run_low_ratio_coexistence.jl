@@ -277,16 +277,12 @@ function run_experiment(config_path::AbstractString, output_dir::AbstractString;
     mkpath(joinpath(output, "contexts"))
     metadata = Evidence.archive_provenance(config_path, output)
     cp(config.base_path, joinpath(output, basename(config.base_path)))
-    for name in ("run_coexistence_map.jl", "run_tetrastability_search.jl",
+    Evidence.archive_sources!(metadata, output,
+        (joinpath("scripts", name) for name in ("run_coexistence_map.jl", "run_tetrastability_search.jl",
         "run_low_ratio_coexistence.jl", "coexistence_core.jl",
         "tetrastability_core.jl", "tetrastability_config.jl",
         "tetrastability_sampling.jl", "tetrastability_confirmation.jl",
-        "tetrastability_continuation.jl", "tetrastability_artifacts.jl")
-        relative = joinpath("scripts", name)
-        destination = joinpath(output, "source", relative)
-        cp(joinpath(REPOSITORY_ROOT, relative), destination)
-        metadata["source_sha256"][relative] = Evidence.file_hash(destination)
-    end
+        "tetrastability_continuation.jl", "tetrastability_artifacts.jl")))
     metadata["base_config_sha256"] = Evidence.file_hash(
         joinpath(output, basename(config.base_path)))
     merge!(metadata, Dict("experiment" => "low_ratio_coexistence",

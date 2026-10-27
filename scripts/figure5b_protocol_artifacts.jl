@@ -2,12 +2,8 @@
 function _archive_provenance(config_path, output, config, smoke, provenance,
     canonical_config, replay_info)
     metadata = Evidence.archive_provenance(config_path, output)
-    for name in PROTOCOL_SOURCES
-        relative = joinpath("scripts", name)
-        destination = joinpath(output, "source", relative)
-        isfile(destination) || cp(joinpath(REPOSITORY_ROOT, relative), destination)
-        metadata["source_sha256"][relative] = Evidence.file_hash(destination)
-    end
+    Evidence.archive_sources!(metadata, output,
+        (joinpath("scripts", name) for name in PROTOCOL_SOURCES); missing_only=true)
     candidate_text = join((string(key) * "=" * string(getproperty(config.candidate, key))
         for key in propertynames(config.candidate)), "\n")
     metadata["git_revision"] = provenance.actual_revision

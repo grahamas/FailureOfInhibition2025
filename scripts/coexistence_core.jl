@@ -139,12 +139,8 @@ end
 
 function archive_provenance(config_path, output, config, smoke)
     metadata = MinimalExperiment.archive_provenance(config_path, output)
-    for name in ("run_coexistence_map.jl", "coexistence_core.jl")
-        relative = joinpath("scripts", name)
-        destination = joinpath(output, "source", relative)
-        cp(joinpath(REPOSITORY_ROOT, relative), destination)
-        metadata["source_sha256"][relative] = file_hash(destination)
-    end
+    MinimalExperiment.archive_sources!(metadata, output,
+        ("scripts/run_coexistence_map.jl", "scripts/coexistence_core.jl"))
     merge!(metadata, Dict("purpose" => "proposed manuscript parameter exploration; no physiological calibration",
         "experiment" => "coexistence_map", "smoke" => smoke,
         "equilibrium_seed_policy" => "union of default 5-by-5 and $(config.seed_grid_points)-by-$(config.seed_grid_points) sharper-rectangle grids",
