@@ -97,14 +97,19 @@ end
         end
     end
 
-    @testset "Julia-only active source" begin
+    @testset "Declared Python verifiers only" begin
         active_python = String[]
         for (directory, subdirectories, files) in walkdir(ROOT)
             filter!(name -> name ∉ (".git", ".jj", "output"), subdirectories)
             append!(active_python,
                 joinpath(directory, file) for file in files if endswith(file, ".py"))
         end
-        @test isempty(active_python)
+        declared_verifiers = Set(joinpath(ROOT, "scripts", file) for file in (
+            "verify_catalog_classifications.py",
+            "verify_structural_distributions.py",
+            "verify_layered_catalog.py",
+        ))
+        @test Set(active_python) == declared_verifiers
     end
 
     @testset "model-backed values" begin
