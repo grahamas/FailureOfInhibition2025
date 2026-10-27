@@ -25,6 +25,11 @@ include(joinpath(@__DIR__, "..", "scripts", "run_minimal_experiment.jl"))
     end
 end
 
+@testset "Replay argument quoting" begin
+    @test MinimalExperiment.shell_quote("a b") == "'a b'"
+    @test MinimalExperiment.shell_quote("a'b") == "'a'\\''b'"
+end
+
 @testset "Synthetic experiment configuration" begin
     config_path = joinpath(@__DIR__, "..", "experiments", "minimal.toml")
     config = MinimalExperiment.load_config(config_path)

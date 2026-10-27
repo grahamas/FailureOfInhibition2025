@@ -8,7 +8,7 @@ import TOML
 include("basin_rescue_core.jl")
 using .BasinRescueStudy: model_for, search_model
 using .BasinRescueStudy.MinimalExperiment: archive_provenance,
-    artifact_checksums, context_record, file_hash, write_rows, write_toml
+    artifact_checksums, context_record, file_hash, shell_quote, write_rows, write_toml
 
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 const PARAMETERS = ("e_to_i", "theta_off", "tau_ratio")
@@ -516,8 +516,8 @@ function run_experiment(config_path, output_dir; case_filter=nothing,
         metadata["replay_from_artifact_directory"] =
             "julia --project=source source/scripts/run_adaptive_rescue_study.jl --config config.toml --output replay" *
             (smoke ? " --smoke" : "") *
-            (case_filter === nothing ? "" : " --case $case_filter") *
-            (cell_filter === nothing ? "" : " --cell $cell_filter")
+            (case_filter === nothing ? "" : " --case " * shell_quote(case_filter)) *
+            (cell_filter === nothing ? "" : " --cell " * shell_quote(cell_filter))
         write_toml(metadata_path, metadata)
     end
     baselines = smoke ? collect(0.0:0.25:0.5) : collect(0.0:0.25:8.0)

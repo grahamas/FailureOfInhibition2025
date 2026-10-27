@@ -5,7 +5,7 @@ import CSV
 import TOML
 include("pulse_experiment_core.jl")
 using .PulseExperiment.MinimalExperiment: write_toml, archive_provenance,
-    archive_sources!, artifact_checksums, file_hash, error_record
+    archive_sources!, artifact_checksums, file_hash, shell_quote, error_record
 
 const REPOSITORY_ROOT = normpath(joinpath(@__DIR__, ".."))
 const CASE_NAMES = ("baseline", "theta_off_10", "theta_off_12", "e_to_i_60_percent",
@@ -82,7 +82,7 @@ function comparison_provenance(config_path, output, names; smoke)
     metadata["absence_inference"] = "a missing discovered equilibrium or pulse transition does not certify absence or global unreachability"
     metadata["replay_from_artifact_directory"] =
         "julia --project=source source/scripts/run_pulse_comparison.jl --config config.toml --output replay" *
-        join([" --case $name" for name in names]) * (smoke ? " --smoke" : "")
+        join([" --case " * shell_quote(name) for name in names]) * (smoke ? " --smoke" : "")
     metadata["artifact_schema"] = Dict("version" => 1,
         "cases" => "one row per parameter configuration with exact parameters, trial counts and elapsed execution seconds",
         "configs" => "complete derived configurations; the root config.toml is the original baseline",

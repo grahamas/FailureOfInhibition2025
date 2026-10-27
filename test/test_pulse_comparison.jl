@@ -84,7 +84,7 @@ end
         @test metadata["case_names"] == ["baseline", "theta_off_12"]
         @test metadata["biological_interpretation"] == "not_assigned"
         @test occursin("IDs are local", metadata["branch_correspondence"])
-        @test occursin("--case baseline --case theta_off_12 --smoke", metadata["replay_from_artifact_directory"])
+        @test occursin("--case 'baseline' --case 'theta_off_12' --smoke", metadata["replay_from_artifact_directory"])
         @test haskey(metadata["source_sha256"], "scripts/run_pulse_comparison.jl")
         @test haskey(metadata["source_sha256"], "scripts/run_pulse_experiment.jl")
         hashes = comparison.TOML.parsefile(joinpath(output, "checksums.toml"))["files"]

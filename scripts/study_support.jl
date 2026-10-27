@@ -78,6 +78,8 @@ end
 
 file_hash(path) = bytes2hex(SHA.sha256(read(path)))
 
+shell_quote(value::AbstractString) = "'" * replace(value, "'" => "'\\''") * "'"
+
 """Archive explicit repository-relative sources and record their copied hashes."""
 function archive_sources!(metadata, output, relatives; root=REPOSITORY_ROOT,
     force=false, missing_only=false)

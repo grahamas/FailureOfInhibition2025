@@ -71,7 +71,7 @@ function complete_unit(dir)
     write_record(joinpath(dir,"done.toml"),Dict("files"=>files))
 end
 
-shell_quote(value::AbstractString) = "'" * replace(value, "'" => "'\\''") * "'"
+const shell_quote = Evidence.shell_quote
 
 function replay_command(script; stage="all", case_filter=nothing, smoke=false)
     command="julia --project=source source/scripts/$script --config config.toml --output replay --stage $stage"
