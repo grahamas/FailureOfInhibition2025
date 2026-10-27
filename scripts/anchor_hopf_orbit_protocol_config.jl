@@ -1,4 +1,4 @@
-"""Figure 5b protocol functions included by run_figure5b_protocol.jl."""
+"""Anchor Hopf/orbit protocol functions included by run_anchor_hopf_orbit_protocol.jl."""
 function number_vector(value, label; positive=false, nonnegative=false,
     minimum_length=1)
     value isa AbstractVector && length(value) >= minimum_length ||
@@ -34,7 +34,7 @@ function _canonical_check(config)
     config.candidate == (tau_e=7.8, excitatory_slope=5.0,
         inhibitory_slope=5.0, theta_e=1.5, theta_on=4.0, theta_off=8.0,
         e_to_e=19.0, i_to_e=13.0, e_to_i=19.0, i_to_i=6.0) ||
-        throw(ArgumentError("candidate differs from the frozen Figure-5b anchor"))
+        throw(ArgumentError("candidate differs from the frozen anchor"))
     config.ratios == (manuscript=4.4, below_hopf=0.4, orbit_anchor=0.5,
         hopf_bracket=(0.4, 0.5), continuation_bounds=(0.2, 8.0)) ||
         throw(ArgumentError("ratio schedule differs from the canonical protocol"))
@@ -103,7 +103,7 @@ function _canonical_check(config)
     return config
 end
 
-"""Load and fail-closed validate the version-1 Figure-5b protocol."""
+"""Load and fail-closed validate the version-1 anchor Hopf/orbit protocol."""
 function load_config(path::AbstractString; require_canonical=true)
     raw = TOML.parsefile(path)
     require_exact_keys(raw, ("schema_version", "candidate", "ratios", "search",
@@ -151,7 +151,7 @@ function load_config(path::AbstractString; require_canonical=true)
         stability_keys, "stability")
     topology_keys = ("coordinate_match_atol", "minimum_root_separation", "residual_atol",
         "jacobian_atol", "slope_atol", "spectral_margin")
-    topology_options = parse_options(raw["topology"], Figure5bTopologyOptions,
+    topology_options = parse_options(raw["topology"], SevenRootTopologyOptions,
         topology_keys, "topology")
 
     hopf_keys = ("balance_residual_atol", "diagonal_atol", "determinant_atol",

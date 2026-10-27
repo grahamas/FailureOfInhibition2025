@@ -1,4 +1,4 @@
-"""Figure 5b protocol functions included by run_figure5b_protocol.jl."""
+"""Anchor Hopf/orbit protocol functions included by run_anchor_hopf_orbit_protocol.jl."""
 function _archive_provenance(config_path, output, config, smoke, provenance,
     canonical_config, replay_info)
     metadata = Evidence.archive_provenance(config_path, output)
@@ -10,8 +10,8 @@ function _archive_provenance(config_path, output, config, smoke, provenance,
     metadata["git_status_porcelain"] = provenance.status_porcelain
     replay_mode = replay_info !== nothing
     merge!(metadata, Dict(
-        "purpose" => "candidate-specific Figure-5b Hopf and periodic-orbit numerical validation",
-        "experiment" => "figure5b_hopf_protocol", "smoke" => smoke,
+        "purpose" => "candidate-specific anchor Hopf/orbit Hopf and periodic-orbit numerical validation",
+        "experiment" => "anchor_hopf_orbit_protocol", "smoke" => smoke,
         "replay_mode" => replay_mode,
         "scientific_acceptance_enabled" => !smoke && !replay_mode && canonical_config,
         "canonical_config_validated" => canonical_config,
@@ -46,7 +46,7 @@ function _archive_provenance(config_path, output, config, smoke, provenance,
         "biological_interpretation" => "not_assigned",
         "reachability_role" => "not_run; existence and local attraction are separate outputs",
         "interruption_policy" => "partial artifacts are diagnostic and not resumable; restart into a new empty output directory",
-        "replay_from_artifact_directory" => "julia --project=source source/scripts/run_figure5b_protocol.jl --config config.toml --output ../replay --replay-parent .",
+        "replay_from_artifact_directory" => "julia --project=source source/scripts/run_anchor_hopf_orbit_protocol.jl --config config.toml --output ../replay --replay-parent .",
         "artifact_schema" => Dict("version" => 1,
             "equilibria" => "all equilibrium attempts, roots and cross-grid coordinate matches",
             "hopf" => "analytical diagnostics plus independent finite-difference trace bisection",

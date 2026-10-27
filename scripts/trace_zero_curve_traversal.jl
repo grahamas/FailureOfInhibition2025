@@ -1,11 +1,11 @@
-module Figure5bCurveTraversal
+module TraceZeroCurveTraversal
 
 using FailureOfInhibition2025
 using ForwardDiff
 using LinearAlgebra: norm, dot, opnorm, svd, svdvals, Diagonal
 
-include("figure5b_curve_seeds.jl")
-const Seeds = Figure5bCurveSeeds
+include("trace_zero_curve_seeds.jl")
+const Seeds = TraceZeroCurveSeeds
 const Axis = Seeds.Axis
 const Lineage = Seeds.Lineage
 const State = Seeds.State
@@ -897,7 +897,7 @@ function _continue_verified(verification::SeedVerification,
     # validated exit whose own neutrality evidence agrees. Validated exits that
     # are not neutrality-qualified are reported separately, and a segment with
     # even one unqualified point is downgraded so no consumer can read the
-    # status as a Figure-5b Hopf claim.
+    # status as a seven-root Hopf claim.
     segment = all(result -> result.termination in BOUNDARY_TERMINATIONS,
         directions)
     neutral_segment = segment &&

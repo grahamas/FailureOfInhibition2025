@@ -1,8 +1,8 @@
 using LinearAlgebra: norm
 
-include(joinpath(@__DIR__, "..", "scripts", "figure5b_axis_continuation.jl"))
-const Axis5b = Figure5bAxisContinuation
-const AxisLineage = Axis5b.Figure5bRootLineage
+include(joinpath(@__DIR__, "..", "scripts", "trace_zero_axis.jl"))
+const AxisSearch = TraceZeroAxisContinuation
+const AxisLineage = AxisSearch.RootLineage
 
 function axis_anchor_model(; e_to_i=19.0, theta_off=8.0)
     return PointModelParameters(
@@ -15,16 +15,16 @@ function axis_anchor_model(; e_to_i=19.0, theta_off=8.0)
             e_to_i=e_to_i, i_to_i=6.0), drive=NoDrive())
 end
 
-@testset "Figure-5b axis continuation contracts" begin
+@testset "Trace-zero axis continuation contracts" begin
     model = axis_anchor_model()
     factory = parameter -> model
-    options = Axis5b.AxisOptions(initial_step_fraction=0.5,
+    options = AxisSearch.AxisOptions(initial_step_fraction=0.5,
         minimum_step_fraction=0.25, maximum_step_fraction=0.5,
         max_steps=2, max_retries=1)
-    searches = Axis5b._searches(model, options)
-    topology = classify_figure5b_topology(searches)
+    searches = AxisSearch._searches(model, options)
+    topology = classify_seven_root_topology(searches)
     @test topology.qualified
-    center = Axis5b._state(topology.central_state)
+    center = AxisSearch._state(topology.central_state)
     seeded = AxisLineage.seed_lineage(searches, center)
     @test seeded.accepted
     root_search = (model, options) -> searches
@@ -34,28 +34,28 @@ end
     for kwargs in ((; initial_step_fraction=0.0),
             (; minimum_step_fraction=0.02, initial_step_fraction=0.01),
             (; trace_atol=Inf), (; max_steps=0))
-        @test_throws ArgumentError Axis5b.AxisOptions(; kwargs...)
+        @test_throws ArgumentError AxisSearch.AxisOptions(; kwargs...)
     end
-    @test_throws ArgumentError Axis5b.AxisOptions(-0.01, 0.005,
+    @test_throws ArgumentError AxisSearch.AxisOptions(-0.01, 0.005,
         0.01, 2, 1, 0.05, 1e-8, 1e-8, 1e-10, 1e-5, 30,
         EquilibriumOptions(), StabilityOptions())
-    @test_throws ArgumentError Axis5b.trace_zero_axis(factory, 19.0;
+    @test_throws ArgumentError AxisSearch.trace_zero_axis(factory, 19.0;
         parameter_bounds=(19.0, 19.0))
-    @test_throws ArgumentError Axis5b.trace_zero_axis(factory, 19.0;
+    @test_throws ArgumentError AxisSearch.trace_zero_axis(factory, 19.0;
         parameter_bounds=(-floatmax(Float64), floatmax(Float64)))
 
     # The default fractions can traverse either half of an authorized
     # width-16 axis well before the default step budget is exhausted.
-    defaults = Axis5b.AxisOptions()
-    scaled = Axis5b._scaled_steps(defaults, (11.0, 27.0))
+    defaults = AxisSearch.AxisOptions()
+    scaled = AxisSearch._scaled_steps(defaults, (11.0, 27.0))
     @test scaled.initial ≈ 0.16
     @test scaled.minimum ≈ 0.00016
     @test scaled.maximum ≈ 0.8
     for (direction, bound) in ((-1, 11.0), (1, 27.0))
         parameter, step, accepted_steps = 19.0, scaled.initial, 0
         while parameter != bound && accepted_steps < defaults.max_steps
-            parameter = Axis5b._axis_target(parameter, bound, step, direction)
-            step = Axis5b._grown_step(step, scaled.maximum)
+            parameter = AxisSearch._axis_target(parameter, bound, step, direction)
+            step = AxisSearch._grown_step(step, scaled.maximum)
             accepted_steps += 1
         end
         @test parameter == bound
@@ -63,7 +63,7 @@ end
     end
 
     # Both exact bounds are required for a finite exhausted path.
-    quiet = Axis5b._trace_zero_axis(factory, 19.0;
+    quiet = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=options,
         search_function=root_search, trace_function=positive_trace)
     @test quiet.seed.accepted
@@ -80,7 +80,7 @@ end
         (quiet.negative.trials..., quiet.positive.trials...))
 
     failed_solve = (model, state, options) -> error("injected local solve failure")
-    failed = Axis5b._trace_zero_axis(factory, 19.0;
+    failed = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=options,
         search_function=root_search, solve_function=failed_solve,
         trace_function=positive_trace)
@@ -106,7 +106,7 @@ end
             solved.frozen_drive, solved.source_time, solved.options,
             solved.stability_options, rejected, solved.stability)
     end
-    rejected = Axis5b._trace_zero_axis(factory, 19.0;
+    rejected = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=options,
         search_function=root_search, solve_function=rejected_solve,
         trace_function=positive_trace)
@@ -121,36 +121,36 @@ end
     @test rejected_trial.local_solve.candidate isa Tuple
 
     wrong_model = axis_anchor_model(theta_off=12.0)
-    wrong_seed = Axis5b.trace_zero_axis(parameter -> wrong_model, 19.0;
+    wrong_seed = AxisSearch.trace_zero_axis(parameter -> wrong_model, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=options)
     @test !wrong_seed.seed.accepted
     @test :root_count_mismatch in wrong_seed.seed.reasons
     @test wrong_seed.status == :seed_unresolved
     @test isempty(wrong_seed.negative.trials)
     bad_seed_search = (model, options) -> error("injected seed search failure")
-    seed_exception = Axis5b._trace_zero_axis(factory, 19.0;
+    seed_exception = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=options,
         search_function=bad_seed_search)
     @test :seed_exception in seed_exception.seed.reasons
     @test occursin("injected seed search failure", seed_exception.seed.error)
 
-    policy_options = Axis5b.AxisOptions(initial_step_fraction=0.5,
+    policy_options = AxisSearch.AxisOptions(initial_step_fraction=0.5,
         minimum_step_fraction=0.25, maximum_step_fraction=0.5, max_steps=1,
         max_retries=1,
         equilibrium_options=EquilibriumOptions(residual_atol=1e-8))
-    policy_mismatch = Axis5b._trace_zero_axis(factory, 19.0;
+    policy_mismatch = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=policy_options,
         search_function=root_search)
     @test !policy_mismatch.seed.accepted
     @test :search_policy_mismatch in policy_mismatch.seed.reasons
 
-    wrong_searches = Axis5b._searches(wrong_model, options)
+    wrong_searches = AxisSearch._searches(wrong_model, options)
     calls = Ref(0)
     wrong_context_search = (model, options) -> begin
         calls[] += 1
         calls[] == 1 ? searches : wrong_searches
     end
-    context = Axis5b._trace_zero_axis(factory, 19.0;
+    context = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=options,
         search_function=wrong_context_search,
         trace_function=positive_trace)
@@ -162,7 +162,7 @@ end
         wrong_model, collect(state);
         options=options.equilibrium_options,
         stability_options=options.stability_options)
-    foreign = Axis5b._trace_zero_axis(factory, 19.0;
+    foreign = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=options,
         search_function=root_search, solve_function=foreign_solve,
         trace_function=positive_trace)
@@ -176,10 +176,10 @@ end
     jump_solve = (model, state, options) -> solve_equilibrium(model,
         other.state; options=options.equilibrium_options,
         stability_options=options.stability_options)
-    jump_options = Axis5b.AxisOptions(initial_step_fraction=0.5,
+    jump_options = AxisSearch.AxisOptions(initial_step_fraction=0.5,
         minimum_step_fraction=0.25, maximum_step_fraction=0.5, max_steps=1,
         max_retries=1, state_step_atol=2.0)
-    jumped = Axis5b._trace_zero_axis(factory, 19.0;
+    jumped = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=jump_options,
         search_function=root_search, solve_function=jump_solve,
         trace_function=positive_trace)
@@ -199,10 +199,10 @@ end
     @test assignment == [1, 3]
     @test isempty(assignment_reasons)
 
-    left = Axis5b.AxisPoint(18.99, center, -0.01, seeded.anchor)
-    right = Axis5b.AxisPoint(19.01, center, 0.01, seeded.anchor)
-    candidate = Axis5b.AugmentedCandidate((center..., 19.0), :converged, 1)
-    corrected = Axis5b._validate_correction(factory, left, right,
+    left = AxisSearch.AxisPoint(18.99, center, -0.01, seeded.anchor)
+    right = AxisSearch.AxisPoint(19.01, center, 0.01, seeded.anchor)
+    candidate = AxisSearch.AugmentedCandidate((center..., 19.0), :converged, 1)
+    corrected = AxisSearch._validate_correction(factory, left, right,
         candidate, (18.99, 19.01), options,
         AxisLineage.RootLineageOptions(), root_search, synthetic_trace)
     @test corrected.accepted
@@ -220,37 +220,37 @@ end
         18.99 <= parameter <= 19.01 || error("outside bracket")
         model
     end
-    guarded = Axis5b._newton_correct(guarded_factory, synthetic_trace,
+    guarded = AxisSearch._newton_correct(guarded_factory, synthetic_trace,
         left, right, (18.98, 19.02), options)
     @test guarded.status == :converged
-    guarded_residual = z -> Axis5b._augmented_residual(guarded_factory,
+    guarded_residual = z -> AxisSearch._augmented_residual(guarded_factory,
         synthetic_trace, z)
     for parameter in (18.99, 19.0, 19.01)
-        @test Axis5b._augmented_jacobian(guarded_residual,
+        @test AxisSearch._augmented_jacobian(guarded_residual,
             Float64[center..., parameter], (18.99, 19.01), 1e-3) !== nothing
     end
     @test !isempty(bracket_probes)
     @test all(parameter -> 18.99 <= parameter <= 19.01,
         bracket_probes)
-    stalled = Axis5b._newton_correct(factory,
+    stalled = AxisSearch._newton_correct(factory,
         (model, state, parameter) -> 1.0, left, right,
         (18.99, 19.01), options)
     @test stalled.status == :rank_unresolved
     @test stalled.iterations == 0
 
-    out_of_bracket = Axis5b._validate_correction(factory, left, right,
-        Axis5b.AugmentedCandidate((center..., 19.02), :converged, 1),
+    out_of_bracket = AxisSearch._validate_correction(factory, left, right,
+        AxisSearch.AugmentedCandidate((center..., 19.02), :converged, 1),
         (18.98, 19.02), options, AxisLineage.RootLineageOptions(),
         root_search, synthetic_trace)
     @test !out_of_bracket.accepted
     @test :correction_out_of_bracket in out_of_bracket.reasons
-    out_of_bounds = Axis5b._validate_correction(factory, left, right,
-        Axis5b.AugmentedCandidate((center..., 19.02), :converged, 1),
+    out_of_bounds = AxisSearch._validate_correction(factory, left, right,
+        AxisSearch.AugmentedCandidate((center..., 19.02), :converged, 1),
         (18.99, 19.01), options, AxisLineage.RootLineageOptions(),
         root_search, synthetic_trace)
     @test :correction_out_of_bounds in out_of_bounds.reasons
 
-    rank_failure = Axis5b._validate_correction(factory, left, right,
+    rank_failure = AxisSearch._validate_correction(factory, left, right,
         candidate, (18.99, 19.01), options,
         AxisLineage.RootLineageOptions(), root_search,
         (model, state, parameter) -> 0.0)
@@ -262,27 +262,27 @@ end
     # A single finite-difference scale falsely reports rank for these
     # stationary trace zeros; the multiscale gate must leave them unresolved.
     cubic_trace = (model, state, parameter) -> (parameter - 19.0)^3
-    cubic_correction = Axis5b._validate_correction(factory, left, right,
+    cubic_correction = AxisSearch._validate_correction(factory, left, right,
         candidate, (18.99, 19.01), options,
         AxisLineage.RootLineageOptions(), root_search, cubic_trace)
     @test !cubic_correction.accepted
     @test cubic_correction.minimum_singular_value > options.rank_atol
     @test :correction_rank_unresolved in cubic_correction.reasons
-    cubic_singleton = Axis5b._validate_zero_endpoint(factory,
-        Axis5b.AxisPoint(19.0, center, 0.0, seeded.anchor),
+    cubic_singleton = AxisSearch._validate_zero_endpoint(factory,
+        AxisSearch.AxisPoint(19.0, center, 0.0, seeded.anchor),
         (18.99, 19.01), options, cubic_trace)
     @test !cubic_singleton.accepted
     @test cubic_singleton.minimum_singular_value > options.rank_atol
     @test :zero_endpoint_rank_unresolved in cubic_singleton.reasons
 
     square_trace = (model, state, parameter) -> (parameter - 19.0)^2
-    bound_point = Axis5b.AxisPoint(19.0, center, 0.0, seeded.anchor)
-    square_singleton = Axis5b._validate_zero_endpoint(factory,
+    bound_point = AxisSearch.AxisPoint(19.0, center, 0.0, seeded.anchor)
+    square_singleton = AxisSearch._validate_zero_endpoint(factory,
         bound_point, (19.0, 19.01), options, square_trace)
     @test !square_singleton.accepted
     @test square_singleton.minimum_singular_value > options.rank_atol
     @test :zero_endpoint_rank_unresolved in square_singleton.reasons
-    square_correction = Axis5b._validate_correction(factory, bound_point,
+    square_correction = AxisSearch._validate_correction(factory, bound_point,
         right, candidate, (19.0, 19.01), options,
         AxisLineage.RootLineageOptions(), root_search, square_trace)
     @test !square_correction.accepted
@@ -292,21 +292,21 @@ end
     # An interval narrower than the requested finest h must not alias all
     # three probes to the same clipped width at a bound.
     narrow_bounds = (19.0, 19.0 + 1e-6)
-    narrow_right = Axis5b.AxisPoint(narrow_bounds[2], center, 1e-12,
+    narrow_right = AxisSearch.AxisPoint(narrow_bounds[2], center, 1e-12,
         seeded.anchor)
-    narrow_square_singleton = Axis5b._validate_zero_endpoint(factory,
+    narrow_square_singleton = AxisSearch._validate_zero_endpoint(factory,
         bound_point, narrow_bounds, options, square_trace)
     @test !narrow_square_singleton.accepted
     @test :zero_endpoint_rank_unresolved in narrow_square_singleton.reasons
-    narrow_square_correction = Axis5b._validate_correction(factory,
+    narrow_square_correction = AxisSearch._validate_correction(factory,
         bound_point, narrow_right, candidate, narrow_bounds, options,
         AxisLineage.RootLineageOptions(), root_search, square_trace)
     @test !narrow_square_correction.accepted
     @test :correction_rank_unresolved in narrow_square_correction.reasons
-    narrow_linear_singleton = Axis5b._validate_zero_endpoint(factory,
+    narrow_linear_singleton = AxisSearch._validate_zero_endpoint(factory,
         bound_point, narrow_bounds, options, synthetic_trace)
     @test narrow_linear_singleton.accepted
-    narrow_linear_correction = Axis5b._validate_correction(factory,
+    narrow_linear_correction = AxisSearch._validate_correction(factory,
         bound_point, narrow_right, candidate, narrow_bounds, options,
         AxisLineage.RootLineageOptions(), root_search, synthetic_trace)
     @test narrow_linear_correction.accepted
@@ -315,13 +315,13 @@ end
     # the smaller, fixed balance mode pins all three minimum values at 1e-7.
     hidden_cubic = z -> Float64[z[1], 1e-7z[2],
         100(z[3] - 19.0)^3]
-    hidden_rank, hidden_stable = Axis5b._stable_augmented_rank(hidden_cubic,
+    hidden_rank, hidden_stable = AxisSearch._stable_augmented_rank(hidden_cubic,
         Float64[0.0, 0.0, 19.0], (18.99, 19.01), options)
     @test hidden_rank ≈ 1e-7
     @test !hidden_stable
 
-    wrong_root = Axis5b._validate_correction(factory, left, right,
-        Axis5b.AugmentedCandidate((Tuple(other.state)..., 19.0),
+    wrong_root = AxisSearch._validate_correction(factory, left, right,
+        AxisSearch.AugmentedCandidate((Tuple(other.state)..., 19.0),
             :converged, 1), (18.99, 19.01), jump_options,
         AxisLineage.RootLineageOptions(), root_search, synthetic_trace)
     @test !wrong_root.accepted
@@ -330,9 +330,9 @@ end
 
     other_seed = AxisLineage.seed_lineage(searches, other.state)
     @test other_seed.accepted
-    other_right = Axis5b.AxisPoint(19.01, Tuple(other.state), 0.01,
+    other_right = AxisSearch.AxisPoint(19.01, Tuple(other.state), 0.01,
         other_seed.anchor)
-    one_sided = Axis5b._validate_correction(factory, left, other_right,
+    one_sided = AxisSearch._validate_correction(factory, left, other_right,
         candidate, (18.99, 19.01), jump_options,
         AxisLineage.RootLineageOptions(), root_search, synthetic_trace)
     @test !one_sided.accepted
@@ -342,7 +342,7 @@ end
 
     # A zero-trace seed is a singleton location, with rank probed inside
     # authorized bounds; no zero-width augmented bracket is invented.
-    zero = Axis5b._trace_zero_axis(factory, 19.0;
+    zero = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=options,
         search_function=root_search, trace_function=synthetic_trace)
     @test zero.seed.accepted
@@ -353,13 +353,13 @@ end
     @test isempty(zero.negative.brackets)
     @test isempty(zero.positive.brackets)
     @test zero.finite_exhausted
-    @test Axis5b._has_crossing(left, right, options.trace_atol)
-    singleton_point = Axis5b.AxisPoint(19.0, center, 0.0, seeded.anchor)
-    @test !Axis5b._has_crossing(singleton_point, right,
+    @test AxisSearch._has_crossing(left, right, options.trace_atol)
+    singleton_point = AxisSearch.AxisPoint(19.0, center, 0.0, seeded.anchor)
+    @test !AxisSearch._has_crossing(singleton_point, right,
         options.trace_atol)
 
     endpoint_trace = (model, state, parameter) -> parameter - 19.01
-    zero_at_bound = Axis5b._trace_zero_axis(factory, 19.0;
+    zero_at_bound = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=options,
         search_function=root_search, trace_function=endpoint_trace)
     @test zero_at_bound.seed_zero === nothing
@@ -370,9 +370,9 @@ end
     @test isempty(zero_at_bound.positive.brackets)
 
     failed_corrector = (factory, trace, left, right, bounds, options) ->
-        Axis5b.AugmentedCandidate((NaN, NaN, NaN), :rank_unresolved, 7)
+        AxisSearch.AugmentedCandidate((NaN, NaN, NaN), :rank_unresolved, 7)
     crossing_trace = (model, state, parameter) -> parameter - 19.005
-    unresolved = Axis5b._trace_zero_axis(factory, 19.0;
+    unresolved = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=options,
         search_function=root_search, trace_function=crossing_trace,
         correct_function=failed_corrector)
@@ -386,7 +386,7 @@ end
     @test first(unresolved.positive.brackets).correction.corrector_iterations == 7
 
     throwing_corrector = (args...) -> error("injected corrector failure")
-    thrown = Axis5b._trace_zero_axis(factory, 19.0;
+    thrown = AxisSearch._trace_zero_axis(factory, 19.0;
         parameter_bounds=(18.99, 19.01), axis_options=options,
         search_function=root_search, trace_function=crossing_trace,
         correct_function=throwing_corrector)
@@ -405,13 +405,13 @@ end
         end
         parameter - 19.005
     end
-    partial = Axis5b._newton_correct(factory, late_throwing_trace,
+    partial = AxisSearch._newton_correct(factory, late_throwing_trace,
         left, right, (18.99, 19.01), options)
     @test partial.status == :corrector_exception
     @test partial.iterations >= 1
     @test partial.candidate[3] ≈ 19.005
     @test occursin("late Newton trace failure", partial.error)
-    partial_correction = Axis5b._validate_correction(factory, left, right,
+    partial_correction = AxisSearch._validate_correction(factory, left, right,
         partial, (18.99, 19.01), options,
         AxisLineage.RootLineageOptions(), root_search, synthetic_trace)
     @test !partial_correction.accepted
@@ -420,9 +420,9 @@ end
 
     # One small genuine axis interval exercises discovery and local solves.
     real_factory = parameter -> axis_anchor_model(e_to_i=parameter)
-    smoke = Axis5b.trace_zero_axis(real_factory, 19.0;
+    smoke = AxisSearch.trace_zero_axis(real_factory, 19.0;
         parameter_bounds=(18.999, 19.001),
-        axis_options=Axis5b.AxisOptions(initial_step_fraction=0.5,
+        axis_options=AxisSearch.AxisOptions(initial_step_fraction=0.5,
             minimum_step_fraction=0.05, maximum_step_fraction=0.5,
             max_steps=1, max_retries=1))
     @test smoke.seed.accepted

@@ -1,7 +1,7 @@
 using ForwardDiff
 using LinearAlgebra: I, det, dot, eigen, eigvals, norm
 
-const FIGURE5B_REFINEMENT_GRID_POINTS = (11, 21, 41)
+const SEVEN_ROOT_REFINEMENT_GRID_POINTS = (11, 21, 41)
 
 function _positive_float64_values(values, label)
     converted = [_hopf_float64(value, label) for value in values]
@@ -56,16 +56,16 @@ function _finite_difference_plateau(values, atol, rtol)
 end
 
 """
-    Figure5bTopologyOptions(; kwargs...)
+    SevenRootTopologyOptions(; kwargs...)
 
-Numerical gates for recognizing the seven-equilibrium Figure-5b topology in
+Numerical gates for recognizing the seven-equilibrium seven-root topology in
 three independently searched refinements. Coordinate matching is deliberately
 stricter than equilibrium discovery deduplication. This finite classifier does
 not certify search completeness or an attractor count. Tolerances use the
 same explicit `Float64` input contract as `hopf_diagnostics` and must remain
 finite and positive after conversion.
 """
-struct Figure5bTopologyOptions
+struct SevenRootTopologyOptions
     coordinate_match_atol::Float64
     minimum_root_separation::Float64
     residual_atol::Float64
@@ -74,7 +74,7 @@ struct Figure5bTopologyOptions
     spectral_margin::Float64
 end
 
-function Figure5bTopologyOptions(;
+function SevenRootTopologyOptions(;
     coordinate_match_atol=1e-6,
     minimum_root_separation=1e-5,
     residual_atol=1e-9,
@@ -84,14 +84,14 @@ function Figure5bTopologyOptions(;
 )
     raw = (coordinate_match_atol, minimum_root_separation, residual_atol,
         jacobian_atol, slope_atol, spectral_margin)
-    converted = _positive_float64_values(raw, "Figure-5b topology tolerances")
+    converted = _positive_float64_values(raw, "seven-root topology tolerances")
     converted[1] < converted[2] / 2 || throw(ArgumentError(
         "coordinate_match_atol must be less than half minimum_root_separation"))
-    return Figure5bTopologyOptions(converted...)
+    return SevenRootTopologyOptions(converted...)
 end
 
-"""Finite result of matching the Figure-5b seven-root topology across refinements."""
-struct Figure5bTopologyResult
+"""Finite result of matching the seven-root seven-root topology across refinements."""
+struct SevenRootTopologyResult
     qualified::Bool
     reasons::Vector{Symbol}
     root_tracks::Vector{NTuple{3,Vector{Float64}}}
@@ -165,7 +165,7 @@ function _safe_spectral_classification(jacobian, classification, margin)
 end
 
 function _recomputed_equilibrium_quality(search, equilibrium,
-    options::Figure5bTopologyOptions)
+    options::SevenRootTopologyOptions)
     state = equilibrium.state
     residual = zeros(Float64, 2)
     jacobian = zeros(Float64, 2, 2)
@@ -182,17 +182,17 @@ function _recomputed_equilibrium_quality(search, equilibrium,
 end
 
 """
-    classify_figure5b_topology(searches; options=Figure5bTopologyOptions())
+    classify_seven_root_topology(searches; options=SevenRootTopologyOptions())
 
 Recognize exactly seven matched roots with three attracting equilibria, three
 saddles, and one repeller across three equilibrium-search refinements. The
 unique repeller must lie on two locally rising nullcline arms. Nonqualifying
 scientific results are returned with reasons rather than raised as errors.
 """
-function classify_figure5b_topology(searches;
-    options=Figure5bTopologyOptions())
-    options isa Figure5bTopologyOptions ||
-        throw(ArgumentError("options must be Figure5bTopologyOptions"))
+function classify_seven_root_topology(searches;
+    options=SevenRootTopologyOptions())
+    options isa SevenRootTopologyOptions ||
+        throw(ArgumentError("options must be SevenRootTopologyOptions"))
     searches isa Tuple && length(searches) == 3 ||
         throw(ArgumentError("searches must be a tuple of three refinements"))
     reasons = Symbol[]
@@ -202,7 +202,7 @@ function classify_figure5b_topology(searches;
         push!(reasons, :model_context_mismatch)
     all(_matches_refinement_schedule(search, grid_points)
         for (search, grid_points) in
-            zip(searches, FIGURE5B_REFINEMENT_GRID_POINTS)) ||
+            zip(searches, SEVEN_ROOT_REFINEMENT_GRID_POINTS)) ||
         push!(reasons, :refinement_schedule_mismatch)
     all(search -> isempty(search.unresolved_nearby), searches) ||
         push!(reasons, :unresolved_nearby_roots)
@@ -280,9 +280,9 @@ function classify_figure5b_topology(searches;
         end
     end
     unique!(reasons)
-    return Figure5bTopologyResult(isempty(reasons), reasons, tracks,
+    return SevenRootTopologyResult(isempty(reasons), reasons, tracks,
         central_track, central_state, slopes, minimum_separation,
-        FIGURE5B_REFINEMENT_GRID_POINTS)
+        SEVEN_ROOT_REFINEMENT_GRID_POINTS)
 end
 
 """

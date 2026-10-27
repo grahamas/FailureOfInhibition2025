@@ -1,4 +1,4 @@
-function figure5b_anchor_model(; ratio=4.4, coupling=PointCoupling(
+function anchor_hopf_model(; ratio=4.4, coupling=PointCoupling(
     e_to_e=19.0, i_to_e=13.0, e_to_i=19.0, i_to_i=6.0))
     return PointModelParameters(
         excitatory=PopulationParameters(timescale=7.8,
@@ -11,7 +11,7 @@ function figure5b_anchor_model(; ratio=4.4, coupling=PointCoupling(
     )
 end
 
-function figure5b_seeds(model, points)
+function anchor_hopf_seeds(model, points)
     seeds = default_equilibrium_seeds(model)
     upper_e, upper_i = last(seeds)
     append!(seeds, [[e, i] for e in range(0.0, upper_e; length=points)
@@ -19,12 +19,12 @@ function figure5b_seeds(model, points)
     return unique!(seeds)
 end
 
-@testset "Figure-5b topology and anchor Hopf diagnostics" begin
-    model = figure5b_anchor_model()
-    searches = Tuple(find_equilibria(model; seeds=figure5b_seeds(model, points))
+@testset "seven-root topology and anchor Hopf diagnostics" begin
+    model = anchor_hopf_model()
+    searches = Tuple(find_equilibria(model; seeds=anchor_hopf_seeds(model, points))
         for points in (11, 21, 41))
     search = first(searches)
-    topology = classify_figure5b_topology(searches)
+    topology = classify_seven_root_topology(searches)
     @test topology.qualified
     @test isempty(topology.reasons)
     @test length(topology.root_tracks) == 7
@@ -51,20 +51,20 @@ end
     @test diagnostics.modal_radius_squared_slope ≈
         -diagnostics.transversality / real(diagnostics.c1) rtol=1e-12
 
-    mismatched_model = figure5b_anchor_model(coupling=PointCoupling(
+    mismatched_model = anchor_hopf_model(coupling=PointCoupling(
         e_to_e=19.0, i_to_e=13.0, e_to_i=19.5, i_to_i=6.0))
     mismatched = find_equilibria(mismatched_model;
-        seeds=figure5b_seeds(mismatched_model, 41))
-    rejected = classify_figure5b_topology((searches[1], searches[2], mismatched))
+        seeds=anchor_hopf_seeds(mismatched_model, 41))
+    rejected = classify_seven_root_topology((searches[1], searches[2], mismatched))
     @test !rejected.qualified
     @test :model_context_mismatch in rejected.reasons
 
-    nonmatching = classify_figure5b_topology((searches[1], searches[2],
+    nonmatching = classify_seven_root_topology((searches[1], searches[2],
         find_equilibria(model; seeds=[[0.0, 0.0]])))
     @test !nonmatching.qualified
     @test :root_count_mismatch in nonmatching.reasons
 
-    shortcut = classify_figure5b_topology((search, search, search))
+    shortcut = classify_seven_root_topology((search, search, search))
     @test !shortcut.qualified
     @test :refinement_schedule_mismatch in shortcut.reasons
 end
@@ -127,7 +127,7 @@ end
                    (; residual_atol=big"1e-1000"),
                    (; residual_atol=BigFloat(1)),
                    (; residual_atol=1 // 10))
-        @test_throws ArgumentError Figure5bTopologyOptions(; kwargs...)
+        @test_throws ArgumentError SevenRootTopologyOptions(; kwargs...)
     end
     exact_options = HopfDiagnosticOptions(
         balance_residual_atol=Float32(0.5), fd_steps=(1 // 8, 1 // 4, 1 // 2))

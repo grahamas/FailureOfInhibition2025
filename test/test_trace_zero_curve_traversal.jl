@@ -1,7 +1,7 @@
 using LinearAlgebra: dot, norm
 
-include(joinpath(@__DIR__, "..", "scripts", "figure5b_curve_traversal.jl"))
-const Traverse = Figure5bCurveTraversal
+include(joinpath(@__DIR__, "..", "scripts", "trace_zero_curve_traversal.jl"))
+const Traverse = TraceZeroCurveTraversal
 const TraverseSeeds = Traverse.Seeds
 
 function traverse_model(; ratio=0.5)
@@ -15,7 +15,7 @@ function traverse_model(; ratio=0.5)
             e_to_i=19.0, i_to_i=7.0), drive=NoDrive())
 end
 
-@testset "Figure-5b curve traversal numerical gates" begin
+@testset "Trace-zero curve traversal numerical gates" begin
     T = Traverse
     options = T.CurveTraversalOptions()
     for kwargs in ((; initial_step=0.0), (; rank_atol=Inf),
@@ -147,7 +147,7 @@ end
         progress_fraction=0.1)
 end
 
-@testset "Figure-5b curve traversal verified FoI seed" begin
+@testset "Trace-zero curve traversal verified FoI seed" begin
     model = traverse_model()
     center = solve_equilibrium(model, [0.36, 0.39]).attempt.candidate
     seeds = TraverseSeeds.seed_trace_zero_curve(model,

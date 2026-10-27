@@ -1,7 +1,7 @@
 using LinearAlgebra: norm
 
-include(joinpath(@__DIR__, "..", "scripts", "figure5b_curve_seeds.jl"))
-const CurveSeeds = Figure5bCurveSeeds
+include(joinpath(@__DIR__, "..", "scripts", "trace_zero_curve_seeds.jl"))
+const CurveSeeds = TraceZeroCurveSeeds
 const CurveAxis = CurveSeeds.Axis
 const CurveLineage = CurveSeeds.Lineage
 
@@ -16,7 +16,7 @@ function curve_seed_model(; ratio=0.5, e_to_e=18.5, i_to_i=7.0)
             e_to_i=19.0, i_to_i=i_to_i), drive=NoDrive())
 end
 
-@testset "Figure-5b finite curve seed qualification" begin
+@testset "seven-root finite curve seed qualification" begin
     model = curve_seed_model()
     center = solve_equilibrium(model, [0.36, 0.39]).attempt.candidate
     box = ((18.3, 18.7), (6.8, 7.2))
@@ -71,7 +71,7 @@ end
 
     slope_atol = CurveAxis._topology_options(
         CurveLineage.RootLineageOptions()).slope_atol
-    @test slope_atol == Figure5bTopologyOptions().slope_atol
+    @test slope_atol == SevenRootTopologyOptions().slope_atol
     @test CurveSeeds._rising_slopes([1.0 -1.0; 1.0 -1.0],
         slope_atol) == (1.0, 1.0)
     @test CurveSeeds._rising_slopes([1.0 -1e-10; 1.0 -1.0],

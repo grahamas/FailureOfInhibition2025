@@ -1,4 +1,4 @@
-"""Figure 5b protocol functions included by run_figure5b_protocol.jl."""
+"""Anchor Hopf/orbit protocol functions included by run_anchor_hopf_orbit_protocol.jl."""
 function candidate_model(config, ratio)
     ratio = number(ratio, "ratio"; positive=true)
     c = config.candidate

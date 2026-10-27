@@ -1,12 +1,12 @@
-module Figure5bCurveSeeds
+module TraceZeroCurveSeeds
 
 using FailureOfInhibition2025
 using ForwardDiff
 using LinearAlgebra: norm, opnorm, svdvals
 
-include("figure5b_axis_continuation.jl")
-const Axis = Figure5bAxisContinuation
-const Lineage = Axis.Figure5bRootLineage
+include("trace_zero_axis.jl")
+const Axis = TraceZeroAxisContinuation
+const Lineage = Axis.RootLineage
 
 const State = NTuple{2,Float64}
 const CurveState = NTuple{4,Float64}
@@ -88,7 +88,7 @@ struct CurveOriginEvidence
     reasons::Tuple{Vararg{Symbol}}
     supplied_state::State
     central_state::Union{Nothing,State}
-    topology::Union{Nothing,Figure5bTopologyResult}
+    topology::Union{Nothing,SevenRootTopologyResult}
     lineage::Union{Nothing,Lineage.RootTransitionEvidence}
     searches::Union{Nothing,Tuple}
     error::Union{Nothing,String}
@@ -393,7 +393,7 @@ function _origin(context, supplied, options, lineage_options, search_function)
         Axis._search_policy_matches(searches, options.axis_options) ||
             push!(reasons, :origin_search_policy_mismatch)
         if isempty(reasons)
-            topology = classify_figure5b_topology(searches;
+            topology = classify_seven_root_topology(searches;
                 options=Axis._topology_options(lineage_options))
             topology.qualified || append!(reasons, topology.reasons)
         end
@@ -873,7 +873,7 @@ end
     seed_trace_zero_curve(base_model, pair, central_state; parameter_bounds, ...)
 
 Attempt a bounded interior stationary-distance KKT solve and all four rectangle edges from
-one independently confirmed Figure-5b central root. Each numerical candidate
+one independently confirmed seven-root central root. Each numerical candidate
 is separately qualified by fresh neutral topology, independent observations,
 regularity, and reciprocal root-lineage homotopy. No qualified seed is a
 finite local negative only when every numerical method completed and had a

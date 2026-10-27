@@ -1,6 +1,6 @@
 schema_version = 1
 
-# Frozen Figure-5b failure-of-inhibition point model. Times are milliseconds.
+# Frozen anchor Hopf/orbit failure-of-inhibition point model. Times are milliseconds.
 [candidate]
 tau_e = 7.8
 excitatory_slope = 5.0

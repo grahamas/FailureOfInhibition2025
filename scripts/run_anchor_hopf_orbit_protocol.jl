@@ -1,5 +1,5 @@
-"""Clean, candidate-specific Figure-5b Hopf and periodic-orbit protocol."""
-module Figure5bProtocol
+"""Candidate-specific Hopf and periodic-orbit protocol at the frozen anchor."""
+module AnchorHopfOrbitProtocol
 
 using FailureOfInhibition2025
 using LinearAlgebra: BLAS, det, dot, eigen, eigvals, norm
@@ -15,10 +15,10 @@ const Evidence = MinimalExperiment
 
 const REPOSITORY_ROOT = normpath(joinpath(@__DIR__, ".."))
 const ROOT_GRIDS = (11, 21, 41)
-const PROTOCOL_SOURCES = ("run_figure5b_protocol.jl", "study_support.jl",
-    "figure5b_protocol_config.jl", "figure5b_protocol_topology.jl",
-    "figure5b_protocol_hopf.jl", "figure5b_protocol_orbits.jl",
-    "figure5b_protocol_evidence.jl", "figure5b_protocol_artifacts.jl")
+const PROTOCOL_SOURCES = ("run_anchor_hopf_orbit_protocol.jl", "study_support.jl",
+    "anchor_hopf_orbit_protocol_config.jl", "anchor_hopf_orbit_protocol_topology.jl",
+    "anchor_hopf_orbit_protocol_hopf.jl", "anchor_hopf_orbit_protocol_orbits.jl",
+    "anchor_hopf_orbit_protocol_evidence.jl", "anchor_hopf_orbit_protocol_artifacts.jl")
 
 require_exact_keys(table, keys, label) = begin
     table isa AbstractDict || throw(ArgumentError("$label must be a table"))
@@ -33,17 +33,17 @@ number(value, label; positive=false, nonnegative=false) =
     Evidence.finite_number(value, label; positive, nonnegative)
 positive_integer(value, label) = Evidence.positive_integer(value, label)
 
-include("figure5b_protocol_config.jl")
+include("anchor_hopf_orbit_protocol_config.jl")
 
-include("figure5b_protocol_topology.jl")
+include("anchor_hopf_orbit_protocol_topology.jl")
 
-include("figure5b_protocol_hopf.jl")
+include("anchor_hopf_orbit_protocol_hopf.jl")
 
-include("figure5b_protocol_orbits.jl")
+include("anchor_hopf_orbit_protocol_orbits.jl")
 
-include("figure5b_protocol_evidence.jl")
+include("anchor_hopf_orbit_protocol_evidence.jl")
 
-include("figure5b_protocol_artifacts.jl")
+include("anchor_hopf_orbit_protocol_artifacts.jl")
 
 function run_experiment(config_path::AbstractString, output_dir::AbstractString;
     smoke=false, require_canonical=true, accepted_revision=nothing,
@@ -73,7 +73,7 @@ function run_experiment(config_path::AbstractString, output_dir::AbstractString;
     mkpath(joinpath(output, "orbits", "shooting"))
     current_stage = "provenance_archive"
     metadata = Dict{String,Any}(
-        "experiment" => "figure5b_hopf_protocol", "smoke" => smoke,
+        "experiment" => "anchor_hopf_orbit_protocol", "smoke" => smoke,
         "replay_mode" => replay_info !== nothing,
         "stage_status" => Dict{String,Any}(),
         "stage_errors" => Dict{String,Any}())
@@ -117,9 +117,9 @@ function run_experiment(config_path::AbstractString, output_dir::AbstractString;
     metadata["stage_status"]["equilibria"] = "completed"
     current_stage = "topology"
     failure_injection == :topology && error("injected topology-stage failure")
-    topology_manuscript = classify_figure5b_topology(searches[config.ratios.manuscript];
+    topology_manuscript = classify_seven_root_topology(searches[config.ratios.manuscript];
         options=config.topology_options)
-    topology_anchor = classify_figure5b_topology(searches[config.ratios.orbit_anchor];
+    topology_anchor = classify_seven_root_topology(searches[config.ratios.orbit_anchor];
         options=config.topology_options)
     below = below_hopf_assessment(searches[config.ratios.below_hopf],
         config.topology_options)
@@ -416,7 +416,7 @@ function run_experiment(config_path::AbstractString, output_dir::AbstractString;
 end
 
 function main(args=ARGS)
-    config_path = joinpath(REPOSITORY_ROOT, "experiments", "figure5b_hopf.toml")
+    config_path = joinpath(REPOSITORY_ROOT, "experiments", "anchor_hopf_orbit.toml")
     output = nothing
     smoke = false
     accepted_revision = nothing
@@ -455,7 +455,7 @@ function main(args=ARGS)
         "--accepted-revision COMMIT is required outside smoke mode"))
     result = run_experiment(config_path, output; smoke, accepted_revision,
         replay_parent)
-    println("Figure-5b protocol: topology=$(result.topology_anchor), " *
+    println("Anchor Hopf/orbit protocol: topology=$(result.topology_anchor), " *
         "hopf=$(result.hopf), orbit=$(result.orbit), smoke=$(result.smoke)")
     return result.success ? 0 : 1
 end
@@ -464,5 +464,5 @@ end
 
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    exit(Figure5bProtocol.main())
+    exit(AnchorHopfOrbitProtocol.main())
 end

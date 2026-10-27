@@ -1,4 +1,4 @@
-module Figure5bRootLineage
+module RootLineage
 
 using FailureOfInhibition2025
 using LinearAlgebra: eigvals, norm, svdvals

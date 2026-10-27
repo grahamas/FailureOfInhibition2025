@@ -1,10 +1,10 @@
-module Figure5bAxisContinuation
+module TraceZeroAxisContinuation
 
 using FailureOfInhibition2025
 using LinearAlgebra: norm, opnorm, svdvals
 
-include("figure5b_root_lineage.jl")
-import .Figure5bRootLineage: RootLineageAnchor, RootTransitionEvidence,
+include("root_lineage.jl")
+import .RootLineage: RootLineageAnchor, RootTransitionEvidence,
     RootLineageOptions, seed_lineage, transition_lineage
 
 const State = NTuple{2,Float64}
@@ -42,7 +42,7 @@ struct AxisOptions
             throw(ArgumentError("axis step order is invalid"))
         all(>(0), (max_steps, max_retries, correction_maxiters)) ||
             throw(ArgumentError("axis iteration limits must be positive"))
-        Figure5bRootLineage._valid_search_policy((;
+        RootLineage._valid_search_policy((;
             options=equilibrium_options,
             stability_options=stability_options)) ||
             throw(ArgumentError("axis equilibrium or stability policy is invalid"))
@@ -91,7 +91,7 @@ struct AxisSeed
     accepted::Bool
     reasons::Tuple{Vararg{Symbol}}
     point::Union{Nothing,AxisPoint}
-    topology::Union{Nothing,Figure5bTopologyResult}
+    topology::Union{Nothing,SevenRootTopologyResult}
     lineage::Union{Nothing,RootTransitionEvidence}
     error::Union{Nothing,String}
 end
@@ -182,7 +182,7 @@ struct TraceZeroAxisResult
     finite_exhausted::Bool
 end
 
-_state(value) = Figure5bRootLineage._state(value)
+_state(value) = RootLineage._state(value)
 
 function _model(model_at_parameter, parameter)
     model = model_at_parameter(parameter)
@@ -205,7 +205,7 @@ function _searches(model, options)
     return Tuple(find_equilibria(model; seeds=_seeds(model, grid),
         options=options.equilibrium_options,
         stability_options=options.stability_options)
-        for grid in Figure5bRootLineage.GRID_POINTS)
+        for grid in RootLineage.GRID_POINTS)
 end
 
 _solve(model, state, options) = solve_equilibrium(model, collect(state);
@@ -221,8 +221,8 @@ end
 function _context_matches(model, searches)
     return searches isa Tuple && length(searches) == 3 &&
         all(search -> search isa EquilibriumSearchResult &&
-            isequal(Figure5bRootLineage._point_model_identity(search.model),
-                Figure5bRootLineage._point_model_identity(model)), searches)
+            isequal(RootLineage._point_model_identity(search.model),
+                RootLineage._point_model_identity(model)), searches)
 end
 
 function _search_policy_matches(searches, options)
@@ -234,15 +234,15 @@ function _search_policy_matches(searches, options)
 end
 
 function _solve_context_matches(solved, model, options)
-    return Figure5bRootLineage._frozen_context_valid(solved) &&
-        isequal(Figure5bRootLineage._point_model_identity(solved.model),
-            Figure5bRootLineage._point_model_identity(model)) &&
+    return RootLineage._frozen_context_valid(solved) &&
+        isequal(RootLineage._point_model_identity(solved.model),
+            RootLineage._point_model_identity(model)) &&
         isequal(solved.options, options.equilibrium_options) &&
         isequal(solved.stability_options, options.stability_options)
 end
 
 function _topology_options(lineage_options)
-    return Figure5bTopologyOptions(
+    return SevenRootTopologyOptions(
         coordinate_match_atol=lineage_options.coordinate_atol,
         minimum_root_separation=lineage_options.minimum_root_separation,
         residual_atol=lineage_options.residual_atol,
@@ -274,7 +274,7 @@ function _seed(model_at_parameter, parameter, options, lineage_options,
     topology = nothing
     lineage = nothing
     if isempty(reasons)
-        topology = classify_figure5b_topology(searches;
+        topology = classify_seven_root_topology(searches;
             options=_topology_options(lineage_options))
         topology.qualified || append!(reasons, topology.reasons)
     end
@@ -737,7 +737,7 @@ end
     trace_zero_axis(model_at_parameter, initial_parameter; parameter_bounds,
         axis_options=AxisOptions(), lineage_options=RootLineageOptions())
 
-Search one authorized parameter axis from a genuine seven-root Figure-5b
+Search one authorized parameter axis from a genuine seven-root seven-root
 seed. Every accepted step and trace-zero correction must pass the shared
 three-grid lineage contract. `finite_exhausted` describes only this bounded
 numerical path, never model-wide absence or completeness.

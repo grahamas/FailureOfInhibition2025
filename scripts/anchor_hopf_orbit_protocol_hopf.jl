@@ -1,4 +1,4 @@
-"""Figure 5b protocol functions included by run_figure5b_protocol.jl."""
+"""Anchor Hopf/orbit protocol functions included by run_anchor_hopf_orbit_protocol.jl."""
 function finite_difference_jacobian(model, state, step)
     step = number(step, "finite-difference step"; positive=true)
     jacobian = zeros(Float64, 2, 2)

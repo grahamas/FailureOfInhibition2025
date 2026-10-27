@@ -61,8 +61,8 @@ export periodic_orbit_half_ranges, periodic_orbit_distances, periodic_orbit_sign
 export periodic_orbit_winding, periodic_orbit_primitive_check
 export phase_invariant_orbit_equivalence, periodic_orbit_divergence_check
 
-export Figure5bTopologyOptions, Figure5bTopologyResult
-export classify_figure5b_topology
+export SevenRootTopologyOptions, SevenRootTopologyResult
+export classify_seven_root_topology
 export HopfDiagnosticOptions, HopfDiagnosticResult, hopf_diagnostics
 
 export PulseExperimentOptions, PulseTrialResult, PulseExperimentResult

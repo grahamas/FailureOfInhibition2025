@@ -1,4 +1,4 @@
-"""Figure 5b protocol functions included by run_figure5b_protocol.jl."""
+"""Anchor Hopf/orbit protocol functions included by run_anchor_hopf_orbit_protocol.jl."""
 function write_rows(path, rows, columns)
     if isempty(rows)
         names = Tuple(columns)
@@ -102,7 +102,7 @@ function validate_replay_parent(parent_directory, config_path)
         isfile(snapshot) && Evidence.file_hash(snapshot) == expected_hash ||
             throw(ArgumentError("replay parent source snapshot mismatch: $relative"))
     end
-    runner_relative = joinpath("scripts", "run_figure5b_protocol.jl")
+    runner_relative = joinpath("scripts", "run_anchor_hopf_orbit_protocol.jl")
     archived_runner = joinpath(parent, "source", runner_relative)
     isfile(archived_runner) || throw(ArgumentError("replay parent lacks archived runner"))
     Evidence.file_hash(joinpath(REPOSITORY_ROOT, runner_relative)) ==

@@ -1,4 +1,4 @@
-"""Figure 5b protocol functions included by run_figure5b_protocol.jl."""
+"""Anchor Hopf/orbit protocol functions included by run_anchor_hopf_orbit_protocol.jl."""
 function _section_return(model, state, period, section_normal, section_tangent,
     epsilon, intervals, options)
     initial = state .+ epsilon .* section_tangent

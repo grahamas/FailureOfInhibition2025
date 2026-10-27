@@ -662,9 +662,9 @@ of their absolute values is a defined input cost, not biological energy. A
 resolved implementation run does not by itself change a manuscript-claim
 disposition; see the claim-specific protocol in the intervention study.
 
-## Figure-5b topology and local Hopf candidates
+## Seven-root topology and local Hopf candidates
 
-`classify_figure5b_topology` compares the independently generated 11×11,
+`classify_seven_root_topology` compares the independently generated 11×11,
 21×21, and 41×41 equilibrium-search refinements. The schedule is fixed and
 each search must contain the exact deterministic union of the default seeds
 and the declared sharper grid. It requires seven uniquely coordinate-matched
@@ -677,7 +677,7 @@ repeller must lie where both implicit nullclines rise:
 a finite discovered topology; it does not certify that all equilibria or
 attractors have been found.
 
-The internal Figure-5b root-lineage component is the numerical identity
+The internal root-lineage component is the numerical identity
 contract for later targeted continuation. At each parameter point it checks
 the deterministic 11×11, 21×21, and 41×41 searches for a common model and
 seed schedule, consistent discovered root count, unique cross-grid matches,
@@ -698,7 +698,7 @@ root's member set; dropping equilibria while retaining their attempts leaves
 the search unresolved. Numerical options are validated through both keyword and
 positional construction. Intermediate points may have a different root count
 from the initial seven-root topology; the full seven-root gate still applies
-separately to an initial Figure-5b seed and a
+separately to an initial seven-root seed and a
 proposed Hopf point. A transition carries the prior three-grid root
 constellation and accepts the followed root only when forward and reciprocal
 matches, an optional predictor, the corrected root, and a displacement bound
@@ -713,7 +713,7 @@ These are finite numerical tracking rules, not proof that a branch cannot
 change between sampled parameter points; later continuation must adapt its
 step size and retain unresolved intervals.
 
-The internal Figure-5b axis search starts from a genuine seven-root central
+The internal trace-zero axis search starts from a genuine seven-root central
 seed and searches both parameter directions. A local solve advances the path
 only after an independent three-grid search and root-lineage transition.
 Its initial, minimum, and maximum step settings are fractions of the
@@ -740,7 +740,7 @@ both exact parameter bounds and every detected sign-change bracket or sampled
 zero endpoint resolved. This describes the finite sampled path, not model-wide
 absence.
 
-The internal two-parameter Figure-5b seed component is a separate finite
+The internal two-parameter trace-zero seed component is a separate finite
 discovery layer; it does not continue a curve. It accepts an autonomous FoI
 base model with all five coordinates inside the authorized search domain,
 two distinct parameter names from those coordinates, a bounded rectangle
@@ -779,7 +779,7 @@ unresolved with no qualified seed), and `origin_unresolved`. Raw attempts,
 qualifications, and unresolved method names remain available for audit. None
 of these statuses certifies global absence or completeness.
 
-The internal Figure-5b curve-traversal component starts only from an indexed,
+The internal trace-zero curve-traversal component starts only from an indexed,
 qualified seed record. It rechecks the frozen model, exact parameter box,
 selected method and candidate, then freshly verifies that seed's origin,
 central-root lineage, and numerical qualification. Its traversal core uses a
@@ -801,14 +801,14 @@ uses one shared tolerance (bounded by the neutral-trace and spectral-margin
 caps) at every gate. Every accepted point gets new 11×11, 21×21, and
 41×41 searches and reciprocal predictor/corrected central-root lineage.
 Seven-root neutral-center Hopf qualification is recorded separately for each
-point; a tracked five-root trace-zero point is not a Figure-5b Hopf candidate.
+point; a tracked five-root trace-zero point is not a seven-root Hopf candidate.
 That per-point record is not advisory: a directional exit is reported as a
 qualified boundary only when its own neutrality evidence qualifies it, and a
 segment containing any unqualified point is reported as
 `finite_two_unqualified_boundary_segment` rather than as a two-boundary segment.
 `finite_two_boundary_segment` is therefore a statement about geometry and
 neutrality together, and a consumer must still read `point.hopf.qualified` at
-every point it treats as a Figure-5b Hopf candidate.
+every point it treats as a seven-root Hopf candidate.
 Failed correctors, retries, rank loss, loops, and iteration-cap endpoints
 remain explicit unresolved outcomes. A revisit is reported only when it is the
 sole failure of its step; `revisit_atol` is required to stay below the smallest
@@ -854,8 +854,8 @@ The modal normal-form amplitude obeys
 coefficient. Orbit continuation and independent shooting evidence are
 required before comparing this local scaling with a finite-amplitude cycle.
 
-The tracked `experiments/figure5b_hopf.toml` and
-`scripts/run_figure5b_protocol.jl` freeze the Figure-5b anchor
+The tracked `experiments/anchor_hopf_orbit.toml` and
+`scripts/run_anchor_hopf_orbit_protocol.jl` freeze the seven-root anchor
 `(e_to_e,i_to_e,e_to_i,i_to_i)=(19,13,19,6)` with `theta_off=8` and zero
 drive. The candidate-specific runner independently repeats the 11×11, 21×21,
 and 41×41 root searches at timescale ratios 4.4, 0.5, and 0.4; bisects trace
@@ -865,6 +865,13 @@ sampling, primitive-period, winding, phase-equivalence, Jacobian, divergence,
 and finite-difference Poincare checks. A validated ratio-0.5 orbit can then be
 continued over the configured finite interval. All shooting failures and
 continuation corrector failures are retained.
+
+The semantic rename changes the artifact `experiment` identifier to
+`anchor_hopf_orbit_protocol` and the archived source paths. Earlier
+`figure5b_hopf_protocol` artifacts require the former runner from VCS change
+`tlxqtzqw` for replay; the current runner checks its new source names and does
+not accept those artifacts as parents. The artifact schema remains version 1
+within each experiment identifier.
 
 A non-smoke run requires `--accepted-revision` and is evidence-eligible only
 when that exact 40-character revision is checked out at detached `HEAD` with a

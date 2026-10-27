@@ -200,7 +200,7 @@ The repository tracks `Manifest.toml` because reproducibility takes priority
 over library-style environment flexibility.
 
 Study commands live in `scripts/run_*.jl`. Reusable calculations live in the
-corresponding `*_core.jl` files; staged Figure 5b and tetrastability procedures
+corresponding `*_core.jl` files; staged anchor Hopf/orbit and tetrastability procedures
 have named protocol files. `scripts/study_support.jl` owns common validation,
 artifact, and provenance helpers. A study archives every included source file
 so its replay command can run from its own source snapshot.

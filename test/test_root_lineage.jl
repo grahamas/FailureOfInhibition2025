@@ -1,7 +1,7 @@
 using LinearAlgebra: norm
 
-include(joinpath(@__DIR__, "..", "scripts", "figure5b_root_lineage.jl"))
-const Lineage = Figure5bRootLineage
+include(joinpath(@__DIR__, "..", "scripts", "root_lineage.jl"))
+const Lineage = RootLineage
 
 function lineage_model(; ratio=4.4, theta_off=8.0)
     return PointModelParameters(
@@ -55,7 +55,7 @@ function lineage_stability_copy(stability; jacobian=stability.jacobian,
         spectral_abscissa, thresholds, classification, geometry)
 end
 
-@testset "Figure-5b root lineage contract" begin
+@testset "Equilibrium root lineage contract" begin
     model = lineage_model()
     searches = Tuple(find_equilibria(model;
         seeds=lineage_seeds(model, points)) for points in Lineage.GRID_POINTS)
@@ -72,7 +72,7 @@ end
         NaN, 1e-5, 1e-9, 1e-9, 1e-8)
     safe_displacement = baseline.minimum_separation / 4
 
-    central = classify_figure5b_topology(searches).central_state
+    central = classify_seven_root_topology(searches).central_state
     seeded = Lineage.seed_lineage(searches, central)
     @test seeded.accepted
     @test seeded.anchor !== nothing
