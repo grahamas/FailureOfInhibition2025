@@ -6,7 +6,7 @@ import CSV
 import TOML
 include("run_minimal_experiment.jl")
 using .MinimalExperiment: write_toml, write_rows, archive_provenance,
-    file_hash, artifact_checksums, context_record
+    archive_sources!, shell_quote, file_hash, artifact_checksums, context_record
 
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 const ROLES = (:low_activity, :high_e_low_i, :high_e_high_i)
@@ -192,18 +192,16 @@ end
 function _metadata(config_path, output, mode, case_name, smoke, parameter_values)
     metadata = archive_provenance(config_path, output)
     relative = "scripts/run_basin_rescue_study.jl"
-    destination = joinpath(output, "source", relative)
-    cp(joinpath(ROOT, relative), destination)
-    metadata["source_sha256"][relative] = file_hash(destination)
+    archive_sources!(metadata, output, (relative,))
     metadata["purpose"] = "finite basin and nonnegative-total-drive protocol observations"
     metadata["mode"] = mode
     metadata["case"] = case_name
     metadata["smoke"] = smoke
     metadata["parameter_values"] = parameter_values
-    flags = join((" --$(replace(name, "_" => "-")) $(value)"
+    flags = join((" --$(replace(name, "_" => "-")) $(shell_quote(string(value)))"
         for (name, value) in sort!(collect(parameter_values); by=first)), "")
     metadata["replay_from_artifact_directory"] =
-        "julia --project=source source/scripts/run_basin_rescue_study.jl --config config.toml --mode $mode --case $case_name --output replay" *
+        "julia --project=source source/scripts/run_basin_rescue_study.jl --config config.toml --mode $(shell_quote(mode)) --case $(shell_quote(case_name)) --output replay" *
         (smoke ? " --smoke" : "") * flags
     metadata["claim_limits"] = "no exact attractor count, asymptotic basin proof, biological label, or exact pulse threshold"
     return metadata

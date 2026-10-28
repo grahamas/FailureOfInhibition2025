@@ -13,10 +13,8 @@ function initialize(config_path, output)
     relative="scripts/run_figure_details.jl"
     hash=S.N.Evidence.file_hash(joinpath(ROOT,relative))
     get(metadata["source_sha256"],relative,hash)==hash || error("detail source changed; use a new output")
-    archived=joinpath(output,"source",relative)
-    isfile(archived) || cp(joinpath(ROOT,relative),archived)
-    S.N.Evidence.file_hash(archived)==hash || error("archived detail source changed")
-    metadata["source_sha256"][relative]=hash
+    S.N.Evidence.archive_sources!(metadata, output, (relative,); missing_only=true)
+    metadata["source_sha256"][relative]==hash || error("archived detail source changed")
     metadata["purpose"]="Targeted figure measurements; finite discovery, no completeness certification"
     metadata["replay_from_artifact_directory"]="julia --project=source source/scripts/run_figure_details.jl config.toml SCREEN_OUTPUT replay STAGE"
     S.write_record(joinpath(output,"metadata.toml"),metadata)

@@ -1,5 +1,22 @@
 include(joinpath(@__DIR__, "..", "scripts", "run_basin_rescue_study.jl"))
 
+@testset "Basin replay archives and quotes inputs" begin
+    config_path = joinpath(@__DIR__, "..", "experiments", "basin_rescue.toml")
+    mktempdir() do output
+        metadata = BasinRescueStudy._metadata(config_path, output, "basin", "a'b",
+            true, Dict("theta_off" => 8.0))
+        relative = "scripts/run_basin_rescue_study.jl"
+        archived = joinpath(output, "source", relative)
+        @test metadata["source_sha256"][relative] ==
+            BasinRescueStudy.file_hash(archived)
+        command = metadata["replay_from_artifact_directory"]
+        @test occursin("--mode 'basin'", command)
+        @test occursin("--case 'a'\\''b'", command)
+        @test occursin("--theta-off '8.0'", command)
+        @test occursin(" --smoke", command)
+    end
+end
+
 @testset "Basin and tonic study configuration and branch identity" begin
     config = BasinRescueStudy.load_config(joinpath(@__DIR__, "..", "experiments",
         "basin_rescue.toml"))

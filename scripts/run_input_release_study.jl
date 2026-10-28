@@ -161,11 +161,7 @@ function archive_inputs(config_path, config, output; smoke)
     metadata = Evidence.archive_provenance(config_path, output)
     paths = ["scripts/input_release_models.jl", "scripts/run_input_release_study.jl",
         "scripts/run_basin_rescue_study.jl"]
-    for relative in paths
-        target = joinpath(output, "source", relative)
-        cp(joinpath(ROOT, relative), target)
-        metadata["source_sha256"][relative] = Evidence.file_hash(target)
-    end
+    Evidence.archive_sources!(metadata, output, paths)
     for (name, source) in (("exemplars", config.exemplar_path), ("roles", config.role_path))
         relative = config.raw[name]
         # Keep replay dependencies beside config.toml; reject paths escaping the archive.

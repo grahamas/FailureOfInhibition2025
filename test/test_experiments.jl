@@ -1,5 +1,33 @@
 include(joinpath(@__DIR__, "..", "scripts", "run_minimal_experiment.jl"))
 
+@testset "Source archive contract" begin
+    mktempdir() do root
+        source = joinpath(root, "scripts", "example.jl")
+        mkpath(dirname(source))
+        write(source, "original")
+        output = joinpath(root, "artifact")
+        metadata = Dict("source_sha256" => Dict{String,String}())
+        relative = "scripts/example.jl"
+        MinimalExperiment.archive_sources!(metadata, output, (relative,); root)
+        archived = joinpath(output, "source", relative)
+        @test read(archived, String) == "original"
+        @test metadata["source_sha256"][relative] == MinimalExperiment.file_hash(archived)
+        write(source, "updated")
+        MinimalExperiment.archive_sources!(metadata, output, (relative,); root,
+            missing_only=true)
+        @test read(archived, String) == "original"
+        MinimalExperiment.archive_sources!(metadata, output, (relative,); root,
+            force=true)
+        @test read(archived, String) == "updated"
+        @test metadata["source_sha256"][relative] == MinimalExperiment.file_hash(archived)
+        @test_throws ArgumentError MinimalExperiment.archive_sources!(metadata, output,
+            ("../escape",); root)
+        @test_throws ArgumentError MinimalExperiment.archive_sources!(metadata, output,
+            ("/absolute",); root)
+    end
+    @test MinimalExperiment.shell_quote("a'b") == "'a'\\''b'"
+end
+
 @testset "Synthetic experiment configuration" begin
     config_path = joinpath(@__DIR__, "..", "experiments", "minimal.toml")
     config = MinimalExperiment.load_config(config_path)
