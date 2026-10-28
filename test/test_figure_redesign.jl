@@ -2,6 +2,22 @@ using Test
 include(joinpath(@__DIR__,"..","scripts","run_figure_details.jl"))
 include(joinpath(@__DIR__,"..","scripts","verify_figure_redesign.jl"))
 include(joinpath(@__DIR__,"..","scripts","build_figure_redesign.jl"))
+@testset "Figure registry path and identifiers" begin
+    screen=FigureDetails.F
+    cfg=screen.S.load_config(joinpath(@__DIR__,"..","experiments","figure_redesign.toml"))
+    @test screen.registry_relative(cfg)==cfg.raw["redesign"]["registry"]
+    @test screen.valid_case_id("selective_withdrawal")
+    @test screen.valid_case_id("case-2")
+    @test !screen.valid_case_id("../escape")
+    @test !screen.valid_case_id("a/b")
+    @test !screen.valid_case_id("case\n")
+    @test !screen.valid_case_id("")
+    for path in ("../outside.toml", "/tmp/outside.toml")
+        invalid=deepcopy(cfg)
+        invalid.raw["redesign"]["registry"]=path
+        @test_throws ErrorException screen.registry_relative(invalid)
+    end
+end
 @testset "Figure redesign study contract" begin
     cfg=FigureDetails.S.load_config(joinpath(@__DIR__,"..","experiments","figure_redesign.toml"))
     cases=FigureDetails.F.registry(cfg)

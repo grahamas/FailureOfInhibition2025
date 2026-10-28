@@ -7,12 +7,26 @@ const S = InputResponseStudy
 const A = InputResponseArchives
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 
-function registry(config)
+function registry_relative(config)
     relative = config.raw["redesign"]["registry"]
+    relative isa AbstractString || error("registry path must be a string")
+    (isabspath(relative) || ".." in splitpath(relative)) && error("registry path must stay within the repository")
+    path = realpath(joinpath(ROOT, relative))
+    inside = relpath(path, realpath(ROOT))
+    first(splitpath(inside)) == ".." &&
+        error("registry path must stay within the repository")
+    relative
+end
+
+valid_case_id(id) = id isa AbstractString && occursin(r"\A[A-Za-z0-9][A-Za-z0-9_.-]*\z", id)
+
+function registry(config)
+    relative = registry_relative(config)
     data = TOML.parsefile(joinpath(ROOT, relative))
     data["schema_version"] == 1 || error("unsupported case registry")
     cases = data["cases"]
     ids = [p["id"] for p in cases]
+    all(valid_case_id, ids) || error("invalid case identifier")
     length(ids) == length(unique(ids)) || error("duplicate case identifiers")
     for p in cases
         S.M.model(p)
@@ -28,7 +42,7 @@ end
 function initialize(config_path, cfg, output)
     metadata = S.initialize(config_path,cfg,output;stage="geometry")
     for relative in ("scripts/run_figure_screen.jl", "scripts/archive_input_response_contexts.jl",
-                     cfg.raw["redesign"]["registry"])
+                     registry_relative(cfg))
         hash = S.N.Evidence.file_hash(joinpath(ROOT,relative))
         old = get(metadata["source_sha256"],relative,hash)
         old == hash || error("screen source changed: $relative")
