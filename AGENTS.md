@@ -23,4 +23,4 @@
 - Never manually edit `Project.toml` or `Manifest.toml` when an equivalent `Pkg` command or API exists. Use `Pkg.add`, `Pkg.rm`, `Pkg.update`, `Pkg.compat`, `Pkg.resolve`, and `Pkg.instantiate` as appropriate, allowing Pkg to update both files together.
 - Do not hand-edit `Manifest.toml`. Keep it synchronized and tracked for reproducibility.
 - Run the suite with `julia --project=. -e 'using Pkg; Pkg.test()'`.
-- For iterative Julia work, use the installed global `julia-repl` skill. Use separate REPLs for the root and `plotting` projects; when including a focused root test file, load `Test` and `test/test_support.jl` if its helpers are needed. Run the root and plotting checks documented in `README.md` for final verification.
+- For iterative Julia work, use the installed global `julia-repl` skill; when including a focused root test file, include `test/test_support.jl` if its helpers are needed.
