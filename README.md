@@ -37,6 +37,12 @@ julia --project=plotting -e 'using Pkg; Pkg.instantiate()'
 julia --project=plotting plotting/test/runtests.jl
 ```
 
+For an edit-and-check loop, keep a `julia --project=.` REPL open from this
+working copy and use a separate `julia --project=plotting` REPL for renderer
+work. The installed global `julia-repl` skill covers source reloads and focused
+checks. Run the commands above for clean full suite checks; `Pkg.test()` starts
+a separate test process.
+
 [Current next steps](NEXT_STEPS.md) concern author review of the figure claims
 and any further numerical work needed for the final paper. Scientific parameter
 choices, biological wording, and manuscript edits remain with the author.
