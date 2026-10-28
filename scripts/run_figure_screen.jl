@@ -32,11 +32,8 @@ function initialize(config_path, cfg, output)
         hash = S.N.Evidence.file_hash(joinpath(ROOT,relative))
         old = get(metadata["source_sha256"],relative,hash)
         old == hash || error("screen source changed: $relative")
-        destination = joinpath(output,"source",relative)
-        mkpath(dirname(destination))
-        isfile(destination) || cp(joinpath(ROOT,relative),destination)
-        S.N.Evidence.file_hash(destination) == hash || error("archived source mismatch")
-        metadata["source_sha256"][relative] = hash
+        S.N.Evidence.archive_sources!(metadata, output, (relative,); missing_only=true)
+        metadata["source_sha256"][relative] == hash || error("archived source mismatch")
     end
     metadata["purpose"] = "Current-source geometry and fixed-protocol refresh of a frozen case list"
     metadata["replay_from_artifact_directory"] = "julia --project=source source/scripts/run_figure_screen.jl config.toml replay"

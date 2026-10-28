@@ -118,7 +118,7 @@ function complete_unit(dir)
     write_record(joinpath(dir,"done.toml"),Dict("files"=>files))
 end
 
-shell_quote(value::AbstractString) = "'" * replace(value, "'" => "'\\''") * "'"
+const shell_quote = Evidence.shell_quote
 
 function replay_command(script; stage="all", case_filter=nothing, smoke=false)
     command="julia --project=source source/scripts/$script --config config.toml --output replay --stage $stage"
@@ -149,11 +149,7 @@ function initialize(config_path, output, config; stage="all", case_filter=nothin
     isdir(output) && !isempty(readdir(output)) && throw(ArgumentError("nonempty unrecognized output"))
     mkpath(output)
     metadata=Evidence.archive_provenance(config_path,output)
-    for relative in SOURCE_FILES
-        destination=joinpath(output,"source",relative)
-        mkpath(dirname(destination)); cp(joinpath(ROOT,relative),destination;force=true)
-        metadata["source_sha256"][relative]=Evidence.file_hash(destination)
-    end
+    Evidence.archive_sources!(metadata, output, SOURCE_FILES; force=true)
     metadata["purpose"]="bounded rest-active switching, selective intervention, paired withdrawal/displacement"
     metadata["smoke"]=config.smoke
     metadata["replay_invocations"]=String[]
