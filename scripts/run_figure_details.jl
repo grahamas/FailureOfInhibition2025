@@ -3,6 +3,7 @@ module FigureDetails
 using FailureOfInhibition2025, LinearAlgebra
 import CSV, TOML
 include("run_figure_screen.jl")
+include("nullcline_overlays.jl")
 const F=FigureScreen
 const S=F.S
 const ROOT=F.ROOT
@@ -10,11 +11,12 @@ const ROOT=F.ROOT
 function initialize(config_path, output)
     cfg=S.load_config(config_path)
     metadata=F.initialize(config_path,cfg,output)
-    relative="scripts/run_figure_details.jl"
-    hash=S.N.Evidence.file_hash(joinpath(ROOT,relative))
-    get(metadata["source_sha256"],relative,hash)==hash || error("detail source changed; use a new output")
-    S.N.Evidence.archive_sources!(metadata, output, (relative,); missing_only=true)
-    metadata["source_sha256"][relative]==hash || error("archived detail source changed")
+    for relative in ("scripts/run_figure_details.jl","scripts/nullcline_overlays.jl")
+        hash=S.N.Evidence.file_hash(joinpath(ROOT,relative))
+        get(metadata["source_sha256"],relative,hash)==hash || error("detail source changed; use a new output")
+        S.N.Evidence.archive_sources!(metadata, output, (relative,); missing_only=true)
+        metadata["source_sha256"][relative]==hash || error("archived detail source changed")
+    end
     metadata["purpose"]="Targeted figure measurements; finite discovery, no completeness certification"
     metadata["replay_from_artifact_directory"]="julia --project=source source/scripts/run_figure_details.jl config.toml SCREEN_OUTPUT replay STAGE"
     S.write_record(joinpath(output,"metadata.toml"),metadata)
@@ -148,13 +150,24 @@ orbit_record(o)=(;period=o.period,validation=string(o.validation),stability=stri
     transverse_imag=imag(o.transverse_multiplier),refinement_difference=o.refinement_difference,
     reasons=string.(o.reasons))
 
-function mechanism(p,cfg,output)
-    dir=joinpath(output,"mechanism");S.N.checked_unit(dir) && return
+function mechanism(p,cfg,output;basins=nothing,separatrices=nothing)
+    dir=joinpath(output,"mechanism")
+    if NullclineOverlays.checked_complete_unit(dir)
+        metadata_path=joinpath(dir,"overlays","metadata.toml")
+        isfile(metadata_path) || error("completed mechanism lacks current overlay settings; use a new output")
+        existing=TOML.parsefile(metadata_path)
+        roots=collect(CSV.File(joinpath(dir,"roots.csv")))
+        expected=NullclineOverlays.identity(p,cfg,NullclineOverlays.configuration(cfg;basins,separatrices),NamedTuple.(roots))
+        existing["identity"]==expected || error("mechanism overlay identity changed; use a new output")
+        return dir
+    end
     ref=S.context(p,.35,0.,cfg;tight=true,grid=41)
     mkpath(dir);response_rows=NamedTuple[];nullclines=NamedTuple[];roots=NamedTuple[]
+    models=Dict{String,Any}();searches=Dict{String,Any}()
     for (condition,control) in (("monotone",true),("failure",false))
         model=S.M.model(p,.35,0.;control)
         search=find_equilibria(model;seeds=[[e,i] for e in range(0,.5;length=41) for i in range(0,.5;length=41)])
+        models[condition]=model;searches[condition]=search
         roles=S.M.roles(model,search)
         for (k,r) in enumerate(search.equilibria)
             push!(roots,(;condition,root=k,E=r.state[1],I=r.state[2],stability=string(r.stability.classification),
@@ -183,7 +196,23 @@ function mechanism(p,cfg,output)
         "inhibitory_input"=>inhibitory_input,"response_peak_input"=>(get(p,"theta_on",4.)+p["theta_off"])/2,
         "descending_branch_condition"=>inhibitory_input>=(get(p,"theta_on",4.)+p["theta_off"])/2,
         "drive_condition"=>"Both drive increments are nonnegative relative to baseline throughout the protocol"))
+    NullclineOverlays.generate(dir,p,cfg,models,searches,roots;basins,separatrices,api=FailureOfInhibition2025)
     S.N.complete_unit(dir)
+    dir
+end
+
+"""Generate and archive only the fixed-input mechanism; no screen or selection is needed."""
+function run_mechanism(config_path,output;basins=nothing,separatrices=nothing)
+    cfg,metadata=initialize(config_path,output)
+    p=only(filter(p->p["id"]==cfg.raw["redesign"]["reference"],F.registry(cfg)))
+    mechanism(p,cfg,output;basins,separatrices)
+    ref=S.context(p,.35,0.,cfg;tight=true,grid=41)
+    S.save_context(joinpath(output,"cases",p["id"],"baseline_1"),ref)
+    metadata["completed"]=true;metadata["completed_stages"]=["mechanism"]
+    metadata["purpose"]="Standalone fixed-input mechanism evidence; no full-study completion claim"
+    S.write_record(joinpath(output,"metadata.toml"),metadata)
+    S.N.Evidence.artifact_checksums(output)
+    output
 end
 
 """Pick the midpoint of the widest observed successful interval, then remeasure it."""
@@ -490,6 +519,10 @@ function run(config_path,screen,output,stage;case_id=nothing)
 end
 end
 if abspath(PROGRAM_FILE)==@__FILE__
+    if length(ARGS)==3 && ARGS[1]=="mechanism-only"
+        FigureDetails.run_mechanism(ARGS[2],ARGS[3])
+        exit()
+    end
     length(ARGS) in (4,5) || error("usage: run_figure_details.jl CONFIG SCREEN OUTPUT STAGE [CASE]")
     FigureDetails.run(ARGS[1:4]...;case_id=length(ARGS)==5 ? ARGS[5] : nothing)
 end

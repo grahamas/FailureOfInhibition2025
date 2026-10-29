@@ -585,3 +585,75 @@ end
         @test occursin("screen configuration differs from detail study",sprint(showerror,err))
     end
 end
+
+@testset "Mechanism overlays generate, verify, and enrich legacy packets" begin
+    D=FigureDetails;V=VerifyFigureRedesign;B=FigureRedesignData
+    mktempdir() do root
+        config=joinpath(root,"config.toml")
+        raw=D.TOML.parsefile(joinpath(@__DIR__,"..","experiments","figure_redesign.toml"))
+        raw["nullcline_overlays"]["basin"]["grid_points"]=7
+        D.S.write_record(config,raw)
+        evidence=joinpath(root,"evidence")
+        D.run_mechanism(config,evidence;basins=true,separatrices=false)
+        @test D.S.N.checked_unit(joinpath(evidence,"mechanism"))
+        @test D.run_mechanism(config,evidence;basins=true,separatrices=false)==evidence
+        @test_throws ErrorException D.run_mechanism(config,evidence;basins=false,separatrices=false)
+        checks=V.verify_mechanism_evidence(evidence)
+        @test !isempty(checks) && all(r->r.passed,checks)
+        folder=joinpath(evidence,"mechanism");metadata=D.TOML.parsefile(joinpath(folder,"overlays","metadata.toml"))
+        roots=collect(D.CSV.File(joinpath(folder,"roots.csv");stringtype=String))
+        group=filter(r->r.condition=="failure",roots)
+        grid=D.NullclineOverlays.read_basins(joinpath(folder,"overlays"),"failure",group,metadata["conditions"]["failure"])
+        @test size(grid.labels)==(7,7)
+        @test all(label->label==0 || group[label].stability=="Attracting",grid.labels)
+        @test any(>(0),grid.labels)
+        @test metadata["identity"]["generation"]["basins"]
+        @test !metadata["identity"]["generation"]["separatrices"]
+
+        separated=joinpath(root,"separated")
+        D.run_mechanism(config,separated;basins=false,separatrices=true)
+        sepchecks=V.verify_mechanism_evidence(separated)
+        @test all(r->r.passed,sepchecks)
+        sepmetadata=D.TOML.parsefile(joinpath(separated,"mechanism","overlays","metadata.toml"))
+        @test !haskey(sepmetadata["conditions"]["failure"],"basin_options")
+        branches=D.NullclineOverlays.read_separatrices(joinpath(separated,"mechanism","overlays"),
+            "failure",group,sepmetadata["conditions"]["failure"])
+        @test length(branches)==2count(r->r.stability=="Saddle",group)
+        @test all(branch->branch.converged || isempty(branch.E),branches)
+
+        # An otherwise valid old packet has no overlays; enrich it without re-running a screen.
+        legacy=joinpath(root,"legacy");mkpath(joinpath(legacy,"mechanism"))
+        for name in ("roots.csv","responses.csv","nullclines.csv","restriction.toml")
+            cp(joinpath(folder,name),joinpath(legacy,"mechanism",name))
+        end
+        D.S.write_record(joinpath(legacy,"packet.toml"),Dict("schema_version"=>1,
+            "copied_artifact_sha256"=>Dict{String,String}()))
+        B.IOChecks.write_manifest(legacy)
+        packet=joinpath(root,"packet")
+        @test B.with_mechanism_evidence(legacy,evidence,packet)==packet
+        @test B.IOChecks.verify_manifest(packet)["algorithm"]=="SHA-256"
+        @test isfile(joinpath(packet,"mechanism","overlays","failure_basins.csv"))
+        @test haskey(D.TOML.parsefile(joinpath(packet,"packet.toml")),"mechanism_evidence")
+
+        basinfile=joinpath(folder,"overlays","failure_basins.csv")
+        original=read(basinfile,String);rows=NamedTuple.(collect(D.CSV.File(basinfile)))
+        rows[1]=merge(rows[1],(;label=length(group)+1))
+        D.CSV.write(basinfile,rows)
+        @test_throws ErrorException D.NullclineOverlays.read_basins(joinpath(folder,"overlays"),"failure",group,metadata["conditions"]["failure"])
+        @test_throws ErrorException B.checked_mechanism_evidence(evidence)
+        write(basinfile,original)
+        altered=deepcopy(metadata)
+        altered["conditions"]["failure"]["basin_options"]["grid_points"]=8
+        D.S.write_record(joinpath(folder,"overlays","metadata.toml"),altered)
+        @test_throws ErrorException V.verify_overlays(folder,metadata["identity"]["parameters"];replay=false)
+        D.S.write_record(joinpath(folder,"overlays","metadata.toml"),metadata)
+    end
+end
+
+@testset "Curve distances include repeated event endpoints" begin
+    V=VerifyFigureRedesign
+    curve=[[0.,0.],[1.,0.],[1.,0.]]
+    @test V.orbit_curve_distance([.5,0.],curve)==0.
+    @test V.orbit_curve_distance([1.,.25],curve)==.25
+    @test V.orbit_curve_distance([0.,.5],[[0.,0.],[0.,0.]])==.5
+end

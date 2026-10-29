@@ -41,3 +41,29 @@ include(joinpath(@__DIR__,"..","..","scripts","render_figure_redesign.jl"))
         @test_throws ErrorException R.phase_data(packet)
     end
 end
+
+@testset "Mechanism basin display switches and legacy packets" begin
+    R=FigureRedesignRenderer
+    mktempdir() do packet
+        roots=[(;root=1,condition="failure",E=.1,I=.1,stability="Attracting",role="active")]
+        @test R.mechanism_overlays(packet,"failure",roots).basins===nothing
+        @test R.mechanism_overlays(packet,"failure",roots;show_separatrices=true).separatrices===nothing
+        folder=joinpath(packet,"mechanism","overlays");mkpath(folder)
+        entry=Dict("shape"=>[2,2],"basin_options"=>Dict("grid_points"=>2,"bounds"=>[[0.,.5],[0.,.5]]))
+        R.NullclineOverlays.write_record(joinpath(folder,"metadata.toml"),Dict("conditions"=>Dict("failure"=>entry)))
+        CSV.write(joinpath(folder,"failure_basins.csv"),[
+            (;condition="failure",E_index=e,I_index=i,E=(e-1)*.5,I=(i-1)*.5,
+              label=e==i ? 1 : 0,status=e==i ? "compatible" : "unresolved") for e in 1:2 for i in 1:2])
+        data=R.mechanism_overlays(packet,"failure",roots)
+        @test data.basins.labels==[1 0;0 1]
+        @test R.mechanism_overlays(packet,"failure",roots;show_basins=false).basins===nothing
+        fig=R.Figure();ax=R.Axis(fig[1,1])
+        R.draw_mechanism_overlays!(ax,data,roots)
+        @test length(ax.scene.plots)==1
+        @test R.pale_role_color("active")!=R.pale_role_color("seizure")
+        @test R.pale_role_color("active").g>.8
+        # A rendered smoke artifact proves the layer is accepted by the plotting backend.
+        R.save(joinpath(packet,"basin_smoke.png"),fig)
+        @test filesize(joinpath(packet,"basin_smoke.png"))>0
+    end
+end

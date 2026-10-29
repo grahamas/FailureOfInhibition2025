@@ -41,3 +41,12 @@ offsets = [0.25, 0.5, 0.25, 0.2]
 registry = "reproducibility/figure_redesign_20261006/cases.toml"
 detailed_limit = 8
 reference = "selective_withdrawal"
+
+# Numerical generation switches; rendering can independently hide available overlays.
+[nullcline_overlays]
+basins = true
+separatrices = true
+
+[nullcline_overlays.basin]
+grid_points = 100
+bounds = [[0.0, 0.5], [0.0, 0.5]]

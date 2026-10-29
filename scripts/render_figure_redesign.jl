@@ -3,6 +3,7 @@ module FigureRedesignRenderer
 using CairoMakie
 import CSV,TOML,SHA
 include("figure_packet_io.jl")
+include("nullcline_overlays.jl")
 const E_COLOR="#0072B2"
 const I_COLOR="#D55E00"
 const ROLES=("rest","active","herald","seizure","oscillatory","unassigned","unresolved")
@@ -48,7 +49,36 @@ function note(position,text)
     Label(position,text;fontsize=15,halign=:left,tellwidth=false,justification=:left)
 end
 
-function mechanism(packet,out)
+function mechanism_overlays(packet,condition,roots;show_basins=true,show_separatrices=true)
+    folder=joinpath(packet,"mechanism","overlays");path=joinpath(folder,"metadata.toml")
+    isfile(path) || return (;basins=nothing,separatrices=nothing)
+    metadata=TOML.parsefile(path);entry=metadata["conditions"][condition]
+    basins=show_basins && haskey(entry,"basin_options") ?
+        NullclineOverlays.read_basins(folder,condition,roots,entry) : nothing
+    separatrices=show_separatrices && haskey(entry,"separatrix_options") ?
+        NullclineOverlays.read_separatrices(folder,condition,roots,entry) : nothing
+    (;basins,separatrices)
+end
+function pale_role_color(role)
+    c=to_color(color(role));weight=.16
+    RGBAf(1-weight+weight*c.r,1-weight+weight*c.g,1-weight+weight*c.b,1)
+end
+function draw_mechanism_overlays!(ax,overlays,roots)
+    if overlays.basins!==nothing
+        grid=overlays.basins
+        palette=vcat([to_color("#F4F4F4")],[pale_role_color(r.role) for r in roots])
+        heatmap!(ax,grid.E,grid.I,grid.labels;colormap=cgrad(palette;categorical=true),
+            colorrange=(-.5,length(roots)+.5),interpolate=false,rasterize=true)
+    end
+    if overlays.separatrices!==nothing
+        for branch in overlays.separatrices
+            branch.converged || continue
+            lines!(ax,branch.E,branch.I;color=("#374151",.8),linestyle=:dash,linewidth=1.4)
+        end
+    end
+end
+
+function mechanism(packet,out;show_basins=true,show_separatrices=true)
     fig=Figure(size=(1120,590));heading(fig,"1   Failure of inhibition changes the available equilibrium ordering")
     response=rows(packet,"mechanism/responses.csv");nulls=rows(packet,"mechanism/nullclines.csv")
     roots=rows(packet,"mechanism/roots.csv")
@@ -65,6 +95,9 @@ function mechanism(packet,out)
     axislegend(a;position=:rt,framevisible=false,labelsize=14)
     for (column,condition,title) in ((2,"monotone","B   Matched monotone circuit"),(3,"failure","C   Failure circuit"))
         ax=Axis(fig[1,column],title=title,xlabel="E occupancy",ylabel="I occupancy",aspect=DataAspect())
+        group=filter(x->x.condition==condition,roots)
+        overlays=mechanism_overlays(packet,condition,group;show_basins,show_separatrices)
+        draw_mechanism_overlays!(ax,overlays,group)
         for (population,c,style) in (("E",E_COLOR,:solid),("I",I_COLOR,:dash))
             r=filter(x->x.condition==condition && x.population==population,nulls)
             lines!(ax,getproperty.(r,:E),getproperty.(r,:I);color=c,linestyle=style,linewidth=2)
@@ -73,20 +106,20 @@ function mechanism(packet,out)
             scatter!(ax,[r.E],[r.I];color=r.stability=="Attracting" ? color(r.role) : "#96A0AE",
                 marker=r.stability=="Attracting" ? marker(r.role) : :xcross,markersize=12)
             if condition=="failure" && r.role!="unassigned"
-                positions=Dict("rest"=>(.035,.04),"active"=>(.27,.35),"herald"=>(.37,.49),"seizure"=>(.36,.035))
+                positions=Dict("rest"=>(.035,.04),"active"=>(.27,.35),"herald"=>(.37,.46),"seizure"=>(.36,.035))
                 text!(ax,positions[r.role]...;text=r.role,color=color(r.role),fontsize=14)
             end
         end
-        xlims!(ax,-.015,.535);ylims!(ax,-.015,.535)
+        xlims!(ax,0.,.5);ylims!(ax,0.,.5)
     end
     # Full physical state domain is context, rather than another main panel.
     inset=Axis(fig[1,1],width=75,height=75,halign=.04,valign=.94,backgroundcolor=:white,
         xticks=[0.,1.],yticks=[0.,1.],xticklabelsize=10,yticklabelsize=10,title="state domain",titlesize=11,
         xlabel="E",ylabel="I",xlabelsize=10,ylabelsize=10,
         tellwidth=false,tellheight=false)
-    poly!(inset,Rect2f(0,0,.535,.535);color=(E_COLOR,.12),strokecolor=E_COLOR,strokewidth=1)
+    poly!(inset,Rect2f(0,0,.5,.5);color=(E_COLOR,.12),strokecolor=E_COLOR,strokewidth=1)
     xlims!(inset,0,1);ylims!(inset,0,1);hidespines!(inset,:t,:r)
-    note(fig[2,1:3],"Same couplings, tonic input, and time scales. Blue/orange curves: E/I nullclines; crosses: other discovered roots.")
+    note(fig[2,1:3],"Same couplings, tonic input, and time scales. Blue/orange: E/I nullclines; crosses: other discovered roots.\nPale colour (when present): compatible attracting root; neutral: unresolved. Dashed grey (when shown): converged stable manifold.")
     note(fig[3,1:3],"Ordering result: with nondecreasing inhibition, E₂ ≥ E₁ and I₂ < I₁ cannot hold for two equilibria\nof the same fixed-input system. The failure response permits this ordering; it does not guarantee it.")
     rowsize!(fig.layout,1,Relative(.75));savefig(fig,out,"01_mechanism")
 end
@@ -367,18 +400,20 @@ function interventions(packet,out)
     savefig(fig,out,"05_interventions")
 end
 
-function render(packet,output)
+function render(packet,output;show_basins=true,show_separatrices=true)
     FigurePacketIO.verify_manifest(packet)
     ispath(output) && error("output already exists")
     mkpath(output)
     with_theme(Theme(fontsize=18,Axis=(titlesize=18,titlealign=:left,xlabelsize=17,ylabelsize=17,
         xticklabelsize=14,yticklabelsize=14,spinewidth=1,xgridcolor=(:gray,.12),ygridcolor=(:gray,.12)))) do
-        mechanism(packet,output);repertoire(packet,output);accessibility(packet,output)
+        mechanism(packet,output;show_basins,show_separatrices);repertoire(packet,output);accessibility(packet,output)
         control(packet,output);interventions(packet,output)
     end
     open(joinpath(output,"provenance.toml"),"w") do io
         TOML.print(io,Dict("packet_manifest_sha256"=>FigurePacketIO.digest(joinpath(packet,"checksums.toml")),
-            "renderer_sha256"=>FigurePacketIO.digest(@__FILE__),"julia_version"=>string(VERSION),
+            "renderer_sha256"=>FigurePacketIO.digest(@__FILE__),
+            "overlay_helper_sha256"=>FigurePacketIO.digest(joinpath(@__DIR__,"nullcline_overlays.jl")),
+            "show_basins"=>show_basins,"show_separatrices"=>show_separatrices,"julia_version"=>string(VERSION),
             "cairomakie_version"=>string(pkgversion(CairoMakie)),
             "plotting_project_sha256"=>FigurePacketIO.digest(joinpath(@__DIR__,"..","plotting","Project.toml")),
             "plotting_manifest_sha256"=>FigurePacketIO.digest(joinpath(@__DIR__,"..","plotting","Manifest.toml")),
@@ -404,6 +439,8 @@ function render(packet,output)
 end
 end
 if abspath(PROGRAM_FILE)==@__FILE__
-    length(ARGS)==2 || error("usage: render_figure_redesign.jl PACKET NEW_OUTPUT")
-    FigureRedesignRenderer.render(ARGS...)
+    length(ARGS)>=2 || error("usage: render_figure_redesign.jl PACKET NEW_OUTPUT [--no-basins] [--no-separatrices]")
+    flags=ARGS[3:end]
+    all(in(("--no-basins","--separatrices","--no-separatrices")),flags) || error("unknown rendering flag")
+    FigureRedesignRenderer.render(ARGS[1],ARGS[2];show_basins=!("--no-basins" in flags),show_separatrices=!("--no-separatrices" in flags))
 end
