@@ -33,7 +33,7 @@ end
 
 function StabilityOptions(; spectral_atol=1.0e-10, spectral_rtol=1.0e-8)
     values = (spectral_atol, spectral_rtol)
-    all(value -> value isa Real, values) ||
+    all(value -> value isa Real && !(value isa Bool), values) ||
         throw(ArgumentError("spectral tolerances must be real"))
     all(isfinite, values) || throw(ArgumentError("spectral tolerances must be finite"))
     all(value -> value >= zero(value), values) ||

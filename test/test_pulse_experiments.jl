@@ -19,7 +19,8 @@ end
         (; followup_times=[200, Inf]), (; targets=[:E, :E]), (; targets=[:unknown]),
         (; refinement_levels=-1), (; refinement_levels=true),
         (; duration_refinement_levels=-1), (; duration_refinement_levels=true), (; maxiters=0),
-        (; trajectory_saveat=0), (; abstol=NaN), (; retain_trajectories=1))
+        (; trajectory_saveat=0), (; abstol=NaN), (; domain_atol=true),
+        (; retain_trajectories=1))
         @test_throws ArgumentError PulseExperimentOptions(; kwargs...)
     end
 end

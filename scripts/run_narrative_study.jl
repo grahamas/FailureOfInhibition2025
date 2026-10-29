@@ -97,24 +97,37 @@ function write_record(path,data)
     mv(path*".tmp",path;force=true)
 end
 
+function unit_files(dir; writing_marker=false)
+    isdir(dir) && !islink(dir) || throw(ArgumentError("checkpoint must be a regular directory: $dir"))
+    files=Dict{String,String}()
+    for (root,folders,names) in walkdir(dir; follow_symlinks=false)
+        any(islink(joinpath(root,name)) for name in vcat(folders,names)) &&
+            throw(ArgumentError("checkpoint symlink: $dir"))
+        for name in names
+            path=joinpath(root,name)
+            relative=relpath(path,dir)
+            (relative=="done.toml" || writing_marker && relative=="done.toml.tmp") && continue
+            isfile(path) || throw(ArgumentError("nonregular checkpoint file: $relative"))
+            files[relative]=Evidence.file_hash(path)
+        end
+    end
+    files
+end
+
 function checked_unit(dir)
     marker=joinpath(dir,"done.toml")
     isfile(marker) || return false
+    islink(marker) && throw(ArgumentError("checkpoint marker is a symlink: $marker"))
     files=TOML.parsefile(marker)["files"]
-    for (relative,hash) in files
-        isabspath(relative) || ".." in splitpath(relative) ? throw(ArgumentError("invalid manifest path")) : nothing
-        isfile(joinpath(dir,relative)) && Evidence.file_hash(joinpath(dir,relative))==hash ||
-            throw(ArgumentError("checkpoint checksum mismatch: $relative"))
-    end
+    files isa AbstractDict && all(relative -> relative isa AbstractString &&
+        !isempty(relative) && !isabspath(relative) && !(".." in splitpath(relative)), keys(files)) ||
+        throw(ArgumentError("invalid checkpoint file map"))
+    unit_files(dir)==files || throw(ArgumentError("checkpoint file set or content changed: $dir"))
     return true
 end
 
 function complete_unit(dir)
-    files=Dict{String,String}()
-    for (root,_,names) in walkdir(dir), name in names
-        name in ("done.toml","done.toml.tmp") && continue
-        files[relpath(joinpath(root,name),dir)]=Evidence.file_hash(joinpath(root,name))
-    end
+    files=unit_files(dir; writing_marker=true)
     write_record(joinpath(dir,"done.toml"),Dict("files"=>files))
 end
 

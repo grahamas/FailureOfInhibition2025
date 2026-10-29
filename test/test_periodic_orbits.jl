@@ -101,7 +101,8 @@ end
                      (; samples=4), (; min_period=2, max_period=1),
                      (; floquet_atol=NaN), (; validation_atol=big"1e-6"),
                      (; validation_atol=true), (; maxiters=true),
-                     (; ode_maxiters=true), (; samples=true))
+                     (; ode_maxiters=true), (; samples=true),
+                     (; samples=big(typemax(Int))+1))
         @test_throws ArgumentError PeriodicOrbitOptions(; keywords...)
     end
     @test_throws ArgumentError solve_periodic_orbit(hopf_test_rhs!, hopf_test_jacobian!,

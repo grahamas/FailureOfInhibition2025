@@ -101,6 +101,22 @@ include(joinpath(@__DIR__, "..", "scripts", "run_narrative_study.jl"))
         @test_throws ArgumentError N.checked_unit(dir)
     end
     mktempdir() do dir
+        nested=joinpath(dir,"nested");mkpath(nested)
+        child_marker=joinpath(nested,"done.toml")
+        N.write_record(child_marker,Dict("files"=>Dict("data.csv"=>"first")))
+        N.complete_unit(dir)
+        @test haskey(N.TOML.parsefile(joinpath(dir,"done.toml"))["files"],"nested/done.toml")
+        @test N.checked_unit(dir)
+        N.write_record(child_marker,Dict("files"=>Dict("data.csv"=>"changed")))
+        @test_throws ArgumentError N.checked_unit(dir)
+        N.complete_unit(dir)
+        write(joinpath(dir,"extra.csv"),"unlisted")
+        @test_throws ArgumentError N.checked_unit(dir)
+        rm(joinpath(dir,"extra.csv"))
+        rm(child_marker)
+        @test_throws ArgumentError N.checked_unit(dir)
+    end
+    mktempdir() do dir
         path=joinpath(@__DIR__,"..","experiments","narrative_study.toml")
         metadata=N.initialize(path,dir,config;stage="screen",case_filter="figure3")
         @test metadata["replay_from_artifact_directory"]==command

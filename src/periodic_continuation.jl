@@ -61,7 +61,7 @@ function PeriodicContinuationOptions(;
         throw(ArgumentError("tangent_alignment_min must be finite and lie in [0, 1)"))
     for (name, value) in (("max_steps", max_steps),
                           ("max_corrector_iters", max_corrector_iters))
-        value isa Integer && !(value isa Bool) && value > 0 ||
+        value isa Integer && !(value isa Bool) && 0 < value <= typemax(Int) ||
             throw(ArgumentError("$name must be a positive integer"))
     end
     return PeriodicContinuationOptions(
