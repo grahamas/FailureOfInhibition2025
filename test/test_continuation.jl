@@ -139,6 +139,7 @@ end
         (; max_corrector_iters=1.5), (; parameter_difference_step=NaN),
         (; state_scales=(1.0, 0.0)), (; state_scales=[1.0, 1.0]),
         (; parameter_scale=-2.0), (; rank_rtol=true), (; max_steps=true),
+        (; max_steps=big(typemax(Int))+1),
     )
         @test_throws ArgumentError ContinuationOptions(; kwargs...)
     end

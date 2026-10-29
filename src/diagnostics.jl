@@ -42,7 +42,7 @@ function DiagnosticOptions(;
     min_samples=3,
 )
     raw_values = (window_duration, coordinate_atol, balance_atol)
-    all(value -> value isa Real, raw_values) ||
+    all(value -> value isa Real && !(value isa Bool), raw_values) ||
         throw(ArgumentError("diagnostic durations and tolerances must be real"))
     min_samples isa Integer && 2 <= min_samples <= typemax(Int) ||
         throw(ArgumentError("min_samples must be an integer of at least two"))

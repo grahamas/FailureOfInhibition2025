@@ -339,7 +339,8 @@ end
     for kwargs in ((; initial_step=0.0), (; minimum_step=-1.0),
                    (; state_scales=[1.0, 1.0]), (; log_period_scale=0.0),
                    (; parameter_scale=Inf), (; max_steps=0),
-                   (; max_corrector_iters=true), (; tangent_alignment_min=1.0))
+                   (; max_corrector_iters=true), (; tangent_alignment_min=1.0),
+                   (; max_steps=big(typemax(Int))+1))
         @test_throws ArgumentError PeriodicContinuationOptions(; kwargs...)
     end
     @test_throws ArgumentError PeriodicContinuationOptions(initial_step=big"0.02")

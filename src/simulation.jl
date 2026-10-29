@@ -98,7 +98,8 @@ function _validate_initial_state(initial_state)
 end
 
 function _validate_domain_atol(domain_atol)
-    domain_atol isa Real || throw(ArgumentError("domain_atol must be real"))
+    domain_atol isa Real && !(domain_atol isa Bool) ||
+        throw(ArgumentError("domain_atol must be real"))
     isfinite(domain_atol) || throw(ArgumentError("domain_atol must be finite"))
     domain_atol >= zero(domain_atol) ||
         throw(ArgumentError("domain_atol must be nonnegative"))

@@ -323,6 +323,9 @@ end
     @test_throws ArgumentError EquilibriumOptions(residual_atol=-1.0)
     @test_throws ArgumentError EquilibriumOptions(domain_atol=Inf)
     @test_throws ArgumentError EquilibriumOptions(maxiters=0)
+    @test_throws ArgumentError EquilibriumOptions(solver_abstol=true)
+    @test_throws ArgumentError EquilibriumOptions(maxiters=true)
+    @test_throws ArgumentError EquilibriumOptions(maxiters=big(typemax(Int))+1)
 
     model = synthetic_model()
     @test_throws ArgumentError solve_equilibrium(model, (0.1, 0.2))

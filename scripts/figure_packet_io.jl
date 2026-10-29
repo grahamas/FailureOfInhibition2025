@@ -75,10 +75,11 @@ function completed_stage_manifests(directory, stages, separator)
         for (root,folders,names) in walkdir(stage;follow_symlinks=false)
             any(islink(joinpath(root,name)) for name in vcat(folders,names)) && error("stage symlink: $relative")
             for name in names
-                name=="done.toml" && continue
                 path=joinpath(root,name)
+                file=portable_name(relpath(path,stage),separator)
+                file=="done.toml" && continue
                 isfile(path) || error("nonregular stage file: $relative")
-                actual[portable_name(relpath(path,stage),separator)]=digest(path)
+                actual[file]=digest(path)
             end
         end
         actual==recorded || error("stage file set or content changed: $relative")

@@ -47,6 +47,7 @@ using LinearAlgebra: Diagonal
 
     @test_throws ArgumentError StabilityOptions(spectral_atol=-1.0)
     @test_throws ArgumentError StabilityOptions(spectral_rtol=Inf)
+    @test_throws ArgumentError StabilityOptions(spectral_atol=true)
     @test_throws ArgumentError classify_local_stability(zeros(3, 3))
     @test_throws ArgumentError classify_local_stability([0.0 NaN; 0.0 1.0])
     @test_throws ArgumentError classify_local_stability(BigFloat[1 0; 0 1])

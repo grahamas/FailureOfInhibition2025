@@ -93,6 +93,8 @@ end
         model;
         domain_atol=Inf,
     )
+    @test_throws ArgumentError solve_point_model([0.1, 0.2], (0.0, 1.0), model;
+        domain_atol=true)
     @test_throws ArgumentError solve_point_model(
         [0.1, 0.2],
         (0.0, 1.0),

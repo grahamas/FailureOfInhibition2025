@@ -58,7 +58,7 @@ struct PeriodicOrbitOptions
         min_period < max_period || throw(ArgumentError("min_period must precede max_period"))
         for (value, name) in ((maxiters, "maxiters"), (ode_maxiters, "ode_maxiters"),
                               (samples, "samples"))
-            value isa Integer && !(value isa Bool) && value > 0 ||
+            value isa Integer && !(value isa Bool) && 0 < value <= typemax(Int) ||
                 throw(ArgumentError("$name must be a positive integer"))
         end
         samples >= 9 || throw(ArgumentError("samples must be at least nine"))

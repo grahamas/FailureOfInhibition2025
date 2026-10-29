@@ -54,13 +54,13 @@ function EquilibriumOptions(;
         singular_atol,
         singular_rtol,
     )
-    all(value -> value isa Real, raw_tolerances) ||
+    all(value -> value isa Real && !(value isa Bool), raw_tolerances) ||
         throw(ArgumentError("equilibrium tolerances must be real"))
     all(isfinite, raw_tolerances) ||
         throw(ArgumentError("equilibrium tolerances must be finite"))
     all(value -> value >= zero(value), raw_tolerances) ||
         throw(ArgumentError("equilibrium tolerances must be nonnegative"))
-    maxiters isa Integer && maxiters > 0 ||
+    maxiters isa Integer && !(maxiters isa Bool) && 0 < maxiters <= typemax(Int) ||
         throw(ArgumentError("maxiters must be a positive integer"))
     tolerances = promote(float.(raw_tolerances)...)
     return EquilibriumOptions(tolerances..., Int(maxiters))

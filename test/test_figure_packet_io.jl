@@ -32,16 +32,26 @@ end
         mkpath(joinpath(stage,"nested"))
         data=joinpath(stage,"nested","trajectory.csv")
         write(data,"time,E,I\n0,0,0\n")
+        nested_marker=joinpath(stage,"nested","done.toml")
+        write(nested_marker,"[files]\n")
         marker=joinpath(stage,"done.toml")
         function complete()
             open(marker,"w") do io
-                TOML.print(io,Dict("files"=>Dict("nested/trajectory.csv"=>FigurePacketIO.digest(data))))
+                TOML.print(io,Dict("files"=>Dict(
+                    "nested/trajectory.csv"=>FigurePacketIO.digest(data),
+                    "nested/done.toml"=>FigurePacketIO.digest(nested_marker))))
             end
         end
         complete()
         first_record=FigurePacketIO.completed_stage_manifests(root,["cases/example"])
+        write(nested_marker,"[files]\nchanged = \"yes\"\n")
+        @test_throws ErrorException FigurePacketIO.completed_stage_manifests(root,["cases/example"])
+        write(nested_marker,"[files]\n")
+        @test FigurePacketIO.completed_stage_manifests(root,["cases/example"])==first_record
         open(marker,"w") do io
-            TOML.print(io,Dict("files"=>Dict("nested\\trajectory.csv"=>FigurePacketIO.digest(data))))
+            TOML.print(io,Dict("files"=>Dict(
+                "nested\\trajectory.csv"=>FigurePacketIO.digest(data),
+                "nested\\done.toml"=>FigurePacketIO.digest(nested_marker))))
         end
         windows_record=FigurePacketIO.completed_stage_manifests(root,["cases\\example"],'\\')
         @test haskey(windows_record,"cases/example")

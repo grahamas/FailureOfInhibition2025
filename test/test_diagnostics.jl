@@ -36,7 +36,8 @@ end
     @test DiagnosticOptions(window_duration=2, coordinate_atol=0, balance_atol=0).window_duration == 2.0
     for kwargs in ((; window_duration=0), (; window_duration=-1), (; window_duration=Inf),
                    (; coordinate_atol=-1), (; coordinate_atol=NaN), (; balance_atol=Inf),
-                   (; balance_atol="small"), (; min_samples=1), (; min_samples=3.5))
+                   (; balance_atol="small"), (; balance_atol=true),
+                   (; min_samples=1), (; min_samples=3.5))
         @test_throws ArgumentError DiagnosticOptions(; kwargs...)
     end
     @test_throws ArgumentError DiagnosticOptions(5.0, -1.0, 1e-8, 3)
