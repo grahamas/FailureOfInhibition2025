@@ -40,3 +40,28 @@ contracts, cache identity/tamper handling, legacy enrichment, and degenerate
 curve distance) plus repeated independent artifact verification. The final
 source diff passed whitespace review. Independent review found no unresolved
 substantive defect after the recorded fixes.
+
+## PR publication checks
+
+The basin change alone was rebased onto remote `main` at `a349af60` (merged
+fixed-point certification PR #155). The three unrelated unpublished ancestors
+remain outside this PR. The manifest was regenerated from the remote base with
+Pkg; all 146 existing dependency versions/tree hashes were retained alongside
+pinned Attractors 2.0.5. Certification includes, exports, implementation, and
+tests were preserved. Independent rebase review found no code integration defect.
+
+Fresh post-rebase checks: plotting 19/19 passed; standalone mechanism generation
+and all 31 independent artifact checks passed; the repeated benchmark again
+found zero disagreements among comparable samples. The fresh full package suite passed 4,043/4,043 assertions. These checks supersede the
+earlier base's transfer verification for PR acceptance.
+
+Remote CI and current-head external review are separate merge gates. No merge
+will occur before review completes and substantive findings are resolved.
+
+The post-rebase mechanism was rendered again; the reviewed source and all
+verification results are recorded against the PR base above. Runtime logs:
+`/tmp/foi-basins-pr-full-tests.log`, `/tmp/foi-basins-pr-plot-tests.log`,
+`/tmp/foi-basins-pr-artifact.log`, `/tmp/foi-basins-pr-benchmark.log`. Fresh
+artifacts: `output/nullcline_basins_pr_20261029/`,
+`output/nullcline_basins_pr_benchmark_20261029/`, and
+`output/nullcline_basins_pr_render_20261029/`.
