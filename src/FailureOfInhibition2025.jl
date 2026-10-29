@@ -5,6 +5,8 @@ include("drives.jl")
 include("point_model.jl")
 include("stability.jl")
 include("equilibria.jl")
+include("certification.jl")
+include("certification_io.jl")
 include("configurations.jl")
 include("simulation.jl")
 include("diagnostics.jl")
@@ -39,6 +41,9 @@ export AdmissibleCandidate, BoundaryAmbiguousCandidate, RejectedCandidate
 export CompletenessNotCertified
 export EquilibriumAttempt, EquilibriumSolveResult, Equilibrium, EquilibriumSearchResult
 export default_equilibrium_seeds, solve_equilibrium, find_equilibria
+export CertificationOptions, CertificationBox, CertificationRoot, CertificationNode
+export EquilibriumCertificate, certify_equilibria
+export write_equilibrium_certificate, read_equilibrium_certificate, verify_equilibrium_certificate
 
 export solve_point_model, write_trajectory_csv
 

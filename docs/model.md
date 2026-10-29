@@ -577,6 +577,15 @@ resolved implementation run does not by itself establish a manuscript claim.
 
 ## Comparison responses and analysis limitations
 
+For fixed parameters and constant tonic inputs, `certify_equilibria` provides
+separate interval completeness certification on `[0,1/2]^2`. Its analytic
+equations treat stored parameter values as exact; numerical saturation in the
+ordinary kernel does not create exact boundary roots. A complete certificate
+requires exhaustive resolved coverage and distinct uniquely isolated roots.
+Resource exhaustion or inconclusive proofs return unresolved coverage. See
+[the certificate contract and replay procedure](fixed_point_certification.md).
+This does not certify local stability, periodic attractors, or biological roles.
+
 `PointModelParameters` supports `LogisticResponse` for the excitatory
 population and either `LogisticResponse` or `FailureOfInhibitionResponse` for
 the inhibitory population. The exported rectified and unequal-slope response
