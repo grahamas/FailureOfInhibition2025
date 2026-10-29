@@ -10,20 +10,21 @@ const D=FigureDetails
 digest(path)=bytes2hex(open(SHA.sha256,path))
 sigmoid(x)=x>=0 ? inv(1+exp(-x)) : exp(x)/(1+exp(x))
 function independent_rhs!(du,x,p,t)
-    q,be,bi=p; e,i=x
+    q,be,bi=p[1:3]; e,i=x
+    control=length(p)==4 && p[4]
     ue=q["e_to_e"]*e-q["i_to_e"]*i+be
     ui=q["e_to_i"]*e-q["i_to_i"]*i+bi
     se=get(q,"slope_e",5.);si=get(q,"slope_i",5.)
     fe=sigmoid(se*(ue-get(q,"theta_e",1.5)))
     on=get(q,"theta_on",4.);off=q["theta_off"]
     # Algebraically the equal-slope difference, evaluated without subtracting saturated sigmoids.
-    fi=sigmoid(si*(ui-on))*sigmoid(si*(off-ui))*(-expm1(-si*(off-on)))
+    fi=control ? sigmoid(si*(ui-on)) : sigmoid(si*(ui-on))*sigmoid(si*(off-ui))*(-expm1(-si*(off-on)))
     tau=get(q,"tau_e",7.8)
     du[1]=(-e+(1-e)*fe)/tau
     du[2]=(-i+(1-i)*fi)/(tau*q["tau_ratio"])
 end
-function integrate(initial,p,be,bi,times)
-    problem=ODEProblem(independent_rhs!,copy(initial),(0.,last(times)),(p,be,bi))
+function integrate(initial,p,be,bi,times;control=false)
+    problem=ODEProblem(independent_rhs!,copy(initial),(0.,last(times)),(p,be,bi,control))
     solution=solve(problem,Tsit5();abstol=1e-12,reltol=1e-12,saveat=times,tstops=times,
         save_everystep=false,dense=false,maxiters=2_000_000,
         isoutofdomain=(x,p,t)->any(y->y<0 || y>1,x))
@@ -258,7 +259,8 @@ function orbit_curve_distance(point,states)
     minimum(begin
         a=states[index];b=states[index+1]
         de=b[1]-a[1];di=b[2]-a[2]
-        fraction=clamp(((point[1]-a[1])*de+(point[2]-a[2])*di)/(de*de+di*di),0.,1.)
+        squared_length=de*de+di*di
+        fraction=squared_length==0 ? 0. : clamp(((point[1]-a[1])*de+(point[2]-a[2])*di)/squared_length,0.,1.)
         max(abs(point[1]-a[1]-fraction*de),abs(point[2]-a[2]-fraction*di))
     end for index in 1:length(states)-1)
 end
@@ -778,6 +780,100 @@ function verify_geometry(details,p,config)
         maximum_coordinate_error=0.,passed=true))
     checks
 end
+function verify_separatrix_overlay(folder,condition,roots,entry,p;replay=true)
+    branches=D.NullclineOverlays.read_separatrices(folder,condition,roots,entry)
+    checks=NamedTuple[]
+    for (index,branch) in enumerate(branches)
+        metadata=branch.metadata;root=roots[metadata["root_index"]]
+        control=condition=="monotone"
+        j=independent_jacobian([root.E,root.I],p,.35,0.;control)
+        matrix=[j.j11 j.j12;j.j21 j.j22]
+        direction=metadata["stable_eigenvector"]
+        discrepancy=maximum(abs.(matrix*direction-metadata["stable_eigenvalue"]*direction))
+        metadata["stable_eigenvalue"]<0 || error("separatrix eigenvalue is not stable")
+        abs(norm(direction)-1)<1e-8 || error("separatrix stable vector is not normalized")
+        if replay && branch.converged
+            points=[[e,i] for (e,i) in zip(branch.E,branch.I)]
+            for k in unique(clamp.(round.(Int,length(points).*[.25,.5,.75]),2,length(points)-1))
+                sol=integrate(points[k],p,.35,0.,[0.,.1];control)
+                # Forward motion must remain on the independently traced stable-manifold geometry.
+                discrepancy=max(discrepancy,orbit_curve_distance(last(sol.u),points))
+            end
+        end
+        push!(checks,(;file="mechanism/overlays/$(condition)_separatrices.csv:$index",
+            maximum_coordinate_error=discrepancy,passed=discrepancy<=2metadata["geometry_atol"]))
+    end
+    checks
+end
+
+"""Validate portable overlays and replay a deterministic subset with independent equations."""
+function verify_overlays(folder,p;cfg=nothing,replay=true)
+    overlay=joinpath(folder,"overlays");path=joinpath(overlay,"metadata.toml")
+    isfile(path) || return NamedTuple[] # Historical packets remain valid without overlays.
+    metadata=TOML.parsefile(path);identity=metadata["identity"]
+    identity["schema_version"]==1 || error("unsupported overlay schema")
+    identity["baseline"]==[.35,0.] || error("overlay baseline changed")
+    identity["parameters"]==D.NullclineOverlays.record(p) || error("overlay model parameters changed")
+    cfg===nothing || identity["configuration"]==D.NullclineOverlays.record(cfg.raw) || error("overlay configuration changed")
+    roots=collect(CSV.File(joinpath(folder,"roots.csv");stringtype=String))
+    identity["roots"]==D.NullclineOverlays.record(NamedTuple.(roots)) || error("overlay root identity changed")
+    identity["source_sha256"]==D.NullclineOverlays.source_identity() || error("overlay source identity changed")
+    checks=NamedTuple[];generation=identity["generation"]
+    for (condition,control) in (("monotone",true),("failure",false))
+        entry=metadata["conditions"][condition]
+        group=filter(r->r.condition==condition,roots)
+        if generation["basins"]
+            grid=D.NullclineOverlays.read_basins(overlay,condition,group,entry)
+            requested=D.NullclineOverlays.options_from(FoI.BasinGridOptions,generation["basin"];api=FoI)
+            entry["basin_options"]==D.NullclineOverlays.record(requested) || error("basin numerical settings changed")
+            selected=Set([(1,1),(1,length(grid.I)),(length(grid.E),1),(length(grid.E),length(grid.I))])
+            for label in unique(grid.labels)
+                label==0 && continue
+                cells=findall(==(label),grid.labels)
+                index=cells[cld(length(cells),2)]
+                push!(selected,Tuple(index))
+            end
+            discrepancy=0.
+            if replay
+                for (e,i) in sort(collect(selected))
+                    label=grid.labels[e,i];label==0 && continue
+                    sol=integrate([grid.E[e],grid.I[i]],p,.35,0.,[0.,maximum(entry["basin_options"]["pulse_options"]["followup_times"])];control)
+                    target=group[label]
+                    discrepancy=max(discrepancy,max(abs(last(sol.u)[1]-target.E),abs(last(sol.u)[2]-target.I)))
+                end
+            end
+            push!(checks,(;file="mechanism/overlays/$(condition)_basins.csv",maximum_coordinate_error=discrepancy,passed=discrepancy<1e-5))
+        elseif haskey(entry,"basin_options")
+            error("disabled basin generation has basin evidence")
+        end
+        if generation["separatrices"]
+            requested=D.NullclineOverlays.options_from(FoI.SeparatrixOptions,generation["separatrix"];api=FoI)
+            entry["separatrix_options"]==D.NullclineOverlays.record(requested) || error("separatrix numerical settings changed")
+            append!(checks,verify_separatrix_overlay(overlay,condition,group,entry,p;replay))
+        elseif haskey(entry,"separatrix_options")
+            error("disabled separatrix generation has trace evidence")
+        end
+    end
+    checks
+end
+
+"""Verify a standalone mechanism artifact without a screen or full detail study."""
+function verify_mechanism_evidence(details)
+    cfg=D.S.load_config(joinpath(details,"config.toml"))
+    p=only(filter(p->p["id"]==cfg.raw["redesign"]["reference"],D.F.registry(cfg)))
+    D.NullclineOverlays.checked_complete_unit(joinpath(details,"mechanism")) || error("mechanism artifact is incomplete or changed")
+    checks=verify_mechanism(details,p)
+    all(r->r.passed,checks) || error("mechanism independent verification failed")
+    output=joinpath(details,"mechanism_verification");mkpath(output)
+    CSV.write(joinpath(output,"checks.csv"),checks)
+    D.S.write_record(joinpath(output,"summary.toml"),Dict("passed"=>true,
+        "verifier_sha256"=>digest(@__FILE__),"helper_sha256"=>digest(joinpath(@__DIR__,"nullcline_overlays.jl")),
+        "mechanism_done_sha256"=>digest(joinpath(details,"mechanism","done.toml")),
+        "checks_sha256"=>digest(joinpath(output,"checks.csv"))))
+    D.S.N.Evidence.artifact_checksums(details)
+    checks
+end
+
 function verify_mechanism(details,p)
     folder=joinpath(details,"mechanism");checks=NamedTuple[]
     responses=collect(CSV.File(joinpath(folder,"responses.csv")))
@@ -891,6 +987,7 @@ function verify_mechanism(details,p)
         abs(restriction["response_peak_input"]-peak)))
     push!(checks,(;file="mechanism/restriction.toml",maximum_coordinate_error=discrepancy,
         passed=discrepancy<1e-10))
+    append!(checks,verify_overlays(folder,p))
     checks
 end
 function verify_sequence_grid(seq,events,config)

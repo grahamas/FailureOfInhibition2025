@@ -15,6 +15,8 @@ include("periodic_orbits.jl")
 include("periodic_continuation.jl")
 include("pulse_experiments.jl")
 include("basin_rescue.jl")
+include("basin_grid.jl")
+include("separatrices.jl")
 
 export LogisticResponse
 export FailureOfInhibitionResponse
@@ -67,6 +69,8 @@ export phase_invariant_orbit_equivalence, periodic_orbit_divergence_check
 
 export PulseExperimentOptions, PulseTrialResult, PulseExperimentResult
 export run_pulse_trial, run_pulse_experiments
+export BasinGridOptions, basin_grid
+export SeparatrixOptions, trace_separatrices
 export BasinMeasurementOptions, basin_destination, measure_basin, run_tonic_rescue_trial
 
 end

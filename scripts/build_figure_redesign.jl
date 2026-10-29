@@ -15,7 +15,64 @@ function compact_roots(directory)
         role=something(findfirst(==(k),roles),"unassigned")) for (k,r) in enumerate(context["equilibria"])]
 end
 
-function build(screen,details,output)
+function checked_mechanism_evidence(evidence)
+    IOChecks.verify_manifest(evidence)
+    D.NullclineOverlays.checked_complete_unit(joinpath(evidence,"mechanism")) || error("mechanism evidence changed")
+    record=TOML.parsefile(joinpath(evidence,"mechanism_verification","summary.toml"))
+    get(record,"passed",false) || error("mechanism evidence has not passed independent verification")
+    for (key,path) in (("verifier_sha256",joinpath(D.ROOT,"scripts","verify_figure_redesign.jl")),
+        ("helper_sha256",joinpath(D.ROOT,"scripts","nullcline_overlays.jl")),
+        ("mechanism_done_sha256",joinpath(evidence,"mechanism","done.toml")),
+        ("checks_sha256",joinpath(evidence,"mechanism_verification","checks.csv")))
+        record[key]==IOChecks.digest(path) || error("verified mechanism evidence changed: $key")
+    end
+    record
+end
+
+"""Enrich a checked historical packet with independently verified mechanism evidence."""
+function with_mechanism_evidence(packet,evidence,output)
+    IOChecks.verify_manifest(packet);checked_mechanism_evidence(evidence)
+    ispath(output) && error("packet destination already exists")
+    check_mechanism_compatibility(packet,evidence)
+    cp(packet,output)
+    rm(joinpath(output,"mechanism");recursive=true)
+    cp(joinpath(evidence,"mechanism"),joinpath(output,"mechanism"))
+    ispath(joinpath(output,"mechanism_verification")) && rm(joinpath(output,"mechanism_verification");recursive=true)
+    cp(joinpath(evidence,"mechanism_verification"),joinpath(output,"mechanism_verification"))
+    provenance=TOML.parsefile(joinpath(output,"packet.toml"))
+    copied=provenance["copied_artifact_sha256"]
+    for path in collect(keys(copied))
+        startswith(path,"mechanism/") && delete!(copied,path)
+    end
+    for folder in ("mechanism","mechanism_verification")
+        for (dir,_,names) in walkdir(joinpath(output,folder)), name in names
+            relative=relpath(joinpath(dir,name),output);copied[relative]=IOChecks.digest(joinpath(output,relative))
+        end
+    end
+    provenance["mechanism_evidence"]=Dict("parent_packet_manifest_sha256"=>IOChecks.digest(joinpath(packet,"checksums.toml")),
+        "evidence_manifest_sha256"=>IOChecks.digest(joinpath(evidence,"checksums.toml")),
+        "builder_sha256"=>IOChecks.digest(@__FILE__))
+    S.write_record(joinpath(output,"packet.toml"),provenance)
+    IOChecks.write_manifest(output);IOChecks.verify_manifest(output)
+    output
+end
+
+function check_mechanism_compatibility(packet,evidence)
+    if isfile(joinpath(packet,"config.toml"))
+        original_cfg=TOML.parsefile(joinpath(packet,"config.toml"));replacement_cfg=TOML.parsefile(joinpath(evidence,"config.toml"))
+        pop!(original_cfg,"nullcline_overlays",nothing);pop!(replacement_cfg,"nullcline_overlays",nothing)
+        original_cfg==replacement_cfg || error("mechanism evidence model configuration differs from packet")
+    end
+    original=collect(CSV.File(joinpath(packet,"mechanism","roots.csv");stringtype=String))
+    replacement=collect(CSV.File(joinpath(evidence,"mechanism","roots.csv");stringtype=String))
+    length(original)==length(replacement) && all(
+        a.condition==b.condition && a.root==b.root && a.role==b.role && a.stability==b.stability &&
+        max(abs(a.E-b.E),abs(a.I-b.I))<1e-7 for (a,b) in zip(original,replacement)) ||
+        error("mechanism evidence is incompatible with packet roots")
+    true
+end
+
+function build(screen,details,output;mechanism_evidence=nothing)
     ispath(output) && error("packet destination already exists")
     metadata=TOML.parsefile(joinpath(details,"metadata.toml"))
     get(metadata,"completed",false) || error("detail study is incomplete")
@@ -145,8 +202,19 @@ function build(screen,details,output)
             end
         end
     end
-    for name in ("responses.csv","nullclines.csv","roots.csv","restriction.toml")
-        copy_evidence(details,joinpath("mechanism",name))
+    mechanism_source=mechanism_evidence===nothing ? details : mechanism_evidence
+    if mechanism_evidence!==nothing
+        checked_mechanism_evidence(mechanism_evidence)
+        check_mechanism_compatibility(details,mechanism_evidence)
+    end
+    for (dir,_,names) in walkdir(joinpath(mechanism_source,"mechanism")), name in names
+        relative=relpath(joinpath(dir,name),mechanism_source)
+        copy_evidence(mechanism_source,relative)
+    end
+    if mechanism_evidence!==nothing
+        for name in ("summary.toml","checks.csv")
+            copy_evidence(mechanism_evidence,joinpath("mechanism_verification",name))
+        end
     end
     S.write_record(joinpath(output,"packet.toml"),Dict("schema_version"=>1,"purpose"=>"Five question-led figure drafts",
         "copied_artifact_sha256"=>sources,"builder_sha256"=>IOChecks.digest(@__FILE__),

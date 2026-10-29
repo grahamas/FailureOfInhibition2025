@@ -597,3 +597,43 @@ above. The minimal matched-model experiment remains a synthetic workflow
 check. Search completeness, rigorous existence and bifurcation certificates,
 biological regime definitions, and publication claims are not supplied by
 these numerical labels.
+
+## Numerical basin maps and saddle stable manifolds
+
+`basin_grid(model, equilibria; options=BasinGridOptions())` samples initial
+conditions on `[0,0.5]^2` by default. This is a display window: integrations and
+the internal cell cache cover the physical `[0,1]^2` domain. The autonomous
+model must match the supplied equilibrium-search context. Labels index its
+attracting equilibria; zero means unresolved, not a distinct attractor.
+
+A persistent dense Attractors.jl recurrence state machine reuses resolved
+trajectory cells, requiring a consistent 3×3 neighbourhood before reusing
+a transient cell. Discovery is seeded only at known attracting equilibria;
+arbitrary slow transients and periodic trajectories cannot create new basin
+identities. Each seed identity is checked against the existing finite-window
+trajectory diagnostics. The internal lattice separates discovered roots even
+when the displayed grid is coarse (at most 4097 points per axis; otherwise an
+explicit error requests a different analysis). The narrow adapter is pinned to
+Attractors 2.0.5 because that release's individual mapper call clears transient
+cells rather than retaining their basin identities. Interrupted attractor
+localization rolls back provisional cells and points.
+
+Cell reuse is a spatial approximation. Both endpoints of grid edges with
+different sampled identities are displayed as unresolved, retaining a neutral
+band at sampled transitions rather than implying sub-cell boundary accuracy.
+This does not certify the remaining cells or exclude undiscovered boundaries,
+small basins, or periodic attractors. Changing resolution can change the map.
+`basin_destination` remains the independent finite-window reference classifier.
+Per-point integration work in the grid result measures time to a reusable basin
+region, not settling time to an equilibrium.
+
+`trace_separatrices(model, equilibria; options=SeparatrixOptions())` traces the
+two stable-manifold branches of each discovered saddle by reversing the
+vector field from offsets along its stable eigenvector. Continuous events stop
+at the physical-domain boundary or near another equilibrium; explicit time,
+solver, and geometry budgets retain incomplete status. A second trace halves
+the seed offset and tightens solver tolerances. Only curves agreeing within
+the recorded geometry tolerance are exposed as display geometry. These are
+finite numerical stable-manifold observations; a branch need not separate
+attracting equilibria with different identities. Neither API certifies
+completeness or assigns new biological roles.
