@@ -14,6 +14,11 @@ measurements. Numerical searches report discovered results and unresolved
 outcomes; they do not certify a complete attractor set or a biological state.
 The trajectory CSV column order is `time,E,I`.
 
+For fixed parameters and constant tonic inputs, [fixed-point certification](docs/fixed_point_certification.md)
+provides exhaustive interval coverage of `[0,1/2]^2`, root enclosures, explicit
+unresolved regions, and replayable certificates. This API is separate from
+multistart discovery and makes no stability or all-attractor claim.
+
 ## Current figure study
 
 The five-figure candidate's questions, historical measurements, limits, and

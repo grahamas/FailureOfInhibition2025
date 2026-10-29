@@ -35,4 +35,6 @@ onset is unresolved. Final results have not been selected.
 
 ## Completed
 
+- [x] CERT-01–07: Implemented fixed-point completeness API, exact artifacts and proof replay; numerical/IO fixtures, full root suite (3,603/3,603), plotting (11/11), and independent review passed. Bounded fixture benchmarks only; no study or batch. See [certification contract](docs/fixed_point_certification.md).
+
 - [x] Built and visually reviewed the five-figure candidate study; retired its generated packet from the active tree.
