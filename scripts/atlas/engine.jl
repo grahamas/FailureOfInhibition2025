@@ -1,5 +1,6 @@
 const ATLAS_SCHEMA_VERSION = 1
 const ATLAS_QUEUES = ("discovery", "events", "cycles", "certification")
+const ATLAS_BENCHMARK_KINDS = ("discovery", "nexus", "continuation", "section", "periodic", "certification")
 const ATLAS_REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 
 "Write a complete TOML document atomically; an interrupted write preserves its predecessor."
@@ -244,6 +245,16 @@ function select_atlas_job!(state, config)
         job === nothing || push!(pending, job)
     end
     isempty(pending) && return nothing
+    if get(state, "mode", "run") == "benchmark"
+        # Calibration gets one attempt at each available job class before wall-
+        # weighted scheduling. Cold compilation must not starve the remaining
+        # classes behind hundreds of cheap discovery jobs. Failures count as
+        # attempts; this policy does not retry until a class succeeds.
+        attempted = Set(job["kind"] for job in state["jobs"] if job["status"] != "pending")
+        for job in pending
+            job["kind"] in ATLAS_BENCHMARK_KINDS && !(job["kind"] in attempted) && return job
+        end
+    end
     queue = first(sort!(unique([job["queue"] for job in pending]);
         by=q -> (state["queue_seconds"][q] / config["allocation"][q], findfirst(==(q), ATLAS_QUEUES))))
     return first(job for job in pending if job["queue"] == queue)
@@ -359,7 +370,22 @@ function atlas_worker_main(directory)
             "compilation_seconds" => Float64(compilation_after[1] - compilation_before[1]) / 1e9,
             "recompilation_seconds" => Float64(compilation_after[2] - compilation_before[2]) / 1e9,
             "scope" => "Julia compiler counters during handler; setup and process startup reported separately")
-        atomic_toml(prefix * ".result.toml", result)
+        try
+            atomic_toml(prefix * ".result.toml", result)
+        catch exception
+            # A handler's evidence is a serialization contract, not permission to
+            # coerce scientific values or terminate the persistent worker.
+            message = "scientific result serialization failed: " * sprint(showerror, exception, catch_backtrace())
+            println(stderr, message)
+            flush(stderr)
+            failure = Dict{String,Any}("status" => "failed", "error" => message,
+                "evidence" => Dict("failure_stage" => "result_serialization",
+                    "job_kind" => string(get(request["job"], "kind", "unknown")),
+                    "completeness" => "CompletenessNotCertified"),
+                "followups" => Any[], "executed_job" => request["job"],
+                "worker_timing" => result["worker_timing"])
+            atomic_toml(prefix * ".result.toml", failure)
+        end
         sequence += 1
     end
 end
@@ -376,6 +402,7 @@ function initialize_atlas(output, mode, config, budget)
     state = Dict{String,Any}("schema_version" => ATLAS_SCHEMA_VERSION, "mode" => mode,
         "config_hash" => toml_digest(config), "source_hashes" => hashes,
         "source_revision" => source_revision(), "julia_version" => string(VERSION),
+        "scheduling_policy" => mode == "benchmark" ? "first_attempt_per_available_kind_then_weighted_wall_time" : "weighted_wall_time",
         "budget_seconds" => Float64(budget), "elapsed_seconds" => 0.0,
         "setup_seconds" => 0.0, "setup_failures" => String[], "stop_reason" => "initialized",
         "status" => "running", "discovery_index" => 0, "jobs" => Dict{String,Any}[],

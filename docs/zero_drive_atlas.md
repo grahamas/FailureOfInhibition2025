@@ -81,6 +81,13 @@ still compile specialized methods; raw worker timing records retain compilation
 separately. Wall-time summaries therefore include cold-handler costs and must not
 be interpreted as uniformly warmed execution times.
 
+The benchmark first attempts each available job kind once, including newly queued
+continuation and section jobs, before applying the weighted time allocation.
+Failed attempts count toward this calibration pass. This avoids cheap discovery
+jobs exhausting the job-count cap before other handlers are measured. The pilot
+uses the weighted allocation throughout; realized benchmark fractions can differ
+because of calibration and compilation costs.
+
 Each output directory retains `state.toml`, exact `config.toml`, referenced raw result files, source/configuration provenance, and pending tasks. Resume checks the recorded inputs before continuing. The generated report provides:
 
 - `index.html`: browsable points, branches, transitions, cycles, certificate evidence, deferred work, and costs.

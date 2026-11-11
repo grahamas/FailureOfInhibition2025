@@ -1,8 +1,10 @@
 using Test
 using FailureOfInhibition2025
 using LinearAlgebra
+using TOML
 module AtlasScienceHarness
 include(joinpath(@__DIR__,"..","scripts","atlas","core.jl"))
+include(joinpath(@__DIR__,"..","scripts","atlas","events.jl"))
 include(joinpath(@__DIR__,"..","scripts","atlas","science.jl"))
 end
 using .AtlasScienceHarness
@@ -105,4 +107,33 @@ end
     @test normalized["queue"]=="events"
     @test !haskey(job,"params")
     @test_throws ArgumentError ASH.atlas_normalize_job(merge(job,Dict("params"=>merge(p,Dict("A"=>1.0)))))
+end
+@testset "Scientific job results round-trip through TOML" begin
+    # Exercise actual handlers: discovery, continuation, nexus, section, periodic,
+    # and both complete and resource-limited fixed-parameter certification.
+    roundtrip(result)=TOML.parse(sprint(io->TOML.print(io,result)))
+    config=Dict{String,Any}("seed_grid"=>2,"continuation_steps"=>1,"section_angles"=>4,
+        "section_trace_steps"=>1,"periodic_max_steps"=>1)
+    discovery=ASH.execute_job(ASH.discovery_job(1,"parameter",false),config)
+    @test roundtrip(discovery)["status"]==discovery["status"]
+    continuation=ASH.execute_job(first(discovery["followups"]),config)
+    @test roundtrip(continuation)["status"]==continuation["status"]
+    nexus=ASH.execute_job(ASH.analytic_seed(),config)
+    @test roundtrip(nexus)["status"]=="completed"
+    section=ASH.execute_job(first(nexus["followups"]),config)
+    @test roundtrip(section)["status"]=="completed"
+    cycles=ASH.execute_job(Dict{String,Any}("kind"=>"periodic","fixture"=>true),config)
+    @test roundtrip(cycles)["status"]=="completed"
+    p=ASH.equilibrium_chart(0.,0.,0.,0.,0.,0.,log(9.))["params"]
+    job=Dict{String,Any}("kind"=>"certification","params"=>p)
+    certified=ASH.execute_job(job,config)
+    @test certified["status"]=="completed"
+    saved=roundtrip(certified)
+    record=only(saved["evidence"]["certifications"])
+    @test record["equilibrium_count"]==1
+    @test length(only(record["root_enclosures"])["lower"])==2
+    @test only(record["root_enclosures"])["lower"] isa Vector{String}
+    unresolved=ASH.execute_job(job,merge(config,Dict("certification_boxes"=>0)))
+    @test roundtrip(unresolved)["status"]=="unresolved"
+    @test !isempty(only(roundtrip(unresolved)["evidence"]["certifications"])["proof_nodes"])
 end

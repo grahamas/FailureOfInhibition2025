@@ -145,7 +145,7 @@ function execute_continuation(job,config)
 end
 function execute_certification(job,config)
     cert=certify_equilibria(reduced_model(job["params"]);options=CertificationOptions(maximum_boxes=Int(get(config,"certification_boxes",500)),maximum_evaluations=Int(get(config,"certification_evaluations",5000)),time_limit=Float64(get(config,"certification_seconds",10.0))))
-    record=Dict{String,Any}("parameters"=>job["params"],"status"=>string(cert.status),"processed_boxes"=>cert.processed_boxes,"evaluations"=>cert.evaluations,"domain"=>[0.0,0.5],"scope"=>"fixed_parameter_equilibria_only","root_enclosures"=>[Dict("lower"=>string.(r.enclosure.lower),"upper"=>string.(r.enclosure.upper)) for r in cert.roots],"proof_nodes"=>[Dict("lower"=>string.(n.box.lower),"upper"=>string.(n.box.upper),"kind"=>string(n.kind),"reason"=>string(n.reason)) for n in cert.nodes])
+    record=Dict{String,Any}("parameters"=>job["params"],"status"=>string(cert.status),"processed_boxes"=>cert.processed_boxes,"evaluations"=>cert.evaluations,"domain"=>[0.0,0.5],"scope"=>"fixed_parameter_equilibria_only","root_enclosures"=>[Dict("lower"=>[string(x) for x in r.enclosure.lower],"upper"=>[string(x) for x in r.enclosure.upper]) for r in cert.roots],"proof_nodes"=>[Dict("lower"=>[string(x) for x in n.box.lower],"upper"=>[string(x) for x in n.box.upper],"kind"=>string(n.kind),"reason"=>string(n.reason)) for n in cert.nodes])
     cert.equilibrium_count!==nothing && (record["equilibrium_count"]=cert.equilibrium_count)
     Dict("status"=>cert.status==:certified ? "completed" : "unresolved","evidence"=>Dict("certifications"=>[record]),"followups"=>Dict{String,Any}[])
 end

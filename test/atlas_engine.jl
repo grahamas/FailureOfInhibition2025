@@ -50,6 +50,24 @@ end
     @test select_atlas_job!(state, config)["queue"] == "events"
     @test_throws ArgumentError register_atlas_job!(state, Dict("kind" => "bad", "queue" => "bad"))
 
+    # A cold nexus can dominate the event allocation. Benchmark calibration
+    # still attempts newly available continuation/section work before cheap
+    # discovery exhausts the job cap; normal pilot allocation remains weighted.
+    calibrated = empty_state()
+    calibrated["mode"] = "benchmark"
+    register_atlas_job!(calibrated, Dict("kind" => "nexus", "queue" => "events"))["status"] = "failed"
+    register_atlas_job!(calibrated, Dict("kind" => "discovery", "queue" => "discovery", "index" => 0))["status"] = "completed"
+    register_atlas_job!(calibrated, Dict("kind" => "discovery", "queue" => "discovery", "index" => 1))
+    continuation = register_atlas_job!(calibrated, Dict("kind" => "continuation", "queue" => "events"))
+    calibrated["queue_seconds"]["events"] = 60.0
+    @test select_atlas_job!(calibrated, config) === continuation
+    continuation["status"] = "failed"
+    @test select_atlas_job!(calibrated, config)["queue"] == "discovery"
+    section = register_atlas_job!(calibrated, Dict("kind" => "section", "queue" => "events"))
+    @test select_atlas_job!(calibrated, config) === section
+    calibrated["mode"] = "run"
+    @test select_atlas_job!(calibrated, config)["queue"] == "discovery"
+
     mktempdir() do directory
         path = joinpath(directory, "checkpoint.toml")
         atomic_toml(path, Dict("value" => 1))
@@ -140,6 +158,7 @@ end
             println(stream, "sleep(get(job, \"sleep\", 0.0))")
             println(stream, "if get(job, \"busy\", false); while true; end; end")
             println(stream, "get(job, \"fail\", false) && error(\"deliberate worker failure\")")
+            println(stream, "get(job, \"unsupported\", false) && return Dict(\"status\"=>\"completed\",\"evidence\"=>Dict(\"unsupported\"=>(\"bad\",\"tuple\")),\"followups\"=>Any[])")
             println(stream, "get(job, \"malformed\", false) && return Dict(\"status\"=>\"completed\",\"followups\"=>[Dict(\"wrong\"=>1)])")
             println(stream, "Dict(\"status\"=>\"completed\",\"evidence\"=>Dict(\"value\"=>7,\"job_id\"=>get(job,\"id\",\"\")),\"followups\"=>Any[])")
             println(stream, "end\nend")
@@ -158,6 +177,14 @@ end
             @test status == "completed"
             @test result["executed_job"]["kind"] == "generated"
             @test result["executed_job"]["id"] == "unique-id"
+            result, status, seconds, message = execute_atlas_worker!(worker, Dict("kind" => "unsupported", "unsupported" => true), config, 20.0)
+            @test status == "failed"
+            @test occursin("serialization failed", message)
+            @test result["evidence"]["failure_stage"] == "result_serialization"
+            @test result["evidence"]["job_kind"] == "unsupported"
+            @test !process_exited(worker.process)
+            result, status, seconds, message = execute_atlas_worker!(worker, Dict("kind" => "after_serialization_failure"), config, 20.0)
+            @test status == "completed"
             result, status, seconds, message = execute_atlas_worker!(worker, Dict("fail" => true), config, 20.0)
             @test status == "failed"
             @test occursin("deliberate worker failure", message)
