@@ -1,4 +1,4 @@
-using LinearAlgebra: svdvals
+using LinearAlgebra: SingularException, svdvals
 using SciMLBase: NonlinearFunction, NonlinearProblem, solve, successful_retcode
 using SimpleNonlinearSolve: SimpleTrustRegion
 
@@ -70,7 +70,12 @@ end
     EquilibriumAttempt
 
 Diagnostics from one nonlinear solve. `seed` is a normalized copy and
-`candidate` is the raw solver state. `solver_status`, `solver_success`, and
+`candidate` is the raw solver state when returned. If a solver linear solve
+throws `SingularException`, `solver_status` is `:SingularException`,
+`solver_success` is false, and `reasons` includes `:singular_linear_solve`.
+No candidate is returned in that case: candidate and numerical diagnostics
+are `NaN`, validation is rejected, and `near_singular` is false (not assessed).
+Otherwise, `solver_status`, `solver_success`, and
 `solver_residual` retain the solver outcome; `balance_residual`, its infinity
 `residual_norm`, and `balance_jacobian` are independently recomputed.
 `near_singular` applies the documented singular-value test. Solver success is
@@ -435,13 +440,33 @@ function _solve_equilibrium_attempt(
         jac=_balance_solver_jacobian!,
     )
     problem = NonlinearProblem(nonlinear_function, copy(seed), model)
-    solution = solve(
-        problem,
-        SimpleTrustRegion();
-        abstol=convert(T, options.solver_abstol),
-        reltol=convert(T, options.solver_reltol),
-        maxiters=options.maxiters,
-    )
+    solution = try
+        solve(
+            problem,
+            SimpleTrustRegion();
+            abstol=convert(T, options.solver_abstol),
+            reltol=convert(T, options.solver_reltol),
+            maxiters=options.maxiters,
+        )
+    catch exception
+        exception isa SingularException || rethrow()
+        # The solver exposes no returned state after this failure. Do not
+        # present the seed or an unevaluated trial as a solver candidate.
+        nan_value = convert(T, NaN)
+        return EquilibriumAttempt(
+            seed,
+            fill(nan_value, 2),
+            :SingularException,
+            false,
+            fill(nan_value, 2),
+            fill(nan_value, 2),
+            nan_value,
+            fill(nan_value, 2, 2),
+            false,
+            RejectedCandidate,
+            [:singular_linear_solve],
+        )
+    end
     candidate = Vector{T}(solution.u)
     solver_residual = Vector{T}(solution.resid)
     status = Symbol(string(solution.retcode))

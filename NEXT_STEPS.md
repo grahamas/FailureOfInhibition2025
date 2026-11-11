@@ -7,7 +7,8 @@
 
 ## Next Steps
 
-- [ ] Review the [pilot outcome](docs/zero_drive_pilot_20261111.md) and choose the next atlas allocation: unresolved recovery paths, unassessed multiroot targets, step-limited branches, and numerical failures precede any larger uniform expansion.
+- [ ] ATLAS-04A: Implement and independently review the [22-job targeted protocol](docs/zero_drive_targeted_protocol.md), numerical diagnostics, execution safeguards, and local adjacency report; pass checks and clean PR review/CI before launch.
+- [ ] ATLAS-04B: Execute the frozen second pilot within the combined 5 GB artifact ceiling; independently review its adjacency evidence and publish resolved findings and remaining limits.
 - [ ] Review the five figure claims and candidate captions in `docs/figure_redesign_20261006.md`; choose the final manuscript presentation and biological wording.
 - [ ] If the paper needs a cycle-onset claim, extend and independently test the truncated periodic branch before identifying a bifurcation.
 - [ ] Revise the manuscript manually using the selected results, keeping its scientific choices and wording under author control.

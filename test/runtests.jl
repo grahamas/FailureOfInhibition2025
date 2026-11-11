@@ -37,4 +37,8 @@ include("test_support.jl")
     include("atlas_engine.jl")
     include("atlas_storage.jl")
     include("atlas_pilot.jl")
+    include("atlas_targeted.jl")
+    include("atlas_targeted_events.jl")
+    include("atlas_targeted_engine.jl")
+    include("atlas_targeted_report.jl")
 end

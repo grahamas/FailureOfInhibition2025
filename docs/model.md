@@ -249,6 +249,15 @@ iteration limits. Candidate acceptance uses a separately evaluated `g`, not
 the solver status or a small dimensional ODE derivative. Solver status and
 validation are both retained.
 
+If a solver step throws `LinearAlgebra.SingularException`, that seed is
+retained as a rejected attempt with `solver_status = :SingularException`,
+`solver_success = false`, and reason `:singular_linear_solve`; multistart
+continues with the remaining seeds. The solver returns no candidate in this
+case, so candidate and numerical diagnostics are `NaN`, and `near_singular`
+is false because candidate conditioning was not assessed. This failure can
+occur at a non-root trial state and does not identify a singular equilibrium.
+Other exceptions propagate. No alternate solver is selected automatically.
+
 `NoDrive()` and a `PiecewiseConstantDrive` with no pulses are autonomous. A
 model with any pulse requires an explicit finite `snapshot_time`. The package
 evaluates the original drive at that time, including half-open endpoints and

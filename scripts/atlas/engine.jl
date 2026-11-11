@@ -202,6 +202,7 @@ function validate_atlas_resume(output; root=ATLAS_REPO_ROOT)
     config = TOML.parsefile(joinpath(output, "config.toml"))
     validate_atlas_config(config)
     toml_digest(config) == state["config_hash"] || throw(ArgumentError("configuration changed since checkpoint"))
+    isdefined(@__MODULE__,:verify_targeted_inputs) && verify_targeted_inputs(output,state,config)
     if get(state,"mode","")=="pilot"
         budget=storage_budget(output)
         budget!==nothing && budget.cap==config["storage_bytes"] || throw(ArgumentError("pilot storage policy changed"))
@@ -547,8 +548,14 @@ function initialize_atlas(output, mode, config, budget)
         "status" => "running", "discovery_index" => 0, "jobs" => Dict{String,Any}[],
         "queue_seconds" => Dict(queue => 0.0 for queue in ATLAS_QUEUES),
         "completeness" => "CompletenessNotCertified")
+    targeted=get(config,"protocol","")=="targeted_followup_v1"
+    if targeted
+        state["protocol"]=config["protocol"]
+        state["targeted_manifest_hash"]=config["targeted_manifest_hash"]
+        atomic_toml(joinpath(output,"targeted_manifest.toml"),config["targeted_manifest"])
+    end
     mode=="pilot" && (state["storage_policy_hash"]=toml_digest(storage_policy(config["storage_bytes"])))
-    initial = mode=="pilot" ? pilot_initial_jobs(config) : initial_jobs(merge(config, get(config, "science", Dict{String,Any}())))
+    initial = mode=="pilot" ? (targeted ? targeted_initial_jobs(config) : pilot_initial_jobs(config)) : initial_jobs(merge(config, get(config, "science", Dict{String,Any}())))
     for payload in initial
         register_atlas_job!(state, payload)
     end
@@ -587,8 +594,9 @@ function drive_atlas!(output, state, config; additional_seconds,
                 break
             end
             pilot_mode=get(state,"mode","")=="pilot"
-            pilot_job=pilot_mode ? pilot_next_job!(output,state,config) : nothing
-            job_cap=pilot_mode ? get(config,"pilot_max_jobs",get(get(get(state,"pilot",Dict()),"manifest",Dict()),"maximum_jobs",971)) : config["max_jobs"]
+            targeted=get(config,"protocol","")=="targeted_followup_v1"
+            pilot_job=pilot_mode ? (targeted ? targeted_next_job!(output,state,config) : pilot_next_job!(output,state,config)) : nothing
+            job_cap=pilot_mode ? get(config,"pilot_max_jobs",targeted ? 22 : get(get(get(state,"pilot",Dict()),"manifest",Dict()),"maximum_jobs",971)) : config["max_jobs"]
             (pilot_mode && pilot_job===nothing) || count(job -> job["status"] != "pending", state["jobs"]) < job_cap || begin
                 state["stop_reason"] = "job_limit"
                 break
@@ -602,7 +610,8 @@ function drive_atlas!(output, state, config; additional_seconds,
             end
             job = pilot_mode ? pilot_job : select_atlas_job!(state, config)
             job === nothing && begin
-                state["stop_reason"] = get(state,"mode","")=="pilot" ? get(get(state,"pilot",Dict()),"stop_reason","protocol_complete") : "queue_empty"
+                metadata=get(state,targeted ? "targeted" : "pilot",Dict())
+                state["stop_reason"] = pilot_mode ? get(metadata,"stop_reason","protocol_complete") : "queue_empty"
                 break
             end
             save_atlas_state(output, state)
@@ -721,7 +730,9 @@ function run_pilot(output,config;storage_bytes=nothing)
     state["budget_scope"]="operational_guard_only_finite_protocol_defines_scientific_completion"
     lock=acquire_atlas_lock(output)
     try
+        isdefined(@__MODULE__,:verify_targeted_inputs) && verify_targeted_inputs(output,state,config)
         drive_atlas!(output,state,config;additional_seconds=guard,lock_held=true)
+        get(config,"protocol","")=="targeted_followup_v1" && verify_targeted_inputs(output,state,config)
         try
             write_report(output)
         catch exception
@@ -740,6 +751,13 @@ end
 function report_atlas(output)
     lock = acquire_atlas_lock(output)
     try
+        path=safe_atlas_path(output,"state.toml")
+        config_path=safe_atlas_path(output,"config.toml")
+        if isdefined(@__MODULE__,:verify_targeted_inputs)
+            state=isfile(path) ? TOML.parsefile(path) : Dict{String,Any}()
+            config=isfile(config_path) ? TOML.parsefile(config_path) : Dict{String,Any}()
+            verify_targeted_inputs(output,state,config)
+        end
         return write_report(output)
     finally
         release_atlas_lock(lock)
@@ -753,6 +771,7 @@ function resume_atlas(output; budget_seconds=nothing)
         state, config = validate_atlas_resume(output)
         # The job cap is cumulative, so resuming cannot silently reset the agreed bound.
         drive_atlas!(output, state, config; additional_seconds=budget_seconds, lock_held=true)
+        get(config,"protocol","")=="targeted_followup_v1" && verify_targeted_inputs(output,state,config)
         write_report(output)
         return state
     finally
@@ -761,7 +780,7 @@ function resume_atlas(output; budget_seconds=nothing)
 end
 
 function atlas_main(arguments)
-    isempty(arguments) && throw(ArgumentError("usage: zero_drive_atlas.jl benchmark|run|pilot|resume|report OUTPUT [--config FILE] [--budget-seconds N] [--storage-bytes N]"))
+    isempty(arguments) && throw(ArgumentError("usage: zero_drive_atlas.jl benchmark|run|pilot|followup|resume|report OUTPUT [--config FILE] [--budget-seconds N] [--storage-bytes N] [--source-packet DIR]"))
     if first(arguments) == "__worker"
         length(arguments) == 2 || throw(ArgumentError("invalid internal worker arguments"))
         return atlas_worker_main(arguments[2])
@@ -773,11 +792,18 @@ function atlas_main(arguments)
     iseven(length(remainder)) || throw(ArgumentError("options require values"))
     for index in 1:2:length(remainder)
         key = remainder[index]
-        key in ("--config", "--budget-seconds", "--storage-bytes") || throw(ArgumentError("unknown option $key"))
+        key in ("--config", "--budget-seconds", "--storage-bytes", "--source-packet") || throw(ArgumentError("unknown option $key"))
         haskey(options, key) && throw(ArgumentError("duplicate option $key"))
         options[key] = remainder[index + 1]
     end
     budget = haskey(options, "--budget-seconds") ? parse(Float64, options["--budget-seconds"]) : nothing
+    if mode=="followup"
+        budget===nothing || throw(ArgumentError("followup uses its fixed manifest and configured operational guard"))
+        haskey(options,"--source-packet") || throw(ArgumentError("followup requires --source-packet"))
+        cap=haskey(options,"--storage-bytes") ? parse(Int,options["--storage-bytes"]) : nothing
+        return run_targeted_pilot(output,options["--source-packet"],targeted_config(get(options,"--config",nothing));combined_storage_bytes=cap)
+    end
+    haskey(options,"--source-packet") && throw(ArgumentError("--source-packet applies only to a targeted followup"))
     if mode=="pilot"
         budget===nothing || throw(ArgumentError("pilot uses its finite protocol and configured operational guard"))
         cap=haskey(options,"--storage-bytes") ? parse(Int,options["--storage-bytes"]) : nothing

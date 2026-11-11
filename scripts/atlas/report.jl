@@ -63,7 +63,7 @@ function atlas_report_data(output_dir)
         evidence = get(result, "evidence", Dict())
         evidence isa AbstractDict || continue
         payload = get(job, "payload", job)
-        if payload isa AbstractDict && haskey(payload, "pilot_role")
+        if payload isa AbstractDict && (haskey(payload, "pilot_role") || haskey(payload, "target_role"))
             pilot_results[string(get(job,"id",""))] = Dict("evidence"=>evidence,"status"=>get(result,"status","unknown"),"source_result"=>relative)
         end
         # Failed jobs may have useful raw evidence, but it cannot establish atlas nodes.
@@ -230,6 +230,25 @@ function write_report(output_dir)
     end
     data = atlas_report_data(output_dir)
     state, jobs, records, issues = data.state, data.jobs, data.records, data.issues
+    config_path = joinpath(output_dir, "config.toml")
+    islink(config_path) && throw(ArgumentError("report configuration must not be a symbolic link"))
+    config = isfile(config_path) ? TOML.parsefile(config_path) : Dict{String,Any}()
+    targeted_active = if isdefined(@__MODULE__, :targeted_run_marker)
+        targeted_run_marker(output_dir, state, config)
+    else
+        any(key -> haskey(config, key), ("protocol", "targeted_manifest", "targeted_manifest_hash")) ||
+        any(key -> haskey(state, key), ("protocol", "targeted_manifest_hash", "targeted")) ||
+        ispath(joinpath(output_dir, "targeted_manifest.toml")) ||
+        islink(joinpath(output_dir, "targeted_manifest.toml")) ||
+        any(job -> haskey(get(job, "payload", Dict()), "target_role") ||
+            startswith(string(get(job, "kind", "")), "targeted_"), jobs)
+    end
+    if targeted_active
+        isdefined(@__MODULE__, :write_targeted_report) &&
+            isdefined(@__MODULE__, :verify_targeted_inputs) ||
+            throw(ArgumentError("targeted reports require the report module and frozen-input verifier"))
+        return write_targeted_report(output_dir)
+    end
     pilot_active = haskey(state,"pilot") || any(job -> get(_report_pilot_payload(job),"pilot_role","") != "",jobs)
     if isdefined(@__MODULE__, :storage_budget)
         budget = storage_budget(output_dir)

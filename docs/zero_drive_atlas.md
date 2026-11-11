@@ -236,3 +236,21 @@ agree before transport duplicates can be truncated; live bound files are not
 unlinked. Scientific results and failure evidence are retained. The storage
 limit can stop dispatch before the directory is full so that final evidence and
 checkpoints still fit. Reports can be regenerated from the retained data.
+
+## Targeted second pilot
+
+The [targeted protocol](zero_drive_targeted_protocol.md) follows specific
+numerical and connectivity questions from the [first pilot](zero_drive_pilot_20261111.md).
+It freezes 22 jobs and the source-packet inventory before execution. Its local
+adjacency report separates base-origin root recovery, target-origin reverse
+tracking, sampled inventory changes, event candidates, and unknown links.
+
+```sh
+prlimit --core=0:0 -- julia --startup-file=no --project=. scripts/zero_drive_atlas.jl followup OUTPUT --source-packet FIRST_PACKET --storage-bytes 5000000000
+```
+
+Here the storage argument is the combined allowance for the immutable first
+packet and the new output. The first packet's measured footprint is reserved
+before allocating the new worker's limit. Resume and report generation verify
+the frozen manifest and source-packet inventory. This mode performs no automatic
+discovery or recursive followups and does not alter the first packet.
