@@ -1,0 +1,218 @@
+using Test
+using FailureOfInhibition2025
+using LinearAlgebra
+using TOML
+module AtlasScienceHarness
+include(joinpath(@__DIR__,"..","scripts","atlas","core.jl"))
+include(joinpath(@__DIR__,"..","scripts","atlas","events.jl"))
+include(joinpath(@__DIR__,"..","scripts","atlas","science.jl"))
+end
+using .AtlasScienceHarness
+const ASH=AtlasScienceHarness
+@testset "First-principles atlas coordinates" begin
+    p=ASH.discovery_job(3,"parameter",false)["params"]
+    x=[0.2,0.3];f=zeros(2);g=zeros(2)
+    point_rhs!(f,x,ASH.reduced_model(p),0.0)
+    point_rhs!(g,x,ASH.physical_model(p;slope_e=2.3,slope_i=4.7,tau_e=7.8),0.0)
+    @test f≈7.8g atol=1e-14
+    for v in (-8.0,-1.0,0.0,2.0,8.0)
+        chart=ASH.equilibrium_chart(12.0,8.0,8.0,2.0,0.5,v,2.0)
+        @test maximum(abs,ASH.balance_value(chart["params"],chart["state"]))<1e-14
+    end
+    chart=ASH.fold_chart(8.,8.,0.,-log(2.),0.,log(9.))
+    @test chart["fold_residual"]<1e-12
+    bt=ASH.analytic_seed();K=ASH.balance_jacobian(bt["params"],bt["state"])
+    @test abs(det(K))<1e-12
+    @test abs(tr(Diagonal([1.0,1/bt["params"]["r"]])*K))<1e-12
+    @test_throws ArgumentError ASH.reduced_model(merge(p,Dict("h"=>0.0)))
+end
+@testset "Disjoint adaptive shells and boundaries" begin
+    for chart in ("parameter","equilibrium"), k in 1:6, i in 1:10, mask in (0,1,15)
+        sample=ASH.shell_sample(k,i;chart=chart,mask=mask);z=sample["chart_coordinates"]
+        @test ASH.in_window(z,k)
+        @test k==1 || !ASH.in_window(z,k-1)
+        for j in 1:4
+            mask & (1<<(j-1))!=0 && @test z[j]==0.0
+        end
+        @test sample==ASH.shell_sample(k,i;chart=chart,mask=mask)
+    end
+end
+@testset "Analytic ratio boundaries" begin
+    distant=ASH.ratio_partition([1e-8 1.; -1. -1.])
+    @test length(distant["boundaries"])==3
+    @test last(distant["boundaries"])≈4e16 rtol=1e-7
+    @test last(distant["intervals"])["spectrum"]=="real"
+    @test ASH.ratio_partition([1e-12 -2.;3. -4.])["hopf_candidate"]
+    @test_throws ArgumentError ASH.ratio_partition([2e-154 -1.;1. -1.])
+
+    for K in ([-1.0 -2;3 -4], [1.0 -2;3 -4], [1.0 2;3 -4], [0.0 0;0 -1])
+        partition=ASH.ratio_partition(K)
+        for interval in partition["intervals"]
+            r=interval["probe"];ev=eigvals(Diagonal([1.0,1/r])*K)
+            label=interval["stability"]
+            label=="attracting" && @test maximum(real.(ev))<0
+            label=="repelling" && @test minimum(real.(ev))>0
+            label=="saddle" && @test prod(real.(ev))<0
+        end
+    end
+end
+@testset "Discovery retains attempts and certification scope" begin
+    job=ASH.discovery_job(1,"parameter",false)
+    result=ASH.execute_job(job,Dict{String,Any}("seed_grid"=>3))
+    @test result["status"]=="completed"
+    point=only(result["evidence"]["points"])
+    @test length(point["attempts"])==9
+    @test point["completeness"]=="CompletenessNotCertified"
+    cert=ASH.execute_job(Dict{String,Any}("kind"=>"certification","params"=>job["params"]),Dict{String,Any}("certification_boxes"=>0))
+    @test cert["status"]=="unresolved"
+    @test only(cert["evidence"]["certifications"])["scope"]=="fixed_parameter_equilibria_only"
+end
+@testset "Per-root chart geometry and retained chart seeds" begin
+    config=Dict{String,Any}("seed_grid"=>3)
+    for (u,label) in ((-4.0,"left"),(-log(2.0),"middle"),(4.0,"right"))
+        chart=ASH.equilibrium_chart(12.,1.,1.,0.,u,0.,2.)
+        point=ASH.atlas_point(chart["params"],config;extra_seeds=[chart["state"]])
+        index=argmin([norm(r["state"]-chart["state"]) for r in point["roots"]])
+        @test point["roots"][index]["excitatory_chart_branch"]==label
+    end
+    for (v,label) in ((0.,"left"),(3.,"middle"),(15.,"right"))
+        chart=ASH.equilibrium_chart(1.,1.,1.,100.,0.,v,2.)
+        point=ASH.atlas_point(chart["params"],config;extra_seeds=[chart["state"]])
+        index=argmin([norm(r["state"]-chart["state"]) for r in point["roots"]])
+        @test point["roots"][index]["inhibitory_self_chart_branch"]==label
+    end
+    job=ASH.discovery_job(1,"equilibrium",false)
+    result=ASH.execute_job(job,config)
+    @test length(only(result["evidence"]["points"])["attempts"])==10
+    @test !isempty(result["evidence"]["events"])
+    @test all(j->!get(j,"fixture",false),ASH.initial_jobs(Dict("mode"=>"run")))
+end
+@testset "Event adapters preserve saved scientific seeds" begin
+    config=Dict{String,Any}("seed_grid"=>2)
+    chart=ASH.equilibrium_chart(12.,0.,0.,0.,-log(2.),0.,log(9.))
+    p,x=chart["params"],chart["state"]
+    plain=ASH.atlas_point(p,config)
+    @test minimum(norm(root["state"]-x) for root in plain["roots"])>0.1
+    section=Dict{String,Any}("section_samples"=>[Dict("parameters"=>p,"equilibria"=>[Dict("state"=>x)])])
+    point=only(ASH.atlas_anchor_points(section,"section",Dict("id"=>"regression"),config))
+    @test length(point["attempts"])==5
+    @test first(point["attempts"])["seed"]==x
+    @test minimum(norm(root["state"]-x) for root in point["roots"])<1e-7
+    cycle=Dict{String,Any}("validated"=>true,"parameters"=>p,"hopf_state"=>x)
+    anchor=only(ASH.atlas_anchor_points(cycle,"periodic",Dict("id"=>"cycle"),config))
+    @test first(anchor["attempts"])["seed"]==x
+    job=Dict{String,Any}("kind"=>"section","parameters"=>p)
+    normalized=ASH.atlas_normalize_job(job)
+    @test normalized["params"]==p
+    @test normalized["queue"]=="events"
+    @test !haskey(job,"params")
+    @test_throws ArgumentError ASH.atlas_normalize_job(merge(job,Dict("params"=>merge(p,Dict("A"=>1.0)))))
+end
+@testset "Scientific job results round-trip through TOML" begin
+    # Exercise actual handlers: discovery, continuation, nexus, section, periodic,
+    # and both complete and resource-limited fixed-parameter certification.
+    roundtrip(result)=TOML.parse(sprint(io->TOML.print(io,result)))
+    config=Dict{String,Any}("seed_grid"=>2,"continuation_steps"=>1,"section_angles"=>4,
+        "section_trace_steps"=>1,"periodic_max_steps"=>1)
+    discovery=ASH.execute_job(ASH.discovery_job(1,"parameter",false),config)
+    @test roundtrip(discovery)["status"]==discovery["status"]
+    continuation=ASH.execute_job(first(discovery["followups"]),config)
+    @test roundtrip(continuation)["status"]==continuation["status"]
+    nexus=ASH.execute_job(ASH.analytic_seed(),config)
+    @test roundtrip(nexus)["status"]=="completed"
+    section=ASH.execute_job(first(nexus["followups"]),config)
+    @test roundtrip(section)["status"]=="completed"
+    @test only(section["evidence"]["events"])["kind"]=="local_neighborhood_witness"
+    @test only(section["evidence"]["sections"])["witness_role"]=="local_neighborhood_witness"
+    @test only(section["evidence"]["events"])["scope"]=="sampled_section_neighbors_only"
+    cycles=ASH.execute_job(Dict{String,Any}("kind"=>"periodic","fixture"=>true),config)
+    @test roundtrip(cycles)["status"]=="completed"
+    p=ASH.equilibrium_chart(0.,0.,0.,0.,0.,0.,log(9.))["params"]
+    job=Dict{String,Any}("kind"=>"certification","params"=>p)
+    certified=ASH.execute_job(job,config)
+    @test certified["status"]=="completed"
+    saved=roundtrip(certified)
+    record=only(saved["evidence"]["certifications"])
+    @test record["equilibrium_count"]==1
+    @test length(only(record["root_enclosures"])["lower"])==2
+    @test only(record["root_enclosures"])["lower"] isa Vector{String}
+    unresolved=ASH.execute_job(job,merge(config,Dict("certification_boxes"=>0)))
+    @test roundtrip(unresolved)["status"]=="unresolved"
+    @test !isempty(only(roundtrip(unresolved)["evidence"]["certifications"])["proof_nodes"])
+end
+@testset "Transition sides require a resolved differing inventory" begin
+    point(id,signature)=Dict{String,Any}("id"=>id,"signature"=>signature,"roots"=>[Dict("state"=>[0.2,0.3])],"parameters"=>Dict("r"=>id=="left" ? 0.9 : 1.1))
+    a=point("left","Attracting");b=point("right","Repelling")
+    event=ASH.atlas_transition_witnesses!(Dict{String,Any}("status"=>"completed","params"=>Dict("r"=>1.0)),a,b)
+    @test event["witness_point_ids"]==["left","right"]
+    @test event["scope"]=="sampled_transition_sides"
+    distant=ASH.atlas_transition_witnesses!(Dict{String,Any}("status"=>"completed","params"=>Dict("r"=>5.0)),a,b)
+    @test isempty(distant["bracket_point_ids"])
+    @test !distant["localization_within_parameter_bracket"]
+    same=ASH.atlas_transition_witnesses!(Dict{String,Any}("status"=>"completed","params"=>Dict("r"=>1.0)),a,point("same","Attracting"))
+    @test isempty(same["witness_point_ids"])
+    @test isempty(same["bracket_point_ids"])
+    unresolved=ASH.atlas_transition_witnesses!(Dict{String,Any}("status"=>"completed","params"=>Dict("r"=>1.0)),a,point("unknown","StabilityUnresolved"))
+    @test isempty(unresolved["witness_point_ids"])
+    # A real fixed-equilibrium r sweep crosses a nondegenerate trace-zero point.
+    chart=ASH.equilibrium_chart(12.,8.,8.,0.,-log(2.),0.,log(9.);r=2.)
+    job=Dict{String,Any}("id"=>"hopf-regression","kind"=>"continuation","params"=>chart["params"],"state"=>chart["state"],"coordinate"=>"r")
+    result=ASH.execute_job(job,Dict{String,Any}("seed_grid"=>3,"continuation_steps"=>4))
+    transitions=filter(e->get(e,"scope","")=="sampled_transition_sides",result["evidence"]["events"])
+    @test !isempty(transitions)
+    ids=[p["id"] for p in result["evidence"]["points"]]
+    @test all(id->id in ids,first(transitions)["witness_point_ids"])
+    TOML.print(devnull,result)
+end
+@testset "Configured scientific residual limits" begin
+    for invalid in (true,NaN,0.0,-1.0)
+        @test_throws ArgumentError ASH.atlas_balance_tolerance(Dict("balance_atol"=>invalid))
+        @test_throws ArgumentError ASH.atlas_event_tolerance(Dict("event_atol"=>invalid),1e-8)
+    end
+    loose=Dict{String,Any}("seed_grid"=>2,"balance_atol"=>1e-7,"event_atol"=>1e-7)
+    strict=merge(loose,Dict("balance_atol"=>1e-14,"event_atol"=>1e-14))
+    p=ASH.discovery_job(1,"parameter",false)["params"]
+    search=ASH.atlas_search(p,strict)
+    @test search.options.residual_atol==1e-14
+    @test all(root->maximum(abs,root.balance_residual)<=1e-14,search.equilibria)
+    # This initial candidate passes the historical defaults, but a zero-iteration
+    # solve cannot make it meet the tighter requested event/balance limits.
+    seed=ASH.analytic_seed();seed["state"]=seed["state"]+[1e-10,0.0]
+    accepted=ASH.atlas_nexus_job(seed,merge(loose,Dict("nexus_max_iterations"=>0)))
+    rejected=ASH.atlas_nexus_job(seed,merge(strict,Dict("nexus_max_iterations"=>0)))
+    @test accepted["status"]=="numerically_validated"
+    @test rejected["status"]=="unresolved"
+    @test !rejected["residual_validation"]["residuals_accepted"]
+    @test rejected["residual_validation"]["event_atol"]==1e-14
+    # Time scaling can make the RHS tiny while the unscaled balance is wrong.
+    chart=ASH.equilibrium_chart(8.,0.,0.,0.,-log(2.),0.,log(9.);r=1e12)
+    bad_state=chart["state"]+[0.0,1e-6]
+    rhs=zeros(2);point_rhs!(rhs,bad_state,ASH.reduced_model(chart["params"]),0.0)
+    @test norm(rhs,Inf)<1e-9
+    @test norm(ASH.balance_value(chart["params"],bad_state),Inf)>1e-9
+    periodic=ASH.atlas_periodic_job(Dict("params"=>chart["params"],"state"=>bad_state),Dict{String,Any}())
+    @test periodic["status"]=="unresolved"
+    @test periodic["reason"]=="hopf_tuple_outside_residual_tolerances"
+    # Algebraic seeds are checked before being advertised as completed events.
+    algebraic=ASH.execute_job(ASH.discovery_job(1,"equilibrium",false),merge(strict,Dict("balance_atol"=>1e-30,"event_atol"=>1e-30)))
+    fold=only(algebraic["evidence"]["events"])
+    @test fold["status"]=="unresolved"
+    @test !fold["residual_validation"]["residuals_accepted"]
+    @test all(point->all(root->root["residual"]<=1e-30,point["roots"]),algebraic["evidence"]["points"])
+    section=ASH.atlas_section_job(Dict("parameters"=>ASH.analytic_seed()["params"],"state"=>ASH.analytic_seed()["state"],"parameter_pair"=>["A","r"]),merge(strict,Dict("section_angles"=>4,"section_curve_max_steps"=>1)))
+    @test length(section["section_samples"])==12
+    @test all(row->row["balance_atol"]==1e-14,section["section_samples"])
+    @test all(row->all(root->root["residual"]<=1e-14,row["equilibria"]),section["section_samples"])
+    @test all(curve->all(point->point["residual_validation"]["residuals_accepted"]&&point["residual_validation"]["event_atol"]==1e-14,curve["points"]),section["transition_curves"])
+    hopf=ASH.equilibrium_chart(12.,8.,8.,0.,-log(2.),0.,log(9.);r=2.)
+    sweep=ASH.execute_job(Dict{String,Any}("kind"=>"continuation","params"=>hopf["params"],"state"=>hopf["state"],"coordinate"=>"r"),merge(strict,Dict("continuation_steps"=>4)))
+    located=filter(event->get(event,"status","")=="completed",sweep["evidence"]["events"])
+    @test !isempty(located)
+    @test all(event->event["balance_atol"]==1e-14&&event["event_atol"]==1e-14&&event["balance_residual"]<=1e-14&&event["event_condition_residual"]<=1e-14,located)
+    # Per-component Newton tolerances avoid accepting a small event residual
+    # alongside a balance component that exceeds its independently chosen cap.
+    _,ok,_=ASH.atlas_newton(z->[1e-10,0.0],zeros(2),z->true;iterations=0,residual_tolerances=[1e-14,1e-8])
+    @test !ok
+    _,ok,_=ASH.atlas_newton(z->[1e-10,0.0],zeros(2),z->true;iterations=0,residual_tolerances=[1e-8,1e-8])
+    @test ok
+end

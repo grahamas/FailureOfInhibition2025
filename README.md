@@ -33,6 +33,12 @@ result selection will determine which data and provenance need an active packet.
 
 ## Development
 
+The [zero-drive atlas workflow](docs/zero_drive_atlas.md) explores the model's
+dimensionless parameter domain using bounded, resumable jobs. Its reports keep
+sampled regions, transition evidence, fixed-parameter certificates, and unknown
+territory separate. Start with the bounded benchmark before choosing a pilot
+budget.
+
 The root and plotting environments have tracked manifests. From the working
 copy, instantiate and run the test suites with:
 

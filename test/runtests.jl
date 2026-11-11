@@ -31,4 +31,8 @@ include("test_support.jl")
     include("test_input_response_archives.jl")
     include("test_figure_packet_io.jl")
     include("test_figure_redesign.jl")
+    include("atlas_report.jl")
+    include("atlas_science.jl")
+    include("atlas_events.jl")
+    include("atlas_engine.jl")
 end

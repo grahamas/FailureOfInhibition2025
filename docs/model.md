@@ -4,6 +4,11 @@ This document describes the assumptions, equations, and numerical conventions
 implemented by the package. It records current behavior rather than the
 history of how the model was selected.
 
+The [zero-drive atlas workflow](zero_drive_atlas.md) derives reduced parameter
+coordinates and an expanding exploration envelope from these equations. It
+retains finite numerical evidence separately from fixed-parameter certificates
+and does not claim complete coverage of parameter space.
+
 ## Scope and state
 
 The package implements a deterministic, CPU-only, two-population point model.
