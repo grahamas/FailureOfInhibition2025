@@ -4,6 +4,31 @@ module AtlasEngineTests
 using Test, TOML, SHA, LinearAlgebra
 include(joinpath(@__DIR__, "..", "scripts", "atlas", "engine.jl"))
 
+# A process can disappear at any instant after its coordinator is killed.
+# Read once; only an absent proc entry establishes exit without a status row.
+function test_process_running(path; read_stat=p -> read(p, String))
+    line = try
+        read_stat(path)
+    catch exception
+        exception isa SystemError && exception.errnum == Base.Libc.ENOENT || rethrow()
+        return false
+    end
+    !occursin(r"\) Z ", line)
+end
+
+@testset "Process-exit observation tolerates a vanished proc entry" begin
+    mktempdir() do directory
+        path = joinpath(directory, "stat")
+        @test !test_process_running(path)
+        write(path, "123 (worker) R 1")
+        @test test_process_running(path)
+        write(path, "123 (worker) Z 1")
+        @test !test_process_running(path)
+        @test_throws SystemError test_process_running(path;
+            read_stat=_ -> throw(SystemError("denied", Base.Libc.EACCES)))
+    end
+end
+
 function discovery_job(index, chart, boundary)
     Dict{String,Any}("kind" => "discovery", "queue" => "discovery", "index" => index,
         "chart" => chart, "boundary" => boundary)
@@ -303,7 +328,7 @@ end
                 sleep(0.1)
                 kill(process, Base.SIGKILL)
                 wait(process)
-                running() = isfile("/proc/$worker_pid/stat") && !occursin(r"\) Z ", read("/proc/$worker_pid/stat", String))
+                running() = test_process_running("/proc/$worker_pid/stat")
                 deadline = time() + 5.0
                 while running() && time() < deadline
                     sleep(0.02)
