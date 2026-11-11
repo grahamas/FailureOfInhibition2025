@@ -297,6 +297,8 @@ function _report_scatter(io, rows, xlabel, ylabel, caption)
         x,y=xmap(r[1]),ymap(r[2]);event=length(r)>=3 ? r[3] : "sample"
         if event == "fold_candidate" || event == "hopf_candidate"
             print(io,"<path d=\"M",x-4," ",y-4,"l8 8m0 -8l-8 8\" stroke=\"#a44213\"><title>",_report_escape(event),"</title></path>")
+        elseif event == "trace_zero_without_positive_determinant"
+            print(io,"<polygon data-marker=\"trace-zero-no-positive-determinant\" points=\"",x,",",y-4," ",x+4,",",y," ",x,",",y+4," ",x-4,",",y,"\" fill=\"none\" stroke=\"#626b73\"><title>Trace-zero point without a resolved positive determinant</title></polygon>")
         else
             print(io,"<circle cx=\"",x,"\" cy=\"",y,"\" r=2.8 fill=\"#086b9a\"><title>",_report_escape(event),"</title></circle>")
         end
@@ -334,6 +336,6 @@ function _report_scientific_plots(io,records)
             p=get(sample,"parameters",Dict());all(k->get(p,k,nothing) isa Real,pair) || continue
             push!(rows,(Float64(p[pair[1]]),Float64(p[pair[2]]),string(get(sample,"classification","transition candidate"))))
         end
-        _report_scatter(io,rows,"$(pair[1]) (dimensionless)","$(pair[2]) (dimensionless)","Job $(get(section,"source_job","")): local two-parameter section; circles are probes, crosses are fold/Hopf candidates. No filled region or continuous-curve claim.")
+        _report_scatter(io,rows,"$(pair[1]) (dimensionless)","$(pair[2]) (dimensionless)","Job $(get(section,"source_job","")): local two-parameter section; blue circles are probes, crosses are fold/Hopf candidates, gray diamonds are trace-zero points without a resolved positive determinant. No filled region or continuous-curve claim.")
     end
 end

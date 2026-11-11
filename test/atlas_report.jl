@@ -48,7 +48,7 @@ end
             Dict("kind"=>"bt","validated"=>true,"witness_point_ids"=>["m2"])]
         evidence = Dict("points"=>vcat(five_points,[points[3]]),"paths"=>[sampled_path],"events"=>events,
             "cycles"=>[Dict("validated"=>true,"witness_point_ids"=>["m3"])],
-            "sections"=>[Dict("parameter_pair"=>["A","a"],"section_samples"=>[Dict("status"=>"sampled","parameters"=>Dict("A"=>8.0,"a"=>1.0))],"transition_curves"=>[Dict("points"=>[Dict("parameters"=>Dict("A"=>9.0,"a"=>1.1),"classification"=>"fold_candidate")])])])
+            "sections"=>[Dict("parameter_pair"=>["A","a"],"section_samples"=>[Dict("status"=>"sampled","parameters"=>Dict("A"=>8.0,"a"=>1.0))],"transition_curves"=>[Dict("points"=>[Dict("parameters"=>Dict("A"=>9.0,"a"=>1.1),"classification"=>"fold_candidate"),Dict("parameters"=>Dict("A"=>8.5,"a"=>1.15),"classification"=>"trace_zero_without_positive_determinant")])])])
         open(joinpath(directory,"results","1.toml"),"w") do io; TOML.print(io,Dict("status"=>"completed","evidence"=>evidence)); end
         jobs[1]["result_hash"] = bytes2hex(sha256(read(joinpath(directory,"results","1.toml"))))
         open(joinpath(directory,"state.toml"),"w") do io; TOML.print(io,Dict("schema_version"=>1,"mode"=>"benchmark","jobs"=>jobs)); end
@@ -59,6 +59,8 @@ end
         @test occursin("&lt;unsafe&gt;",html)
         @test occursin("CompletenessNotCertified",html)
         @test occursin("<svg",html)
+        @test occursin("<polygon data-marker=\"trace-zero-no-positive-determinant\"",html)
+        @test occursin("gray diamonds are trace-zero points without a resolved positive determinant",html)
         @test occursin("A (dimensionless)",html)
         @test occursin("href=\"results/1.toml\"",html)
         base_csv = read(joinpath(directory,"base_cases.csv"),String)
