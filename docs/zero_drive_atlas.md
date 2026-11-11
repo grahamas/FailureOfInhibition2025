@@ -65,7 +65,7 @@ and must reproduce their reported event residuals.
 
 ## Running and reading the evidence
 
-The entry point is `scripts/zero_drive_atlas.jl`, run with the repository's Julia 1.10 project. It provides `benchmark`, `run`, `resume`, and `report` modes; the versioned default configuration is `scripts/atlas/defaults.toml`. The commands are:
+The entry point is `scripts/zero_drive_atlas.jl`, run with the repository's Julia 1.10 project. It provides `benchmark`, `run`, `pilot`, `resume`, and `report` modes; the versioned default configuration is `scripts/atlas/defaults.toml`. The commands are:
 
 ```sh
 julia --project=. scripts/zero_drive_atlas.jl benchmark OUTPUT [--config FILE]
@@ -121,3 +121,118 @@ Each output directory retains `state.toml`, exact `config.toml`, referenced raw 
 Timing medians and tails require their sample counts. Timeouts are censored observations rather than successful cost samples; a few easy jobs cannot predict difficult neighborhoods reliably. Numerical failures, unexecuted queued work, unsampled finite parameters, unbounded shells, and unsearched attractors remain visible even when a run ends normally at its budget.
 
 The report renders sparse evidence as tables and examined connections, not filled high-dimensional regions. Saved numerical classifications and proof statuses remain separate. Re-rendering is deterministic from the same saved evidence and does not silently run additional discovery.
+
+## Structured pilot
+
+The pilot asks whether the numerical workflow and proposed base cases support
+further exploration. Its endpoint is completion of a declared finite protocol or
+an explicit resource/verification stop, not a claim that the atlas is complete.
+The author selected 5 GB (5,000,000,000 bytes) of additional storage, including
+results, temporary files, reports, and run-owned caches. Time limits remain
+operational safeguards rather than the measure of scientific completion.
+
+The sequence separates known-model controls from discovery. Training
+probes cover shells 1 through 4, both parameter and equilibrium charts, and all
+16 coupling-zero masks. In each stream, the accepted indices 1 through 256 are
+ranked by SHA-256 using a fixed protocol seed and the stream identity. The first
+four ranked indices form training; the next two form the held-out cohort. The
+actual indices and selection recipe are frozen in the manifest. This disperses
+the samples instead of repeatedly using the same early Halton digits in every
+stream. It is a deterministic finite design, not independent random replication.
+
+There are 512 training probes. Shell 4 reaches a chart-coordinate extent of 16;
+equilibrium-chart shells bound chart coordinates, not the same projected
+parameter region as parameter-chart shells. The finite shell choice is a pilot
+convention, not a model-derived outer boundary. A pre-run coordinate-support
+ledger records the ranges and marginal coverage of both cohorts, including
+threshold/input signs, inhibitory width below/above 1, and coupling A below/above
+8. Gaps stay visible; this ledger does not establish joint parameter coverage.
+
+Known controls contribute three jobs. Training results may supply at most 24
+additional investigations: the first eligible continuation, nexus, and periodic
+proposal in each shell/chart combination, at one follow-up depth only. Missing
+eligible proposals are unavailable opportunities, not evidence of absence.
+These selected investigations are not a representative statistical sample.
+The protocol has 947 prescribed jobs and at most 971 jobs including these
+opportunity-dependent follow-ups; their descendants do not create an unbounded
+work queue.
+
+112 cases selected before observing their outcomes receive paired numerical
+audits: each shell/chart combination at masks 0, 1, 3, 5, 7, 10, and 15, training
+design positions 1 and 3 (their accepted indices depend on the frozen stream
+selection). These masks represent each number of zero couplings but do not audit
+every directional boundary face. Denser equilibrium seeds and tighter balance residual
+limits are compared with the baseline; continuation depths are compared from
+the first baseline root in coordinate `A`, with unchanged starting case and
+parameter bounds. This does not audit every branch or parameter direction.
+Deterministic agreement of the shared continuation prefix is reported separately
+from additional states, event candidates, and termination differences.
+Parameter-bound stops, corrector failures, and unresolved inventories remain distinct from saturation.
+
+Candidate base cases and parameter-only nearest-base routes are frozen from
+the training results before the 256 held-out probes are evaluated. The held-out
+indices are disjoint from training indices within each stream. They do not
+constitute independent random replicates or a statistical sample of the
+unbounded parameter domain. Grouping training cases by structural signature
+is a base-selection hypothesis; matching signatures do not establish connection.
+The signature describes the sampled root inventory, chart labels, and stability
+at the stored time-scale ratio. Roots retain separate analytic classifications
+over all positive time-scale ratios; equal signatures need not share those
+partition boundaries.
+Held-out signatures and root inventories do not select the recovery base.
+Directly audited points with failed or inconsistent audits are excluded with
+recorded reasons. An unaudited replacement remains explicitly unaudited,
+including any known audit warning in its cohort.
+
+Recovery checks use a prespecified subset of 64 held-out cases: each shell/chart
+combination at masks 0, 5, 10, and 15, both held-out indices. They follow corrected
+equilibrium states along sampled parameter paths from frozen candidate bases and compare the
+observed endpoint inventory with the held-out target. Independently solving the
+target is not by itself recovery evidence. Root-tracking ambiguity, unsuccessful
+correction, and intervening structural changes are recorded. A path can recover
+a target while encountering transitions; sampled tracking does not certify
+continuous branch identity or absence of intervening transitions.
+
+The decision summary separates control performance, numerical disagreements,
+held-out structure, recovery outcomes, and unresolved obligations. Counts of
+singleton graph components or candidate base cases are not discovery yield.
+Saved-tuple or provenance inconsistencies require repair; inventory disagreements
+require reassessment. Consistency on this finite protocol can support another
+declared exploration stage, but cannot establish absence of missed regions,
+nexuses, roots, or cycles.
+
+### Pilot storage and execution
+
+The structured pilot requires installed Linux `bwrap`, `prlimit`, and `setpriv` tools and
+working unprivileged user/PID namespaces. It fails closed if the required
+isolation cannot be established. Run the coordinator with core dumps disabled:
+
+```sh
+prlimit --core=0:0 -- julia --startup-file=no --project=. scripts/zero_drive_atlas.jl pilot OUTPUT --storage-bytes 5000000000
+```
+
+The worker sees a read-only filesystem except for four precreated transport/log
+files. Per-file kernel limits bound those files, and nested user namespaces are
+disabled. Compiled-module and package-image writes are disabled; run-owned
+temporary and depot directories are read-only inside the worker. This uses
+[bubblewrap's filesystem and namespace isolation](https://github.com/containers/bubblewrap/blob/main/bwrap.xml),
+not periodic monitoring as a substitute for a bound on worker writes.
+The launcher installs a parent-death signal and checks the coordinator's process
+identity before starting the sandbox, so coordinator termination also stops a
+worker during startup.
+
+Coordinator writes reserve space for new and old atomic files, checkpointing,
+reports, and the worker's maximum remaining write allowance. Storage accounting
+covers the generated pilot-owned directory, including its source snapshot,
+results, checkpoints, reports, logs, and runtime directories. Preexisting shared
+dependencies are read-only and are not additional pilot storage. Newly created
+external log files are not automatically covered: use terminal/tool capture, or
+include them in an explicitly bounded owned directory.
+
+The report distinguishes retained bytes, observed peak usage, and reserved
+capacity. Its accounting conservatively uses the larger of logical and allocated
+size for each owned entry. Committed result hashes and a durable checkpoint must
+agree before transport duplicates can be truncated; live bound files are not
+unlinked. Scientific results and failure evidence are retained. The storage
+limit can stop dispatch before the directory is full so that final evidence and
+checkpoints still fit. Reports can be regenerated from the retained data.

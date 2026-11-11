@@ -106,6 +106,8 @@ end
         for filename in ("core.jl", "engine.jl", "defaults.toml")
             cp(joinpath(source, "atlas", filename), joinpath(assets, filename))
         end
+        cp(joinpath(source,"atlas","storage.jl"),joinpath(assets,"storage.jl"))
+        write(joinpath(assets,"pilot.jl"),"# no finite pilot needed for report fixture\n")
         write(joinpath(assets, "events.jl"), "# no numerical handlers needed\n")
         write(joinpath(assets, "science.jl"), "# no numerical handlers needed\n")
         write(joinpath(assets, "report.jl"), """
@@ -239,6 +241,27 @@ end
         @test state["stop_reason"] == "budget_exhausted"
         @test state["jobs"][1]["status"] == "timed_out"
         @test state["elapsed_seconds"] < 1.0
+
+        # A restarted worker gets its setup allowance, rather than the much
+        # smaller handler timeout that caused the preceding worker to stop.
+        restart_root=joinpath(directory,"restart-setup")
+        mkpath(joinpath(restart_root,"workers"))
+        delayed_script=joinpath(directory,"delayed_worker.jl")
+        write(delayed_script,replace(read(script,String),
+            "MockAtlas.atlas_worker_main(ARGS[2])"=>"sleep(0.25); MockAtlas.atlas_worker_main(ARGS[2])"))
+        restart_state=empty_state()
+        restart_state["queue_seconds"]["discovery"]=100.0
+        register_atlas_job!(restart_state,Dict("kind"=>"first_slow","queue"=>"events","sleep"=>3.0))
+        register_atlas_job!(restart_state,Dict("kind"=>"second_slow","queue"=>"events","sleep"=>3.0))
+        restart_config=atlas_config()
+        restart_config["max_jobs"]=2
+        restart_config["job_timeout_seconds"]=0.05
+        restart_config["warmup_seconds"]=30.0
+        drive_atlas!(restart_root,restart_state,restart_config;additional_seconds=15.0,worker_script=delayed_script)
+        @test restart_state["stop_reason"]=="job_limit"
+        @test restart_state["jobs"][1]["status"]=="timed_out"
+        @test restart_state["jobs"][2]["status"]=="timed_out"
+        @test isempty(restart_state["setup_failures"])
 
         broken = joinpath(directory, "broken")
         mkpath(joinpath(broken, "workers"))

@@ -199,6 +199,7 @@ end
 function execute_job(job::Dict{String,Any},config::Dict{String,Any})
     job=atlas_normalize_job(job)
     kind=job["kind"]
+    (startswith(kind,"pilot_") || get(job,"pilot_role","")=="control") && return execute_pilot_job(job,config)
     kind=="discovery" && return execute_discovery(job,config)
     kind=="continuation" && return execute_continuation(job,config)
     kind=="certification" && return execute_certification(job,config)
