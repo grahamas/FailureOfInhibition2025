@@ -254,3 +254,7 @@ packet and the new output. The first packet's measured footprint is reserved
 before allocating the new worker's limit. Resume and report generation verify
 the frozen manifest and source-packet inventory. This mode performs no automatic
 discovery or recursive followups and does not alter the first packet.
+
+The [second-pilot outcome](zero_drive_targeted_20261111.md) records a cusp
+readiness failure: all three controls ran, and the 19 targeted investigations
+remain unattempted. No local adjacency result was inferred.

@@ -7,8 +7,7 @@
 
 ## Next Steps
 
-- [ ] ATLAS-04A: Implement and independently review the [22-job targeted protocol](docs/zero_drive_targeted_protocol.md), numerical diagnostics, execution safeguards, and local adjacency report; pass checks and clean PR review/CI before launch.
-- [ ] ATLAS-04B: Execute the frozen second pilot within the combined 5 GB artifact ceiling; independently review its adjacency evidence and publish resolved findings and remaining limits.
+- [ ] ATLAS-04C: Choose and review a cusp-validation numerical repair before another frozen run. The second pilot stopped at its readiness gate; all 19 targeted investigations remain unattempted. Preserve the blocked packet and its fixed thresholds; see the [diagnosis and outcome](docs/zero_drive_targeted_20261111.md).
 - [ ] Review the five figure claims and candidate captions in `docs/figure_redesign_20261006.md`; choose the final manuscript presentation and biological wording.
 - [ ] If the paper needs a cycle-onset claim, extend and independently test the truncated periodic branch before identifying a bifurcation.
 - [ ] Revise the manuscript manually using the selected results, keeping its scientific choices and wording under author control.
@@ -37,6 +36,8 @@ onset is unresolved. Final results have not been selected.
 - What biological evidence supports the final interpretation?
 
 ## Completed
+
+- [x] ATLAS-04A: Implemented and merged the reviewed 22-job targeted protocol in PR #160. ATLAS-04B attempted all three controls; BT and Hopf passed, while refined cusp validation failed and correctly blocked all 19 investigations. This is a readiness outcome, not completed targeted science. See the [saved evidence](docs/zero_drive_targeted_20261111.md).
 
 - [x] ATLAS-03A–D: Implemented, reviewed, and merged the storage-bounded pilot in PR #158, then executed all 947 mandatory jobs and 12 available followups. Independent artifact review verified 60/64 assessed single-root recoveries, four unresolved paths, and explicit coverage limits. The scientific packet uses 50.24 MB; review artifacts kept the observed footprint near 54.4 MB within the 5 GB cap. See the [outcome and provenance](docs/zero_drive_pilot_20261111.md).
 
