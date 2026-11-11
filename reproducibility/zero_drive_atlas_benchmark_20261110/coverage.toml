@@ -1,0 +1,11 @@
+base_case_role_rows = 281
+completeness = "CompletenessNotCertified"
+examined_paths = 20
+frontier = "Unexamined finite parameters, unsampled strata and paths, unbounded shells, excluded h=0/r=0/infinite limits, and unsearched attractors remain unresolved."
+issues = 331
+jobs = 531
+jobs_with_issues = 331
+observed_components = 233
+observed_points = 325
+pending_jobs = 331
+unique_base_case_points = 239
