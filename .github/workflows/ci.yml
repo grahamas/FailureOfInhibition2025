@@ -18,6 +18,11 @@ jobs:
           arch: x64
           show-versioninfo: true
       - uses: julia-actions/cache@v2
+      - name: Install and check pilot sandbox tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap util-linux
+          prlimit --core=0:0 -- setpriv --pdeathsig KILL -- bwrap --unshare-user --disable-userns --unshare-pid --die-with-parent --ro-bind / / --proc /proc --dev /dev --remount-ro /dev --cap-drop ALL true
       - name: Instantiate tracked environment
         run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
       - name: Run package tests

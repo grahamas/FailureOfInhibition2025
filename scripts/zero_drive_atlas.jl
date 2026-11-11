@@ -11,6 +11,8 @@ const ATLAS_LIGHTWEIGHT_COORDINATOR = abspath(PROGRAM_FILE) == (@__FILE__) &&
 include("atlas/core.jl")
 include("atlas/events.jl")
 include("atlas/science.jl")
+include("atlas/pilot.jl")
+include("atlas/storage.jl")
 include("atlas/engine.jl")
 include("atlas/report.jl")
 
