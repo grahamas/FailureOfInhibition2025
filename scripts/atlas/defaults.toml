@@ -1,0 +1,23 @@
+schema_version = 1
+warmup_seconds = 600.0
+benchmark_seconds = 1200.0
+job_timeout_seconds = 120.0
+max_jobs = 200
+max_followups_per_job = 256
+
+[allocation]
+discovery = 0.4
+events = 0.4
+cycles = 0.1
+certification = 0.1
+
+[science]
+seed_grid = 5
+max_corrector_iters = 100
+max_evaluations = 10000
+continuation_steps = 12
+certification_boxes = 500
+certification_evaluations = 5000
+certification_seconds = 10.0
+balance_atol = 1.0e-9
+event_atol = 1.0e-7
