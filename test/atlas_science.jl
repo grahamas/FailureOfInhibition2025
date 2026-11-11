@@ -122,6 +122,9 @@ end
     @test roundtrip(nexus)["status"]=="completed"
     section=ASH.execute_job(first(nexus["followups"]),config)
     @test roundtrip(section)["status"]=="completed"
+    @test only(section["evidence"]["events"])["kind"]=="local_neighborhood_witness"
+    @test only(section["evidence"]["sections"])["witness_role"]=="local_neighborhood_witness"
+    @test only(section["evidence"]["events"])["scope"]=="sampled_section_neighbors_only"
     cycles=ASH.execute_job(Dict{String,Any}("kind"=>"periodic","fixture"=>true),config)
     @test roundtrip(cycles)["status"]=="completed"
     p=ASH.equilibrium_chart(0.,0.,0.,0.,0.,0.,log(9.))["params"]
@@ -136,4 +139,28 @@ end
     unresolved=ASH.execute_job(job,merge(config,Dict("certification_boxes"=>0)))
     @test roundtrip(unresolved)["status"]=="unresolved"
     @test !isempty(only(roundtrip(unresolved)["evidence"]["certifications"])["proof_nodes"])
+end
+@testset "Transition sides require a resolved differing inventory" begin
+    point(id,signature)=Dict{String,Any}("id"=>id,"signature"=>signature,"roots"=>[Dict("state"=>[0.2,0.3])],"parameters"=>Dict("r"=>id=="left" ? 0.9 : 1.1))
+    a=point("left","Attracting");b=point("right","Repelling")
+    event=ASH.atlas_transition_witnesses!(Dict{String,Any}("status"=>"completed","params"=>Dict("r"=>1.0)),a,b)
+    @test event["witness_point_ids"]==["left","right"]
+    @test event["scope"]=="sampled_transition_sides"
+    distant=ASH.atlas_transition_witnesses!(Dict{String,Any}("status"=>"completed","params"=>Dict("r"=>5.0)),a,b)
+    @test isempty(distant["bracket_point_ids"])
+    @test !distant["localization_within_parameter_bracket"]
+    same=ASH.atlas_transition_witnesses!(Dict{String,Any}("status"=>"completed","params"=>Dict("r"=>1.0)),a,point("same","Attracting"))
+    @test isempty(same["witness_point_ids"])
+    @test isempty(same["bracket_point_ids"])
+    unresolved=ASH.atlas_transition_witnesses!(Dict{String,Any}("status"=>"completed","params"=>Dict("r"=>1.0)),a,point("unknown","StabilityUnresolved"))
+    @test isempty(unresolved["witness_point_ids"])
+    # A real fixed-equilibrium r sweep crosses a nondegenerate trace-zero point.
+    chart=ASH.equilibrium_chart(12.,8.,8.,0.,-log(2.),0.,log(9.);r=2.)
+    job=Dict{String,Any}("id"=>"hopf-regression","kind"=>"continuation","params"=>chart["params"],"state"=>chart["state"],"coordinate"=>"r")
+    result=ASH.execute_job(job,Dict{String,Any}("seed_grid"=>3,"continuation_steps"=>4))
+    transitions=filter(e->get(e,"scope","")=="sampled_transition_sides",result["evidence"]["events"])
+    @test !isempty(transitions)
+    ids=[p["id"] for p in result["evidence"]["points"]]
+    @test all(id->id in ids,first(transitions)["witness_point_ids"])
+    TOML.print(devnull,result)
 end

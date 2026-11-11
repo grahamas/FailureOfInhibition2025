@@ -47,12 +47,36 @@ end
     @test result["unfolding_smallest_singular_value"]>1e-7
     @test result["completeness"]=="CompletenessNotCertified"
     @test length(result["followups"])==1
+    # Validate the serialized tuple itself, not a closure evaluated again at
+    # converged coordinates. Finite-difference callbacks previously mutated
+    # the saved parameter binding to their last probe.
+    saved_io=IOBuffer();TOML.print(saved_io,result)
+    saved=TOML.parse(String(take!(saved_io)))
+    saved_pair=saved["parameter_pair"]
+    @test vcat(saved["state"],saved["parameters"][saved_pair[1]],
+        saved["parameters"][saved_pair[2]])==saved["converged_coordinates"]
+    @test saved["saved_tuple_matches_converged_coordinates"]
+    saved_model=reduced_model(saved["parameters"])
+    saved_balance=zeros(2);saved_jacobian=zeros(2,2)
+    point_rhs!(saved_balance,saved["state"],saved_model,0.0)
+    point_jacobian!(saved_jacobian,saved["state"],saved_model,0.0)
+    independent_residual=norm(vcat(saved_balance,tr(saved_jacobian),det(saved_jacobian)),Inf)
+    @test independent_residual<=1e-8
+    @test saved["event_residual"]==independent_residual
+    @test saved["followups"][1]["parameters"]==saved["parameters"]
+    @test saved["followups"][1]["state"]==saved["state"]
     cuspseed=merge(equilibrium_chart(8.0,0.0,0.0,0.0,-log(2.0),0.0,log(9.0)),
         Dict("kind"=>"nexus","event_type"=>"cusp"))
     cuspevidence=atlas_nexus_job(cuspseed,Dict{String,Any}())
     @test cuspevidence["status"]=="numerically_validated"
     @test cuspevidence["classification"]=="cusp"
     @test cuspevidence["event_residual"]<1e-8
+    cusp_pair=cuspevidence["parameter_pair"]
+    @test vcat(cuspevidence["state"],cuspevidence["parameters"][cusp_pair[1]],
+        cuspevidence["parameters"][cusp_pair[2]])==cuspevidence["converged_coordinates"]
+    saved_cusp_vector=atlas_event_vector(state->atlas_rhs(cuspevidence["parameters"],state),
+        state->atlas_jac(cuspevidence["parameters"],state),cuspevidence["state"],"cusp")
+    @test norm(saved_cusp_vector,Inf)==cuspevidence["event_residual"]
     cusptraces,_=atlas_section_traces(cuspevidence["parameters"],cuspevidence["state"],
         cuspevidence["parameter_pair"],Dict("section_curve_max_steps"=>1))
     @test all(t->t["termination"]=="initial_point_not_on_event_locus",
@@ -63,6 +87,19 @@ end
     @test length(section["transition_curves"])==4
     @test all(row->haskey(row,"status"),section["section_samples"])
     @test all(curve->haskey(curve,"termination"),section["transition_curves"])
+    @test any(curve->curve["event"]=="hopf" && !isempty(curve["points"]),section["transition_curves"])
+    for curve in section["transition_curves"], savedpoint in curve["points"]
+        curve_model=reduced_model(savedpoint["parameters"])
+        curve_balance=zeros(2);curve_jacobian=zeros(2,2)
+        point_rhs!(curve_balance,savedpoint["state"],curve_model,0.0)
+        point_jacobian!(curve_jacobian,savedpoint["state"],curve_model,0.0)
+        curve_residual=norm(vcat(curve_balance,curve["event"]=="fold" ?
+            det(curve_jacobian) : tr(curve_jacobian)),Inf)
+        @test curve_residual<=1e-8
+        @test curve_residual==savedpoint["residual"]
+        @test tr(curve_jacobian)==savedpoint["trace"]
+        @test det(curve_jacobian)==savedpoint["determinant"]
+    end
     io=IOBuffer();TOML.print(io,section)
     @test !isempty(take!(io))
 end

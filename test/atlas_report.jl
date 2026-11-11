@@ -29,15 +29,25 @@ end
     @test length(atlas_region_components([merge(p,Dict("signature"=>p["id"]=="m2" ? "different" : "same")) for p in five_points],[sampled_path])) == 5
     @test isempty(atlas_region_components([merge(points[1], Dict("roots"=>[]))],[]))
     @test isempty(atlas_region_components([merge(points[1], Dict("signature"=>"Eturn:unresolved"))],[]))
+    plot_io = IOBuffer()
+    projection_points = [Dict("source_job"=>"projection","parameters"=>Dict("B"=>Float64(i),"r"=>Float64(i)),"roots"=>roots) for i in 1:2]
+    _report_scientific_plots(plot_io,Dict("points"=>projection_points,"sections"=>[]))
+    @test occursin("varying parameter coordinates: B, r",String(take!(plot_io)))
     @test_throws ArgumentError atlas_region_components([points[1],points[1]],[])
     mktempdir() do directory
         mkpath(joinpath(directory,"results"))
         jobs = [Dict("id"=>"1","kind"=>"discovery","status"=>"completed","elapsed_seconds"=>2.0,"result_file"=>"results/1.toml"),
             Dict("id"=>"2","kind"=>"cycles","status"=>"timed_out","elapsed_seconds"=>5.0,"error"=>"<script>alert(1)</script>"),
-            Dict("id"=>"3","kind"=>"discovery","status"=>"pending")]
+            Dict("id"=>"3","kind"=>"discovery","status"=>"pending","result_file"=>"results/not-yet-written.toml")]
         open(joinpath(directory,"state.toml"),"w") do io; TOML.print(io,Dict("schema_version"=>1,"mode"=>"benchmark","jobs"=>jobs)); end
         open(joinpath(directory,"config.toml"),"w") do io; TOML.print(io,Dict("version"=>1)); end
-        evidence = Dict("points"=>vcat(five_points,[points[3]]),"paths"=>[sampled_path],"events"=>[Dict("id"=>"<unsafe>","status"=>"candidate")],
+        events = [Dict("id"=>"<unsafe>","status"=>"candidate"),
+            Dict("kind"=>"local_neighborhood_witness","validated"=>true,"witness_point_ids"=>["a","m1"]),
+            Dict("kind"=>"local_neighborhood_witness","validated"=>true,"witness_point_ids"=>["a"]),
+            Dict("kind"=>"hopf","validated"=>true,"bracket_point_ids"=>["a","b"]),
+            Dict("kind"=>"bt","validated"=>true,"witness_point_ids"=>["m2"])]
+        evidence = Dict("points"=>vcat(five_points,[points[3]]),"paths"=>[sampled_path],"events"=>events,
+            "cycles"=>[Dict("validated"=>true,"witness_point_ids"=>["m3"])],
             "sections"=>[Dict("parameter_pair"=>["A","a"],"section_samples"=>[Dict("status"=>"sampled","parameters"=>Dict("A"=>8.0,"a"=>1.0))],"transition_curves"=>[Dict("points"=>[Dict("parameters"=>Dict("A"=>9.0,"a"=>1.1),"classification"=>"fold_candidate")])])])
         open(joinpath(directory,"results","1.toml"),"w") do io; TOML.print(io,Dict("status"=>"completed","evidence"=>evidence)); end
         jobs[1]["result_hash"] = bytes2hex(sha256(read(joinpath(directory,"results","1.toml"))))
@@ -51,11 +61,20 @@ end
         @test occursin("<svg",html)
         @test occursin("A (dimensionless)",html)
         @test occursin("href=\"results/1.toml\"",html)
-        @test !occursin("transition_witness",read(joinpath(directory,"base_cases.csv"),String))
+        base_csv = read(joinpath(directory,"base_cases.csv"),String)
+        @test count(line -> startswith(line,"\"local_neighborhood_witness\""),split(base_csv,'\n')) == 2
+        @test count(line -> startswith(line,"\"transition_witness\""),split(base_csv,'\n')) == 2
+        @test count(line -> startswith(line,"\"periodic_witness\""),split(base_csv,'\n')) == 1
+        @test !any(line -> startswith(line,"\"transition_witness\",\"m2\""),split(base_csv,'\n'))
         coverage = TOML.parsefile(joinpath(directory,"coverage.toml"))
         @test coverage["observed_components"] == 2
         @test coverage["pending_jobs"] == 1
         @test coverage["issues"] == 2
+        @test coverage["jobs_with_issues"] == 2
+        @test coverage["base_case_role_rows"] == 7
+        @test coverage["unique_base_case_points"] == 5
+        @test count(issue -> issue["job"]=="3",atlas_report_data(directory).issues) == 1
+        @test !any(issue -> issue["job"]=="3" && issue["status"]=="missing_result",atlas_report_data(directory).issues)
         @test _report_safe_file(directory,"../state.toml") === nothing
         @test _report_safe_file(directory,joinpath(directory,"state.toml")) === nothing
         @test atlas_timing_rows(jobs)[1]["completed_samples"] == 0 # cycles first

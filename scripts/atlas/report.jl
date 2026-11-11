@@ -27,6 +27,10 @@ function atlas_report_data(output_dir)
     for job in jobs
         status = string(get(job, "status", "unknown"))
         status == "completed" || push!(issues, Dict("job" => get(job, "id", ""), "status" => status, "detail" => get(job, "error", "")))
+        # Deferred jobs have assigned filenames but no result is expected yet.
+        # Display their deferred status once rather than adding a missing-file
+        # issue (or consuming a stale partial result from a running worker).
+        status in ("pending", "running") && continue
         relative = get(job, "result_file", "")
         if isempty(string(relative))
             status == "completed" && push!(issues, Dict("job"=>get(job,"id",""), "status"=>"missing_result", "detail"=>"Completed job has no result reference"))
@@ -212,17 +216,38 @@ function write_report(output_dir)
         push!(bases, Dict("kind"=>"region_representative", "id"=>first(component), "component"=>i, "members"=>join(component, ";"),
             "evidence"=>"Observed connections only; lexicographically first point; path ledger supplies connections."))
     end
-    for (key, kind) in (("events", "transition_witness"), ("cycles", "periodic_witness")), item in records[key]
+    known_points = Set(string(get(point,"id","")) for point in records["points"])
+    witness_rows = Dict{Tuple{String,String},Dict{String,Any}}()
+    for key in ("events", "cycles"), item in records[key]
         get(item,"validated",false) === true || continue
-        for id in get(item,"witness_point_ids",String[])
-            push!(bases, Dict("kind"=>kind,"id"=>id,"component"=>"","members"=>"","evidence"=>get(item,"source_job","")))
+        if key == "cycles"
+            kind = "periodic_witness"
+            ids = get(item,"witness_point_ids",String[])
+        elseif get(item,"kind","") in ("local_neighborhood_witness", "section_side_witnesses")
+            kind = "local_neighborhood_witness"
+            ids = get(item,"witness_point_ids",String[])
+        else
+            # A numerically validated nexus or nearby section sample is not
+            # itself an observed bracket on two sides of a transition.
+            kind = "transition_witness"
+            ids = get(item,"bracket_point_ids",String[])
+            ids isa AbstractVector && length(unique(ids)) >= 2 || continue
+        end
+        ids isa AbstractVector || continue
+        all(id -> string(id) in known_points, ids) || continue
+        for raw_id in ids
+            id = string(raw_id)
+            witness_rows[(kind,id)] = Dict("kind"=>kind,"id"=>id,"component"=>"","members"=>"","evidence"=>get(item,"source_job",""))
         end
     end
+    append!(bases,[witness_rows[key] for key in sort!(collect(keys(witness_rows)))])
     _report_write_csv(joinpath(output_dir,"base_cases.csv"), ["kind","id","component","members","evidence"], bases)
     timings = atlas_timing_rows(jobs)
     _report_write_csv(joinpath(output_dir,"timings.csv"), ["kind","attempted","uncensored_samples","completed_samples","timeout_samples","median_seconds","p95_seconds","projected_jobs_per_hour_at_median","failures_or_unresolved"], timings)
     coverage = Dict("completeness"=>"CompletenessNotCertified", "jobs"=>length(jobs), "pending_jobs"=>count(j->get(j,"status","") ∈ ("pending","running"),jobs),
         "observed_points"=>length(records["points"]), "observed_components"=>length(components), "examined_paths"=>length(records["paths"]), "issues"=>length(issues),
+        "jobs_with_issues"=>length(Set(string(get(issue,"job","")) for issue in issues)),
+        "base_case_role_rows"=>length(bases), "unique_base_case_points"=>length(Set(string(row["id"]) for row in bases)),
         "frontier"=>"Unexamined finite parameters, unsampled strata and paths, unbounded shells, excluded h=0/r=0/infinite limits, and unsearched attractors remain unresolved.")
     _report_atomic_write(joinpath(output_dir,"coverage.toml")) do io; TOML.print(io,coverage;sorted=true); end
     destination = joinpath(output_dir,"index.html")
@@ -233,7 +258,7 @@ function write_report(output_dir)
 <nav><a href="#coverage">Coverage</a><a href="#bases">Base cases</a><a href="#points">Points</a><a href="#paths">Paths</a><a href="#events">Transitions</a><a href="#cycles">Cycles</a><a href="#certifications">Point certificates</a><a href="#issues">Unresolved</a><a href="#timing">Costs</a><a href="#provenance">Provenance</a></nav>
 <section id=coverage><h2>Coverage and frontier</h2>""")
         _report_table(io, [coverage])
-        print(io,"<p>Stop reason: ",_report_escape(get(state,"stop_reason","unspecified")),". Mode: ",_report_escape(get(state,"mode","unspecified")),". A budget or job limit ends this protocol; it does not establish absence of additional structures.</p></section><section id=bases><h2>Base cases and connections</h2><p>Representatives belong to provisional components of explicitly examined, signature-preserving connections. Path validity is numerical and scoped to saved evidence. Transition and periodic witnesses are listed separately.</p><p><a href=base_cases.csv>Download base cases</a></p>")
+        print(io,"<p>Stop reason: ",_report_escape(get(state,"stop_reason","unspecified")),". Mode: ",_report_escape(get(state,"mode","unspecified")),". A budget or job limit ends this protocol; it does not establish absence of additional structures.</p></section><section id=bases><h2>Base cases and connections</h2><p>Representatives belong to provisional components of explicitly examined, signature-preserving connections. Path validity is numerical and scoped to saved evidence. Local neighborhood samples, observed transition brackets, and periodic witnesses retain separate roles. Role rows may share a point; the coverage table reports unique base-case points separately.</p><p><a href=base_cases.csv>Download base cases</a></p>")
         _report_table(io,bases)
         print(io,"</section>")
         print(io,"<section id=plots><h2>Saved branch and section samples</h2><p>Markers are saved numerical samples, without interpolation or filled parameter regions. Root ordering does not imply branch identity.</p>")
@@ -294,7 +319,8 @@ function _report_scientific_plots(io,records)
             state=get(root,"state",[]);length(state)==2 || continue
             push!(rows,(Float64(p["parameters"][coordinate]),Float64(state[1]),string(get(root,"stability","unresolved"))))
         end
-        _report_scatter(io,rows,"$coordinate (dimensionless)","E (occupancy)","Job $job: saved equilibrium samples; unconnected markers do not assign root identity.")
+        varied = join(coordinates, ", ")
+        _report_scatter(io,rows,"$coordinate (dimensionless)","E (occupancy)","Job $job: projection of saved equilibrium samples; varying parameter coordinates: $varied. Other coordinates may vary; this is not necessarily a fixed-parameter slice. Unconnected markers do not assign root identity.")
     end
     for section in records["sections"]
         pair=get(section,"parameter_pair",[]);length(pair)==2 || continue

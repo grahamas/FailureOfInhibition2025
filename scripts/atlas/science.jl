@@ -37,7 +37,7 @@ end
 function localize_event(p,x,name,kind;iterations=20,tolerance=1e-9)
     z=vcat(x,p[name]);history=Dict{String,Any}[]
     function residual(z)
-        q=atlas_replace(p,name,z[3]);K=balance_jacobian(q,z[1:2]);J=Diagonal([1.0,1/q["r"]])*K
+        local q=atlas_replace(p,name,z[3]);local K=balance_jacobian(q,z[1:2]);local J=Diagonal([1.0,1/q["r"]])*K
         vcat(balance_value(q,z[1:2]),kind=="fold" ? det(K) : tr(J))
     end
     for iteration in 1:iterations
@@ -107,6 +107,23 @@ function execute_discovery(job,config)
     end
     Dict("status"=>isempty(point["roots"]) ? "unresolved" : "completed","evidence"=>Dict("points"=>[point],"events"=>seed_events,"chart"=>get(job,"chart","parameter"),"shell"=>get(job,"shell",0)),"followups"=>follow)
 end
+function atlas_transition_witnesses!(event,first,second)
+    event["candidate_bracket_point_ids"]=[first["id"],second["id"]]
+    resolved(point)=!isempty(point["roots"]) && !occursin("unresolved",lowercase(point["signature"]))
+    bounded=haskey(event,"params") && haskey(first,"parameters") && haskey(second,"parameters") && all(keys(event["params"])) do key
+        value=event["params"][key];left=first["parameters"][key];right=second["parameters"][key]
+        tolerance=1e-7*max(1,abs(left),abs(right))
+        min(left,right)-tolerance<=value<=max(left,right)+tolerance
+    end
+    event["localization_within_parameter_bracket"]=bounded
+    established=event["status"]=="completed" && bounded && resolved(first) && resolved(second) && first["signature"]!=second["signature"]
+    event["validated"]=event["status"]=="completed"
+    event["bracket_point_ids"]=established ? event["candidate_bracket_point_ids"] : String[]
+    event["witness_point_ids"]=event["bracket_point_ids"]
+    event["scope"]=established ? "sampled_transition_sides" : "localized_event_only"
+    event["continuous_coverage_certified"]=false
+    event
+end
 function execute_continuation(job,config)
     p=job["params"];name=get(job,"coordinate","A");center=p[name];radius=max(1.0,abs(center))*0.5
     lower=name in ("a","b") ? center-radius : max(name in ("h","r") ? 1e-6 : 0.0,center-radius)
@@ -133,7 +150,11 @@ function execute_continuation(job,config)
         end
         for candidate in branch.candidates
             pt=branch.points[candidate.first_point];q=atlas_replace(p,name,pt.parameter)
-            event=localize_event(q,pt.state,name,string(candidate.kind));push!(events,event)
+            event=localize_event(q,pt.state,name,string(candidate.kind))
+            first_point=first(filter(z->z["id"]==ids[candidate.first_point],points))
+            second_point=first(filter(z->z["id"]==ids[candidate.second_point],points))
+            atlas_transition_witnesses!(event,first_point,second_point)
+            push!(events,event)
             if event["status"]=="completed"
                 push!(follow,Dict("kind"=>"nexus","queue"=>"events","params"=>event["params"],"state"=>event["state"],"event_type"=>candidate.kind==:fold ? "cusp" : "bt","origin"=>"localized_$(candidate.kind)"))
                 candidate.kind==:hopf && push!(follow,Dict("kind"=>"periodic","queue"=>"cycles","params"=>event["params"],"state"=>event["state"]))
@@ -167,7 +188,7 @@ function atlas_anchor_points(raw,kind,job,config)
         for (i,sample) in enumerate(get(raw,"section_samples",[]))
             haskey(sample,"parameters") || continue
             extra=[root["state"] for root in get(sample,"equilibria",[]) if haskey(root,"state")]
-            point=atlas_point(sample["parameters"],config;id="$(get(job,"id","section"))-side$i",extra_seeds=extra)
+            point=atlas_point(sample["parameters"],config;id="$(get(job,"id","section"))-neighbor$i",extra_seeds=extra)
             isempty(point["roots"]) || push!(witnesses,point)
         end
     end
@@ -188,9 +209,10 @@ function execute_job(job::Dict{String,Any},config::Dict{String,Any})
         key=kind=="section" ? "sections" : kind=="periodic" ? "cycles" : "events"
         witnesses=atlas_anchor_points(raw,kind,job,config)
         raw["witness_point_ids"]=[p["id"] for p in witnesses]
+        kind=="section" && (raw["witness_role"]="local_neighborhood_witness")
         kind=="section" && (raw["validated"]=!isempty(witnesses))
         evidence=Dict{String,Any}(key=>[raw],"points"=>witnesses)
-        kind=="section" && (evidence["events"]=[Dict("kind"=>"section_side_witnesses","validated"=>!isempty(witnesses),"witness_point_ids"=>raw["witness_point_ids"],"scope"=>"sampled_section_neighbors_only")])
+        kind=="section" && (evidence["events"]=[Dict("kind"=>"local_neighborhood_witness","validated"=>!isempty(witnesses),"witness_point_ids"=>raw["witness_point_ids"],"scope"=>"sampled_section_neighbors_only")])
         return Dict("status"=>accepted ? "completed" : "unresolved","evidence"=>evidence,"followups"=>follow)
     end
     throw(ArgumentError("unknown scientific job kind: $kind"))

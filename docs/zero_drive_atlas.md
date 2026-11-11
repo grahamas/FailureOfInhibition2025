@@ -56,6 +56,13 @@ The report builds provisional region components only from explicit completed pat
 
 Point certificates cover the equilibrium rectangle `[0,1/2]^2` at their exact saved parameters. They do not certify continuous parameter neighborhoods, stability, basin structure, or all attractors.
 
+Ordinary section samples have the separate `local_neighborhood_witness` role.
+Transition witnesses require explicit saved inventories bracketing a localized
+event; proximity to a nexus alone is insufficient. A point can have multiple
+roles, so the report counts role rows separately from unique base-case points.
+Saved event parameters and states are checked again after derivative calculations
+and must reproduce their reported event residuals.
+
 ## Running and reading the evidence
 
 The entry point is `scripts/zero_drive_atlas.jl`, run with the repository's Julia 1.10 project. It provides `benchmark`, `run`, `resume`, and `report` modes; the versioned default configuration is `scripts/atlas/defaults.toml`. The commands are:

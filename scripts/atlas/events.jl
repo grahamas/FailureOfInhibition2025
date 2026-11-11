@@ -121,6 +121,22 @@ function atlas_event_vector(rhs, jac, x, kind)
         vcat(rhs(x),det(A),atlas_nexus_coefficients(jac,x,"cusp")["quadratic"])
 end
 
+# Keep reconstruction in its own function scope: a callback-local assignment
+# must never capture and overwrite a later saved output binding in its caller.
+function atlas_parameters_at(base, pair, coordinates; scales=(1.0,1.0))
+    reconstructed=copy(base)
+    reconstructed[pair[1]]=coordinates[3]*scales[1]
+    reconstructed[pair[2]]=coordinates[4]*scales[2]
+    reconstructed
+end
+function atlas_nexus_vector_at(base,pair,coordinates,kind)
+    candidate_parameters=atlas_parameters_at(base,pair,coordinates)
+    atlas_parameter_admissible(candidate_parameters) ||
+        throw(ArgumentError("parameter perturbation outside domain"))
+    atlas_event_vector(state->atlas_rhs(candidate_parameters,state),
+        state->atlas_jac(candidate_parameters,state),coordinates[1:2],kind)
+end
+
 function atlas_nexus_job(job, config)
     p = Dict{String,Any}(get(job,"parameters",get(job,"params",Dict())))
     x = Float64.(job["state"])
@@ -130,11 +146,7 @@ function atlas_nexus_job(job, config)
     # A full-rank augmented event system is the numerical unfolding test.
     for i in 1:7, j in i+1:8
         pair=(ATLAS_EVENT_PARAMETERS[i],ATLAS_EVENT_PARAMETERS[j])
-        function f(z)
-            t=copy(p); t[pair[1]]=z[3]; t[pair[2]]=z[4]
-            atlas_parameter_admissible(t) || throw(ArgumentError("parameter perturbation outside domain"))
-            atlas_event_vector(y->atlas_rhs(t,y),y->atlas_jac(t,y),z[1:2],kind)
-        end
+        f=coordinates->atlas_nexus_vector_at(p,pair,coordinates,kind)
         z=vcat(x,p[pair[1]],p[pair[2]])
         try
             M=atlas_difference(f,z)
@@ -147,14 +159,14 @@ function atlas_nexus_job(job, config)
     isempty(scored) && return Dict{String,Any}("status"=>"unresolved","reason"=>"no_admissible_unfolding_pair","followups"=>Any[])
     sort!(scored;by=z->(-z[1],z[2]))
     score,pair=first(scored)
-    function params(z)
-        t=copy(p); t[pair[1]]=z[3]; t[pair[2]]=z[4]; t
-    end
-    f=z->atlas_event_vector(y->atlas_rhs(params(z),y),y->atlas_jac(params(z),y),z[1:2],kind)
+    params=coordinates->atlas_parameters_at(p,pair,coordinates)
+    f=coordinates->atlas_nexus_vector_at(p,pair,coordinates,kind)
     admissible=z->all(isfinite,z) && all(0 .<= z[1:2] .<= 0.5) && atlas_parameter_admissible(params(z))
     z,converged,attempts=atlas_newton(f,vcat(x,p[pair[1]],p[pair[2]]),admissible;
         iterations=get(config,"nexus_max_iterations",16))
-    t=params(z); y=z[1:2]
+    # Finish derivative probes before creating the saved parameter/state tuple.
+    M=atlas_difference(f,z)
+    t=params(z); y=copy(z[1:2])
     coefficients=atlas_nexus_coefficients(q->atlas_jac(t,q),y,kind)
     refined=atlas_nexus_coefficients(q->atlas_jac(t,q),y,kind;step=5e-4)
     keys_to_check=kind=="bt" ? ("quadratic","mixed") : ("quadratic","cubic")
@@ -163,10 +175,14 @@ function atlas_nexus_job(job, config)
     checks=Dict(k=>atlas_coefficient_resolved(coefficients[k],refined[k]) for k in nonzero_keys)
     stable=all(values(checks))
     nondegenerate=stable
-    M=atlas_difference(f,z)
     unfolding=minimum(svdvals(M*Diagonal([1.0,1.0,max(1,abs(z[3])),max(1,abs(z[4]))])))
     chain=kind=="bt" ? refined["jordan_residual"]<=1e-7 : abs(refined["quadratic"])<=1e-7
-    validated=converged && stable && nondegenerate && chain && unfolding>1e-7
+    saved_vector=atlas_event_vector(state->atlas_rhs(t,state),state->atlas_jac(t,state),y,kind)
+    saved_residual=norm(saved_vector,Inf)
+    saved_coordinates=vcat(y,t[pair[1]],t[pair[2]])
+    saved_tuple_matches=isequal(saved_coordinates,z)
+    validated=converged && stable && nondegenerate && chain && unfolding>1e-7 &&
+        saved_tuple_matches && isfinite(saved_residual) && saved_residual<=1e-8
     followups=validated ? Any[Dict("kind"=>"section","parameters"=>t,"state"=>y,
         "parameter_pair"=>collect(pair),"nexus_type"=>kind)] : Any[]
     Dict{String,Any}("status"=>validated ? "numerically_validated" : "unresolved","validated"=>validated,
@@ -176,7 +192,9 @@ function atlas_nexus_job(job, config)
         "derivative_scheme"=>"fourth_order_centered_jacobian_differences_at_steps_0.001_and_0.0005",
         "coefficient_convention"=>"F=J*x+B(x,x)/2+C(x,x,x)/6; normalized right null vector; dual Jordan basis for BT",
         "unfolding_smallest_singular_value"=>unfolding,"initial_pair_score"=>score,
-        "event_residual"=>norm(f(z),Inf),"attempts"=>attempts,"followups"=>followups,
+        "event_residual"=>saved_residual,"converged_coordinates"=>copy(z),
+        "saved_tuple_matches_converged_coordinates"=>saved_tuple_matches,
+        "attempts"=>attempts,"followups"=>followups,
         "completeness"=>"CompletenessNotCertified")
 end
 
@@ -214,13 +232,16 @@ end
 function atlas_section_traces(p,center,pair,config)
     scale=[1.0,1.0,max(1,abs(p[pair[1]])),max(1,abs(p[pair[2]]))]
     initial=vcat(center,p[pair[1]],p[pair[2]])./scale
-    params=z->begin t=copy(p);t[pair[1]]=z[3]*scale[3];t[pair[2]]=z[4]*scale[4];t end
+    params=coordinates->atlas_parameters_at(p,pair,coordinates;scales=(scale[3],scale[4]))
     valid=z->all(isfinite,z) && all(0 .<= z[1:2] .<= 0.5) && atlas_parameter_admissible(params(z))
     traces=Dict{String,Any}[]; followups=Any[]
     for event in ("fold","hopf"), direction in (-1,1)
         condition=z->begin
-            x=z[1:2]; t=params(z); A=atlas_jac(t,x)
-            vcat(atlas_rhs(t,x),event=="fold" ? det(A) : tr(A))
+            local candidate_state=z[1:2]
+            local candidate_parameters=params(z)
+            local candidate_jacobian=atlas_jac(candidate_parameters,candidate_state)
+            vcat(atlas_rhs(candidate_parameters,candidate_state),
+                event=="fold" ? det(candidate_jacobian) : tr(candidate_jacobian))
         end
         z=copy(initial); points=Dict{String,Any}[]; attempts=Any[]
         oldtangent=nothing; termination="step_limit"; cycle_enqueued=false
@@ -250,10 +271,15 @@ function atlas_section_traces(p,center,pair,config)
             if !ok
                 termination="unresolved_corrector";break
             end
-            z=corrected;oldtangent=tangent;t=params(z);x=z[1:2];A=atlas_jac(t,x)
+            z=corrected;oldtangent=tangent;t=params(z);x=copy(z[1:2]);A=atlas_jac(t,x)
+            saved_condition=vcat(atlas_rhs(t,x),event=="fold" ? det(A) : tr(A))
+            saved_residual=norm(saved_condition,Inf)
+            if !isfinite(saved_residual) || saved_residual>1e-8
+                termination="unresolved_saved_tuple_residual";break
+            end
             classification=event=="fold" ? "fold_candidate" : det(A)>1e-8 ? "hopf_candidate" : "trace_zero_without_positive_determinant"
             push!(points,Dict("parameters"=>t,"state"=>x,"classification"=>classification,
-                "trace"=>tr(A),"determinant"=>det(A),"residual"=>norm(condition(z),Inf)))
+                "trace"=>tr(A),"determinant"=>det(A),"residual"=>saved_residual))
             if classification=="hopf_candidate" && !cycle_enqueued
                 push!(followups,Dict("kind"=>"periodic","queue"=>"cycles","parameters"=>t,"state"=>x,"origin"=>"section_hopf"))
                 cycle_enqueued=true
@@ -327,7 +353,11 @@ function atlas_periodic_job(job, config)
         "parameters"=>t,"hopf_parameters"=>p,"hopf_state"=>x,"initial_side"=>Int(direction),
         "orbit"=>atlas_orbit_evidence(orbit),"followups"=>Any[],"completeness"=>"CompletenessNotCertified")
     if orbit.validation==NumericallyValidatedPeriodicOrbit
-        factory=r->begin s=copy(t);s["r"]=r;reduced_model(s) end
+        factory=r->begin
+            local orbit_parameters=copy(t)
+            orbit_parameters["r"]=r
+            reduced_model(orbit_parameters)
+        end
         bounds=(max(1e-6,t["r"]-0.25max(1,t["r"])),t["r"]+0.25max(1,t["r"]))
         branch=continue_periodic_orbit(factory,orbit.initial_state,orbit.period,t["r"];
             parameter_bounds=bounds,options=PeriodicContinuationOptions(max_steps=get(config,"periodic_max_steps",12)),
@@ -343,14 +373,19 @@ function atlas_periodic_fixture(config)
     evidence=Any[]
     for cubic in (-1.0,1.0)
         rhs! = (out,x,p)->begin
-            beta,c=p;radius2=sum(abs2,x)
-            out[1]=beta*x[1]-x[2]+c*x[1]*radius2
-            out[2]=x[1]+beta*x[2]+c*x[2]*radius2
+            local fixture_beta,fixture_cubic=p
+            local radius2=sum(abs2,x)
+            out[1]=fixture_beta*x[1]-x[2]+fixture_cubic*x[1]*radius2
+            out[2]=x[1]+fixture_beta*x[2]+fixture_cubic*x[2]*radius2
         end
         jac! = (J,x,p)->begin
-            beta,c=p; a,b=x; radius2=a*a+b*b
-            J[1,1]=beta+c*(radius2+2a*a);J[1,2]=-1+2c*a*b
-            J[2,1]=1+2c*a*b;J[2,2]=beta+c*(radius2+2b*b)
+            local fixture_beta,fixture_cubic=p
+            local first_state,second_state=x
+            local radius2=first_state^2+second_state^2
+            J[1,1]=fixture_beta+fixture_cubic*(radius2+2first_state^2)
+            J[1,2]=-1+2fixture_cubic*first_state*second_state
+            J[2,1]=1+2fixture_cubic*first_state*second_state
+            J[2,2]=fixture_beta+fixture_cubic*(radius2+2second_state^2)
         end
         beta=-0.04cubic
         options=PeriodicOrbitOptions(samples=129,maxiters=12,ode_maxiters=100000)
