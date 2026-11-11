@@ -5,7 +5,7 @@ end
 function atlas_search(p,config;extra_seeds=Vector{Float64}[])
     n=Int(get(config,"seed_grid",5));2<=n<=31 || throw(ArgumentError("seed_grid must be 2:31"))
     seeds=[[e,i] for e in range(0,0.5;length=n) for i in range(0,0.5;length=n)]
-    find_equilibria(reduced_model(p);seeds=vcat(extra_seeds,seeds),options=EquilibriumOptions(maxiters=Int(get(config,"max_corrector_iters",100))))
+    find_equilibria(reduced_model(p);seeds=vcat(extra_seeds,seeds),options=atlas_equilibrium_options(config))
 end
 function atlas_point(p,config;id="",extra_seeds=Vector{Float64}[])
     found=atlas_search(p,config;extra_seeds=extra_seeds)
@@ -29,13 +29,14 @@ function atlas_point(p,config;id="",extra_seeds=Vector{Float64}[])
     iturn=abs(p["D"]-dcrit)<1e-8 ? "unresolved" : p["D"]>dcrit ? "two" : "none"
     geometry=Dict("excitatory_global_chart_turns"=>eturn,"inhibitory_global_chart_turns"=>iturn,"inhibitory_turn_threshold"=>dcrit,"coupling_zero_mask"=>sum(p[k]==0 ? 1<<(i-1) : 0 for (i,k) in enumerate(("A","B","C","D"))))
     signature="Eturn:$eturn/Iturn:$iturn/zero:$(geometry["coupling_zero_mask"])/"*join(sort([r["stability"]*":"*r["spectrum"]*":"*r["inhibitory_response_branch"]*":"*r["excitatory_chart_branch"]*":"*r["inhibitory_self_chart_branch"] for r in roots]),"|")
-    Dict{String,Any}("id"=>id,"parameters"=>p,"roots"=>roots,"signature"=>signature,"geometry"=>geometry,"signature_scope"=>"sampled_root_inventory_and_nullcline_chart_branches","attempts"=>atlas_attempt.(found.attempts),"completeness"=>"CompletenessNotCertified","coverage"=>"sampled_point")
+    Dict{String,Any}("id"=>id,"parameters"=>p,"roots"=>roots,"signature"=>signature,"geometry"=>geometry,"signature_scope"=>"sampled_root_inventory_and_nullcline_chart_branches","attempts"=>atlas_attempt.(found.attempts),"completeness"=>"CompletenessNotCertified","coverage"=>"sampled_point","balance_atol"=>atlas_balance_tolerance(config))
 end
 function atlas_replace(p,name,value)
     q=copy(p);q[name]=value;validate_parameters(q);q
 end
-function localize_event(p,x,name,kind;iterations=20,tolerance=1e-9)
+function localize_event(p,x,name,kind;iterations=20,tolerance=1e-9,balance_tolerance=tolerance)
     z=vcat(x,p[name]);history=Dict{String,Any}[]
+    residual_tolerances=[balance_tolerance,balance_tolerance,tolerance]
     function residual(z)
         local q=atlas_replace(p,name,z[3]);local K=balance_jacobian(q,z[1:2]);local J=Diagonal([1.0,1/q["r"]])*K
         vcat(balance_value(q,z[1:2]),kind=="fold" ? det(K) : tr(J))
@@ -43,10 +44,10 @@ function localize_event(p,x,name,kind;iterations=20,tolerance=1e-9)
     for iteration in 1:iterations
         f=try residual(z) catch; return Dict("status"=>"unresolved","reason"=>"inadmissible_correction","attempts"=>history) end
         push!(history,Dict("state_parameter"=>copy(z),"residual"=>maximum(abs,f)))
-        if all(isfinite,f) && maximum(abs,f)<=tolerance && all(v->0<=v<=0.5,z[1:2])
+        if all(isfinite,f) && maximum(abs,f[1:2])<=balance_tolerance && abs(f[3])<=tolerance && all(v->0<=v<=0.5,z[1:2])
             q=atlas_replace(p,name,z[3]);K=balance_jacobian(q,z[1:2]);J=Diagonal([1.0,1/q["r"]])*K
-            kind=="hopf" && det(J)<=tolerance && return Dict("status"=>"unresolved","reason"=>"nonpositive_hopf_determinant","attempts"=>history)
-            return Dict("status"=>"completed","params"=>q,"state"=>z[1:2],"kind"=>kind,"residual"=>maximum(abs,f),"attempts"=>history)
+            kind=="hopf" && det(J)<=1e-9 && return Dict("status"=>"unresolved","reason"=>"nonpositive_hopf_determinant","attempts"=>history)
+            return Dict("status"=>"completed","params"=>q,"state"=>z[1:2],"kind"=>kind,"residual"=>maximum(abs,f),"balance_residual"=>maximum(abs,f[1:2]),"event_condition_residual"=>abs(f[3]),"balance_atol"=>balance_tolerance,"event_atol"=>tolerance,"attempts"=>history)
         end
         M=zeros(3,3)
         for j in 1:3
@@ -60,7 +61,7 @@ function localize_event(p,x,name,kind;iterations=20,tolerance=1e-9)
             zz=z-step/2.0^power
             all(v->0<=v<=0.5,zz[1:2]) || continue
             ff=try residual(zz) catch; continue end
-            if all(isfinite,ff) && norm(ff)<norm(f)
+            if all(isfinite,ff) && norm(ff ./ residual_tolerances,Inf)<norm(f ./ residual_tolerances,Inf)
                 z=zz;accepted=true;break
             end
         end
@@ -87,10 +88,11 @@ function execute_discovery(job,config)
         c=job["chart_coordinates"]
         candidate=try
             fold=fold_chart(c[2],c[3],c[4],c[5],c[6],c[7])
-            Dict{String,Any}("status"=>"completed","params"=>fold["params"],"state"=>fold["state"],"residual"=>fold["fold_residual"],"origin"=>"algebraic_fold_chart")
+            validation=atlas_saved_event_residuals(fold["params"],fold["state"],[fold["fold_residual"]],config;stage=1e-9)
+            Dict{String,Any}("status"=>validation["residuals_accepted"] ? "completed" : "unresolved","params"=>fold["params"],"state"=>fold["state"],"residual"=>fold["fold_residual"],"residual_validation"=>validation,"origin"=>"algebraic_fold_chart")
         catch err
             # Singular/invalid algebraic charts leave a real augmented-solver obligation.
-            augmented=localize_event(p,extra[1],"A","fold")
+            augmented=localize_event(p,extra[1],"A","fold";tolerance=atlas_event_tolerance(config,1e-9),balance_tolerance=min(1e-9,atlas_balance_tolerance(config)))
             augmented["algebraic_chart_failure"]=sprint(showerror,err)
             augmented["origin"]="augmented_fold_correction"
             augmented
@@ -129,7 +131,7 @@ function execute_continuation(job,config)
     lower=name in ("a","b") ? center-radius : max(name in ("h","r") ? 1e-6 : 0.0,center-radius)
     upper=center+radius
     factory=t->reduced_model(atlas_replace(p,name,t))
-    curve=continue_equilibria(factory,job["state"],center;parameter_bounds=(lower,upper),options=ContinuationOptions(max_steps=Int(get(config,"continuation_steps",12))))
+    curve=continue_equilibria(factory,job["state"],center;parameter_bounds=(lower,upper),options=ContinuationOptions(max_steps=Int(get(config,"continuation_steps",12)),corrector_atol=min(1e-10,atlas_balance_tolerance(config))),equilibrium_options=atlas_equilibrium_options(config))
     points=Dict{String,Any}[];paths=Dict{String,Any}[];events=Dict{String,Any}[];follow=Dict{String,Any}[]
     for branch in (curve.negative,curve.positive)
         ids=String[]
@@ -150,7 +152,7 @@ function execute_continuation(job,config)
         end
         for candidate in branch.candidates
             pt=branch.points[candidate.first_point];q=atlas_replace(p,name,pt.parameter)
-            event=localize_event(q,pt.state,name,string(candidate.kind))
+            event=localize_event(q,pt.state,name,string(candidate.kind);tolerance=atlas_event_tolerance(config,1e-9),balance_tolerance=min(1e-9,atlas_balance_tolerance(config)))
             first_point=first(filter(z->z["id"]==ids[candidate.first_point],points))
             second_point=first(filter(z->z["id"]==ids[candidate.second_point],points))
             atlas_transition_witnesses!(event,first_point,second_point)

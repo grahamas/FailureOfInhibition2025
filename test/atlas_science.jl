@@ -164,3 +164,55 @@ end
     @test all(id->id in ids,first(transitions)["witness_point_ids"])
     TOML.print(devnull,result)
 end
+@testset "Configured scientific residual limits" begin
+    for invalid in (true,NaN,0.0,-1.0)
+        @test_throws ArgumentError ASH.atlas_balance_tolerance(Dict("balance_atol"=>invalid))
+        @test_throws ArgumentError ASH.atlas_event_tolerance(Dict("event_atol"=>invalid),1e-8)
+    end
+    loose=Dict{String,Any}("seed_grid"=>2,"balance_atol"=>1e-7,"event_atol"=>1e-7)
+    strict=merge(loose,Dict("balance_atol"=>1e-14,"event_atol"=>1e-14))
+    p=ASH.discovery_job(1,"parameter",false)["params"]
+    search=ASH.atlas_search(p,strict)
+    @test search.options.residual_atol==1e-14
+    @test all(root->maximum(abs,root.balance_residual)<=1e-14,search.equilibria)
+    # This initial candidate passes the historical defaults, but a zero-iteration
+    # solve cannot make it meet the tighter requested event/balance limits.
+    seed=ASH.analytic_seed();seed["state"]=seed["state"]+[1e-10,0.0]
+    accepted=ASH.atlas_nexus_job(seed,merge(loose,Dict("nexus_max_iterations"=>0)))
+    rejected=ASH.atlas_nexus_job(seed,merge(strict,Dict("nexus_max_iterations"=>0)))
+    @test accepted["status"]=="numerically_validated"
+    @test rejected["status"]=="unresolved"
+    @test !rejected["residual_validation"]["residuals_accepted"]
+    @test rejected["residual_validation"]["event_atol"]==1e-14
+    # Time scaling can make the RHS tiny while the unscaled balance is wrong.
+    chart=ASH.equilibrium_chart(8.,0.,0.,0.,-log(2.),0.,log(9.);r=1e12)
+    bad_state=chart["state"]+[0.0,1e-6]
+    rhs=zeros(2);point_rhs!(rhs,bad_state,ASH.reduced_model(chart["params"]),0.0)
+    @test norm(rhs,Inf)<1e-9
+    @test norm(ASH.balance_value(chart["params"],bad_state),Inf)>1e-9
+    periodic=ASH.atlas_periodic_job(Dict("params"=>chart["params"],"state"=>bad_state),Dict{String,Any}())
+    @test periodic["status"]=="unresolved"
+    @test periodic["reason"]=="hopf_tuple_outside_residual_tolerances"
+    # Algebraic seeds are checked before being advertised as completed events.
+    algebraic=ASH.execute_job(ASH.discovery_job(1,"equilibrium",false),merge(strict,Dict("balance_atol"=>1e-30,"event_atol"=>1e-30)))
+    fold=only(algebraic["evidence"]["events"])
+    @test fold["status"]=="unresolved"
+    @test !fold["residual_validation"]["residuals_accepted"]
+    @test all(point->all(root->root["residual"]<=1e-30,point["roots"]),algebraic["evidence"]["points"])
+    section=ASH.atlas_section_job(Dict("parameters"=>ASH.analytic_seed()["params"],"state"=>ASH.analytic_seed()["state"],"parameter_pair"=>["A","r"]),merge(strict,Dict("section_angles"=>4,"section_curve_max_steps"=>1)))
+    @test length(section["section_samples"])==12
+    @test all(row->row["balance_atol"]==1e-14,section["section_samples"])
+    @test all(row->all(root->root["residual"]<=1e-14,row["equilibria"]),section["section_samples"])
+    @test all(curve->all(point->point["residual_validation"]["residuals_accepted"]&&point["residual_validation"]["event_atol"]==1e-14,curve["points"]),section["transition_curves"])
+    hopf=ASH.equilibrium_chart(12.,8.,8.,0.,-log(2.),0.,log(9.);r=2.)
+    sweep=ASH.execute_job(Dict{String,Any}("kind"=>"continuation","params"=>hopf["params"],"state"=>hopf["state"],"coordinate"=>"r"),merge(strict,Dict("continuation_steps"=>4)))
+    located=filter(event->get(event,"status","")=="completed",sweep["evidence"]["events"])
+    @test !isempty(located)
+    @test all(event->event["balance_atol"]==1e-14&&event["event_atol"]==1e-14&&event["balance_residual"]<=1e-14&&event["event_condition_residual"]<=1e-14,located)
+    # Per-component Newton tolerances avoid accepting a small event residual
+    # alongside a balance component that exceeds its independently chosen cap.
+    _,ok,_=ASH.atlas_newton(z->[1e-10,0.0],zeros(2),z->true;iterations=0,residual_tolerances=[1e-14,1e-8])
+    @test !ok
+    _,ok,_=ASH.atlas_newton(z->[1e-10,0.0],zeros(2),z->true;iterations=0,residual_tolerances=[1e-8,1e-8])
+    @test ok
+end

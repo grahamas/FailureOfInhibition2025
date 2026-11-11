@@ -84,16 +84,46 @@ function atlas_difference(f, x; step=1e-5)
     M
 end
 
-function atlas_newton(f, x, admissible; iterations=16, atol=1e-8)
+# Configured tolerances cap residual acceptance; rank and nondegeneracy
+# diagnostics retain their separately documented numerical thresholds.
+function atlas_residual_tolerance(config,key,default)
+    value=get(config,key,default)
+    value isa Real && !(value isa Bool) && isfinite(value) && value>0 ||
+        throw(ArgumentError("$key must be a finite positive number"))
+    converted=Float64(value)
+    isfinite(converted) && converted>0 || throw(ArgumentError("$key is outside the numerical range"))
+    converted
+end
+atlas_balance_tolerance(config)=atlas_residual_tolerance(config,"balance_atol",1e-9)
+atlas_event_tolerance(config,stage)=min(stage,atlas_residual_tolerance(config,"event_atol",1e-7))
+function atlas_equilibrium_options(config)
+    tolerance=atlas_balance_tolerance(config)
+    EquilibriumOptions(residual_atol=tolerance,solver_abstol=min(1e-12,tolerance/10),
+        solver_reltol=min(1e-10,tolerance/10),maxiters=Int(get(config,"max_corrector_iters",100)))
+end
+function atlas_saved_event_residuals(p,x,event_components,config;stage=1e-8)
+    balance_residual=norm(balance_value(p,x),Inf)
+    event_residual=norm(event_components,Inf)
+    event_tolerance=atlas_event_tolerance(config,stage)
+    balance_tolerance=atlas_balance_tolerance(config)
+    Dict{String,Any}("balance_residual"=>balance_residual,"event_condition_residual"=>event_residual,
+        "balance_atol"=>balance_tolerance,"event_atol"=>event_tolerance,
+        "residuals_accepted"=>isfinite(balance_residual)&&isfinite(event_residual)&&
+            balance_residual<=balance_tolerance&&event_residual<=event_tolerance)
+end
+function atlas_newton(f, x, admissible; iterations=16, atol=1e-8, residual_tolerances=nothing)
     x = Float64.(x)
     attempts = Dict{String,Any}[]
     admissible(x) || return x,false,attempts
     for iteration in 0:iterations
         y = f(x)
         residual = norm(y,Inf)
-        push!(attempts,Dict("iteration"=>iteration,"coordinates"=>copy(x),"residual"=>residual))
+        tolerances=residual_tolerances===nothing ? fill(atol,length(y)) : residual_tolerances
+        length(tolerances)==length(y) && all(t->isfinite(t)&&t>0,tolerances) || throw(ArgumentError("positive component tolerances required"))
+        scaled_residual=norm(y ./ tolerances,Inf)
+        push!(attempts,Dict("iteration"=>iteration,"coordinates"=>copy(x),"residual"=>residual,"scaled_residual"=>scaled_residual))
         isfinite(residual) || return x,false,attempts
-        residual <= atol && return x,true,attempts
+        scaled_residual <= 1 && return x,true,attempts
         iteration == iterations && break
         M = atlas_difference(f,x)
         minimum(svdvals(M)) > 1e-12 || break
@@ -101,7 +131,7 @@ function atlas_newton(f, x, admissible; iterations=16, atol=1e-8)
         accepted = false
         for reduction in 0:10
             trial = x - correction/2.0^reduction
-            if admissible(trial) && norm(f(trial),Inf) < residual
+            if admissible(trial) && norm(f(trial) ./ tolerances,Inf) < scaled_residual
                 x = trial; accepted = true; break
             end
         end
@@ -133,8 +163,10 @@ function atlas_nexus_vector_at(base,pair,coordinates,kind)
     candidate_parameters=atlas_parameters_at(base,pair,coordinates)
     atlas_parameter_admissible(candidate_parameters) ||
         throw(ArgumentError("parameter perturbation outside domain"))
-    atlas_event_vector(state->atlas_rhs(candidate_parameters,state),
+    vector=atlas_event_vector(state->atlas_rhs(candidate_parameters,state),
         state->atlas_jac(candidate_parameters,state),coordinates[1:2],kind)
+    vector[1:2]=balance_value(candidate_parameters,coordinates[1:2])
+    vector
 end
 
 function atlas_nexus_job(job, config)
@@ -163,7 +195,7 @@ function atlas_nexus_job(job, config)
     f=coordinates->atlas_nexus_vector_at(p,pair,coordinates,kind)
     admissible=z->all(isfinite,z) && all(0 .<= z[1:2] .<= 0.5) && atlas_parameter_admissible(params(z))
     z,converged,attempts=atlas_newton(f,vcat(x,p[pair[1]],p[pair[2]]),admissible;
-        iterations=get(config,"nexus_max_iterations",16))
+        iterations=get(config,"nexus_max_iterations",16),residual_tolerances=[min(1e-8,atlas_balance_tolerance(config)),min(1e-8,atlas_balance_tolerance(config)),atlas_event_tolerance(config,1e-8),atlas_event_tolerance(config,1e-8)])
     # Finish derivative probes before creating the saved parameter/state tuple.
     M=atlas_difference(f,z)
     t=params(z); y=copy(z[1:2])
@@ -176,23 +208,24 @@ function atlas_nexus_job(job, config)
     stable=all(values(checks))
     nondegenerate=stable
     unfolding=minimum(svdvals(M*Diagonal([1.0,1.0,max(1,abs(z[3])),max(1,abs(z[4]))])))
-    chain=kind=="bt" ? refined["jordan_residual"]<=1e-7 : abs(refined["quadratic"])<=1e-7
-    saved_vector=atlas_event_vector(state->atlas_rhs(t,state),state->atlas_jac(t,state),y,kind)
+    chain=kind=="bt" ? refined["jordan_residual"]<=1e-7 : abs(refined["quadratic"])<=atlas_event_tolerance(config,1e-7)
+    saved_vector=atlas_nexus_vector_at(t,pair,vcat(y,t[pair[1]],t[pair[2]]),kind)
+    residual_validation=atlas_saved_event_residuals(t,y,saved_vector[3:end],config)
     saved_residual=norm(saved_vector,Inf)
     saved_coordinates=vcat(y,t[pair[1]],t[pair[2]])
     saved_tuple_matches=isequal(saved_coordinates,z)
     validated=converged && stable && nondegenerate && chain && unfolding>1e-7 &&
-        saved_tuple_matches && isfinite(saved_residual) && saved_residual<=1e-8
+        saved_tuple_matches && residual_validation["residuals_accepted"]
     followups=validated ? Any[Dict("kind"=>"section","parameters"=>t,"state"=>y,
         "parameter_pair"=>collect(pair),"nexus_type"=>kind)] : Any[]
     Dict{String,Any}("status"=>validated ? "numerically_validated" : "unresolved","validated"=>validated,
         "classification"=>validated ? kind : "candidate_$(kind)","parameters"=>t,"state"=>y,
         "parameter_pair"=>collect(pair),"coefficients"=>refined,"coefficient_refinement_difference"=>difference,
-        "coefficient_refinement_checks"=>checks,
+        "coefficient_refinement_checks"=>checks,"refined_degeneracy_residual"=>kind=="cusp" ? abs(refined["quadratic"]) : 0.0,
         "derivative_scheme"=>"fourth_order_centered_jacobian_differences_at_steps_0.001_and_0.0005",
         "coefficient_convention"=>"F=J*x+B(x,x)/2+C(x,x,x)/6; normalized right null vector; dual Jordan basis for BT",
         "unfolding_smallest_singular_value"=>unfolding,"initial_pair_score"=>score,
-        "event_residual"=>saved_residual,"converged_coordinates"=>copy(z),
+        "event_residual"=>saved_residual,"residual_validation"=>residual_validation,"converged_coordinates"=>copy(z),
         "saved_tuple_matches_converged_coordinates"=>saved_tuple_matches,
         "attempts"=>attempts,"followups"=>followups,
         "completeness"=>"CompletenessNotCertified")
@@ -213,11 +246,11 @@ function atlas_section_job(job, config)
             push!(rows,Dict("radius"=>radius,"angle"=>angle,"status"=>"outside_admissible_domain"));continue
         end
         model=reduced_model(t)
-        search=find_equilibria(model;seeds=vcat([center],default_equilibrium_seeds(model)))
+        search=find_equilibria(model;seeds=vcat([center],default_equilibrium_seeds(model)),options=atlas_equilibrium_options(config))
         roots=[Dict("state"=>root.state,"residual"=>maximum(abs,root.balance_residual),
             "stability"=>string(root.stability.classification)) for root in search.equilibria]
         push!(rows,Dict("radius"=>radius,"angle"=>angle,"parameters"=>t,"status"=>"sampled",
-            "equilibria"=>roots,"failed_attempts"=>count(a->a.validation!=AdmissibleCandidate,search.attempts),
+            "equilibria"=>roots,"balance_atol"=>atlas_balance_tolerance(config),"failed_attempts"=>count(a->a.validation!=AdmissibleCandidate,search.attempts),
             "attempts"=>[Dict("seed"=>a.seed,"candidate"=>a.candidate,"residual"=>a.residual_norm,
                 "solver_status"=>string(a.solver_status),"validation"=>string(a.validation),
                 "reasons"=>string.(a.reasons)) for a in search.attempts]))
@@ -240,14 +273,14 @@ function atlas_section_traces(p,center,pair,config)
             local candidate_state=z[1:2]
             local candidate_parameters=params(z)
             local candidate_jacobian=atlas_jac(candidate_parameters,candidate_state)
-            vcat(atlas_rhs(candidate_parameters,candidate_state),
+            vcat(balance_value(candidate_parameters,candidate_state),
                 event=="fold" ? det(candidate_jacobian) : tr(candidate_jacobian))
         end
         z=copy(initial); points=Dict{String,Any}[]; attempts=Any[]
         oldtangent=nothing; termination="step_limit"; cycle_enqueued=false
         # A cusp is on the fold locus, but generally not on the trace-zero
         # locus. Do not jump to a remote curve and call it a local unfolding.
-        if norm(condition(z),Inf)>1e-7
+        if !all(abs.(condition(z)) .<= [min(1e-7,atlas_balance_tolerance(config)),min(1e-7,atlas_balance_tolerance(config)),atlas_event_tolerance(config,1e-7)])
             push!(traces,Dict("event"=>event,"direction"=>direction,"points"=>points,
                 "attempts"=>attempts,"termination"=>"initial_point_not_on_event_locus"))
             continue
@@ -266,20 +299,21 @@ function atlas_section_traces(p,center,pair,config)
             end
             predictor=z+0.02tangent
             augmented=y->vcat(condition(y),dot(y-predictor,tangent))
-            corrected,ok,history=atlas_newton(augmented,predictor,valid;iterations=12)
+            corrected,ok,history=atlas_newton(augmented,predictor,valid;iterations=12,residual_tolerances=[min(1e-8,atlas_balance_tolerance(config)),min(1e-8,atlas_balance_tolerance(config)),atlas_event_tolerance(config,1e-8),atlas_event_tolerance(config,1e-8)])
             push!(attempts,Dict("step"=>index,"accepted"=>ok,"iterations"=>history))
             if !ok
                 termination="unresolved_corrector";break
             end
             z=corrected;oldtangent=tangent;t=params(z);x=copy(z[1:2]);A=atlas_jac(t,x)
-            saved_condition=vcat(atlas_rhs(t,x),event=="fold" ? det(A) : tr(A))
+            saved_condition=vcat(balance_value(t,x),event=="fold" ? det(A) : tr(A))
+            residual_validation=atlas_saved_event_residuals(t,x,saved_condition[3:end],config)
             saved_residual=norm(saved_condition,Inf)
-            if !isfinite(saved_residual) || saved_residual>1e-8
+            if !residual_validation["residuals_accepted"]
                 termination="unresolved_saved_tuple_residual";break
             end
             classification=event=="fold" ? "fold_candidate" : det(A)>1e-8 ? "hopf_candidate" : "trace_zero_without_positive_determinant"
             push!(points,Dict("parameters"=>t,"state"=>x,"classification"=>classification,
-                "trace"=>tr(A),"determinant"=>det(A),"residual"=>saved_residual))
+                "trace"=>tr(A),"determinant"=>det(A),"residual"=>saved_residual,"residual_validation"=>residual_validation))
             if classification=="hopf_candidate" && !cycle_enqueued
                 push!(followups,Dict("kind"=>"periodic","queue"=>"cycles","parameters"=>t,"state"=>x,"origin"=>"section_hopf"))
                 cycle_enqueued=true
@@ -329,6 +363,9 @@ function atlas_periodic_job(job, config)
     get(job,"fixture",false) && return atlas_periodic_fixture(config)
     p=Dict{String,Any}(get(job,"parameters",get(job,"params",Dict())))
     x=Float64.(job["state"])
+    hopf_validation=atlas_saved_event_residuals(p,x,[tr(atlas_jac(p,x))],config)
+    hopf_validation["residuals_accepted"] || return Dict{String,Any}("status"=>"unresolved",
+        "reason"=>"hopf_tuple_outside_residual_tolerances","residual_validation"=>hopf_validation,"followups"=>Any[])
     l1,omega,q=atlas_hopf_coefficient(y->atlas_jac(p,y),x)
     l1_fine,_,_=atlas_hopf_coefficient(y->atlas_jac(p,y),x;step=5e-4)
     atlas_coefficient_resolved(l1,l1_fine) ||
@@ -350,7 +387,7 @@ function atlas_periodic_job(job, config)
     result=Dict{String,Any}("status"=>orbit.validation==NumericallyValidatedPeriodicOrbit ? "numerically_validated" : "unresolved",
         "validated"=>orbit.validation==NumericallyValidatedPeriodicOrbit,
         "first_lyapunov_coefficient"=>l1_fine,"coefficient_refinement_difference"=>abs(l1-l1_fine),
-        "parameters"=>t,"hopf_parameters"=>p,"hopf_state"=>x,"initial_side"=>Int(direction),
+        "parameters"=>t,"hopf_parameters"=>p,"hopf_state"=>x,"hopf_residual_validation"=>hopf_validation,"initial_side"=>Int(direction),
         "orbit"=>atlas_orbit_evidence(orbit),"followups"=>Any[],"completeness"=>"CompletenessNotCertified")
     if orbit.validation==NumericallyValidatedPeriodicOrbit
         factory=r->begin

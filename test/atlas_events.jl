@@ -58,7 +58,7 @@ end
     @test saved["saved_tuple_matches_converged_coordinates"]
     saved_model=reduced_model(saved["parameters"])
     saved_balance=zeros(2);saved_jacobian=zeros(2,2)
-    point_rhs!(saved_balance,saved["state"],saved_model,0.0)
+    point_balance!(saved_balance,saved["state"],saved_model,0.0)
     point_jacobian!(saved_jacobian,saved["state"],saved_model,0.0)
     independent_residual=norm(vcat(saved_balance,tr(saved_jacobian),det(saved_jacobian)),Inf)
     @test independent_residual<=1e-8
@@ -76,6 +76,7 @@ end
         cuspevidence["parameters"][cusp_pair[2]])==cuspevidence["converged_coordinates"]
     saved_cusp_vector=atlas_event_vector(state->atlas_rhs(cuspevidence["parameters"],state),
         state->atlas_jac(cuspevidence["parameters"],state),cuspevidence["state"],"cusp")
+    saved_cusp_vector[1:2]=balance_value(cuspevidence["parameters"],cuspevidence["state"])
     @test norm(saved_cusp_vector,Inf)==cuspevidence["event_residual"]
     cusptraces,_=atlas_section_traces(cuspevidence["parameters"],cuspevidence["state"],
         cuspevidence["parameter_pair"],Dict("section_curve_max_steps"=>1))
@@ -91,7 +92,7 @@ end
     for curve in section["transition_curves"], savedpoint in curve["points"]
         curve_model=reduced_model(savedpoint["parameters"])
         curve_balance=zeros(2);curve_jacobian=zeros(2,2)
-        point_rhs!(curve_balance,savedpoint["state"],curve_model,0.0)
+        point_balance!(curve_balance,savedpoint["state"],curve_model,0.0)
         point_jacobian!(curve_jacobian,savedpoint["state"],curve_model,0.0)
         curve_residual=norm(vcat(curve_balance,curve["event"]=="fold" ?
             det(curve_jacobian) : tr(curve_jacobian)),Inf)

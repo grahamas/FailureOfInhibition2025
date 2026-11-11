@@ -26,6 +26,11 @@ end
     invalid_science["science"]["max_evaluations"] = 100
     invalid_science["science"]["balance_atol"] = NaN
     @test_throws ArgumentError validate_atlas_config(invalid_science)
+    for key in ("balance_atol", "event_atol")
+        invalid_boolean = deepcopy(config)
+        invalid_boolean["science"][key] = true
+        @test_throws ArgumentError validate_atlas_config(invalid_boolean)
+    end
     @test_throws ArgumentError run_atlas("run", "unused-output", config)
     @test_throws ArgumentError atlas_main(["benchmark", "output", "--budget-seconds", "1"])
     @test_throws ArgumentError atlas_main(["report", "output", "--config", "file"])

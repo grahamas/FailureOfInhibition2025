@@ -19,6 +19,13 @@ determinant. Periodic work in this benchmark is a synthetic solver fixture;
 the model's queued periodic follow-up was not executed. Certification applies
 to one fixed parameter tuple. The atlas remains `CompletenessNotCertified`.
 
+The frozen source predates the fix that propagates configured numerical
+tolerances to all relevant solvers and acceptance checks. Independent checks
+confirmed that its saved roots and event tuples satisfy the recorded defaults
+(`balance_atol=1e-9`, `event_atol=1e-7`). This packet preserves evidence and
+timings for that historical source; it does not test tolerance overrides or
+measure the updated runner. Current regression tests cover tolerance overrides.
+
 ## Costs and scope
 
 The discovery median was 0.0214 seconds and p95 was 0.0425 seconds across

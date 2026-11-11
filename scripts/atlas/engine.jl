@@ -71,7 +71,7 @@ function validate_atlas_config(config)
     end
     for key in ("certification_seconds", "balance_atol", "event_atol")
         value = get(science, key, nothing)
-        value isa Real && isfinite(value) && value > 0 ||
+        value isa Real && !(value isa Bool) && isfinite(value) && value > 0 ||
             throw(ArgumentError("science.$key must be finite and positive"))
     end
     2 <= science["seed_grid"] <= 31 || throw(ArgumentError("science.seed_grid must be in 2:31"))

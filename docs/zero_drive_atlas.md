@@ -76,6 +76,22 @@ julia --project=. scripts/zero_drive_atlas.jl report OUTPUT
 
 `resume` retains the saved configuration. The report mode reads saved results and performs no scientific computations.
 
+The scientific configuration's `balance_atol` bounds the unscaled equilibrium
+balance residual, including at saved event tuples; a small dynamic residual
+after division by a large time-scale ratio is insufficient. `event_atol` bounds
+event-equation residuals. Correctors retain any stricter stage-specific defaults
+(`1e-9` for localization, `1e-8` for nexus and section correction, and `1e-7`
+for initial section-locus checks),
+so these settings are upper acceptance bounds rather than promises that every
+candidate below them will be accepted. Failure to meet a requested tolerance
+leaves the candidate unresolved. Normal-form nondegeneracy, unfolding rank,
+spectral classification, and periodic-orbit accuracy retain their separate
+criteria; these two settings do not redefine those tests.
+Saved `residual_validation` records separate balance and event residuals and
+their effective bounds. The diagnostic `event_residual` can include both kinds
+of equations and therefore need not be below `event_atol` when a looser balance
+bound is permitted. Boolean, nonfinite, and nonpositive tolerances are rejected.
+
 Execution currently requires Linux: a kernel lock excludes concurrent coordinators,
 and parent-death signaling stops workers if their coordinator exits. Workers run
 from the saved source snapshot with one Julia and BLAS thread. Report generation
