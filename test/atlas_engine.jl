@@ -108,6 +108,9 @@ end
         end
         cp(joinpath(source,"atlas","storage.jl"),joinpath(assets,"storage.jl"))
         write(joinpath(assets,"pilot.jl"),"# no finite pilot needed for report fixture\n")
+        for filename in ("targeted.jl","targeted_events.jl","targeted_protocol.jl","targeted_report.jl")
+            write(joinpath(assets,filename),"# no targeted follow-up needed for report fixture\n")
+        end
         write(joinpath(assets, "events.jl"), "# no numerical handlers needed\n")
         write(joinpath(assets, "science.jl"), "# no numerical handlers needed\n")
         write(joinpath(assets, "report.jl"), """

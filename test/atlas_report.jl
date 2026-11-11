@@ -412,3 +412,39 @@ end
     malformed=deepcopy(manifest);push!(malformed["cohort_designs"],deepcopy(designs[1]))
     @test !_report_pilot_design(malformed,jobs)["verified"]
 end
+
+function targeted_report_marker_cases(write_report_function)
+    outputs=("index.html","base_cases.csv","timings.csv","coverage.toml")
+    cases=(:config_protocol,:config_manifest,:config_hash,:state_protocol,
+        :state_hash,:state_metadata,:targeted_kind,:targeted_role,
+        :manifest_file,:manifest_symlink)
+    for marker in cases
+        mktempdir() do directory
+            state=Dict{String,Any}("schema_version"=>1,"mode"=>"pilot","jobs"=>Any[])
+            config=Dict{String,Any}()
+            marker==:config_protocol && (config["protocol"]="targeted_followup_v1")
+            marker==:config_manifest && (config["targeted_manifest"]=Dict("schema_version"=>1))
+            marker==:config_hash && (config["targeted_manifest_hash"]="untrusted")
+            marker==:state_protocol && (state["protocol"]="targeted_followup_v1")
+            marker==:state_hash && (state["targeted_manifest_hash"]="untrusted")
+            marker==:state_metadata && (state["targeted"]=Dict("stage"=>"control"))
+            marker==:targeted_kind && push!(state["jobs"],Dict("id"=>"job-000001","kind"=>"targeted_diagnosis","status"=>"pending","payload"=>Dict()))
+            marker==:targeted_role && push!(state["jobs"],Dict("id"=>"job-000001","kind"=>"nexus","status"=>"pending","payload"=>Dict("target_role"=>"control")))
+            marker==:manifest_file && write(joinpath(directory,"targeted_manifest.toml"),"schema_version = 1\n")
+            marker==:manifest_symlink && symlink("missing-target",joinpath(directory,"targeted_manifest.toml"))
+            open(io->TOML.print(io,state),joinpath(directory,"state.toml"),"w")
+            open(io->TOML.print(io,config),joinpath(directory,"config.toml"),"w")
+            for name in outputs
+                write(joinpath(directory,name),"preserved prior output")
+            end
+            @test_throws ArgumentError write_report_function(directory)
+            for name in outputs
+                @test read(joinpath(directory,name),String)=="preserved prior output"
+            end
+        end
+    end
+end
+
+@testset "Targeted report markers cannot use generic reporting" begin
+    targeted_report_marker_cases(write_report)
+end

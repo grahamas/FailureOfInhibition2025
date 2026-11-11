@@ -423,6 +423,80 @@ end
     @test :large_balance_residual in large_balance.reasons
 end
 
+@testset "Singular solver steps retain attempts and continue multistart" begin
+    # This seed has exactly singular Dg but nonzero g. A failed Newton step
+    # therefore says nothing about singularity at an equilibrium.
+    for T in (Float32, Float64)
+        model = synthetic_model(
+            excitatory_response=LogisticResponse(slope=one(T), threshold=T(2)),
+            inhibitory_response=LogisticResponse(slope=one(T), threshold=zero(T)),
+            excitatory_timescale=one(T),
+            inhibitory_timescale=one(T),
+            coupling=PointCoupling(
+                e_to_e=T(8), i_to_e=zero(T), e_to_i=zero(T), i_to_i=zero(T),
+            ),
+        )
+        seed = T[0.25, 0.25]
+        jacobian = zeros(T, 2, 2)
+        balance = zeros(T, 2)
+        point_balance_jacobian!(jacobian, seed, model, zero(T))
+        point_balance!(balance, seed, model, zero(T))
+        @test jacobian[1, 1] == 0
+        @test balance[1] != 0
+
+        failed = solve_equilibrium(model, seed)
+        attempt = failed.attempt
+        @test attempt.seed == seed
+        @test attempt.seed !== seed
+        @test attempt.candidate isa Vector{T}
+        @test attempt.solver_status == :SingularException
+        @test !attempt.solver_success
+        @test attempt.reasons == [:singular_linear_solve]
+        @test attempt.validation == RejectedCandidate
+        @test all(isnan, attempt.candidate)
+        @test all(isnan, attempt.solver_residual)
+        @test all(isnan, attempt.balance_residual)
+        @test isnan(attempt.residual_norm)
+        @test all(isnan, attempt.balance_jacobian)
+        @test !attempt.near_singular
+        @test isnothing(failed.stability)
+    end
+
+    # Bounded regressions for the two saved pilot failures. The singular
+    # Jacobians occur at intermediate trials, rather than at these seeds.
+    for (a, d, threshold_e, threshold_i, width) in (
+        (4.5625, 15.7667638483965, -6.719759579263712,
+         -6.5325443786982245, 1.9017605918250104),
+        (7.03125, 0.0, 1.2677485756974058,
+         -9.955393718707331, 11.112014199781825),
+    )
+        model = synthetic_model(
+            excitatory_response=LogisticResponse(slope=1.0, threshold=threshold_e),
+            inhibitory_response=FailureOfInhibitionResponse(
+                slope=1.0, onset_threshold=threshold_i,
+                failure_threshold=threshold_i + width,
+            ),
+            excitatory_timescale=1.0,
+            inhibitory_timescale=1.0,
+            coupling=PointCoupling(e_to_e=a, i_to_e=0.0, e_to_i=0.0, i_to_i=d),
+        )
+        seeds = [[e, i] for e in range(0, 0.5; length=5)
+                 for i in range(0, 0.5; length=5)]
+        result = find_equilibria(model; seeds=seeds)
+        @test length(result.attempts) == length(seeds)
+        @test getfield.(result.attempts, :seed) == seeds
+        first_failure = findfirst(attempt -> attempt.solver_status == :SingularException,
+                                  result.attempts)
+        @test !isnothing(first_failure)
+        @test any(attempt -> attempt.validation == AdmissibleCandidate,
+                  result.attempts[(first_failure + 1):end])
+        @test !isempty(result.equilibria)
+        @test all(equilibrium -> maximum(abs, independent_balance(model, equilibrium.state, 0.0)) <=
+                  result.options.residual_atol, result.equilibria)
+        @test result.completeness == CompletenessNotCertified
+    end
+end
+
 @testset "Boundary ambiguity and deduplication policy" begin
     tail_response = LogisticResponse(slope=1.0, threshold=1000.0)
     tail_model = PointModelParameters(

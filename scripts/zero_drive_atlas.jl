@@ -12,9 +12,13 @@ include("atlas/core.jl")
 include("atlas/events.jl")
 include("atlas/science.jl")
 include("atlas/pilot.jl")
+include("atlas/targeted.jl")
+include("atlas/targeted_events.jl")
 include("atlas/storage.jl")
+include("atlas/targeted_protocol.jl")
 include("atlas/engine.jl")
 include("atlas/report.jl")
+include("atlas/targeted_report.jl")
 
 end
 
