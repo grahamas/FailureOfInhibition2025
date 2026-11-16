@@ -1,0 +1,299 @@
+source_packet = "/home/graham/src/FailureOfInhibition2025/local_audits/zero_drive_atlas_campaign_20261116"
+scope = "Exact endpoint parameters, signatures and saved root states from all nine failed path payloads; full result hashes bind original payloads."
+
+[[cases]]
+job_id = "job-000773"
+source_result = "results/job-000773.toml"
+source_result_sha256 = "d6036edec257fc76f605a5b14cf016e950f82260db54dde8d233631a2129ff22"
+
+[cases.from]
+id = "job-000045"
+signature = "Eturn:none/Iturn:none/zero:5/Attracting:RealDistinctSpectrum:rising:single:single"
+states = [[0.24963830223091787, 0.14024646302087726]]
+[cases.from.parameters]
+A = 0.0
+B = 0.32373113854595337
+C = 0.0
+D = 0.8046647230320699
+a = 0.6506386175807664
+b = 0.960400546199363
+h = 1.220267322456598
+r = 1.0
+
+[cases.to]
+id = "job-000053"
+signature = "Eturn:none/Iturn:none/zero:7/Attracting:RealDistinctSpectrum:rising:single:single"
+states = [[0.2553127703915873, 0.14024646302087726]]
+[cases.to.parameters]
+A = 0.0
+B = 0.0
+C = 0.0
+D = 0.8046647230320699
+a = 0.6506386175807664
+b = 0.960400546199363
+h = 1.220267322456598
+r = 1.0
+
+[[cases]]
+job_id = "job-000774"
+source_result = "results/job-000774.toml"
+source_result_sha256 = "41f10a2f9d015160c9ba716a797b9a63b19ffd7e21fd167fc06842996bb92ae4"
+
+[cases.from]
+id = "job-000073"
+signature = "Eturn:none/Iturn:none/zero:12/Attracting:RealDistinctSpectrum:rising:single:single"
+states = [[0.22457705422922505, 0.0577417740820121]]
+[cases.from.parameters]
+A = 0.05859375
+B = 0.438957475994513
+C = 0.0
+D = 0.0
+a = 0.8850488354620589
+b = 1.9326354119253528
+h = 0.7305828972061567
+r = 1.0
+
+[cases.to]
+id = "job-000084"
+signature = "Eturn:none/Iturn:none/zero:15/Attracting:RealDistinctSpectrum:rising:single:single"
+states = [[0.2508056787777394, 0.0862556891591494]]
+[cases.to.parameters]
+A = 0.0
+B = 0.0
+C = 0.0
+D = 0.0
+a = 0.6867017280240422
+b = 1.5065999089667734
+h = 0.8436592610011953
+r = 1.0
+
+[[cases]]
+job_id = "job-000777"
+source_result = "results/job-000777.toml"
+source_result_sha256 = "f717baf3f2502b9cf99dba895fbefd7cc7c1facad2250aa521bb6517f2e32232"
+
+[cases.from]
+id = "job-000138"
+signature = "Eturn:none/Iturn:none/zero:12/Attracting:RealDistinctSpectrum:falling:single:single"
+states = [[0.39655591260002904, 0.22348524530570488]]
+[cases.from.parameters]
+A = 0.69140625
+B = 0.32373113854595337
+C = 0.0
+D = 0.0
+a = -0.44880651404569005
+b = -0.960400546199363
+h = 1.220267322456598
+r = 1.0
+
+[cases.to]
+id = "job-000144"
+signature = "Eturn:none/Iturn:none/zero:14/Attracting:RealDistinctSpectrum:falling:single:single"
+states = [[0.3915378235061279, 0.21054660937049635]]
+[cases.to.parameters]
+A = 0.87109375
+B = 0.0
+C = 0.0
+D = 0.0
+a = -0.2494672825638487
+b = -0.7492034592626311
+h = 1.103644547078216
+r = 1.0
+
+[[cases]]
+job_id = "job-000778"
+source_result = "results/job-000778.toml"
+source_result_sha256 = "1de33b3138f0958c129cbd30846f1e39a23d9addf1c8d24dd16d04559d4ec9d6"
+
+[cases.from]
+id = "job-000108"
+signature = "Eturn:none/Iturn:none/zero:5/Attracting:RealDistinctSpectrum:rising:single:single"
+states = [[0.18055331120568682, 0.08628891633445332]]
+[cases.from.parameters]
+A = 0.0
+B = 1.6652949245541835
+C = 0.0
+D = 0.4089962515618492
+a = 1.120015000699408
+b = 1.606037241783942
+h = 0.9789215918003618
+r = 1.0
+
+[cases.to]
+id = "job-000124"
+signature = "Eturn:none/Iturn:none/zero:9/Attracting:ComplexConjugateSpectrum:rising:single:single"
+states = [[0.18055331120568682, 0.08628891633445332]]
+[cases.to.parameters]
+A = 0.0
+B = 1.6652949245541835
+C = 0.3104
+D = 0.0
+a = 1.120015000699408
+b = 1.6973728329143125
+h = 0.9789215918003618
+r = 1.0
+
+[[cases]]
+job_id = "job-000781"
+source_result = "results/job-000781.toml"
+source_result_sha256 = "243e62a289bbccbf96cfc42d4e8f3edb85bd39df65bd58e9e3c3ce8631a39bba"
+
+[cases.from]
+id = "job-000163"
+signature = "Eturn:none/Iturn:none/zero:3/Attracting:RealDistinctSpectrum:falling:single:single"
+states = [[0.46643201114110855, 0.03933411523780828]]
+[cases.from.parameters]
+A = 0.0
+B = 0.0
+C = 2.9888000000000003
+D = 0.001665972511453561
+a = -1.9383921863260705
+b = -0.9157942649066908
+h = 0.41992948974789435
+r = 1.0
+
+[cases.to]
+id = "job-000196"
+signature = "Eturn:none/Iturn:none/zero:11/Attracting:RealDistinctSpectrum:falling:single:single"
+states = [[0.4592137668380013, 0.058047901002555066]]
+[cases.to.parameters]
+A = 0.0
+B = 0.0
+C = 3.1872000000000007
+D = 0.0
+a = -1.728024042073629
+b = -0.9631315430131995
+h = 0.6343604446393488
+r = 1.0
+
+[[cases]]
+job_id = "job-000782"
+source_result = "results/job-000782.toml"
+source_result_sha256 = "d13b1f23a37db5143c53926fcbbaf841b348fb8c184717c3f3c2a1baa5a423ff"
+
+[cases.from]
+id = "job-000163"
+signature = "Eturn:none/Iturn:none/zero:3/Attracting:RealDistinctSpectrum:falling:single:single"
+states = [[0.46643201114110855, 0.03933411523780828]]
+[cases.from.parameters]
+A = 0.0
+B = 0.0
+C = 2.9888000000000003
+D = 0.001665972511453561
+a = -1.9383921863260705
+b = -0.9157942649066908
+h = 0.41992948974789435
+r = 1.0
+
+[cases.to]
+id = "job-000192"
+signature = "Eturn:none/Iturn:none/zero:10/Attracting:RealDistinctSpectrum:falling:single:single"
+states = [[0.48986924204516835, 0.03102910489950257]]
+[cases.to.parameters]
+A = 0.3984375
+B = 0.0
+C = 2.6112000000000006
+D = 0.0
+a = -2.9902329075882794
+b = -0.6791078743741465
+h = 0.26751653654750274
+r = 1.0
+
+[[cases]]
+job_id = "job-000785"
+source_result = "results/job-000785.toml"
+source_result_sha256 = "e3e6c37987bb7a2961ac1fc15151f79df63efed7d209746a462f619db2b31be2"
+
+[cases.from]
+id = "job-000250"
+signature = "Eturn:none/Iturn:none/zero:8/Attracting:RealDistinctSpectrum:falling:single:single"
+states = [[0.49291500997245236, 0.06684481539149438]]
+[cases.from.parameters]
+A = 0.3203125
+B = 3.9067215363511654
+C = 1.4848
+D = 0.0
+a = -3.6524683602106216
+b = -1.8516427790827539
+h = 0.7834282135530625
+r = 1.0
+
+[cases.to]
+id = "job-000253"
+signature = "Eturn:none/Iturn:none/zero:9/Attracting:RealDistinctSpectrum:falling:single:single"
+states = [[0.48555698254190793, 0.08352532800633672]]
+[cases.to.parameters]
+A = 0.0
+B = 2.5733882030178323
+C = 0.6848000000000001
+D = 0.0
+a = -3.036881485931028
+b = -1.6356289488605364
+h = 0.6655315073362306
+r = 1.0
+
+[[cases]]
+job_id = "job-000786"
+source_result = "results/job-000786.toml"
+source_result_sha256 = "1650d550c5bb801fc9c7cb198f55390287fcc75e43542a30bf044773a8c3c46e"
+
+[cases.from]
+id = "job-000246"
+signature = "Eturn:none/Iturn:none/zero:7/Attracting:RealDistinctSpectrum:rising:single:single"
+states = [[0.11176216814478722, 0.07201312791701628]]
+[cases.from.parameters]
+A = 0.0
+B = 0.0
+C = 0.0
+D = 0.001665972511453561
+a = 1.9383921863260705
+b = 0.9156742930151173
+h = 0.41992948974789435
+r = 1.0
+
+[cases.to]
+id = "job-000269"
+signature = "Eturn:none/Iturn:none/zero:13/Attracting:RealDistinctSpectrum:rising:single:single"
+states = [[0.06922252802770659, 0.2079099166517649]]
+[cases.to.parameters]
+A = 0.0
+B = 0.010973936899862825
+C = 0.0
+D = 0.0
+a = 2.5191308815195024
+b = 0.3950842057350932
+h = 1.4201117663571186
+r = 1.0
+
+[[cases]]
+job_id = "job-000789"
+source_result = "results/job-000789.toml"
+source_result_sha256 = "f5a06a2cca7fe6edd271011bbdaa73359a803bf0b5786f211ba6dbc216c424e7"
+
+[cases.from]
+id = "job-000284"
+signature = "Eturn:none/Iturn:none/zero:1/Attracting:RealDistinctSpectrum:falling:single:single"
+states = [[0.4948309343893506, 0.0025452438322786574]]
+[cases.from.parameters]
+A = 0.0
+B = 3.3031550068587103
+C = 5.977600000000001
+D = 0.003331945022907122
+a = -3.876784372652141
+b = -1.8315885298133816
+h = 0.27212256841094906
+r = 1.0
+
+[cases.to]
+id = "job-000314"
+signature = "Eturn:none/Iturn:none/zero:8/Attracting:RealDistinctSpectrum:falling:single:single"
+states = [[0.4998660795402277, 0.0024713362340043074]]
+[cases.to.parameters]
+A = 7.328125
+B = 3.3031550068587103
+C = 5.977600000000001
+D = 0.0
+a = -3.876784372652141
+b = -1.8315885298133816
+h = 0.27212256841094906
+r = 1.0

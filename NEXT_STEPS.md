@@ -7,7 +7,7 @@
 
 ## Next Steps
 
-- [ ] ATLAS-B0: Integrate and independently review the finite campaign, storage guards, and evidence report; pass root/plotting checks and merge reviewed executable code before launch. See the [approved completion protocol](docs/zero_drive_completion_protocol.md).
+- [ ] ATLAS-B0R: Repair the admissible-domain derivative stencil exposed by component paths, independently review new calibration, and merge the tested correction before launching a new packet. Preserve the stopped packet and deduct its footprint from the combined 5 GB allowance.
 - [ ] ATLAS-B1–B3: Run the replacement 22-job targeted protocol, three balanced exploration rounds over shells 1–4, and fresh validation against frozen bases, subject to readiness and the combined 5 GB ceiling.
 - [ ] ATLAS-C1: Review scientific evidence, provenance, storage, and presentation; publish the atlas, explicit unresolved frontier, and reproducible outcome through the clean PR review/merge loop.
 - [ ] Review the five figure claims and candidate captions in `docs/figure_redesign_20261006.md`; choose the final manuscript presentation and biological wording.
@@ -39,6 +39,8 @@ onset is unresolved. Final results have not been selected.
 
 ## Completed
 
+- [x] ATLAS-B0: Merged the independently reviewed campaign and report in PR #162 after clean root/plotting CI. The first run passed all three readiness controls, 512 round-one inventories and 128 audits, then exposed a path-corrector boundary defect; execution remains incomplete.
+
 - [x] ATLAS-A1–A2: Implemented analytic event derivatives and independently reviewed calibration over all 512 original parameter tuples (522 state evaluations) and 11 controls. The corrected cusp passes the unchanged event threshold while the historical biased tuple remains rejected. Campaign execution and final delivery remain pending; see the [completion protocol](docs/zero_drive_completion_protocol.md).
 
 - [x] ATLAS-04A: Implemented and merged the reviewed 22-job targeted protocol in PR #160. ATLAS-04B attempted all three controls; BT and Hopf passed, while refined cusp validation failed and correctly blocked all 19 investigations. This is a readiness outcome, not completed targeted science. See the [saved evidence](docs/zero_drive_targeted_20261111.md).
@@ -46,6 +48,3 @@ onset is unresolved. Final results have not been selected.
 - [x] ATLAS-03A–D: Implemented, reviewed, and merged the storage-bounded pilot in PR #158, then executed all 947 mandatory jobs and 12 available followups. Independent artifact review verified 60/64 assessed single-root recoveries, four unresolved paths, and explicit coverage limits. The scientific packet uses 50.24 MB; review artifacts kept the observed footprint near 54.4 MB within the 5 GB cap. See the [outcome and provenance](docs/zero_drive_pilot_20261111.md).
 
 - [x] ATLAS-01–02: Implemented and independently reviewed first-principles atlas tools, numerical invariants, execution limits, and the bounded benchmark packet. The benchmark exercised all six job kinds; its 331 pending queued jobs and finite-coverage limits remain explicit. See the [workflow](docs/zero_drive_atlas.md) and [replay packet](reproducibility/zero_drive_atlas_benchmark_20261110/README.md).
-
-- [x] CERT-01–07: Implemented fixed-point completeness API, exact artifacts and proof replay; numerical/IO fixtures, full root suite (3,603/3,603), plotting (11/11), and independent review passed. Bounded fixture benchmarks only; no study or batch. See [certification contract](docs/fixed_point_certification.md).
-

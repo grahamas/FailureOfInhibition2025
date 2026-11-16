@@ -7,10 +7,13 @@ It does not certify parameter-space coverage, absence of additional nexuses,
 or completeness of equilibrium or attractor discovery. Every packet retains
 `CompletenessNotCertified`.
 
-Implementation status: the numerical calibration has passed independent
-scientific review. The replacement pilot, three exploration rounds, and fresh
-validation have not run. Executable delivery, launch, and final artifact review
-remain separate acceptance gates.
+Implementation status: PR #162 merged after independent review and clean CI.
+The first campaign passed its three readiness controls, all 512 round-one
+inventories and 128 audits, then exposed an admissible-domain derivative-stencil
+defect during component-path correction. That packet is stopped and preserved;
+the protocol is incomplete. A reviewed correction, renewed calibration and a new
+packet are required. Retained failed-run storage remains within the combined
+5 GB allowance; final artifact review remains a separate acceptance gate.
 
 ## Dependencies and acceptance
 

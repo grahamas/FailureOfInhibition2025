@@ -499,6 +499,14 @@ with its dual basis, and the normalized complex Hopf eigenvector with
 `l1 = Re(G21)/(2 omega)`. Generic polynomial fixtures retain the existing
 finite-difference fallback.
 
+The Newton correction Jacobian uses finite differences restricted to its
+admissible state and parameter domain. Interior probes retain centered
+second-order differences. At a boundary, a three-point one-sided stencil uses
+the actual floating-point offsets; at most 20 step halvings seek distinct,
+finite, admissible probes. If no stencil is available, correction remains
+explicitly unresolved. Probes are never clipped or evaluated outside the
+frozen path, and residual acceptance caps do not change.
+
 The reviewed policy separates unscaled balance residuals, original-time event
 residuals, coefficient resolution, and identity matching. Cusp acceptance
 requires a resolved simple-zero spectrum and agreement of the primary and
