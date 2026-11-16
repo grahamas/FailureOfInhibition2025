@@ -86,6 +86,46 @@ end
     data.state["campaign"]["base_selection"]=Dict("entries"=>[Dict("point_id"=>"pj1","members"=>["pj1"],"roots"=>[Dict("raw_numerics"=>999)],"parameters"=>Dict("A"=>1.0))])
     @test !haskey(campaign_report_summary(data)["bases"]["entries"][1],"roots")
 end
+@testset "Completed execution retains explicit unresolved scientific records" begin
+    function path_packet(record)
+        data=fixture(n=1,status="completed",role="component_path")
+        data.results["j1"]["evidence"]["paths"]=[merge(Dict{String,Any}("id"=>"interval1","from"=>"pj1","to"=>"pj1","status"=>"signature_change_observed","crosscheck_agreement"=>true,"validated"=>false,"continuous_coverage_certified"=>false,"completeness"=>"CompletenessNotCertified"),record)]
+        data
+    end
+    clean=path_packet(Dict())
+    summary=campaign_report_summary(clean)
+    @test summary["status"]["execution_completed"]==1
+    @test summary["status"]["fully_resolved"]==1
+    @test summary["status"]["completed_with_unresolved"]==0
+    @test isempty(summary["unresolved_frontier"])
+    @test summary["graph"]["edges"][1]["kind"]=="sampled_transition"
+    for (fields,reason) in ((Dict("tracking_guard_failures"=>["missing_root"]),"tracking_guard_failures"),
+                            (Dict("audit_agreement"=>false),"audit_disagreement_or_unresolved"),
+                            (Dict("localization_stop_reason"=>"split_cap"),"localization_split_cap"),
+                            (Dict("localization_stop_reason"=>"inventory_cap"),"localization_inventory_cap"),
+                            (Dict("corrector_status"=>"unresolved_corrector_cap"),"unresolved_corrector_cap"))
+        data=path_packet(fields);summary=campaign_report_summary(data)
+        @test summary["status"]["execution_completed"]==1
+        @test summary["status"]["fully_resolved"]==0
+        @test summary["status"]["completed_with_unresolved"]==1
+        @test summary["graph"]["nodes"][1]["eligible"] # execution eligibility unchanged
+        @test any(row->get(row,"record_id","")=="interval1" && get(row,"reason","")==reason && row["source_job"]=="j1" && row["source_result"]=="results/j1.toml",summary["unresolved_frontier"])
+        io=IOBuffer();_campaign_render_html(io,summary,data);html=String(take!(io))
+        @test occursin(reason,html)
+        @test occursin("completed with unresolved evidence",html)
+    end
+    transition=path_packet(Dict())
+    push!(transition.results["j1"]["evidence"]["paths"],Dict("id"=>"whole-path","kind"=>"unknown_connection","status"=>"unresolved","validated"=>false,"audit_agreement"=>true,"forward_tracking_unambiguous"=>true,"tracking_guard_failures"=>String[]))
+    @test campaign_report_summary(transition)["status"]["fully_resolved"]==1
+    @test isempty(campaign_report_summary(transition)["unresolved_frontier"])
+    transition.results["j1"]["evidence"]["paths"][1]["crosscheck_agreement"]=false
+    @test campaign_report_summary(transition)["status"]["fully_resolved"]==0
+    # A candidate is unresolved only when its saved diagnostics say so.
+    clean.results["j1"]["evidence"]["events"]=[Dict("id"=>"trace","kind"=>"trace_zero","status"=>"candidate","validated"=>false)]
+    @test campaign_report_summary(clean)["status"]["fully_resolved"]==1
+    clean.results["j1"]["evidence"]["events"][1]["status"]="unresolved_corrector"
+    @test campaign_report_summary(clean)["status"]["fully_resolved"]==0
+end
 @testset "Frozen inputs are mandatory" begin
     mktempdir() do output
         for name in ("state.toml","config.toml","campaign_manifest.toml")
@@ -128,6 +168,7 @@ if isdefined(container,:AtlasCampaignScienceTests)
         summary=R.campaign_report_summary(packet(jobs,results))
         @test first(path_result["evidence"]["paths"])["validated"]
         @test length(summary["graph"]["sampled_components"])==1
+        @test summary["status"]["fully_resolved"]==3
         @test length(only(summary["graph"]["sampled_components"]))==129
         @test count(e->e["kind"]=="fixed_parameter_inventory_audit",summary["graph"]["edges"])==4
         base=E.point("base",p);base["point_id"]="base"

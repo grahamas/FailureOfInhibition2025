@@ -48,6 +48,54 @@ function _campaign_success(job,result)
     end
     true
 end
+"""Expose declared unresolved diagnostics without changing graph eligibility."""
+function _campaign_unresolved_diagnostics(job,result)
+    result===nothing && return Dict{String,Any}[]
+    rows=Dict{String,Any}[];seen=Set{Tuple{String,String}}()
+    evidence=get(result,"evidence",Dict())
+    observed_transition=any(row->get(row,"status","")=="signature_change_observed" && get(row,"crosscheck_agreement",false)===true,_report_records(get(evidence,"paths",[])))
+    function record!(id,reason)
+        key=(id,reason);key in seen && return
+        push!(seen,key)
+        push!(rows,Dict("source_job"=>string(job["id"]),"record_id"=>id,"reason"=>reason,"source_result"=>get(result,"source_result","")))
+    end
+    function visit(record,fallback)
+        record isa AbstractDict || return
+        id=string(get(record,"id",fallback))
+        failures=get(record,"tracking_guard_failures",Any[])
+        failures isa AbstractVector && !isempty(failures) && record!(id,"tracking_guard_failures")
+        get(record,"audit_agreement",nothing)===false && record!(id,"audit_disagreement_or_unresolved")
+        get(record,"forward_tracking_unambiguous",nothing)===false && record!(id,"forward_tracking_unresolved")
+        stop=string(get(record,"localization_stop_reason",""))
+        stop in ("split_cap","inventory_cap","corrector_cap") && record!(id,"localization_"*stop)
+        corrector=string(get(record,"corrector_status",""))
+        startswith(corrector,"unresolved") && record!(id,corrector)
+        status=string(get(record,"status",""))
+        # A different resolved signature makes the aggregate preservation edge
+        # unresolved by design. Its audited transition is evidence, not failure.
+        transition_only=status=="unresolved" && get(record,"kind","")=="unknown_connection" && observed_transition && get(record,"audit_agreement",false)===true && get(record,"forward_tracking_unambiguous",false)===true && failures isa AbstractVector && isempty(failures)
+        !transition_only && (startswith(status,"unresolved") || endswith(status,"_unresolved") || status in ("crosscheck_disagreement","disagreement_observed","disagreement_or_unresolved","outside_admissible_domain","unavailable_target_or_base")) && record!(id,status)
+        if haskey(record,"signature") && (occursin("unresolved",lowercase(string(record["signature"]))) || isempty(get(record,"roots",Any[])))
+            record!(id,"unresolved_inventory")
+        end
+        # Follow only declared scientific summaries, not solver attempt logs:
+        # an unsuccessful seed does not invalidate an otherwise resolved search.
+        for key in ("intervals","comparisons","endpoint_comparisons","transverse_probes","unresolved_sides","levels")
+            for (index,child) in enumerate(_report_records(get(record,key,[])))
+                visit(child,"$id/$key/$index")
+            end
+        end
+    end
+    evidence=get(result,"evidence",Dict())
+    for key in ("points","paths","campaign_paths","audits","validations","recoveries","geometry_probes","events")
+        for (index,record) in enumerate(_report_records(get(evidence,key,[])))
+            visit(record,"$key/$index")
+        end
+    end
+    rows
+end
+_campaign_fully_resolved(job,result) = _campaign_success(job,result) && isempty(_campaign_unresolved_diagnostics(job,result))
+
 function _campaign_rows(data,key; successful_only=false)
     rows=Dict{String,Any}[]
     for job in data.jobs
@@ -152,7 +200,7 @@ end
 
 function _campaign_progress(data,jobs)
     verified=[job for job in jobs if haskey(data.results,string(job["id"]))]
-    Dict("planned"=>length(jobs),"attempted"=>count(j->get(j,"status","")!="pending",jobs),"execution_completed"=>count(j->get(j,"status","")=="completed",jobs),"resolved"=>count(j->_campaign_success(j,get(data.results,string(j["id"]),nothing)),jobs),"verified_results"=>length(verified),"pending"=>count(j->get(j,"status","")=="pending",jobs),"failed_or_unresolved"=>count(j->get(j,"status","") in ("failed","unresolved","timed_out","cancelled"),jobs))
+    Dict("planned"=>length(jobs),"attempted"=>count(j->get(j,"status","")!="pending",jobs),"execution_completed"=>count(j->get(j,"status","")=="completed",jobs),"resolved"=>count(j->_campaign_fully_resolved(j,get(data.results,string(j["id"]),nothing)),jobs),"fully_resolved"=>count(j->_campaign_fully_resolved(j,get(data.results,string(j["id"]),nothing)),jobs),"completed_with_unresolved"=>count(j->get(j,"status","")=="completed" && !_campaign_fully_resolved(j,get(data.results,string(j["id"]),nothing)),jobs),"verified_results"=>length(verified),"pending"=>count(j->get(j,"status","")=="pending",jobs),"failed_or_unresolved"=>count(j->get(j,"status","") in ("failed","unresolved","timed_out","cancelled"),jobs))
 end
 
 function campaign_report_summary(data)
@@ -186,16 +234,19 @@ function campaign_report_summary(data)
     raw_bases=get(get(data.state,"campaign",Dict()),"base_selection",Dict())
     bases=Dict{String,Any}("frozen_before_validation"=>get(raw_bases,"frozen_before_validation",false),"component_rule"=>get(raw_bases,"component_rule","unreported"),"entries"=>[Dict("point_id"=>get(b,"point_id","unreported"),"members"=>get(b,"members",String[]),"signature"=>get(b,"signature","unreported"),"source_job"=>get(b,"source_job","unreported")) for b in _report_records(get(raw_bases,"entries",[]))],"route_count"=>length(get(raw_bases,"routes",[])),"event_witness_count"=>length(get(raw_bases,"event_witnesses",[])))
     frontier=[Dict("source_job"=>j["id"],"role"=>_campaign_role(j),"status"=>get(j,"status","pending"),"detail"=>get(j,"error","No resolved, hash-verified result")) for j in data.jobs if !_campaign_success(j,get(data.results,string(j["id"]),nothing))]
+    for job in data.jobs
+        append!(frontier,_campaign_unresolved_diagnostics(job,get(data.results,string(job["id"]),nothing)))
+    end
     Dict{String,Any}("schema_version"=>1,"completeness"=>"CompletenessNotCertified","status"=>_campaign_progress(data,data.jobs),"progress"=>progress,"coverage_ledger"=>ledger,"round_novelty"=>rounds,"bases"=>bases,"graph"=>graph,"recoveries"=>recoveries,"unresolved_frontier"=>frontier,"issues"=>data.issues,"heldout_planned"=>256,"scope"=>"Bounded three-round campaign; finite sampled inventories and sampled paths do not certify complete parameter-space coverage")
 end
 
 function _campaign_render_html(io,summary,data)
     status=summary["status"];metadata=get(data.state,"campaign",Dict())
-    print(io,"""<!doctype html><html lang=en><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Bounded atlas evidence</title><style>body{font:16px/1.5 system-ui;max-width:1250px;margin:2rem auto;padding:0 1rem;color:#18202a}nav{display:flex;gap:1rem;flex-wrap:wrap}.warning{border:3px solid #985400;padding:1rem;background:#fff7df}.scroll{overflow:auto;max-height:36rem}table{border-collapse:collapse;font-size:14px;width:100%}th,td{border:1px solid #bbb;padding:.4rem;text-align:left;vertical-align:top}th{position:sticky;top:0;background:#eee}pre{white-space:pre-wrap;margin:0}section{margin:2rem 0}a{color:#075b9b}details{margin:.5rem 0}</style><h1>Bounded atlas evidence</h1><div class=warning><strong>CompletenessNotCertified</strong><p>Planned work, attempted work, execution completion, and resolved scientific evidence are separate. Finite samples do not establish complete parameter-space coverage.</p>""")
-    print(io,"<p><strong>",status["planned"]," assigned jobs · ",status["attempted"]," attempted · ",status["resolved"]," resolved · ",status["pending"]," pending</strong></p><p>Scheduler stage: ",_report_escape(get(metadata,"stage","unreported")),". Protocol finished: ",_report_escape(get(metadata,"protocol_complete",false)),". Stop reason: ",_report_escape(get(metadata,"stop_reason","unreported")),".</p></div>")
+    print(io,"""<!doctype html><html lang=en><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Bounded atlas evidence</title><style>body{font:16px/1.5 system-ui;max-width:1250px;margin:2rem auto;padding:0 1rem;color:#18202a}nav{display:flex;gap:1rem;flex-wrap:wrap}.warning{border:3px solid #985400;padding:1rem;background:#fff7df}.scroll{overflow:auto;max-height:36rem}table{border-collapse:collapse;font-size:14px;width:100%}th,td{border:1px solid #bbb;padding:.4rem;text-align:left;vertical-align:top}th{position:sticky;top:0;background:#eee}pre{white-space:pre-wrap;margin:0}section{margin:2rem 0}a{color:#075b9b}details{margin:.5rem 0}</style><h1>Bounded atlas evidence</h1><div class=warning><strong>CompletenessNotCertified</strong><p>Planned work, attempted work, execution completion, and resolved scientific evidence are separate. Fully resolved means no explicit unresolved diagnostics for the finite job; candidate classifications remain candidates. Finite samples do not establish complete parameter-space coverage.</p>""")
+    print(io,"<p><strong>",status["planned"]," assigned jobs · ",status["attempted"]," attempted · ",status["resolved"]," fully resolved · ",status["completed_with_unresolved"]," completed with unresolved evidence · ",status["pending"]," pending</strong></p><p>Scheduler stage: ",_report_escape(get(metadata,"stage","unreported")),". Protocol finished: ",_report_escape(get(metadata,"protocol_complete",false)),". Stop reason: ",_report_escape(get(metadata,"stop_reason","unreported")),".</p></div>")
     print(io,"<nav><a href=#progress>Progress</a><a href=#graph>Evidence graph</a><a href=#bases>Frozen bases</a><a href=#coverage>Coverage ledger</a><a href=#novelty>Round novelty</a><a href=#recovery>Held-out recovery</a><a href=#frontier>Unresolved frontier</a></nav><p><a href=campaign_summary.toml>Compact decision data</a> · <a href=campaign_manifest.toml>Frozen bounded design</a> · <a href=state.toml>Checkpoint and raw result references</a></p>")
     print(io,"<section id=progress><h2>Planned, attempted, and resolved</h2><p>The design prescribes three rounds of 512 discovery points and 128 audits per round, bounded proposals, geometry probes and component paths, followed by frozen bases and 256 held-out inventories with recovery attempts, including observed multiroot targets. Assigned jobs appear as each stage becomes eligible; the manifest records the complete bounded design. A failed control with pending jobs is unfinished science.</p>")
-    _report_table(io,summary["progress"];columns=["role","planned","attempted","execution_completed","resolved","pending","failed_or_unresolved"],compact=true)
+    _report_table(io,summary["progress"];columns=["role","planned","attempted","execution_completed","fully_resolved","completed_with_unresolved","pending","failed_or_unresolved"],compact=true)
     print(io,"</section><section id=graph><h2>Typed evidence graph</h2><p>This browsable graph is schematic; table order, distances and areas have no parameter-space meaning. Inventory nodes, numerical event witnesses, sampled structural links, transition brackets and uncertainty remain distinct. Equal signatures alone add no edge. Every record links to its single raw source; numerical arrays remain there.</p><p>Filter graph records: <input id=graph-filter aria-label=\"Filter graph records\" type=search></p><div id=graph-records>")
     for node in summary["graph"]["nodes"]
         id=node["id"]
