@@ -128,7 +128,8 @@ end
         mkpath(assets)
         source = joinpath(@__DIR__, "..", "scripts")
         cp(joinpath(source, "zero_drive_atlas.jl"), joinpath(scripts, "zero_drive_atlas.jl"))
-        for filename in ("core.jl", "engine.jl", "defaults.toml")
+        for filename in ("core.jl", "engine.jl", "defaults.toml", "calibration.jl",
+                         "campaign.jl", "campaign_science.jl", "campaign_report.jl")
             cp(joinpath(source, "atlas", filename), joinpath(assets, filename))
         end
         cp(joinpath(source,"atlas","storage.jl"),joinpath(assets,"storage.jl"))

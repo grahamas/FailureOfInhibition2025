@@ -280,10 +280,22 @@ function execute_targeted_recovery(job,config)
     Dict("status"=>covered&&terminal_agreement ? "completed" : "unresolved","evidence"=>Dict("targeted_recoveries"=>[record]),"followups"=>Any[])
 end
 function execute_targeted_job(job,config)
-    effective=merge(config,Dict("balance_atol"=>1e-11,"event_atol"=>1e-9,"seed_grid"=>9,"max_corrector_iters"=>100))
+    effective=targeted_execution_config(config)
     job["kind"]=="targeted_diagnosis" && return execute_targeted_diagnosis(job,effective)
     job["kind"]=="targeted_recovery" && return execute_targeted_recovery(job,effective)
     job["kind"]=="targeted_transition" && return execute_targeted_transition(job,effective)
     job["kind"]=="targeted_continuation" && return execute_targeted_continuation(job,effective)
     throw(ArgumentError("unsupported targeted job"))
+end
+
+function targeted_execution_config(config)
+    defaults=Dict("balance_atol"=>1e-11,"event_atol"=>1e-9,"seed_grid"=>9,"max_corrector_iters"=>100)
+    if get(config,"protocol","")=="bounded_atlas_campaign_v1"
+        # Campaign preparation binds the reviewed numerical overrides. Retain
+        # the targeted search limits and never reinstate historical tolerances.
+        for key in ("balance_atol","event_atol")
+            defaults[key]=config[key]
+        end
+    end
+    merge(config,defaults)
 end

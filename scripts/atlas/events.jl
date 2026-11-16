@@ -1,3 +1,5 @@
+include("derivatives.jl")
+
 # Numerical local bifurcation evidence. These routines never certify a
 # neighborhood or infer absence from a failed correction/shooting attempt.
 
@@ -46,11 +48,11 @@ end
 The coefficient convention uses F=J*x+B(x,x)/2+C(x,x,x)/6+... .
 BT coordinates obey J*q1=q0 and duality p_i'*q_j=delta_ij.
 """
-function atlas_nexus_coefficients(jac, x, kind; step=1e-3)
+function atlas_nexus_coefficients(jac, x, kind; step=1e-3, tensors=nothing)
     A = jac(x)
     S = svd(A)
     q = atlas_orient(S.V[:,end])
-    B, C = atlas_tensors(jac, x; step=step)
+    B, C = tensors===nothing ? atlas_tensors(jac, x; step=step) : tensors
     if kind == "cusp"
         p = S.U[:,end]
         abs(dot(p,q)) > 1e-7 || throw(ArgumentError("zero eigenvalue is not simple"))
@@ -59,7 +61,8 @@ function atlas_nexus_coefficients(jac, x, kind; step=1e-3)
         h = ([A q; p' 0.0] \ vcat(-B(q,q) + 2quadratic*q, 0.0))[1:2]
         cubic = dot(p,C(q,q,q) + 3B(q,h))/6
         return Dict{String,Any}("quadratic"=>quadratic, "cubic"=>cubic,
-            "null_residual"=>norm(A*q,Inf), "simple_pairing"=>abs(dot(S.U[:,end],q)))
+            "null_residual"=>norm(A*q,Inf), "simple_pairing"=>abs(dot(S.U[:,end],q)),
+            "transverse_eigenvalue_magnitude"=>abs(tr(A)),"largest_singular_value"=>S.S[1])
     elseif kind == "bt"
         q1 = pinv(A; rtol=1e-7)*q
         norm(q1) > 1e-8 || throw(ArgumentError("double-zero Jordan chain unresolved"))
@@ -145,10 +148,10 @@ function atlas_parameter_admissible(p)
     all(isfinite, values(p)) && all(p[k]>=0 for k in ("A","B","C","D")) &&
         p["h"]>0 && p["r"]>0
 end
-function atlas_event_vector(rhs, jac, x, kind)
+function atlas_event_vector(rhs, jac, x, kind; tensors=nothing)
     A=jac(x)
     kind == "bt" ? vcat(rhs(x), tr(A),det(A)) :
-        vcat(rhs(x),det(A),atlas_nexus_coefficients(jac,x,"cusp")["quadratic"])
+        vcat(rhs(x),det(A),atlas_nexus_coefficients(jac,x,"cusp";tensors=tensors)["quadratic"])
 end
 
 # Keep reconstruction in its own function scope: a callback-local assignment
@@ -164,9 +167,15 @@ function atlas_nexus_vector_at(base,pair,coordinates,kind)
     atlas_parameter_admissible(candidate_parameters) ||
         throw(ArgumentError("parameter perturbation outside domain"))
     vector=atlas_event_vector(state->atlas_rhs(candidate_parameters,state),
-        state->atlas_jac(candidate_parameters,state),coordinates[1:2],kind)
+        state->atlas_jac(candidate_parameters,state),coordinates[1:2],kind;
+        tensors=atlas_reduced_tensors(candidate_parameters,coordinates[1:2]))
     vector[1:2]=balance_value(candidate_parameters,coordinates[1:2])
     vector
+end
+
+function atlas_cusp_simple_zero_resolved(coefficients,event_tolerance)
+    coefficients["null_residual"]<=event_tolerance &&
+        coefficients["transverse_eigenvalue_magnitude"]>1e-7 && coefficients["largest_singular_value"]>1e-7
 end
 
 function atlas_nexus_job(job, config)
@@ -199,16 +208,21 @@ function atlas_nexus_job(job, config)
     # Finish derivative probes before creating the saved parameter/state tuple.
     M=atlas_difference(f,z)
     t=params(z); y=copy(z[1:2])
-    coefficients=atlas_nexus_coefficients(q->atlas_jac(t,q),y,kind)
-    refined=atlas_nexus_coefficients(q->atlas_jac(t,q),y,kind;step=5e-4)
+    coefficients=atlas_nexus_coefficients(q->atlas_jac(t,q),y,kind;tensors=atlas_reduced_tensors(t,y))
+    reference=atlas_nexus_coefficients(q->atlas_jac(t,q),y,kind;tensors=atlas_reference_tensors(t,y))
+    refined=atlas_nexus_coefficients(q->atlas_jac(t,q),y,kind;
+        tensors=atlas_reference_tensors(t,y;step=ATLAS_DERIVATIVE_REFERENCE_STEP/2))
     keys_to_check=kind=="bt" ? ("quadratic","mixed") : ("quadratic","cubic")
     difference=maximum(abs(coefficients[k]-refined[k]) for k in keys_to_check)
     nonzero_keys=kind=="bt" ? ("quadratic","mixed") : ("cubic",)
-    checks=Dict(k=>atlas_coefficient_resolved(coefficients[k],refined[k]) for k in nonzero_keys)
+    checks=Dict(k=>atlas_coefficient_resolved(coefficients[k],refined[k]) &&
+        atlas_coefficient_resolved(reference[k],refined[k]) for k in nonzero_keys)
     stable=all(values(checks))
     nondegenerate=stable
     unfolding=minimum(svdvals(M*Diagonal([1.0,1.0,max(1,abs(z[3])),max(1,abs(z[4]))])))
-    chain=kind=="bt" ? refined["jordan_residual"]<=1e-7 : abs(refined["quadratic"])<=atlas_event_tolerance(config,1e-7)
+    chain=kind=="bt" ? coefficients["jordan_residual"]<=1e-7 :
+        atlas_cusp_simple_zero_resolved(coefficients,atlas_event_tolerance(config,1e-7)) &&
+        all(abs(c["quadratic"])<=atlas_event_tolerance(config,1e-7) for c in (coefficients,reference,refined))
     saved_vector=atlas_nexus_vector_at(t,pair,vcat(y,t[pair[1]],t[pair[2]]),kind)
     residual_validation=atlas_saved_event_residuals(t,y,saved_vector[3:end],config)
     saved_residual=norm(saved_vector,Inf)
@@ -220,9 +234,15 @@ function atlas_nexus_job(job, config)
         "parameter_pair"=>collect(pair),"nexus_type"=>kind)] : Any[]
     Dict{String,Any}("status"=>validated ? "numerically_validated" : "unresolved","validated"=>validated,
         "classification"=>validated ? kind : "candidate_$(kind)","parameters"=>t,"state"=>y,
-        "parameter_pair"=>collect(pair),"coefficients"=>refined,"coefficient_refinement_difference"=>difference,
-        "coefficient_refinement_checks"=>checks,"refined_degeneracy_residual"=>kind=="cusp" ? abs(refined["quadratic"]) : 0.0,
-        "derivative_scheme"=>"fourth_order_centered_jacobian_differences_at_steps_0.001_and_0.0005",
+        "parameter_pair"=>collect(pair),"coefficients"=>coefficients,"independent_reference_coefficients"=>refined,"coefficient_refinement_difference"=>difference,
+        "coefficient_refinement_checks"=>checks,
+        "coefficient_comparison"=>"analytic versus independent direct-RHS highprecision differences; reference checked at two steps",
+        "reference_coefficient_refinement_difference"=>maximum(abs(reference[k]-refined[k]) for k in keys_to_check),"refined_degeneracy_residual"=>kind=="cusp" ? abs(refined["quadratic"]) : 0.0,
+        "analytic_degeneracy_residual"=>kind=="cusp" ? abs(coefficients["quadratic"]) : 0.0,
+        "derivative_scheme"=>"analytic_original_time_state_tensors_with_independent_256bit_rhs_differences",
+        "numerical_policy_version"=>ATLAS_NUMERICAL_POLICY_VERSION,
+        "derivative_diagnostics"=>atlas_derivative_diagnostics(t,y),
+        "conditioning"=>atlas_event_conditioning(M,z,saved_vector),
         "coefficient_convention"=>"F=J*x+B(x,x)/2+C(x,x,x)/6; normalized right null vector; dual Jordan basis for BT",
         "unfolding_smallest_singular_value"=>unfolding,"initial_pair_score"=>score,
         "event_residual"=>saved_residual,"residual_validation"=>residual_validation,"converged_coordinates"=>copy(z),
@@ -325,7 +345,7 @@ function atlas_section_traces(p,center,pair,config)
     traces,followups
 end
 
-function atlas_hopf_coefficient(jac, x;step=1e-3)
+function atlas_hopf_coefficient(jac, x;step=1e-3,tensors=nothing)
     A=jac(x); E=eigen(A)
     index=argmax(imag.(E.values)); lambda=E.values[index]; omega=imag(lambda)
     omega>1e-7 && abs(real(lambda))<1e-6 || throw(ArgumentError("not a resolved Hopf candidate"))
@@ -333,7 +353,7 @@ function atlas_hopf_coefficient(jac, x;step=1e-3)
     P=eigen(complex.(A'))
     p=P.vectors[:,argmin(abs.(P.values .+ im*omega))]
     p/=conj(dot(p,q))
-    B,C=atlas_tensors(jac,x;step=step)
+    B,C=tensors===nothing ? atlas_tensors(jac,x;step=step) : tensors
     G=dot(p,C(q,q,conj(q))-2B(q,A\B(q,conj(q)))+
         B(conj(q),(2im*omega*I-A)\B(q,q)))
     real(G)/(2omega),omega,q
@@ -366,27 +386,32 @@ function atlas_periodic_job(job, config)
     hopf_validation=atlas_saved_event_residuals(p,x,[tr(atlas_jac(p,x))],config)
     hopf_validation["residuals_accepted"] || return Dict{String,Any}("status"=>"unresolved",
         "reason"=>"hopf_tuple_outside_residual_tolerances","residual_validation"=>hopf_validation,"followups"=>Any[])
-    l1,omega,q=atlas_hopf_coefficient(y->atlas_jac(p,y),x)
-    l1_fine,_,_=atlas_hopf_coefficient(y->atlas_jac(p,y),x;step=5e-4)
-    atlas_coefficient_resolved(l1,l1_fine) ||
+    l1,omega,q=atlas_hopf_coefficient(y->atlas_jac(p,y),x;tensors=atlas_reduced_tensors(p,x))
+    l1_reference,_,_=atlas_hopf_coefficient(y->atlas_jac(p,y),x;tensors=atlas_reference_tensors(p,x))
+    l1_fine,_,_=atlas_hopf_coefficient(y->atlas_jac(p,y),x;
+        tensors=atlas_reference_tensors(p,x;step=ATLAS_DERIVATIVE_REFERENCE_STEP/2))
+    (atlas_coefficient_resolved(l1,l1_fine) && atlas_coefficient_resolved(l1_reference,l1_fine)) ||
         return Dict{String,Any}("status"=>"unresolved","reason"=>"generalized_hopf_or_unresolved_coefficient",
             "first_lyapunov_coefficient"=>l1_fine,"followups"=>Any[])
     # The r derivative is analytic because J=diag(1,1/r)*K.
     A=atlas_jac(p,x); derivative=-A[2,2]/(2p["r"])
     abs(derivative)>1e-10 || return Dict{String,Any}("status"=>"unresolved","reason"=>"time_ratio_not_transverse","followups"=>Any[])
     # For w'= (beta+i*omega)w+l1*w*|w|^2, beta/l1<0.
-    direction=-sign(l1_fine*derivative)
+    direction=-sign(l1*derivative)
     delta=get(config,"hopf_parameter_step",1e-3)*max(1,p["r"])
     t=copy(p);t["r"]+=direction*delta
     atlas_parameter_admissible(t) || return Dict{String,Any}("status"=>"unresolved","reason"=>"initial_cycle_outside_domain","followups"=>Any[])
-    amplitude=min(0.02,sqrt(abs(derivative*delta/(omega*l1_fine))))
+    amplitude=min(0.02,sqrt(abs(derivative*delta/(omega*l1))))
     seed=x+2amplitude*real(q)
     options=PeriodicOrbitOptions(maxiters=get(config,"periodic_shooting_iterations",15),samples=129,
         ode_maxiters=get(config,"periodic_ode_maxiters",100000))
     orbit=solve_periodic_orbit(reduced_model(t),seed,2pi/omega;options=options)
     result=Dict{String,Any}("status"=>orbit.validation==NumericallyValidatedPeriodicOrbit ? "numerically_validated" : "unresolved",
         "validated"=>orbit.validation==NumericallyValidatedPeriodicOrbit,
-        "first_lyapunov_coefficient"=>l1_fine,"coefficient_refinement_difference"=>abs(l1-l1_fine),
+        "first_lyapunov_coefficient"=>l1,"independent_reference_coefficient"=>l1_fine,
+        "coefficient_refinement_difference"=>abs(l1-l1_fine),
+        "reference_coefficient_refinement_difference"=>abs(l1_reference-l1_fine),
+        "numerical_policy_version"=>ATLAS_NUMERICAL_POLICY_VERSION,"derivative_diagnostics"=>atlas_derivative_diagnostics(p,x),
         "parameters"=>t,"hopf_parameters"=>p,"hopf_state"=>x,"hopf_residual_validation"=>hopf_validation,"initial_side"=>Int(direction),
         "orbit"=>atlas_orbit_evidence(orbit),"followups"=>Any[],"completeness"=>"CompletenessNotCertified")
     if orbit.validation==NumericallyValidatedPeriodicOrbit

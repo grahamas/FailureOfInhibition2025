@@ -233,6 +233,9 @@ function write_report(output_dir)
     config_path = joinpath(output_dir, "config.toml")
     islink(config_path) && throw(ArgumentError("report configuration must not be a symbolic link"))
     config = isfile(config_path) ? TOML.parsefile(config_path) : Dict{String,Any}()
+    if isdefined(@__MODULE__, :campaign_run_marker) && campaign_run_marker(output_dir,state,config)
+        return write_campaign_report(output_dir)
+    end
     targeted_active = if isdefined(@__MODULE__, :targeted_run_marker)
         targeted_run_marker(output_dir, state, config)
     else

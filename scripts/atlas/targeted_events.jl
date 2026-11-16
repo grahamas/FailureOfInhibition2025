@@ -26,7 +26,8 @@ function targeted_event_residual(first,last,z,kind)
     vcat(balance_value(parameters,z[1:2]),kind=="fold" ? det(K) : tr(J))
 end
 
-function targeted_fold_coefficients(first,last,z;step=1e-3,path_step=step)
+function targeted_fold_coefficients(first,last,z;step=1e-3,path_step=step,
+        reference=false,reference_step=ATLAS_DERIVATIVE_REFERENCE_STEP)
     if !(0<=z[3]-path_step && z[3]+path_step<=1)
         return Dict{String,Any}("resolved"=>false,"reason"=>"centered_path_derivative_outside_frozen_path",
             "state_step"=>step,"path_step"=>path_step)
@@ -38,7 +39,7 @@ function targeted_fold_coefficients(first,last,z;step=1e-3,path_step=step)
     pairing=dot(p,q)
     abs(pairing)>1e-7 || return Dict{String,Any}("resolved"=>false,"reason"=>"unresolved_zero_eigenvalue_pairing")
     p/=pairing
-    B,_=atlas_tensors(point->atlas_jac(parameters,point),state;step=step)
+    B,_=reference ? atlas_reference_tensors(parameters,state;step=reference_step) : atlas_reduced_tensors(parameters,state)
     plus=targeted_affine_parameters(first,last,z[3]+path_step)
     minus=targeted_affine_parameters(first,last,z[3]-path_step)
     path_derivative=(atlas_rhs(plus,state)-atlas_rhs(minus,state))/(2path_step)
@@ -51,7 +52,9 @@ function targeted_fold_coefficients(first,last,z;step=1e-3,path_step=step)
         "path_transversality"=>dot(p,path_derivative),"singular_values"=>S.S,
         "eigenvalue_real"=>real.(spectrum),"eigenvalue_imag"=>imag.(spectrum),
         "null_residual"=>right_residual,"left_null_residual"=>left_residual,"left_right_pairing"=>pairing,
-        "trace"=>tr(J),"state_step"=>step,"path_step"=>path_step,"vector_field"=>"original_time_rhs")
+        "trace"=>tr(J),"state_step"=>step,
+        "state_derivative_scheme"=>reference ? "independent_highprecision_rhs_differences" : "analytic",
+        "numerical_policy_version"=>ATLAS_NUMERICAL_POLICY_VERSION,"path_step"=>path_step,"vector_field"=>"original_time_rhs")
 end
 
 function targeted_corrector(first,last,seed,kind,bounds;tight=false)
@@ -72,14 +75,19 @@ end
 
 function targeted_fold_validation(first,last,z,coarse_coordinates,crosscheck_agreement)
     coarse=targeted_fold_coefficients(first,last,z)
-    fine=targeted_fold_coefficients(first,last,z;step=5e-4)
+    reference=targeted_fold_coefficients(first,last,z;step=5e-4,reference=true)
+    fine=targeted_fold_coefficients(first,last,z;step=5e-4,reference=true,
+        reference_step=ATLAS_DERIVATIVE_REFERENCE_STEP/2)
     residual=targeted_event_residual(first,last,z,"fold")
-    simple=get(coarse,"resolved",false)&&get(fine,"resolved",false)
-    quadratic=simple&&atlas_coefficient_resolved(coarse["quadratic"],fine["quadratic"])
+    simple=all(get(c,"resolved",false) for c in (coarse,reference,fine))
+    quadratic=simple&&atlas_coefficient_resolved(coarse["quadratic"],fine["quadratic"])&&
+        atlas_coefficient_resolved(reference["quadratic"],fine["quadratic"])
     transverse=simple&&atlas_coefficient_resolved(coarse["path_transversality"],fine["path_transversality"])
     accepted=all(isfinite,residual)&&maximum(abs,residual[1:2])<=1e-11&&abs(residual[3])<=1e-9&&
         norm(z-coarse_coordinates,Inf)<=1e-6&&crosscheck_agreement&&simple&&quadratic&&transverse
     Dict{String,Any}("validated"=>accepted,"coarse"=>coarse,"refined"=>fine,
+        "independent_reference"=>reference,
+        "coefficient_comparison"=>"analytic versus independent RHS differences; reference checked at two steps; path derivative separately refined",
         "simple_zero_refinement_passed"=>simple,"quadratic_refinement_passed"=>quadratic,
         "transversality_refinement_passed"=>transverse,"crosscheck_agreement"=>crosscheck_agreement)
 end

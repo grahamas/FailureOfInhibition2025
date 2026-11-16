@@ -477,6 +477,36 @@ are adjacent-point screening brackets, not located or certified
 bifurcations. Branch switching and nondegeneracy verification are not
 performed automatically.
 
+## Atlas event derivatives and numerical acceptance
+
+The private zero-drive atlas evaluates analytic second and third state
+derivatives of `F_i = (-x_i + (1-x_i) R_i) / tau_i`, with `tau_E = 1` and
+`tau_I = r`. These tensors differentiate both the response and its occupancy
+prefactor. They retain the original-time convention and the expansion
+`F = Jx + B(x,x)/2 + C(x,x,x)/6`.
+
+Event correction and primary saved coefficients use these analytic tensors.
+An independent direct-equation implementation uses the difference of logistic
+responses, 256-bit arithmetic, and fourth-order differences at two steps,
+`2^-24` and `2^-25`, divided by `max(1,A,B,C,D)`. These checks assess numerical
+agreement at the evaluated tuples; they are not interval error bounds.
+The rounded input failure threshold is preserved when converting the model
+to high precision.
+
+Normal-form conventions remain unchanged: a unit Euclidean right null vector,
+cusp dual pairing and bordered complement, the BT Jordan relation `Jq1=q0`
+with its dual basis, and the normalized complex Hopf eigenvector with
+`l1 = Re(G21)/(2 omega)`. Generic polynomial fixtures retain the existing
+finite-difference fallback.
+
+The reviewed policy separates unscaled balance residuals, original-time event
+residuals, coefficient resolution, and identity matching. Cusp acceptance
+requires a resolved simple-zero spectrum and agreement of the primary and
+both independent reference degeneracy residuals. Conditioning estimates
+describe local linear sensitivity rather than rigorous coordinate-error
+bounds. Calibration and finite sampled validation do not confer completeness;
+see the [bounded completion protocol](zero_drive_completion_protocol.md).
+
 ## Numerical periodic-orbit shooting
 
 `solve_periodic_orbit(model, state_guess, period_guess; options)` uses a

@@ -171,7 +171,22 @@ function release_atlas_lock(stream)
     close(stream)
 end
 
+function atlas_campaign_storage_stopped(state)
+    get(state,"protocol","")=="bounded_atlas_campaign_v1" || return false
+    get(state,"campaign_storage_stopped",false) || get(state,"status","")=="storage_budget" ||
+        startswith(get(state,"stop_reason",""),"storage_budget") ||
+        get(state,"stop_reason","")=="checkpoint_capacity_new_proposals_uncommitted" ||
+        any(job->get(job,"status","")=="storage_budget",get(state,"jobs",[]))
+end
+
 function save_atlas_state(output, state)
+    if atlas_campaign_storage_stopped(state)
+        state["campaign_storage_stopped"]=true
+        metadata=get!(state,"campaign",Dict{String,Any}())
+        metadata["protocol_complete"]=false
+        metadata["storage_stop"]=true
+        metadata["stop_reason"]="storage_budget"
+    end
     path=joinpath(output,"state.toml")
     try
         atomic_toml(path,state)
@@ -182,6 +197,13 @@ function save_atlas_state(output, state)
         previous=TOML.parsefile(path)
         previous["status"]="storage_budget"
         previous["stop_reason"]="checkpoint_capacity_new_proposals_uncommitted"
+        if get(previous,"protocol","")=="bounded_atlas_campaign_v1"
+            previous["campaign_storage_stopped"]=true
+            metadata=get!(previous,"campaign",Dict{String,Any}())
+            metadata["protocol_complete"]=false
+            metadata["storage_stop"]=true
+            metadata["stop_reason"]="storage_budget"
+        end
         for job in get(previous,"jobs",[])
             if get(job,"status","")=="running"
                 job["status"]="interrupted"
@@ -193,6 +215,16 @@ function save_atlas_state(output, state)
     end
 end
 
+# Dispatch by validated protocol markers before historical targeted detection:
+# campaign packets legitimately contain targeted replacement jobs.
+function atlas_verify_protocol_inputs(output,state,config)
+    if isdefined(@__MODULE__, :campaign_run_marker) && campaign_run_marker(output,state,config)
+        return verify_campaign_inputs(output,state,config)
+    end
+    isdefined(@__MODULE__, :verify_targeted_inputs) && verify_targeted_inputs(output,state,config)
+    nothing
+end
+
 function validate_atlas_resume(output; root=ATLAS_REPO_ROOT)
     for path in ("state.toml", "config.toml", "results", "source", "workers")
         safe_atlas_path(output, path)
@@ -202,7 +234,7 @@ function validate_atlas_resume(output; root=ATLAS_REPO_ROOT)
     config = TOML.parsefile(joinpath(output, "config.toml"))
     validate_atlas_config(config)
     toml_digest(config) == state["config_hash"] || throw(ArgumentError("configuration changed since checkpoint"))
-    isdefined(@__MODULE__,:verify_targeted_inputs) && verify_targeted_inputs(output,state,config)
+    atlas_verify_protocol_inputs(output,state,config)
     if get(state,"mode","")=="pilot"
         budget=storage_budget(output)
         budget!==nothing && budget.cap==config["storage_bytes"] || throw(ArgumentError("pilot storage policy changed"))
@@ -415,11 +447,19 @@ function start_atlas_worker(output, timeout; script=joinpath(output, "source", "
     return worker
 end
 
+function atlas_worker_config(config)
+    get(config,"protocol","")=="bounded_atlas_campaign_v1" || return config
+    # The immutable manifest lives once in the coordinator packet. Scientific
+    # workers need effective numerical settings, not every historical inventory.
+    Dict{String,Any}(key=>value for (key,value) in config if
+        !(key in ("campaign_manifest","campaign_calibration_sources")))
+end
+
 function execute_atlas_worker!(worker, payload, config, timeout;storage=nothing)
     worker.strict && !worker.reusable && throw(ArgumentError("fixed response slot has not been durably committed and hash verified"))
     worker.sequence += 1
     prefix = joinpath(worker.directory, string(worker.sequence))
-    atomic_toml(prefix * ".request.toml", Dict("job" => payload, "config" => config))
+    atomic_toml(prefix * ".request.toml", Dict("job" => payload, "config" => atlas_worker_config(config)))
     started = time_ns()
     result_file=worker.strict ? joinpath(worker.directory,"response.toml") : prefix*".result.toml"
     function complete()
@@ -548,14 +588,20 @@ function initialize_atlas(output, mode, config, budget)
         "status" => "running", "discovery_index" => 0, "jobs" => Dict{String,Any}[],
         "queue_seconds" => Dict(queue => 0.0 for queue in ATLAS_QUEUES),
         "completeness" => "CompletenessNotCertified")
+    campaign=get(config,"protocol","")=="bounded_atlas_campaign_v1"
     targeted=get(config,"protocol","")=="targeted_followup_v1"
+    if campaign
+        state["protocol"]=config["protocol"]
+        state["campaign_manifest_hash"]=config["campaign_manifest_hash"]
+        atomic_toml(joinpath(output,"campaign_manifest.toml"),config["campaign_manifest"])
+    end
     if targeted
         state["protocol"]=config["protocol"]
         state["targeted_manifest_hash"]=config["targeted_manifest_hash"]
         atomic_toml(joinpath(output,"targeted_manifest.toml"),config["targeted_manifest"])
     end
     mode=="pilot" && (state["storage_policy_hash"]=toml_digest(storage_policy(config["storage_bytes"])))
-    initial = mode=="pilot" ? (targeted ? targeted_initial_jobs(config) : pilot_initial_jobs(config)) : initial_jobs(merge(config, get(config, "science", Dict{String,Any}())))
+    initial = mode=="pilot" ? (campaign ? campaign_initial_jobs(config) : targeted ? targeted_initial_jobs(config) : pilot_initial_jobs(config)) : initial_jobs(merge(config, get(config, "science", Dict{String,Any}())))
     for payload in initial
         register_atlas_job!(state, payload)
     end
@@ -567,6 +613,8 @@ end
 function drive_atlas!(output, state, config; additional_seconds,
                       worker_script=joinpath(output, "source", "scripts", "zero_drive_atlas.jl"), lock_held=false)
     isfinite(additional_seconds) && additional_seconds > 0 || throw(ArgumentError("budget must be finite and positive"))
+    atlas_campaign_storage_stopped(state) &&
+        throw(ArgumentError("campaign stopped at its storage ceiling and remains incomplete; ordinary resume cannot clear that frontier"))
     lock = lock_held ? nothing : acquire_atlas_lock(output)
     worker = nothing
     storage = isdefined(@__MODULE__,:storage_budget) ? storage_budget(output) : nothing
@@ -594,8 +642,9 @@ function drive_atlas!(output, state, config; additional_seconds,
                 break
             end
             pilot_mode=get(state,"mode","")=="pilot"
+            campaign=get(config,"protocol","")=="bounded_atlas_campaign_v1"
             targeted=get(config,"protocol","")=="targeted_followup_v1"
-            pilot_job=pilot_mode ? (targeted ? targeted_next_job!(output,state,config) : pilot_next_job!(output,state,config)) : nothing
+            pilot_job=pilot_mode ? (campaign ? campaign_next_job!(output,state,config) : targeted ? targeted_next_job!(output,state,config) : pilot_next_job!(output,state,config)) : nothing
             job_cap=pilot_mode ? get(config,"pilot_max_jobs",targeted ? 22 : get(get(get(state,"pilot",Dict()),"manifest",Dict()),"maximum_jobs",971)) : config["max_jobs"]
             (pilot_mode && pilot_job===nothing) || count(job -> job["status"] != "pending", state["jobs"]) < job_cap || begin
                 state["stop_reason"] = "job_limit"
@@ -610,7 +659,7 @@ function drive_atlas!(output, state, config; additional_seconds,
             end
             job = pilot_mode ? pilot_job : select_atlas_job!(state, config)
             job === nothing && begin
-                metadata=get(state,targeted ? "targeted" : "pilot",Dict())
+                metadata=get(state,campaign ? "campaign" : targeted ? "targeted" : "pilot",Dict())
                 state["stop_reason"] = pilot_mode ? get(metadata,"stop_reason","protocol_complete") : "queue_empty"
                 break
             end
@@ -730,9 +779,9 @@ function run_pilot(output,config;storage_bytes=nothing)
     state["budget_scope"]="operational_guard_only_finite_protocol_defines_scientific_completion"
     lock=acquire_atlas_lock(output)
     try
-        isdefined(@__MODULE__,:verify_targeted_inputs) && verify_targeted_inputs(output,state,config)
+        atlas_verify_protocol_inputs(output,state,config)
         drive_atlas!(output,state,config;additional_seconds=guard,lock_held=true)
-        get(config,"protocol","")=="targeted_followup_v1" && verify_targeted_inputs(output,state,config)
+        atlas_verify_protocol_inputs(output,state,config)
         try
             write_report(output)
         catch exception
@@ -753,11 +802,9 @@ function report_atlas(output)
     try
         path=safe_atlas_path(output,"state.toml")
         config_path=safe_atlas_path(output,"config.toml")
-        if isdefined(@__MODULE__,:verify_targeted_inputs)
-            state=isfile(path) ? TOML.parsefile(path) : Dict{String,Any}()
-            config=isfile(config_path) ? TOML.parsefile(config_path) : Dict{String,Any}()
-            verify_targeted_inputs(output,state,config)
-        end
+        state=isfile(path) ? TOML.parsefile(path) : Dict{String,Any}()
+        config=isfile(config_path) ? TOML.parsefile(config_path) : Dict{String,Any}()
+        atlas_verify_protocol_inputs(output,state,config)
         return write_report(output)
     finally
         release_atlas_lock(lock)
@@ -771,7 +818,7 @@ function resume_atlas(output; budget_seconds=nothing)
         state, config = validate_atlas_resume(output)
         # The job cap is cumulative, so resuming cannot silently reset the agreed bound.
         drive_atlas!(output, state, config; additional_seconds=budget_seconds, lock_held=true)
-        get(config,"protocol","")=="targeted_followup_v1" && verify_targeted_inputs(output,state,config)
+        atlas_verify_protocol_inputs(output,state,config)
         write_report(output)
         return state
     finally
@@ -779,8 +826,26 @@ function resume_atlas(output; budget_seconds=nothing)
     end
 end
 
+function atlas_calibration_destination(output,roots)
+    path=abspath(output)
+    (ispath(path) || islink(path)) && throw(ArgumentError("calibration output already exists"))
+    suffix=String[];ancestor=path
+    while !ispath(ancestor)
+        islink(ancestor) && throw(ArgumentError("calibration destination has a broken symbolic-link ancestor"))
+        pushfirst!(suffix,basename(ancestor));ancestor=dirname(ancestor)
+    end
+    isdir(ancestor) || throw(ArgumentError("calibration destination ancestor is not a directory"))
+    destination=joinpath(realpath(ancestor),suffix...)
+    for root in roots
+        canonical=realpath(root)
+        (destination==canonical || startswith(destination,canonical*"/") || startswith(canonical,destination*"/")) &&
+            throw(ArgumentError("calibration output must be disjoint from immutable historical packets"))
+    end
+    destination
+end
+
 function atlas_main(arguments)
-    isempty(arguments) && throw(ArgumentError("usage: zero_drive_atlas.jl benchmark|run|pilot|followup|resume|report OUTPUT [--config FILE] [--budget-seconds N] [--storage-bytes N] [--source-packet DIR]"))
+    isempty(arguments) && throw(ArgumentError("usage: zero_drive_atlas.jl benchmark|run|pilot|followup|calibrate|campaign|resume|report OUTPUT [--config FILE] [--budget-seconds N] [--storage-bytes N] [--source-packet DIR] [--prior-targeted-packet DIR] [--numerical-policy FILE]"))
     if first(arguments) == "__worker"
         length(arguments) == 2 || throw(ArgumentError("invalid internal worker arguments"))
         return atlas_worker_main(arguments[2])
@@ -792,11 +857,38 @@ function atlas_main(arguments)
     iseven(length(remainder)) || throw(ArgumentError("options require values"))
     for index in 1:2:length(remainder)
         key = remainder[index]
-        key in ("--config", "--budget-seconds", "--storage-bytes", "--source-packet") || throw(ArgumentError("unknown option $key"))
+        key in ("--config", "--budget-seconds", "--storage-bytes", "--source-packet", "--prior-targeted-packet", "--numerical-policy") || throw(ArgumentError("unknown option $key"))
         haskey(options, key) && throw(ArgumentError("duplicate option $key"))
         options[key] = remainder[index + 1]
     end
     budget = haskey(options, "--budget-seconds") ? parse(Float64, options["--budget-seconds"]) : nothing
+    if mode=="calibrate"
+        Set(keys(options))==Set(("--source-packet","--prior-targeted-packet","--storage-bytes")) ||
+            throw(ArgumentError("calibrate requires only --source-packet, --prior-targeted-packet and --storage-bytes"))
+        cap=parse(Int,options["--storage-bytes"])
+        0<cap<=5_000_000_000 || throw(ArgumentError("calibration combined cap must be at most 5 GB"))
+        roots=realpath.([options["--source-packet"],options["--prior-targeted-packet"]])
+        roots[1]!=roots[2] || throw(ArgumentError("calibration requires distinct historical packets"))
+        output=atlas_calibration_destination(output,roots)
+        retained=sum(storage_owned_bytes(root) for root in roots)
+        retained+atlas_calibration_policy()["calibration_storage_cap_bytes"]<=cap ||
+            throw(StorageBudgetExceeded("historical packets and calibration reservation exceed combined cap"))
+        return atlas_calibrate_numerics(roots[1],output;targeted_source=roots[2])
+    end
+    if mode=="campaign"
+        budget===nothing || throw(ArgumentError("campaign uses its frozen finite protocol and operational guard"))
+        for key in ("--source-packet", "--prior-targeted-packet", "--numerical-policy", "--storage-bytes")
+            haskey(options,key) || throw(ArgumentError("campaign requires $key"))
+        end
+        policy=TOML.parsefile(options["--numerical-policy"])
+        config=atlas_config(get(options,"--config",nothing))
+        config["campaign_calibration_sources"]=get(policy,"calibration_sources",String[])
+        isempty(config["campaign_calibration_sources"]) && throw(ArgumentError("campaign requires frozen calibration evidence"))
+        return run_campaign(output,options["--source-packet"],options["--prior-targeted-packet"],config;
+            combined_storage_bytes=parse(Int,options["--storage-bytes"]), numerical_policy=policy)
+    end
+    any(key->haskey(options,key),("--prior-targeted-packet","--numerical-policy")) &&
+        throw(ArgumentError("calibration and prior-targeted inputs apply only to campaign"))
     if mode=="followup"
         budget===nothing || throw(ArgumentError("followup uses its fixed manifest and configured operational guard"))
         haskey(options,"--source-packet") || throw(ArgumentError("followup requires --source-packet"))

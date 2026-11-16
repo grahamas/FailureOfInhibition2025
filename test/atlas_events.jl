@@ -75,7 +75,8 @@ end
     @test vcat(cuspevidence["state"],cuspevidence["parameters"][cusp_pair[1]],
         cuspevidence["parameters"][cusp_pair[2]])==cuspevidence["converged_coordinates"]
     saved_cusp_vector=atlas_event_vector(state->atlas_rhs(cuspevidence["parameters"],state),
-        state->atlas_jac(cuspevidence["parameters"],state),cuspevidence["state"],"cusp")
+        state->atlas_jac(cuspevidence["parameters"],state),cuspevidence["state"],"cusp";
+        tensors=atlas_reduced_tensors(cuspevidence["parameters"],cuspevidence["state"]))
     saved_cusp_vector[1:2]=balance_value(cuspevidence["parameters"],cuspevidence["state"])
     @test norm(saved_cusp_vector,Inf)==cuspevidence["event_residual"]
     cusptraces,_=atlas_section_traces(cuspevidence["parameters"],cuspevidence["state"],
