@@ -68,8 +68,18 @@ function _campaign_unresolved_diagnostics(job,result)
         get(record,"forward_tracking_unambiguous",nothing)===false && record!(id,"forward_tracking_unresolved")
         stop=string(get(record,"localization_stop_reason",""))
         stop in ("split_cap","inventory_cap","corrector_cap") && record!(id,"localization_"*stop)
-        corrector=string(get(record,"corrector_status",""))
-        startswith(corrector,"unresolved") && record!(id,corrector)
+        for field in ("corrector_status","termination","finite_outcome","comparison_status","depth_adequacy","validation","stability")
+            value=string(get(record,field,""))
+            (occursin("unresolved",lowercase(value)) || field=="termination" && value=="minimum_step") && record!(id,field=="corrector_status" ? value : "$field:$value")
+        end
+        for field in ("resolved","source_endpoint_inventories_reproduced","classification_resolved","inventory_agreement","base_origin_target_coverage","reverse_target_origin_base_coverage")
+            get(record,field,nothing)===false && record!(id,field*"_not_established")
+        end
+        unresolved_reason=string(get(record,"unresolved_reason",""))
+        isempty(unresolved_reason) || record!(id,unresolved_reason)
+        if get(record,"status","")=="sampled" && haskey(record,"equilibria") && isempty(record["equilibria"])
+            record!(id,"unresolved_sampled_section_inventory")
+        end
         status=string(get(record,"status",""))
         # A different resolved signature makes the aggregate preservation edge
         # unresolved by design. Its audited transition is evidence, not failure.
@@ -78,17 +88,22 @@ function _campaign_unresolved_diagnostics(job,result)
         if haskey(record,"signature") && (occursin("unresolved",lowercase(string(record["signature"]))) || isempty(get(record,"roots",Any[])))
             record!(id,"unresolved_inventory")
         end
-        # Follow only declared scientific summaries, not solver attempt logs:
-        # an unsuccessful seed does not invalidate an otherwise resolved search.
-        for key in ("intervals","comparisons","endpoint_comparisons","transverse_probes","unresolved_sides","levels")
-            for (index,child) in enumerate(_report_records(get(record,key,[])))
+        # Traverse producer summaries independently of their enclosing evidence
+        # category: execute_job also emits sections/cycles and targeted_* records.
+        # Attempts and raw event estimates are numerical work logs, not terminal
+        # scientific summaries. Rejected seeds do not invalidate a resolved search.
+        for key in sort!(collect(keys(record));by=string)
+            key in ("attempts","corrector_attempts","saved_attempts","event_estimates","followups","original_level17","source_audit","source_payload","historical_results") && continue
+            children=_report_records(record[key])
+            finest=key=="levels" && !isempty(children) && all(child->haskey(child,"grid_size"),children) ? maximum(child["grid_size"] for child in children) : nothing
+            for (index,child) in enumerate(children)
+                finest===nothing || child["grid_size"]==finest || continue
                 visit(child,"$id/$key/$index")
             end
         end
     end
-    evidence=get(result,"evidence",Dict())
-    for key in ("points","paths","campaign_paths","audits","validations","recoveries","geometry_probes","events")
-        for (index,record) in enumerate(_report_records(get(evidence,key,[])))
+    for key in sort!(collect(keys(evidence));by=string)
+        for (index,record) in enumerate(_report_records(evidence[key]))
             visit(record,"$key/$index")
         end
     end

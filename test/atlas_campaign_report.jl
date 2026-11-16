@@ -207,3 +207,61 @@ else
     end
 end
 end
+
+# Exercise execute_job's real evidence wrapping with a deterministic saved-event
+# producer. No numerical solver is run by this fixture.
+module CampaignReportScientificWrapperTests
+using Test
+include(joinpath(@__DIR__,"..","scripts","atlas","science.jl"))
+execute_event_job(job,config)=deepcopy(job["saved_event"])
+const R=getfield(parentmodule(@__MODULE__),:CampaignReportTests)
+function wrapped_summary(kind,record)
+    result=execute_job(Dict{String,Any}("id"=>"scientific","kind"=>kind,"saved_event"=>record),Dict{String,Any}())
+    job=Dict("id"=>"scientific","status"=>result["status"],"payload"=>Dict("campaign_role"=>kind=="section" ? "nexus_section" : "proposal"))
+    data=(;jobs=[job],results=Dict("scientific"=>Dict("status"=>result["status"],"source_result"=>"results/scientific.toml","evidence"=>result["evidence"])),state=Dict(),config=Dict(),manifest=Dict(),issues=[])
+    R.campaign_report_summary(data)
+end
+@testset "Real scientific wrapper preserves section and cycle uncertainties" begin
+    for termination in ("unresolved_event_rank","unresolved_corrector","unresolved_saved_tuple_residual")
+        raw=Dict("status"=>"sampled","section_samples"=>Any[],"transition_curves"=>[Dict("event"=>"fold","direction"=>1,"termination"=>termination)])
+        summary=wrapped_summary("section",raw)
+        @test summary["status"]["execution_completed"]==1
+        @test summary["status"]["fully_resolved"]==0
+        @test any(row->get(row,"reason","")=="termination:"*termination && row["record_id"]=="sections/1/transition_curves/1" && row["source_result"]=="results/scientific.toml",summary["unresolved_frontier"])
+    end
+    for termination in ("step_limit","parameter_boundary","initial_point_not_on_event_locus")
+        @test wrapped_summary("section",Dict("status"=>"sampled","section_samples"=>Any[],"transition_curves"=>[Dict("termination"=>termination)]))["status"]["fully_resolved"]==1
+    end
+    for sample in (Dict("status"=>"sampled","equilibria"=>Any[]),Dict("status"=>"sampled","equilibria"=>[Dict("stability"=>"StabilityUnresolved")]),Dict("status"=>"outside_admissible_domain"))
+        @test wrapped_summary("section",Dict("status"=>"sampled","section_samples"=>[sample]))["status"]["fully_resolved"]==0
+    end
+    for orbit in (Dict("validation"=>"PeriodicOrbitUnresolved"),Dict("validation"=>"NumericallyValidatedPeriodicOrbit","stability"=>"PeriodicOrbitStabilityUnresolved"))
+        @test wrapped_summary("periodic",Dict("status"=>"numerically_validated","orbit"=>orbit))["status"]["fully_resolved"]==0
+    end
+    for termination in ("initial_equilibrium_unresolved","initial_orbit_unresolved","initial_phase_unresolved","initial_tangent_unresolved","minimum_step")
+        @test wrapped_summary("periodic",Dict("status"=>"numerically_validated","branches"=>[Dict("termination"=>termination)]))["status"]["fully_resolved"]==0
+    end
+end
+@testset "Replacement summaries and refinement scope" begin
+    job=Dict("id"=>"replacement","status"=>"completed","payload"=>Dict("campaign_role"=>"replacement"))
+    function diagnostics(evidence)
+        R._campaign_unresolved_diagnostics(job,Dict("status"=>"completed","source_result"=>"results/replacement.toml","evidence"=>evidence))
+    end
+    for branch in (Dict("finite_outcome"=>"unresolved_96_step_limit"),Dict("prefix_comparison"=>Dict("status"=>"shared_prefix_disagreement_or_unresolved")),Dict("points"=>[Dict("stability"=>"StabilityUnresolved")]))
+        @test !isempty(diagnostics(Dict("targeted_continuations"=>[Dict("branches"=>[branch])])) )
+    end
+    @test !isempty(diagnostics(Dict("targeted_transitions"=>[Dict("initial_brackets"=>[Dict("source_endpoint_inventories_reproduced"=>false,"source_endpoint_comparisons"=>[Dict("status"=>"disagreement_or_unresolved")])])])) )
+    @test !isempty(diagnostics(Dict("targeted_recoveries"=>[Dict("terminal_grid_comparison"=>Dict("status"=>"disagreement_or_unresolved"))])))
+    @test !isempty(diagnostics(Dict("targeted_recoveries"=>[Dict("independent_points"=>[Dict("id"=>"independent","signature"=>"unresolved_search","roots"=>Any[])])])) )
+    record=Dict{String,Any}("base_origin_target_coverage"=>true,"levels"=>[Dict("grid_size"=>33,"base_origin_target_coverage"=>false),Dict("grid_size"=>129,"base_origin_target_coverage"=>true)],"original_level17"=>Dict("status"=>"unresolved"),"attempts"=>[Dict("status"=>"unresolved")])
+    @test isempty(diagnostics(Dict("targeted_recoveries"=>[record])))
+    record["levels"][2]["reverse_target_origin_base_coverage"]=false
+    rows=diagnostics(Dict("targeted_recoveries"=>[record]))
+    @test length(rows)==1
+    @test rows[1]["reason"]=="reverse_target_origin_base_coverage_not_established"
+    @test rows[1]["record_id"]=="targeted_recoveries/1/levels/2"
+    @test record["base_origin_target_coverage"] # reporting does not alter forward evidence
+    @test isempty(diagnostics(Dict("events"=>[Dict("kind"=>"fold","validated"=>false,"status"=>"candidate")])))
+    @test !isempty(diagnostics(Dict("events"=>[Dict("kind"=>"fold","validated"=>false,"status"=>"candidate","coefficients"=>Dict("resolved"=>false,"reason"=>"unresolved_zero_eigenvalue_pairing"))])))
+end
+end
