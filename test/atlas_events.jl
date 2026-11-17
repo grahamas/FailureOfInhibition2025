@@ -10,7 +10,7 @@ include(joinpath(@__DIR__,"..","scripts","atlas","events.jl"))
     @test c["quadratic"] ≈ 1 atol=1e-10
     @test c["mixed"] ≈ 1 atol=1e-10
     @test c["jordan_residual"]<1e-12
-    @test_throws ArgumentError atlas_nexus_coefficients(x->zeros(2,2),zeros(2),"bt")
+    @test_throws AtlasNormalFormUnresolved atlas_nexus_coefficients(x->zeros(2,2),zeros(2),"bt")
     # Scalar cusp suspended by y'=-y.
     cusp=x->[3x[1]^2 0.0;0.0 -1.0]
     c=atlas_nexus_coefficients(cusp,zeros(2),"cusp")
@@ -24,7 +24,7 @@ include(joinpath(@__DIR__,"..","scripts","atlas","events.jl"))
     @test !atlas_coefficient_resolved(coarse,fine)
     @test !atlas_coefficient_resolved(1e-4,-1e-4)
     @test !atlas_coefficient_resolved(1e-6,1e-6)
-    @test_throws ArgumentError atlas_nexus_coefficients(Jbt,zeros(2),"cusp")
+    @test_throws AtlasNormalFormUnresolved atlas_nexus_coefficients(Jbt,zeros(2),"cusp")
     # Generic four-equation cusp and BT unfolding must be transverse.
     fbt=z->[z[2],z[3]+z[4]*z[2]+z[1]^2+z[1]*z[2],z[4]+z[1],-2z[1]-z[2]]
     fcusp=z->[z[1]^3+z[3]+z[4]*z[1],-z[2],-(3z[1]^2+z[4]),3z[1]]
@@ -116,7 +116,7 @@ end
         @test omega ≈ 1
         @test norm(q) ≈ 1
     end
-    @test_throws ArgumentError atlas_hopf_coefficient(x->[-1.0 0.0;0.0 -2.0],zeros(2))
+    @test_throws AtlasNormalFormUnresolved atlas_hopf_coefficient(x->[-1.0 0.0;0.0 -2.0],zeros(2))
     fixture=atlas_periodic_fixture(Dict("periodic_max_steps"=>1))
     @test fixture["origin"]=="synthetic_normal_form"
     @test length(fixture["fixtures"])==2

@@ -74,6 +74,6 @@ end
     @test atlas_cusp_simple_zero_resolved(atlas_nexus_coefficients(J,zeros(2),"cusp"),1e-9)
     @test !atlas_coefficient_resolved(1e-6,1e-6)
     @test !atlas_coefficient_resolved(1.,-1.)
-    @test_throws ArgumentError atlas_nexus_coefficients(x->zeros(2,2),zeros(2),"bt")
+    @test_throws AtlasNormalFormUnresolved atlas_nexus_coefficients(x->zeros(2,2),zeros(2),"bt")
 end
 end

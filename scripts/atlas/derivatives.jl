@@ -1,5 +1,5 @@
 # Private atlas derivatives; no public package API or scientific convention changes.
-const ATLAS_NUMERICAL_POLICY_VERSION = "analytic-state-derivatives-v2"
+const ATLAS_NUMERICAL_POLICY_VERSION = "analytic-state-derivatives-v3"
 const ATLAS_DERIVATIVE_REFERENCE_BITS = 256
 const ATLAS_DERIVATIVE_REFERENCE_STEP = 2.0^-24
 
