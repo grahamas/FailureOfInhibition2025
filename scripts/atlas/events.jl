@@ -43,37 +43,64 @@ function atlas_coefficient_resolved(coarse,fine;floor=1e-5,rtol=0.02)
         sign(coarse)==sign(fine) && abs(coarse-fine)<=rtol*min(abs(coarse),abs(fine))
 end
 
+# Expected inability to resolve a normal form is scientific evidence, distinct
+# from invalid input or an implementation error raised as ArgumentError.
+struct AtlasNormalFormUnresolved <: Exception
+    kind::String
+    reason::String
+    evidence::Dict{String,Any}
+end
+Base.showerror(io::IO,error::AtlasNormalFormUnresolved)=print(io,error.kind,": ",error.reason)
+atlas_normal_form_evidence(error::AtlasNormalFormUnresolved)=Dict{String,Any}(
+    "kind"=>error.kind,"reason"=>error.reason,"evidence"=>error.evidence)
+
 """Cusp/BT coefficients, with the raw degeneracy residuals retained.
 
 The coefficient convention uses F=J*x+B(x,x)/2+C(x,x,x)/6+... .
 BT coordinates obey J*q1=q0 and duality p_i'*q_j=delta_ij.
 """
 function atlas_nexus_coefficients(jac, x, kind; step=1e-3, tensors=nothing)
+    kind in ("cusp","bt") || throw(ArgumentError("unknown nexus type $kind"))
     A = jac(x)
     S = svd(A)
     q = atlas_orient(S.V[:,end])
     B, C = tensors===nothing ? atlas_tensors(jac, x; step=step) : tensors
     if kind == "cusp"
         p = S.U[:,end]
-        abs(dot(p,q)) > 1e-7 || throw(ArgumentError("zero eigenvalue is not simple"))
+        abs(dot(p,q)) > 1e-7 || throw(AtlasNormalFormUnresolved("cusp","zero_eigenvalue_not_simple",
+            Dict("state"=>copy(x),"left_right_pairing"=>abs(dot(p,q)),"required_pairing"=>1e-7)))
         p /= dot(p,q)
         quadratic = dot(p,B(q,q))/2
-        h = ([A q; p' 0.0] \ vcat(-B(q,q) + 2quadratic*q, 0.0))[1:2]
+        bordered=[A q; p' 0.0]
+        bordered_rhs=vcat(-B(q,q) + 2quadratic*q, 0.0)
+        h = try
+            (bordered \ bordered_rhs)[1:2]
+        catch err
+            (err isa SingularException || (err isa LinearAlgebra.LAPACKException && err.info>0)) || rethrow()
+            throw(AtlasNormalFormUnresolved("cusp","singular_cusp_bordered_system",
+                Dict("state"=>copy(x),"left_right_pairing"=>abs(dot(S.U[:,end],q)),"jacobian_norm"=>norm(A),"linear_algebra_failure"=>sprint(showerror,err))))
+        end
         cubic = dot(p,C(q,q,q) + 3B(q,h))/6
         return Dict{String,Any}("quadratic"=>quadratic, "cubic"=>cubic,
             "null_residual"=>norm(A*q,Inf), "simple_pairing"=>abs(dot(S.U[:,end],q)),
             "transverse_eigenvalue_magnitude"=>abs(tr(A)),"largest_singular_value"=>S.S[1])
     elseif kind == "bt"
         q1 = pinv(A; rtol=1e-7)*q
-        norm(q1) > 1e-8 || throw(ArgumentError("double-zero Jordan chain unresolved"))
-        dual = inv(hcat(q,q1))'
+        norm(q1) > 1e-8 || throw(AtlasNormalFormUnresolved("bt","double_zero_jordan_chain_unresolved",
+            Dict("state"=>copy(x),"generalized_vector_norm"=>norm(q1),"required_norm"=>1e-8)))
+        dual = try
+            inv(hcat(q,q1))'
+        catch err
+            (err isa SingularException || (err isa LinearAlgebra.LAPACKException && err.info>0)) || rethrow()
+            throw(AtlasNormalFormUnresolved("bt","singular_bt_dual_basis",
+                Dict("state"=>copy(x),"generalized_vector_norm"=>norm(q1),"jacobian_norm"=>norm(A),"linear_algebra_failure"=>sprint(showerror,err))))
+        end
         p0, p1 = dual[:,1], dual[:,2]
         return Dict{String,Any}("quadratic"=>dot(p1,B(q,q))/2,
             "mixed"=>dot(p1,B(q,q1)) + dot(p0,B(q,q)),
             "jordan_residual"=>max(norm(A*q,Inf),norm(A*q1-q,Inf)),
             "jacobian_norm"=>norm(A))
     end
-    throw(ArgumentError("unknown nexus type $kind"))
 end
 
 const ATLAS_EVENT_DIFFERENCE_STEP = 1e-5
@@ -102,13 +129,21 @@ function atlas_difference(f, x; step=ATLAS_EVENT_DIFFERENCE_STEP,
     for j in eachindex(x)
         initial_h = step*max(1,abs(x[j]))
         resolved=false
+        probe_rejections=Dict{String,Any}[]
         for halving in 0:max_halvings
             h=initial_h/2.0^halving
             function probe(multiplier)
                 trial=copy(x);trial[j]=x[j]+multiplier*h
                 offset=trial[j]-x[j]
                 isfinite(offset)&&offset!=0&&sign(offset)==sign(multiplier)&&admissible(trial) || return nothing
-                value=f(trial)
+                value=try
+                    f(trial)
+                catch err
+                    err isa AtlasNormalFormUnresolved || rethrow()
+                    push!(probe_rejections,Dict("coordinates"=>copy(trial),"halvings"=>halving,
+                        "rejection"=>atlas_normal_form_evidence(err)))
+                    return nothing
+                end
                 length(value)==length(y) || throw(ArgumentError("derivative probe output size changed"))
                 all(isfinite,value) ? (value,offset) : nothing
             end
@@ -140,11 +175,15 @@ function atlas_difference(f, x; step=ATLAS_EVENT_DIFFERENCE_STEP,
             if column!==nothing && all(isfinite,column)
                 M[:,j].=column
                 diagnostics===nothing || push!(diagnostics,Dict{String,Any}("coordinate"=>j,"scheme"=>scheme,
-                    "nominal_step"=>h,"halvings"=>halving))
+                    "nominal_step"=>h,"halvings"=>halving,"normal_form_probe_rejections"=>probe_rejections))
                 resolved=true;break
             end
         end
-        resolved || throw(AtlasDifferenceUnresolved(j,"no_admissible_finite_representable_derivative_stencil"))
+        if !resolved
+            isempty(probe_rejections) || diagnostics===nothing || push!(diagnostics,Dict{String,Any}(
+                "coordinate"=>j,"scheme"=>"unresolved","normal_form_probe_rejections"=>probe_rejections))
+            throw(AtlasDifferenceUnresolved(j,"no_admissible_finite_representable_derivative_stencil"))
+        end
     end
     M
 end
@@ -181,7 +220,15 @@ function atlas_newton(f, x, admissible; iterations=16, atol=1e-8, residual_toler
     attempts = Dict{String,Any}[]
     admissible(x) || return x,false,attempts
     for iteration in 0:iterations
-        y = f(x)
+        y = try
+            f(x)
+        catch err
+            err isa AtlasNormalFormUnresolved || rethrow()
+            push!(attempts,Dict("iteration"=>iteration,"coordinates"=>copy(x),
+                "status"=>"unresolved_normal_form","rejection_phase"=>"corrector_center",
+                "normal_form_rejection"=>atlas_normal_form_evidence(err)))
+            return x,false,attempts
+        end
         residual = norm(y,Inf)
         tolerances=residual_tolerances===nothing ? fill(atol,length(y)) : residual_tolerances
         length(tolerances)==length(y) && all(t->isfinite(t)&&t>0,tolerances) || throw(ArgumentError("positive component tolerances required"))
@@ -194,6 +241,13 @@ function atlas_newton(f, x, admissible; iterations=16, atol=1e-8, residual_toler
         M = try
             atlas_difference(f,x;admissible=admissible,diagnostics=stencils)
         catch error
+            if error isa AtlasNormalFormUnresolved
+                attempts[end]["status"]="unresolved_normal_form"
+                attempts[end]["rejection_phase"]="corrector_derivative_center"
+                attempts[end]["normal_form_rejection"]=atlas_normal_form_evidence(error)
+                attempts[end]["derivative_stencils"]=stencils
+                return x,false,attempts
+            end
             error isa AtlasDifferenceUnresolved || rethrow()
             attempts[end]["derivative_status"]="unresolved"
             attempts[end]["derivative_reason"]=error.reason
@@ -207,8 +261,19 @@ function atlas_newton(f, x, admissible; iterations=16, atol=1e-8, residual_toler
         accepted = false
         for reduction in 0:10
             trial = x - correction/2.0^reduction
-            if admissible(trial) && norm(f(trial) ./ tolerances,Inf) < scaled_residual
-                x = trial; accepted = true; break
+            if admissible(trial)
+                value=try
+                    f(trial)
+                catch err
+                    err isa AtlasNormalFormUnresolved || rethrow()
+                    rejected=get!(attempts[end],"normal_form_rejected_trials",Dict{String,Any}[])
+                    push!(rejected,Dict("coordinates"=>copy(trial),"reduction"=>reduction,
+                        "rejection"=>atlas_normal_form_evidence(err)))
+                    continue
+                end
+                if norm(value ./ tolerances,Inf) < scaled_residual
+                    x = trial; accepted = true; break
+                end
             end
         end
         accepted || break
@@ -256,7 +321,17 @@ function atlas_nexus_admissible(base,pair,coordinates)
         atlas_parameter_admissible(atlas_parameters_at(base,pair,coordinates))
 end
 
-function atlas_nexus_job(job, config;differentiate=atlas_difference)
+function atlas_nexus_rejection(parameters,pair,coordinates,kind,attempts,phase,error)
+    Dict{String,Any}("status"=>"unresolved","validated"=>false,"classification"=>"candidate_$(kind)",
+        "reason"=>"unresolved_normal_form","rejection_phase"=>phase,
+        "normal_form_rejection"=>atlas_normal_form_evidence(error),
+        "parameters"=>parameters,"state"=>copy(coordinates[1:2]),"parameter_pair"=>collect(pair),
+        "converged_coordinates"=>copy(coordinates),"attempts"=>attempts,"followups"=>Any[],
+        "completeness"=>"CompletenessNotCertified")
+end
+
+function atlas_nexus_job(job, config;differentiate=atlas_difference,
+        coefficient_solver=atlas_nexus_coefficients,event_evaluator=atlas_nexus_vector_at)
     p = Dict{String,Any}(get(job,"parameters",get(job,"params",Dict())))
     x = Float64.(job["state"])
     kind = lowercase(get(job,"nexus_type",get(job,"event_type","bt")))
@@ -266,7 +341,7 @@ function atlas_nexus_job(job, config;differentiate=atlas_difference)
     # A full-rank augmented event system is the numerical unfolding test.
     for i in 1:7, j in i+1:8
         pair=(ATLAS_EVENT_PARAMETERS[i],ATLAS_EVENT_PARAMETERS[j])
-        f=coordinates->atlas_nexus_vector_at(p,pair,coordinates,kind)
+        f=coordinates->event_evaluator(p,pair,coordinates,kind)
         z=vcat(x,p[pair[1]],p[pair[2]])
         admissible=coordinates->atlas_nexus_admissible(p,pair,coordinates)
         stencils=Dict{String,Any}[]
@@ -280,8 +355,9 @@ function atlas_nexus_job(job, config;differentiate=atlas_difference)
         catch err
             if err isa AtlasDifferenceUnresolved
                 merge!(record,Dict("status"=>"unresolved_derivative_stencil","reason"=>err.reason,"coordinate"=>err.coordinate))
-            elseif err isa SingularException
-                merge!(record,Dict("status"=>"unresolved_singular_event_system","reason"=>sprint(showerror,err)))
+            elseif err isa AtlasNormalFormUnresolved
+                merge!(record,Dict("status"=>"unresolved_normal_form",
+                    "normal_form_rejection"=>atlas_normal_form_evidence(err)))
             else
                 rethrow()
             end
@@ -289,12 +365,13 @@ function atlas_nexus_job(job, config;differentiate=atlas_difference)
         push!(pair_diagnostics,record)
     end
     isempty(scored) && return Dict{String,Any}("status"=>"unresolved","validated"=>false,
-        "reason"=>"no_admissible_unfolding_pair",
+        "reason"=>"no_admissible_unfolding_pair","classification"=>"candidate_$(kind)",
+        "parameters"=>p,"state"=>copy(x),"completeness"=>"CompletenessNotCertified",
         "attempts"=>[Dict("stage"=>"unfolding_pair_selection","pair_selection_attempts"=>pair_diagnostics)],"followups"=>Any[])
     sort!(scored;by=z->(-z[1],z[2]))
     score,pair=first(scored)
     params=coordinates->atlas_parameters_at(p,pair,coordinates)
-    f=coordinates->atlas_nexus_vector_at(p,pair,coordinates,kind)
+    f=coordinates->event_evaluator(p,pair,coordinates,kind)
     admissible=coordinates->atlas_nexus_admissible(p,pair,coordinates)
     z,converged,attempts=atlas_newton(f,vcat(x,p[pair[1]],p[pair[2]]),admissible;
         iterations=get(config,"nexus_max_iterations",16),residual_tolerances=[min(1e-8,atlas_balance_tolerance(config)),min(1e-8,atlas_balance_tolerance(config)),atlas_event_tolerance(config,1e-8),atlas_event_tolerance(config,1e-8)])
@@ -308,6 +385,7 @@ function atlas_nexus_job(job, config;differentiate=atlas_difference)
     M=try
         differentiate(f,z;admissible=admissible,diagnostics=conditioning_stencils)
     catch err
+        err isa AtlasNormalFormUnresolved && return atlas_nexus_rejection(params(z),pair,z,kind,attempts,"final_conditioning",err)
         err isa AtlasDifferenceUnresolved || rethrow()
         return Dict{String,Any}("status"=>"unresolved","validated"=>false,
             "classification"=>"candidate_$(kind)","reason"=>"unresolved_conditioning_derivative_stencil",
@@ -318,10 +396,16 @@ function atlas_nexus_job(job, config;differentiate=atlas_difference)
             "completeness"=>"CompletenessNotCertified")
     end
     t=params(z); y=copy(z[1:2])
-    coefficients=atlas_nexus_coefficients(q->atlas_jac(t,q),y,kind;tensors=atlas_reduced_tensors(t,y))
-    reference=atlas_nexus_coefficients(q->atlas_jac(t,q),y,kind;tensors=atlas_reference_tensors(t,y))
-    refined=atlas_nexus_coefficients(q->atlas_jac(t,q),y,kind;
-        tensors=atlas_reference_tensors(t,y;step=ATLAS_DERIVATIVE_REFERENCE_STEP/2))
+    coefficient_set=try
+        (coefficient_solver(q->atlas_jac(t,q),y,kind;tensors=atlas_reduced_tensors(t,y)),
+            coefficient_solver(q->atlas_jac(t,q),y,kind;tensors=atlas_reference_tensors(t,y)),
+            coefficient_solver(q->atlas_jac(t,q),y,kind;
+                tensors=atlas_reference_tensors(t,y;step=ATLAS_DERIVATIVE_REFERENCE_STEP/2)))
+    catch err
+        err isa AtlasNormalFormUnresolved || rethrow()
+        return atlas_nexus_rejection(t,pair,z,kind,attempts,"final_coefficients",err)
+    end
+    coefficients,reference,refined=coefficient_set
     keys_to_check=kind=="bt" ? ("quadratic","mixed") : ("quadratic","cubic")
     difference=maximum(abs(coefficients[k]-refined[k]) for k in keys_to_check)
     nonzero_keys=kind=="bt" ? ("quadratic","mixed") : ("cubic",)
@@ -333,7 +417,12 @@ function atlas_nexus_job(job, config;differentiate=atlas_difference)
     chain=kind=="bt" ? coefficients["jordan_residual"]<=1e-7 :
         atlas_cusp_simple_zero_resolved(coefficients,atlas_event_tolerance(config,1e-7)) &&
         all(abs(c["quadratic"])<=atlas_event_tolerance(config,1e-7) for c in (coefficients,reference,refined))
-    saved_vector=atlas_nexus_vector_at(t,pair,vcat(y,t[pair[1]],t[pair[2]]),kind)
+    saved_vector=try
+        event_evaluator(t,pair,vcat(y,t[pair[1]],t[pair[2]]),kind)
+    catch err
+        err isa AtlasNormalFormUnresolved || rethrow()
+        return atlas_nexus_rejection(t,pair,z,kind,attempts,"saved_event_conditions",err)
+    end
     residual_validation=atlas_saved_event_residuals(t,y,saved_vector[3:end],config)
     saved_residual=norm(saved_vector,Inf)
     saved_coordinates=vcat(y,t[pair[1]],t[pair[2]])
@@ -473,7 +562,8 @@ end
 function atlas_hopf_coefficient(jac, x;step=1e-3,tensors=nothing)
     A=jac(x); E=eigen(A)
     index=argmax(imag.(E.values)); lambda=E.values[index]; omega=imag(lambda)
-    omega>1e-7 && abs(real(lambda))<1e-6 || throw(ArgumentError("not a resolved Hopf candidate"))
+    omega>1e-7 && abs(real(lambda))<1e-6 || throw(AtlasNormalFormUnresolved("hopf","hopf_spectrum_unresolved",
+        Dict("state"=>copy(x),"omega"=>omega,"eigenvalue_real"=>real.(E.values),"eigenvalue_imag"=>imag.(E.values))))
     q=ComplexF64.(E.vectors[:,index]); q/=norm(q)
     P=eigen(complex.(A'))
     p=P.vectors[:,argmin(abs.(P.values .+ im*omega))]
@@ -504,17 +594,27 @@ function atlas_periodic_attempt_evidence(a)
         "shooting_evidence"=>a.orbit===nothing ? Dict{String,Any}() : atlas_orbit_evidence(a.orbit))
 end
 
-function atlas_periodic_job(job, config)
+function atlas_periodic_job(job, config;coefficient_solver=atlas_hopf_coefficient)
     get(job,"fixture",false) && return atlas_periodic_fixture(config)
     p=Dict{String,Any}(get(job,"parameters",get(job,"params",Dict())))
     x=Float64.(job["state"])
     hopf_validation=atlas_saved_event_residuals(p,x,[tr(atlas_jac(p,x))],config)
     hopf_validation["residuals_accepted"] || return Dict{String,Any}("status"=>"unresolved",
         "reason"=>"hopf_tuple_outside_residual_tolerances","residual_validation"=>hopf_validation,"followups"=>Any[])
-    l1,omega,q=atlas_hopf_coefficient(y->atlas_jac(p,y),x;tensors=atlas_reduced_tensors(p,x))
-    l1_reference,_,_=atlas_hopf_coefficient(y->atlas_jac(p,y),x;tensors=atlas_reference_tensors(p,x))
-    l1_fine,_,_=atlas_hopf_coefficient(y->atlas_jac(p,y),x;
-        tensors=atlas_reference_tensors(p,x;step=ATLAS_DERIVATIVE_REFERENCE_STEP/2))
+    coefficient_set=try
+        (coefficient_solver(y->atlas_jac(p,y),x;tensors=atlas_reduced_tensors(p,x)),
+            coefficient_solver(y->atlas_jac(p,y),x;tensors=atlas_reference_tensors(p,x)),
+            coefficient_solver(y->atlas_jac(p,y),x;
+                tensors=atlas_reference_tensors(p,x;step=ATLAS_DERIVATIVE_REFERENCE_STEP/2)))
+    catch err
+        err isa AtlasNormalFormUnresolved || rethrow()
+        return Dict{String,Any}("status"=>"unresolved","validated"=>false,"reason"=>"unresolved_normal_form",
+            "rejection_phase"=>"hopf_coefficients","normal_form_rejection"=>atlas_normal_form_evidence(err),
+            "parameters"=>p,"state"=>copy(x),"hopf_residual_validation"=>hopf_validation,
+            "followups"=>Any[],"completeness"=>"CompletenessNotCertified")
+    end
+    l1,omega,q=coefficient_set[1]
+    l1_reference=first(coefficient_set[2]);l1_fine=first(coefficient_set[3])
     (atlas_coefficient_resolved(l1,l1_fine) && atlas_coefficient_resolved(l1_reference,l1_fine)) ||
         return Dict{String,Any}("status"=>"unresolved","reason"=>"generalized_hopf_or_unresolved_coefficient",
             "first_lyapunov_coefficient"=>l1_fine,"followups"=>Any[])

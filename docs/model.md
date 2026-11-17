@@ -506,6 +506,10 @@ the actual floating-point offsets; at most 20 step halvings seek distinct,
 finite, admissible probes. If no stencil is available, correction remains
 explicitly unresolved. Probes are never clipped or evaluated outside the
 frozen path, and residual acceptance caps do not change.
+Expected numerical failures to resolve a normal form are retained as unresolved
+candidates or rejected attempts. They have a distinct exception type so invalid
+inputs and unexpected implementation errors are not silently classified as
+numerical uncertainty.
 
 The reviewed policy separates unscaled balance residuals, original-time event
 residuals, coefficient resolution, and identity matching. Cusp acceptance
