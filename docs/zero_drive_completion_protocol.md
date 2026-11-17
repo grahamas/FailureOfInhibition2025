@@ -7,13 +7,16 @@ It does not certify parameter-space coverage, absence of additional nexuses,
 or completeness of equilibrium or attractor discovery. Every packet retains
 `CompletenessNotCertified`.
 
-Implementation status: PR #162 merged after independent review and clean CI.
-The first campaign passed its three readiness controls, all 512 round-one
-inventories and 128 audits, then exposed an admissible-domain derivative-stencil
-defect during component-path correction. That packet is stopped and preserved;
-the protocol is incomplete. A reviewed correction, renewed calibration and a new
-packet are required. Retained failed-run storage remains within the combined
-5 GB allowance; final artifact review remains a separate acceptance gate.
+Implementation status: the campaign and numerical boundary/rejection repairs
+merged in PRs #162 and #163 after independent review and clean CI. The second
+campaign completed round one without worker failures, then stopped during round
+two because measured checkpoint growth would exceed its frozen 16 MiB limit.
+Both stopped packets remain preserved. Compact queued evidence and an adequate,
+versioned checkpoint, worker-result, and report reserves must be verified before a new
+packet. The numerical
+calibration remains accepted for its unchanged source; final artifact review and
+fresh validation remain outstanding. Every retained packet counts against the
+combined 5 GB allowance.
 
 ## Dependencies and acceptance
 
@@ -114,6 +117,16 @@ silently shrinking the study.
 The versioned manifest binds source, numerical policy, selections, stage rules,
 and storage accounting. Preserve strict worker isolation and atomic
 checkpoints. Store raw evidence once and reference it from reports.
+
+The pending storage repair uses versioned operational reserves derived from
+serialized stress fixtures. The full checkpoint fixture measures 460,303,259
+bytes; an 82-root recovery result measures 71,521,268 bytes; a practical
+three-root report fixture measures 229,141,544 bytes. Proposed limits are
+640 MiB for checkpoints, 96 MiB per result, 128 MiB per worker transport file,
+and 320 MiB for reports. Each measured fixture has at least 25% margin. These
+fixtures test storage capacity, not scientific outcomes or a guarantee that
+all future evidence fits. The combined ceiling and fail-closed writes remain
+mandatory. Legacy packets retain exact validation of their original policies.
 
 Deliver a browsable typed evidence graph, frozen-base table and rationales,
 shell/chart/mask coverage ledger, per-round novelty, and unresolved frontier.

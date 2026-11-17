@@ -7,7 +7,7 @@
 
 ## Next Steps
 
-- [ ] ATLAS-B0R: Repair the admissible-domain derivative stencil exposed by component paths, independently review new calibration, and merge the tested correction before launching a new packet. Preserve the stopped packet and deduct its footprint from the combined 5 GB allowance.
+- [ ] ATLAS-B0R: Compact duplicated queued evidence and size versioned checkpoint, worker-result, and report reserves for the full bounded campaign; verify scientific equivalence and legacy storage-policy validation, then merge before a new packet. Preserve both stopped campaign packets within the combined 5 GB allowance.
 - [ ] ATLAS-B1–B3: Run the replacement 22-job targeted protocol, three balanced exploration rounds over shells 1–4, and fresh validation against frozen bases, subject to readiness and the combined 5 GB ceiling.
 - [ ] ATLAS-C1: Review scientific evidence, provenance, storage, and presentation; publish the atlas, explicit unresolved frontier, and reproducible outcome through the clean PR review/merge loop.
 - [ ] Review the five figure claims and candidate captions in `docs/figure_redesign_20261006.md`; choose the final manuscript presentation and biological wording.
@@ -39,7 +39,7 @@ onset is unresolved. Final results have not been selected.
 
 ## Completed
 
-- [x] ATLAS-B0: Merged the independently reviewed campaign and report in PR #162 after clean root/plotting CI. The first run passed all three readiness controls, 512 round-one inventories and 128 audits, then exposed a path-corrector boundary defect; execution remains incomplete.
+- [x] ATLAS-B0: Merged the campaign in PR #162 and numerical boundary/rejection repairs in PR #163 after clean review and CI. Renewed calibration passed; the replacement run completed all round-one jobs without failures, then stopped during round two when measured checkpoint growth exposed an insufficient per-file reserve. Execution remains incomplete.
 
 - [x] ATLAS-A1–A2: Implemented analytic event derivatives and independently reviewed calibration over all 512 original parameter tuples (522 state evaluations) and 11 controls. The corrected cusp passes the unchanged event threshold while the historical biased tuple remains rejected. Campaign execution and final delivery remain pending; see the [completion protocol](docs/zero_drive_completion_protocol.md).
 

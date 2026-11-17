@@ -47,5 +47,6 @@ include("test_support.jl")
     include("atlas_campaign_engine.jl")
     include("atlas_campaign_science.jl")
     include("atlas_campaign.jl")
+    include("atlas_campaign_capacity.jl")
     include("atlas_campaign_report.jl")
 end
