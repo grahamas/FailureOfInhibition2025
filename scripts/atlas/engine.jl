@@ -238,7 +238,8 @@ function validate_atlas_resume(output; root=ATLAS_REPO_ROOT)
     if get(state,"mode","")=="pilot"
         budget=storage_budget(output)
         budget!==nothing && budget.cap==config["storage_bytes"] || throw(ArgumentError("pilot storage policy changed"))
-        get(state,"storage_policy_hash","")==toml_digest(storage_policy(budget.cap)) || throw(ArgumentError("pilot storage policy hash changed"))
+        # storage_budget validates the persisted policy version and its checkpoint hash.
+        # Do not rebuild a legacy policy using the default for new runs.
     end
     atlas_source_hashes(root) == state["source_hashes"] || throw(ArgumentError("source changed since checkpoint; start a new run"))
     for (path, digest) in state["source_hashes"]

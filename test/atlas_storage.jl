@@ -235,4 +235,30 @@ end
         @test read(joinpath(root,job["result_file"]),String)!="changed"
     end
 end
+
+@testset "Versioned storage policies retain exact legacy resume and hash validation" begin
+    for version in (1,2)
+        mktempdir() do root
+            policy=storage_policy(4_489_486_848;schema_version=version)
+            open(joinpath(root,".storage.toml"),"w") do io;TOML.print(io,policy;sorted=true);end
+            config=merge(atlas_config(),Dict("mode"=>"pilot","storage_bytes"=>policy["cap_bytes"]))
+            atomic_toml(joinpath(root,"config.toml"),config)
+            for name in ("source","results","workers");mkpath(joinpath(root,name));end
+            hashes=atlas_source_hashes();snapshot_atlas_source(root,hashes)
+            state=Dict("schema_version"=>1,"mode"=>"pilot","config_hash"=>toml_digest(config),"source_hashes"=>hashes,
+                "storage_policy_hash"=>toml_digest(policy),"jobs"=>Any[],"status"=>"running")
+            atomic_toml(joinpath(root,"state.toml"),state)
+            loaded,loaded_config=validate_atlas_resume(root)
+            @test loaded==state && loaded_config==config
+            @test storage_budget(root).checkpoint==policy["checkpoint_reserve_bytes"]
+            state["storage_policy_hash"]=repeat("0",64)
+            atomic_toml(joinpath(root,"state.toml"),state)
+            @test_throws ArgumentError validate_atlas_resume(root)
+        end
+    end
+    @test storage_policy(4_489_486_848;schema_version=1)["checkpoint_reserve_bytes"]==16*1024^2
+    @test storage_policy(4_489_486_848)["schema_version"]==2
+    @test_throws ArgumentError storage_policy(4_489_486_848;schema_version=3)
+    @test_throws ArgumentError storage_policy(4_489_486_848;schema_version=1.0)
+end
 end

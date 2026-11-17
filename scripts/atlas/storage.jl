@@ -19,19 +19,25 @@ mutable struct StorageBudget
     peak::Int
 end
 
-function storage_policy(cap::Integer)
+function storage_policy(cap::Integer;schema_version=2)
     cap >= 1024^2 || throw(ArgumentError("storage cap must be at least one MiB for initialization reserves"))
     cap <= typemax(Int) || throw(ArgumentError("storage cap is too large"))
     cap = Int(cap)
-    checkpoint = min(16 * 1024^2, max(256, cap ÷ 100))
-    report = min(64 * 1024^2, max(256, cap ÷ 50))
-    result = min(32 * 1024^2, max(256, cap ÷ 50))
-    file_limit = 4096 * div(min(64 * 1024^2, cap ÷ 20),4096)
+    schema_version isa Integer && !(schema_version isa Bool) && schema_version in (1,2) || throw(ArgumentError("unsupported storage policy schema"))
+    # Version 2 covers the fully populated finite campaign and an 82-root
+    # recovery serialization with at least 25 percent measured capacity margin.
+    # The report reserve covers a conservative full three-root evidence graph;
+    # none of these stress fixtures guarantees that arbitrary outcomes fit.
+    # Version 1 remains byte-for-byte reproducible for immutable older packets.
+    checkpoint = schema_version==1 ? min(16 * 1024^2, max(256, cap ÷ 100)) : min(640 * 1024^2,max(256,cap ÷ 6))
+    report = schema_version==1 ? min(64 * 1024^2,max(256,cap ÷ 50)) : min(320 * 1024^2,max(256,cap ÷ 12))
+    result = schema_version==1 ? min(32 * 1024^2, max(256, cap ÷ 50)) : min(96 * 1024^2,max(256,cap ÷ 25))
+    file_limit = 4096 * div(min((schema_version==1 ? 64 : 128) * 1024^2, cap ÷ 20),4096)
     metadata_padding=min(16*1024^2,max(128*1024,cap÷100))
     headroom = max(cap ÷ 20, 4file_limit+metadata_padding)
     checkpoint + report + 2result + 2headroom < cap ||
         throw(ArgumentError("storage cap is too small for checkpoint/report/in-flight reserves"))
-    Dict{String,Any}("schema_version"=>1,"cap_bytes"=>cap,"checkpoint_reserve_bytes"=>checkpoint,
+    Dict{String,Any}("schema_version"=>schema_version,"cap_bytes"=>cap,"checkpoint_reserve_bytes"=>checkpoint,
         "report_reserve_bytes"=>report,"result_reserve_bytes"=>result,
         "monitor_headroom_bytes"=>headroom,"file_limit_bytes"=>file_limit,
         "enforcement"=>"reserved_controlled_writes_readonly_worker_filesystem_fixed_capped_transport_inodes")
@@ -42,7 +48,7 @@ function storage_budget(output)
     islink(policy_path) && throw(ArgumentError("storage policy must not be a symlink"))
     isfile(policy_path) || return nothing
     policy = TOML.parsefile(policy_path)
-    expected = storage_policy(policy["cap_bytes"])
+    expected = storage_policy(policy["cap_bytes"];schema_version=get(policy,"schema_version",0))
     policy == expected || throw(ArgumentError("storage policy changed or is unsupported"))
     state_path=joinpath(output,"state.toml")
     if isfile(state_path)
@@ -127,6 +133,27 @@ function storage_monitor!(budget::StorageBudget)
     return observation
 end
 storage_monitor!(::Nothing) = nothing
+
+mutable struct StorageSizeCounter <: IO
+    count::Int
+    limit::Int
+end
+Base.isopen(::StorageSizeCounter)=true
+function Base.unsafe_write(io::StorageSizeCounter,pointer::Ptr{UInt8},count::UInt)
+    count<=io.limit-io.count || throw(StorageBudgetExceeded("storage_budget: serialized checkpoint exceeds its reserved allowance"))
+    io.count+=Int(count)
+    count
+end
+function Base.write(io::StorageSizeCounter,value::UInt8)
+    io.count<io.limit || throw(StorageBudgetExceeded("storage_budget: serialized checkpoint exceeds its reserved allowance"))
+    io.count+=1
+    1
+end
+function storage_serialized_size(value;limit=typemax(Int))
+    counter=StorageSizeCounter(0,limit)
+    TOML.print(counter,value;sorted=true)
+    counter.count
+end
 
 mutable struct StorageBuffer <: IO
     buffer::IOBuffer

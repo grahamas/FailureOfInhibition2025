@@ -208,7 +208,7 @@ function campaign_prepare(config,pilot_root,targeted_root; policy,source_hashes,
     packet_metadata(packet)=merge(Dict(key=>packet[key] for key in ("root","role","inventory","inventory_hash","retained_bytes")),
         Dict("result_kinds"=>Dict(job["result_file"]=>job["kind"] for job in packet["state"]["jobs"] if haskey(job,"result_hash"))))
     manifest=Dict{String,Any}("schema_version"=>CAMPAIGN_VERSION,"protocol"=>CAMPAIGN_PROTOCOL,
-        "completeness"=>"CompletenessNotCertified","shells"=>[1,2,3,4],"charts"=>collect(CAMPAIGN_CHARTS),"masks"=>collect(0:15),
+        "completeness"=>"CompletenessNotCertified","payload_schema_version"=>2,"shells"=>[1,2,3,4],"charts"=>collect(CAMPAIGN_CHARTS),"masks"=>collect(0:15),
         "selection_seed"=>CAMPAIGN_SELECTION_SEED,"selection_algorithm"=>"ascending SHA256 hex then accepted index; independent per shell/chart/mask; first 4 training and first 2 validation",
         "selection_encoding"=>"atlas-campaign-v2|shell=K|chart=CHART|mask=MASK|index=INDEX",
         "design"=>campaign_design(),"bounds"=>campaign_job_bounds(),"replacement_jobs"=>replacements,
@@ -243,6 +243,30 @@ function campaign_sample_jobs(manifest,round; audit=false,validation=false)
     jobs
 end
 
+# Execution inputs are exact scientific projections of hash-bound raw evidence.
+# Solver attempts and other diagnostics remain once in the retained result file.
+function campaign_evidence_reference(job,key,index,record)
+    haskey(job,"result_hash") || throw(ArgumentError("campaign source lacks bound raw evidence"))
+    Dict{String,Any}("source_job"=>job["id"],"result_file"=>job["result_file"],"result_hash"=>job["result_hash"],
+        "evidence_key"=>key,"record_index"=>index,"record_id"=>get(record,"id",get(record,"point_id","")))
+end
+
+function campaign_point_input(point;reference=get(point,"source_evidence_reference",nothing),retain_root_records=false)
+    input=Dict{String,Any}("parameters"=>deepcopy(point["parameters"]),"signature"=>point["signature"],
+        "roots"=>retain_root_records ? deepcopy(point["roots"]) : [Dict("state"=>deepcopy(root["state"])) for root in point["roots"]])
+    for key in ("id","point_id","source_job")
+        haskey(point,key) && (input[key]=point[key])
+    end
+    reference===nothing || (input["source_evidence_reference"]=deepcopy(reference))
+    input
+end
+
+function campaign_witness_input(witness)
+    input=Dict{String,Any}(key=>deepcopy(witness[key]) for key in
+        ("id","kind","classification","nexus_type","status","validated","source_job","source_evidence_reference") if haskey(witness,key))
+    input
+end
+
 function campaign_audit_jobs(output,state,manifest,round)
     payloads=campaign_sample_jobs(manifest,round;audit=true)
     for payload in payloads
@@ -256,7 +280,7 @@ function campaign_audit_jobs(output,state,manifest,round)
         result=pilot_result(output,source)
         points=result===nothing ? [] : get(get(result,"evidence",Dict()),"points",[])
         if source["status"]=="completed" && length(points)==1
-            payload["training_point"]=deepcopy(only(points))
+            payload["training_point"]=campaign_point_input(only(points);reference=campaign_evidence_reference(source,"points",1,only(points)))
         end
     end
     payloads
@@ -287,9 +311,10 @@ function campaign_records(output,state; before_validation=true)
         end
         job["status"]=="completed" && result!==nothing || continue
         get(result,"status","")=="completed" || continue
-        for key in ("points","paths","events","cycles","sections"), raw in get(get(result,"evidence",Dict()),key,[])
+        for key in ("points","paths","events","cycles","sections"), (index,raw) in enumerate(get(get(result,"evidence",Dict()),key,[]))
             raw isa AbstractDict || throw(ArgumentError("campaign evidence must contain records"))
-            push!(records[key],merge(deepcopy(raw),Dict("source_job"=>job["id"],"campaign_role"=>role,
+            push!(records[key],merge(deepcopy(raw),Dict("source_job"=>job["id"],
+                "source_evidence_reference"=>campaign_evidence_reference(job,key,index,raw),"campaign_role"=>role,
                 "campaign_shell"=>get(job["payload"],"campaign_shell",0),"campaign_chart"=>get(job["payload"],"campaign_chart",""))))
         end
     end
@@ -341,7 +366,9 @@ function campaign_nexus_jobs(output,state,round)
         push!(jobs,merge(section,common,Dict("campaign_role"=>"nexus_section")))
         for coordinate in setdiff(collect(ATLAS_COORDINATES[1:7]), section["parameter_pair"]), offset in (-0.01,-0.005,0.005,0.01)
             push!(jobs,merge(deepcopy(section),common,Dict("kind"=>"campaign_geometry_probe","campaign_role"=>"geometry_probe",
-                "normalized_transverse_offset"=>offset,"transverse_coordinate"=>coordinate,"nexus_evidence"=>deepcopy(only(events)))))
+                "normalized_transverse_offset"=>offset,"transverse_coordinate"=>coordinate,
+                "nexus_evidence"=>merge(Dict{String,Any}(key=>deepcopy(only(events)[key]) for key in ("validated","id") if haskey(only(events),key)),
+                    Dict("source_evidence_reference"=>campaign_evidence_reference(source,"events",1,only(events)))))))
         end
     end
     jobs
@@ -386,7 +413,7 @@ function campaign_path_jobs(output,state,round)
         for (_,a,b) in selected
             push!(examined,(a,b))
             push!(jobs,Dict("kind"=>"campaign_path","queue"=>"events","campaign_stage"=>"round$(round)_component_paths","campaign_role"=>"component_path",
-                "campaign_round"=>round,"campaign_shell"=>k,"campaign_chart"=>chart,"from"=>lookup[a],"to"=>lookup[b],"same_signature_pair"=>same,
+                "campaign_round"=>round,"campaign_shell"=>k,"campaign_chart"=>chart,"from"=>campaign_point_input(lookup[a]),"to"=>campaign_point_input(lookup[b]),"same_signature_pair"=>same,
                 "component_pair_ids"=>sort([component_of[a],component_of[b]]),
                 "selection_rule"=>"Minimum pilot_distance over eligible endpoints in distinct explicit components, then stable endpoint IDs; one minimum per component pair and previously examined endpoint pairs excluded","path_samples"=>129))
         end
@@ -401,9 +428,9 @@ function campaign_freeze_bases!(output,state,manifest)
     get(metadata,"bases_frozen",false) && return metadata["base_selection"]
     records=campaign_records(output,state);points=campaign_eligible_points(records)
     lookup=Dict(p["id"]=>p for p in points);components=atlas_region_components(points,campaign_connection_paths(records))
-    entries=[Dict("point_id"=>first(c),"members"=>c,"parameters"=>lookup[first(c)]["parameters"],"roots"=>lookup[first(c)]["roots"],
-        "signature"=>lookup[first(c)]["signature"],"source_job"=>lookup[first(c)]["source_job"]) for c in components]
-    witnesses=[deepcopy(row) for key in ("events","cycles","sections") for row in records[key] if get(row,"validated",false)===true]
+    entries=[Dict("point_id"=>first(c),"members"=>c,"parameters"=>lookup[first(c)]["parameters"],"roots"=>[Dict("state"=>deepcopy(root["state"])) for root in lookup[first(c)]["roots"]],
+        "source_evidence_reference"=>deepcopy(lookup[first(c)]["source_evidence_reference"]),"signature"=>lookup[first(c)]["signature"],"source_job"=>lookup[first(c)]["source_job"]) for c in components]
+    witnesses=[campaign_witness_input(row) for key in ("events","cycles","sections") for row in records[key] if get(row,"validated",false)===true]
     routes=Dict{String,Any}[]
     for payload in campaign_sample_jobs(manifest,4;validation=true)
         route=Dict{String,Any}("stream"=>payload["campaign_stream"],"accepted_index"=>payload["accepted_index"],"params"=>payload["params"],
@@ -433,10 +460,14 @@ function campaign_recovery_jobs(output,state)
         payload=Dict{String,Any}("kind"=>"campaign_recovery","queue"=>"events","campaign_stage"=>"validation_recovery","campaign_role"=>"validation_recovery",
             "campaign_round"=>4,"campaign_stream"=>p["campaign_stream"],"campaign_shell"=>p["campaign_shell"],"campaign_chart"=>p["campaign_chart"],
             "campaign_target_job"=>source["id"],"route"=>deepcopy(route),"base_selection_hash"=>metadata["base_selection_hash"],"target_parameters"=>p["params"],"path_samples"=>129)
-        haskey(route,"base_point_id") && (payload["base"]=deepcopy(only(filter(b->b["point_id"]==route["base_point_id"],selection["entries"]))))
+        haskey(route,"base_point_id") && (payload["base"]=campaign_point_input(only(filter(b->b["point_id"]==route["base_point_id"],selection["entries"]))))
         result=pilot_result(output,source)
         payload["validation_inventory_status"]=source["status"]
-        result===nothing || (payload["validation_evidence"]=deepcopy(get(result,"evidence",Dict())))
+        if result!==nothing
+            points=get(get(result,"evidence",Dict()),"points",[])
+            payload["validation_evidence"]=Dict("points"=>[campaign_point_input(point;
+                reference=campaign_evidence_reference(source,"points",index,point),retain_root_records=true) for (index,point) in enumerate(points)])
+        end
         push!(jobs,payload)
     end
     jobs
@@ -487,6 +518,26 @@ function campaign_remaining_kind_bounds(manifest,state)
         job["status"] in CAMPAIGN_TERMINAL || continue
         kind=job["kind"];bounds[kind]=max(0,get(bounds,kind,0)-1)
     end
+    # Empty conditional slots cease to be future work only after their own
+    # registration barrier and every registered dependent job have finished.
+    # A completed proposal phase does not close the later nexus/probe phase.
+    metadata=get(state,"campaign",Dict())
+    for round in 1:3
+        quotas=("proposals"=>Dict("continuation"=>16,"nexus"=>16,"periodic"=>16),
+            "nexus_sections"=>Dict("section"=>16,"campaign_geometry_probe"=>384),
+            "component_paths"=>Dict("campaign_path"=>32))
+        for (role,kinds) in quotas
+            phase="round$(round)_$role"
+            get(metadata,phase*"_registered",false)===true || continue
+            jobs=filter(job->campaign_stage(job)==phase,state["jobs"])
+            all(job->job["status"] in CAMPAIGN_TERMINAL,jobs) || continue
+            for (kind,quota) in kinds
+                unused=quota-count(job->job["kind"]==kind,jobs)
+                unused>=0 || throw(ArgumentError("registered campaign stage exceeds its kind quota"))
+                bounds[kind]=max(0,bounds[kind]-unused)
+            end
+        end
+    end
     bounds
 end
 
@@ -496,6 +547,11 @@ function campaign_stage_forecast!(output,state,config,phase)
     budget=storage_budget(output)
     budget===nothing && throw(ArgumentError("campaign storage policy is missing"))
     observation=storage_snapshot!(budget)
+    checkpoint_bytes=storage_serialized_size(state)
+    if checkpoint_bytes>budget.checkpoint
+        state["campaign"]["storage_stop"]=true;state["campaign"]["stop_reason"]="storage_budget"
+        throw(StorageBudgetExceeded("storage_budget: current serialized checkpoint exceeds the versioned campaign allowance before $phase"))
+    end
     measured=Dict{String,Int}();origins=Dict{String,String}()
     for packet in manifest["source_packets"], entry in packet["inventory"]
         get(entry,"kind","")=="file" || continue
@@ -525,6 +581,9 @@ function campaign_stage_forecast!(output,state,config,phase)
     reserve=budget.checkpoint+budget.report+2budget.result+2budget.headroom
     required=Base.checked_add(Base.checked_add(observation["retained_bytes"],projected),reserve)
     forecast=Dict{String,Any}("stage"=>phase,"retained_new_packet_bytes"=>observation["retained_bytes"],"kinds"=>rows,
+        "serialized_checkpoint_bytes"=>checkpoint_bytes,"checkpoint_reserve_bytes"=>budget.checkpoint,
+        "checkpoint_remaining_bytes"=>budget.checkpoint-checkpoint_bytes,
+        "checkpoint_forecast_scope"=>"Exact current TOML snapshot; versioned reserve also covers the declared fully populated max-root stress fixture with at least 25 percent measured margin, not arbitrary diagnostic growth",
         "remaining_job_upper_bound"=>sum(values(remaining)),"unknown_kind_job_count"=>unknown,"projected_result_bytes"=>projected,"dispatch_reserves_bytes"=>reserve,
         "required_known_new_packet_bytes"=>required,"new_packet_cap_bytes"=>budget.cap,
         "measurement_scope"=>"Maximum actual saved result bytes per scientific kind, with same-kind historical fallback; unobserved kinds remain explicit unknowns",
